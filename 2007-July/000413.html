@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r431 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r431%20-%20trunk/can-utils&In-Reply-To=%3C200707160952.l6G9qlYQ011107%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000412.html">
+   <LINK REL="Next"  HREF="000414.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r431 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r431%20-%20trunk/can-utils&In-Reply-To=%3C200707160952.l6G9qlYQ011107%40sheep.berlios.de%3E"
+       TITLE="r431 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul 16 11:52:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000412.html">r430 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000414.html">r432 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#413">[ date ]</a>
+              <a href="thread.html#413">[ thread ]</a>
+              <a href="subject.html#413">[ subject ]</a>
+              <a href="author.html#413">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-07-16 11:52:43 +0200 (Mon, 16 Jul 2007)
+New Revision: 431
+
+Modified:
+   trunk/can-utils/cansniffer.c
+Log:
+Added the blanking of 'old' data when the can_dlc decreases between two 
+receiptions of the same can_id.
+Thanks to Andre Naujoks for the bug report.
+
+
+Modified: trunk/can-utils/cansniffer.c
+===================================================================
+--- trunk/can-utils/cansniffer.c	2007-07-16 08:29:28 UTC (rev 430)
++++ trunk/can-utils/cansniffer.c	2007-07-16 09:52:43 UTC (rev 431)
+@@ -580,6 +580,7 @@
+ 
+     long diffsec  = sniftab[id].currstamp.tv_sec  - sniftab[id].laststamp.tv_sec;
+     long diffusec = sniftab[id].currstamp.tv_usec - sniftab[id].laststamp.tv_usec;
++    int dlc_diff  = sniftab[id].last.can_dlc - sniftab[id].current.can_dlc;
+     int i,j;
+ 
+     if (diffusec &lt; 0)
+@@ -612,6 +613,16 @@
+ 	    if (binary_gap)
+ 		putchar(' ');
+ 	}
++
++	/*
++	 * when the can_dlc decreased (dlc_diff &gt; 0),
++	 * we need to blank the former data printout
++	 */
++	for (i=0; i&lt;dlc_diff; i++) {
++	    printf(&quot;        &quot;);
++	    if (binary_gap)
++		putchar(' ');
++	}
+     }
+     else {
+ 
+@@ -633,6 +644,13 @@
+ 		    putchar(sniftab[id].current.data[i]);
+ 	    else
+ 		putchar('.');
++
++	/*
++	 * when the can_dlc decreased (dlc_diff &gt; 0),
++	 * we need to blank the former data printout
++	 */
++	for (i=0; i&lt;dlc_diff; i++)
++	    putchar(' ');
+     }
+ 
+     putchar('\n');
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000412.html">r430 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000414.html">r432 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#413">[ date ]</a>
+              <a href="thread.html#413">[ thread ]</a>
+              <a href="subject.html#413">[ subject ]</a>
+              <a href="author.html#413">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

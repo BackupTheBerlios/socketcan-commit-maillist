@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r651 - branches/cannetdriver26/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r651%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801091134.m09BYGo1026066%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000632.html">
+   <LINK REL="Next"  HREF="000634.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r651 - branches/cannetdriver26/drivers/net/can/sja1000</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r651%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801091134.m09BYGo1026066%40sheep.berlios.de%3E"
+       TITLE="r651 - branches/cannetdriver26/drivers/net/can/sja1000">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:34:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000632.html">r650 - in branches/cannetdriver26: . drivers/net/can	drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000634.html">r652 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#633">[ date ]</a>
+              <a href="thread.html#633">[ thread ]</a>
+              <a href="subject.html#633">[ subject ]</a>
+              <a href="author.html#633">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:34:13 +0100 (Wed, 09 Jan 2008)
+New Revision: 651
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+Log:
+Remove TX timeout function from SJA1000 driver
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:33:22 UTC (rev 650)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:34:13 UTC (rev 651)
+@@ -551,28 +551,6 @@
+ 	return 0;
+ }
+ 
+-static void sja1000_tx_timeout(struct net_device *dev)
+-{
+-	struct sja1000_priv *priv = netdev_priv(dev);
+-	struct net_device_stats *stats = dev-&gt;get_stats(dev);
+-
+-	stats-&gt;tx_errors++;
+-
+-	/* do not conflict with e.g. bus error handling */
+-	if (!(priv-&gt;timer.expires)) {	/* no restart on the run */
+-		chipset_init_trx(dev);	/* no tx queue wakeup */
+-		priv-&gt;can.can_stats.restarts++;
+-		if (priv-&gt;echo_skb) {	/* pending echo? */
+-			kfree_skb(priv-&gt;echo_skb);
+-			priv-&gt;echo_skb = NULL;
+-		}
+-		netif_wake_queue(dev);	/* wakeup here */
+-	} else
+-		DBG(KERN_INFO &quot;%s: %s: can_restart_dev already active.\n&quot;,
+-		    dev-&gt;name, __FUNCTION__);
+-
+-}
+-
+ static void can_restart_on(struct net_device *dev)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+@@ -1002,8 +980,6 @@
+ 	dev-&gt;open = sja1000_open;
+ 	dev-&gt;stop = sja1000_close;
+ 	dev-&gt;hard_start_xmit = sja1000_start_xmit;
+-	dev-&gt;tx_timeout = sja1000_tx_timeout;
+-	dev-&gt;watchdog_timeo = TX_TIMEOUT;
+ 
+ 	priv-&gt;can.do_set_bittime = sja1000_set_bittime;
+ 	priv-&gt;can.do_get_state = sja1000_get_state;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000632.html">r650 - in branches/cannetdriver26: . drivers/net/can	drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000634.html">r652 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#633">[ date ]</a>
+              <a href="thread.html#633">[ thread ]</a>
+              <a href="subject.html#633">[ subject ]</a>
+              <a href="author.html#633">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r677 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r677%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200802061156.m16ButaC002569%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000658.html">
+   <LINK REL="Next"  HREF="000660.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r677 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r677%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200802061156.m16ButaC002569%40sheep.berlios.de%3E"
+       TITLE="r677 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb  6 12:56:55 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000658.html">r676 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000660.html">r678 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#659">[ date ]</a>
+              <a href="thread.html#659">[ thread ]</a>
+              <a href="subject.html#659">[ subject ]</a>
+              <a href="author.html#659">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2008-02-06 12:56:52 +0100 (Wed, 06 Feb 2008)
+New Revision: 677
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Move calls to proto_{,un}register() outside of spin-locked region,
+since proto_register() changed and can now sleep.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2008-02-06 09:02:17 UTC (rev 676)
++++ trunk/kernel/2.6/net/can/af_can.c	2008-02-06 11:56:52 UTC (rev 677)
+@@ -740,29 +740,31 @@
+ 		return -EINVAL;
+ 	}
+ 
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	err = proto_register(cp-&gt;prot, 0);
++	if (err &lt; 0)
++		return err;
++#endif
++
+ 	spin_lock(&amp;proto_tab_lock);
+ 	if (proto_tab[proto]) {
+ 		printk(KERN_ERR &quot;can: protocol %d already registered\n&quot;,
+ 		       proto);
+ 		err = -EBUSY;
+-		goto errout;
++	} else {
++		proto_tab[proto] = cp;
++
++		/* use generic ioctl function if not defined by module */
++		if (!cp-&gt;ops-&gt;ioctl)
++			cp-&gt;ops-&gt;ioctl = can_ioctl;
+ 	}
++	spin_unlock(&amp;proto_tab_lock);
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	err = proto_register(cp-&gt;prot, 0);
+ 	if (err &lt; 0)
+-		goto errout;
++		proto_unregister(cp-&gt;prot);
+ #endif
+ 
+-	proto_tab[proto] = cp;
+-
+-	/* use generic ioctl function if the module doesn't bring its own */
+-	if (!cp-&gt;ops-&gt;ioctl)
+-		cp-&gt;ops-&gt;ioctl = can_ioctl;
+-
+- errout:
+-	spin_unlock(&amp;proto_tab_lock);
+-
+ 	return err;
+ }
+ EXPORT_SYMBOL(can_proto_register);
+@@ -780,11 +782,12 @@
+ 		printk(KERN_ERR &quot;BUG: can: protocol %d is not registered\n&quot;,
+ 		       proto);
+ 	}
++	proto_tab[proto] = NULL;
++	spin_unlock(&amp;proto_tab_lock);
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	proto_unregister(cp-&gt;prot);
+ #endif
+-	proto_tab[proto] = NULL;
+-	spin_unlock(&amp;proto_tab_lock);
+ }
+ EXPORT_SYMBOL(can_proto_unregister);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000658.html">r676 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000660.html">r678 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#659">[ date ]</a>
+              <a href="thread.html#659">[ thread ]</a>
+              <a href="subject.html#659">[ subject ]</a>
+              <a href="author.html#659">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

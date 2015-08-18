@@ -1,0 +1,431 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r797 - in trunk/kernel/2.6: drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/old/i82527	drivers/net/can/old/mscan drivers/net/can/old/sja1000	drivers/net/can/sja1000 net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r797%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can/mscan%0A%09drivers/net/can/old/ccan%20drivers/net/can/old/i82527%0A%09drivers/net/can/old/mscan%20drivers/net/can/old/sja1000%0A%09drivers/net/can/sja1000%20net/can&In-Reply-To=%3C200806240612.m5O6CNvC009553%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000776.html">
+   <LINK REL="Next"  HREF="000778.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r797 - in trunk/kernel/2.6: drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/old/i82527	drivers/net/can/old/mscan drivers/net/can/old/sja1000	drivers/net/can/sja1000 net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r797%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can/mscan%0A%09drivers/net/can/old/ccan%20drivers/net/can/old/i82527%0A%09drivers/net/can/old/mscan%20drivers/net/can/old/sja1000%0A%09drivers/net/can/sja1000%20net/can&In-Reply-To=%3C200806240612.m5O6CNvC009553%40sheep.berlios.de%3E"
+       TITLE="r797 - in trunk/kernel/2.6: drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/old/i82527	drivers/net/can/old/mscan drivers/net/can/old/sja1000	drivers/net/can/sja1000 net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 24 08:12:23 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000776.html">r796 - branches/ha
+</A></li>
+        <LI>Next message: <A HREF="000778.html">r798 - in trunk: . mkseries-dev mkseries-dev/headers	mkseries-dev/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#777">[ date ]</a>
+              <a href="thread.html#777">[ thread ]</a>
+              <a href="subject.html#777">[ subject ]</a>
+              <a href="author.html#777">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-24 08:12:18 +0200 (Tue, 24 Jun 2008)
+New Revision: 797
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+   trunk/kernel/2.6/drivers/net/can/old/ccan/Makefile
+   trunk/kernel/2.6/drivers/net/can/old/i82527/Makefile
+   trunk/kernel/2.6/drivers/net/can/old/mscan/Makefile
+   trunk/kernel/2.6/drivers/net/can/old/sja1000/Makefile
+   trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+   trunk/kernel/2.6/net/can/Makefile
+Log:
+Removed copyright and license info from the Makefiles.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2008-06-23 12:32:45 UTC (rev 796)
++++ trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2008-06-24 06:12:18 UTC (rev 797)
+@@ -1,44 +1,6 @@
+ #
+ #  $Id$
+ #
+-#  Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+-#  All rights reserved.
+-#
+-#  Redistribution and use in source and binary forms, with or without
+-#  modification, are permitted provided that the following conditions
+-#  are met:
+-#  1. Redistributions of source code must retain the above copyright
+-#     notice, this list of conditions, the following disclaimer and
+-#     the referenced file 'COPYING'.
+-#  2. Redistributions in binary form must reproduce the above copyright
+-#     notice, this list of conditions and the following disclaimer in the
+-#     documentation and/or other materials provided with the distribution.
+-#  3. Neither the name of Volkswagen nor the names of its contributors
+-#     may be used to endorse or promote products derived from this software
+-#     without specific prior written permission.
+-#
+-#  Alternatively, provided that this notice is retained in full, this
+-#  software may be distributed under the terms of the GNU General
+-#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+-#  file from the main directory of the linux kernel source.
+-#
+-#  The provided data structures and external interfaces from this code
+-#  are not restricted to be used by modules with a GPL compatible license.
+-#
+-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+-#  DAMAGE.
+-#
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/ccan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/ccan/Makefile	2008-06-23 12:32:45 UTC (rev 796)
++++ trunk/kernel/2.6/drivers/net/can/old/ccan/Makefile	2008-06-24 06:12:18 UTC (rev 797)
+@@ -1,44 +1,6 @@
+ #
+ #  $Id: Makefile 438 2007-07-21 17:53:09Z hartkopp $
+ #
+-#  Copyright (c) 2007 intefo AG
+-#  All rights reserved.
+-#
+-#  Redistribution and use in source and binary forms, with or without
+-#  modification, are permitted provided that the following conditions
+-#  are met:
+-#  1. Redistributions of source code must retain the above copyright
+-#     notice, this list of conditions, the following disclaimer and
+-#     the referenced file 'COPYING'.
+-#  2. Redistributions in binary form must reproduce the above copyright
+-#     notice, this list of conditions and the following disclaimer in the
+-#     documentation and/or other materials provided with the distribution.
+-#  3. Neither the name of Volkswagen nor the names of its contributors
+-#     may be used to endorse or promote products derived from this software
+-#     without specific prior written permission.
+-#
+-#  Alternatively, provided that this notice is retained in full, this
+-#  software may be distributed under the terms of the GNU General
+-#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+-#  file from the main directory of the linux kernel source.
+-#
+-#  The provided data structures and external interfaces from this code
+-#  are not restricted to be used by modules with a GPL compatible license.
+-#
+-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+-#  DAMAGE.
+-#
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/i82527/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/i82527/Makefile	2008-06-23 12:32:45 UTC (rev 796)
++++ trunk/kernel/2.6/drivers/net/can/old/i82527/Makefile	2008-06-24 06:12:18 UTC (rev 797)
+@@ -1,44 +1,6 @@
+ #
+ #  $Id$
+ #
+-#  Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+-#  All rights reserved.
+-#
+-#  Redistribution and use in source and binary forms, with or without
+-#  modification, are permitted provided that the following conditions
+-#  are met:
+-#  1. Redistributions of source code must retain the above copyright
+-#     notice, this list of conditions, the following disclaimer and
+-#     the referenced file 'COPYING'.
+-#  2. Redistributions in binary form must reproduce the above copyright
+-#     notice, this list of conditions and the following disclaimer in the
+-#     documentation and/or other materials provided with the distribution.
+-#  3. Neither the name of Volkswagen nor the names of its contributors
+-#     may be used to endorse or promote products derived from this software
+-#     without specific prior written permission.
+-#
+-#  Alternatively, provided that this notice is retained in full, this
+-#  software may be distributed under the terms of the GNU General
+-#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+-#  file from the main directory of the linux kernel source.
+-#
+-#  The provided data structures and external interfaces from this code
+-#  are not restricted to be used by modules with a GPL compatible license.
+-#
+-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+-#  DAMAGE.
+-#
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/mscan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/mscan/Makefile	2008-06-23 12:32:45 UTC (rev 796)
++++ trunk/kernel/2.6/drivers/net/can/old/mscan/Makefile	2008-06-24 06:12:18 UTC (rev 797)
+@@ -1,44 +1,6 @@
+ #
+ #  $Id$
+ #
+-#  Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+-#  All rights reserved.
+-#
+-#  Redistribution and use in source and binary forms, with or without
+-#  modification, are permitted provided that the following conditions
+-#  are met:
+-#  1. Redistributions of source code must retain the above copyright
+-#     notice, this list of conditions, the following disclaimer and
+-#     the referenced file 'COPYING'.
+-#  2. Redistributions in binary form must reproduce the above copyright
+-#     notice, this list of conditions and the following disclaimer in the
+-#     documentation and/or other materials provided with the distribution.
+-#  3. Neither the name of Volkswagen nor the names of its contributors
+-#     may be used to endorse or promote products derived from this software
+-#     without specific prior written permission.
+-#
+-#  Alternatively, provided that this notice is retained in full, this
+-#  software may be distributed under the terms of the GNU General
+-#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+-#  file from the main directory of the linux kernel source.
+-#
+-#  The provided data structures and external interfaces from this code
+-#  are not restricted to be used by modules with a GPL compatible license.
+-#
+-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+-#  DAMAGE.
+-#
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/sja1000/Makefile	2008-06-23 12:32:45 UTC (rev 796)
++++ trunk/kernel/2.6/drivers/net/can/old/sja1000/Makefile	2008-06-24 06:12:18 UTC (rev 797)
+@@ -1,46 +1,7 @@
+ #
+ #  $Id$
+ #
+-#  Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+-#  All rights reserved.
+-#
+-#  Redistribution and use in source and binary forms, with or without
+-#  modification, are permitted provided that the following conditions
+-#  are met:
+-#  1. Redistributions of source code must retain the above copyright
+-#     notice, this list of conditions, the following disclaimer and
+-#     the referenced file 'COPYING'.
+-#  2. Redistributions in binary form must reproduce the above copyright
+-#     notice, this list of conditions and the following disclaimer in the
+-#     documentation and/or other materials provided with the distribution.
+-#  3. Neither the name of Volkswagen nor the names of its contributors
+-#     may be used to endorse or promote products derived from this software
+-#     without specific prior written permission.
+-#
+-#  Alternatively, provided that this notice is retained in full, this
+-#  software may be distributed under the terms of the GNU General
+-#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+-#  file from the main directory of the linux kernel source.
+-#
+-#  The provided data structures and external interfaces from this code
+-#  are not restricted to be used by modules with a GPL compatible license.
+-#
+-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+-#  DAMAGE.
+-#
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+-
+ ifeq ($(KERNELRELEASE),)
+ 
+ KERNELDIR := /lib/modules/$(shell uname -r)/build
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2008-06-23 12:32:45 UTC (rev 796)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2008-06-24 06:12:18 UTC (rev 797)
+@@ -1,46 +1,7 @@
+ #
+ #  $Id: Makefile 443 2007-07-25 11:41:27Z hartkopp $
+ #
+-#  Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+-#  All rights reserved.
+-#
+-#  Redistribution and use in source and binary forms, with or without
+-#  modification, are permitted provided that the following conditions
+-#  are met:
+-#  1. Redistributions of source code must retain the above copyright
+-#     notice, this list of conditions, the following disclaimer and
+-#     the referenced file 'COPYING'.
+-#  2. Redistributions in binary form must reproduce the above copyright
+-#     notice, this list of conditions and the following disclaimer in the
+-#     documentation and/or other materials provided with the distribution.
+-#  3. Neither the name of Volkswagen nor the names of its contributors
+-#     may be used to endorse or promote products derived from this software
+-#     without specific prior written permission.
+-#
+-#  Alternatively, provided that this notice is retained in full, this
+-#  software may be distributed under the terms of the GNU General
+-#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+-#  file from the main directory of the linux kernel source.
+-#
+-#  The provided data structures and external interfaces from this code
+-#  are not restricted to be used by modules with a GPL compatible license.
+-#
+-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+-#  DAMAGE.
+-#
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+-
+ ifeq ($(KERNELRELEASE),)
+ 
+ KERNELDIR := /lib/modules/$(shell uname -r)/build
+
+Modified: trunk/kernel/2.6/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/net/can/Makefile	2008-06-23 12:32:45 UTC (rev 796)
++++ trunk/kernel/2.6/net/can/Makefile	2008-06-24 06:12:18 UTC (rev 797)
+@@ -1,44 +1,6 @@
+ #
+ #  $Id$
+ #
+-#  Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+-#  All rights reserved.
+-#
+-#  Redistribution and use in source and binary forms, with or without
+-#  modification, are permitted provided that the following conditions
+-#  are met:
+-#  1. Redistributions of source code must retain the above copyright
+-#     notice, this list of conditions, the following disclaimer and
+-#     the referenced file 'COPYING'.
+-#  2. Redistributions in binary form must reproduce the above copyright
+-#     notice, this list of conditions and the following disclaimer in the
+-#     documentation and/or other materials provided with the distribution.
+-#  3. Neither the name of Volkswagen nor the names of its contributors
+-#     may be used to endorse or promote products derived from this software
+-#     without specific prior written permission.
+-#
+-#  Alternatively, provided that this notice is retained in full, this
+-#  software may be distributed under the terms of the GNU General
+-#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+-#  file from the main directory of the linux kernel source.
+-#
+-#  The provided data structures and external interfaces from this code
+-#  are not restricted to be used by modules with a GPL compatible license.
+-#
+-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+-#  DAMAGE.
+-#
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000776.html">r796 - branches/ha
+</A></li>
+	<LI>Next message: <A HREF="000778.html">r798 - in trunk: . mkseries-dev mkseries-dev/headers	mkseries-dev/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#777">[ date ]</a>
+              <a href="thread.html#777">[ thread ]</a>
+              <a href="subject.html#777">[ subject ]</a>
+              <a href="author.html#777">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1199 - in trunk/kernel/2.6: Documentation/networking net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1199%20-%20in%20trunk/kernel/2.6%3A%20Documentation/networking%20net/can&In-Reply-To=%3C20101022052403.4DE9D480E57%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1199 - in trunk/kernel/2.6: Documentation/networking net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1199%20-%20in%20trunk/kernel/2.6%3A%20Documentation/networking%20net/can&In-Reply-To=%3C20101022052403.4DE9D480E57%40sheep.berlios.de%3E"
+       TITLE="r1199 - in trunk/kernel/2.6: Documentation/networking net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct 22 07:24:03 CEST 2010</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#831">[ date ]</a>
+              <a href="thread.html#831">[ thread ]</a>
+              <a href="subject.html#831">[ subject ]</a>
+              <a href="author.html#831">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-10-22 07:24:03 +0200 (Fri, 22 Oct 2010)
+New Revision: 1199
+
+Modified:
+   trunk/kernel/2.6/Documentation/networking/can.txt
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+can-raw: add msg_flags to distinguish local traffic
+
+CAN has no addressing scheme. It is currently impossible for userspace
+to tell is a received CAN frame comes from another process on the local
+host, or from a remote CAN device.
+
+This patch add support for userspace applications to distinguish between
+'own', 'local' and 'remote' CAN traffic. The distinction is made by returning
+flags in msg-&gt;msg_flags in the call to recvmsg().
+
+The added documentation explains the introduced flags.
+
+Signed-off-by: Kurt Van Dijck &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kurt.van.dijck at eia.be</A>&gt;
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+Signed-off-by: David S. Miller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">davem at davemloft.net</A>&gt;
+
+Upstream commit:
+<A HREF="http://git.kernel.org/?p=linux/kernel/git/davem/net-next-2.6.git;a=commitdiff;h=1e55659ce6ddb5247cee0b1f720d77a799902b85">http://git.kernel.org/?p=linux/kernel/git/davem/net-next-2.6.git;a=commitdiff;h=1e55659ce6ddb5247cee0b1f720d77a799902b85</A>
+
+
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2010-09-30 12:51:54 UTC (rev 1198)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2010-10-22 05:24:03 UTC (rev 1199)
+@@ -22,6 +22,7 @@
+       4.1.2 RAW socket option CAN_RAW_ERR_FILTER
+       4.1.3 RAW socket option CAN_RAW_LOOPBACK
+       4.1.4 RAW socket option CAN_RAW_RECV_OWN_MSGS
++      4.1.5 RAW socket returned message flags
+     4.2 Broadcast Manager protocol sockets (SOCK_DGRAM)
+     4.3 connected transport protocols (SOCK_SEQPACKET)
+     4.4 unconnected transport protocols (SOCK_DGRAM)
+@@ -472,6 +473,17 @@
+     setsockopt(s, SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS,
+                &amp;recv_own_msgs, sizeof(recv_own_msgs));
+ 
++  4.1.5 RAW socket returned message flags
++
++  When using recvmsg() call, the msg-&gt;msg_flags may contain following flags:
++
++    MSG_DONTROUTE: set when the received frame was created on the local host.
++
++    MSG_CONFIRM: set when the frame was sent via the socket it is received on.
++      This flag can be interpreted as a 'transmission confirmation' when the
++      CAN driver supports the echo of frames on driver level, see 3.2 and 6.2.
++      In order to receive such messages, CAN_RAW_RECV_OWN_MSGS must be set.
++
+   4.2 Broadcast Manager protocol sockets (SOCK_DGRAM)
+   4.3 connected transport protocols (SOCK_SEQPACKET)
+   4.4 unconnected transport protocols (SOCK_DGRAM)
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2010-09-30 12:51:54 UTC (rev 1198)
++++ trunk/kernel/2.6/net/can/raw.c	2010-10-22 05:24:03 UTC (rev 1199)
+@@ -102,6 +102,20 @@
+ 	can_err_mask_t err_mask;
+ };
+ 
++/*
++ * Return pointer to store the extra msg flags for raw_recvmsg().
++ * We use the space of one unsigned int beyond the 'struct sockaddr_can'
++ * in skb-&gt;cb.
++ */
++static inline unsigned int *raw_flags(struct sk_buff *skb)
++{
++	BUILD_BUG_ON(sizeof(skb-&gt;cb) &lt;= (sizeof(struct sockaddr_can) +
++					 sizeof(unsigned int)));
++
++	/* return pointer after struct sockaddr_can */
++	return (unsigned int *)(&amp;((struct sockaddr_can *)skb-&gt;cb)[1]);
++}
++
+ static inline struct raw_sock *raw_sk(const struct sock *sk)
+ {
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+@@ -111,18 +125,20 @@
+ #endif
+ }
+ 
+-static void raw_rcv(struct sk_buff *skb, void *data)
++static void raw_rcv(struct sk_buff *oskb, void *data)
+ {
+ 	struct sock *sk = (struct sock *)data;
+ 	struct raw_sock *ro = raw_sk(sk);
+ 	struct sockaddr_can *addr;
++	struct sk_buff *skb;
++	unsigned int *pflags;
+ 
+ 	/* check the received tx sock reference */
+-	if (!ro-&gt;recv_own_msgs &amp;&amp; skb-&gt;sk == sk)
++	if (!ro-&gt;recv_own_msgs &amp;&amp; oskb-&gt;sk == sk)
+ 		return;
+ 
+ 	/* clone the given skb to be able to enqueue it into the rcv queue */
+-	skb = skb_clone(skb, GFP_ATOMIC);
++	skb = skb_clone(oskb, GFP_ATOMIC);
+ 	if (!skb)
+ 		return;
+ 
+@@ -139,6 +155,14 @@
+ 	addr-&gt;can_family  = AF_CAN;
+ 	addr-&gt;can_ifindex = skb-&gt;dev-&gt;ifindex;
+ 
++	/* add CAN specific message flags for raw_recvmsg() */
++	pflags = raw_flags(skb);
++	*pflags = 0;
++	if (oskb-&gt;sk)
++		*pflags |= MSG_DONTROUTE;
++	if (oskb-&gt;sk == sk)
++		*pflags |= MSG_CONFIRM;
++
+ 	if (sock_queue_rcv_skb(sk, skb) &lt; 0)
+ 		kfree_skb(skb);
+ }
+@@ -739,6 +763,9 @@
+ 		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+ 	}
+ 
++	/* assign the flags that have been recorded in raw_rcv() */
++	msg-&gt;msg_flags |= *(raw_flags(skb));
++
+ 	skb_free_datagram(sk, skb);
+ 
+ 	return size;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#831">[ date ]</a>
+              <a href="thread.html#831">[ thread ]</a>
+              <a href="subject.html#831">[ subject ]</a>
+              <a href="author.html#831">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

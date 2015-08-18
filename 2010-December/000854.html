@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1222 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1222%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101205193716.78FC2480C9B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000855.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1222 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1222%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101205193716.78FC2480C9B%40sheep.berlios.de%3E"
+       TITLE="r1222 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec  5 20:37:16 CET 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000855.html">r1223 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#854">[ date ]</a>
+              <a href="thread.html#854">[ thread ]</a>
+              <a href="subject.html#854">[ subject ]</a>
+              <a href="author.html#854">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-12-05 20:37:16 +0100 (Sun, 05 Dec 2010)
+New Revision: 1222
+
+Modified:
+   trunk/kernel/2.6/net/can/gw.c
+Log:
+RTNL is used as a global lock for all changes to network configuration.
+Therefore the cgw_list_lock was obvoiusly over-engineered 8-)
+This patch makes use of the rtnl_lock to protect cangw route entry changes.
+
+
+Modified: trunk/kernel/2.6/net/can/gw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/gw.c	2010-11-30 19:27:36 UTC (rev 1221)
++++ trunk/kernel/2.6/net/can/gw.c	2010-12-05 19:37:16 UTC (rev 1222)
+@@ -62,7 +62,7 @@
+ #include &lt;socketcan/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define CAN_GW_VERSION &quot;20100412&quot;
++#define CAN_GW_VERSION &quot;20101205&quot;
+ static __initdata const char banner[] =
+ 	KERN_INFO &quot;can: netlink gateway (rev &quot; CAN_GW_VERSION &quot;)\n&quot;;
+ 
+@@ -72,7 +72,6 @@
+ MODULE_ALIAS(&quot;can-gw&quot;);
+ 
+ HLIST_HEAD(cgw_list);
+-static DEFINE_SPINLOCK(cgw_list_lock);
+ static struct notifier_block notifier;
+ 
+ static struct kmem_cache *cgw_cache __read_mostly;
+@@ -435,7 +434,7 @@
+ 		struct cgw_job *gwj = NULL;
+ 		struct hlist_node *n, *nx;
+ 
+-		spin_lock(&amp;cgw_list_lock);
++		ASSERT_RTNL();
+ 
+ 		hlist_for_each_entry_safe(gwj, n, nx, &amp;cgw_list, list) {
+ 
+@@ -445,8 +444,6 @@
+ 				kfree(gwj);
+ 			}
+ 		}
+-
+-		spin_unlock(&amp;cgw_list_lock);
+ 	}
+ 
+ 	return NOTIFY_DONE;
+@@ -829,14 +826,12 @@
+ 	if (gwj-&gt;dst.dev-&gt;type != ARPHRD_CAN)
+ 		goto put_src_dst_out;
+ 		
+-	spin_lock(&amp;cgw_list_lock);
++	ASSERT_RTNL();
+ 
+ 	err = cgw_register_filter(gwj);
+ 	if (!err)
+ 		hlist_add_head_rcu(&amp;gwj-&gt;list, &amp;cgw_list);
+ 
+-	spin_unlock(&amp;cgw_list_lock);
+-	
+ put_src_dst_out:
+ 	dev_put(gwj-&gt;dst.dev);
+ put_src_out:
+@@ -853,15 +848,13 @@
+ 	struct cgw_job *gwj = NULL;
+ 	struct hlist_node *n, *nx;
+ 
+-	spin_lock(&amp;cgw_list_lock);
++	ASSERT_RTNL();
+ 
+ 	hlist_for_each_entry_safe(gwj, n, nx, &amp;cgw_list, list) {
+ 		hlist_del(&amp;gwj-&gt;list);
+ 		cgw_unregister_filter(gwj);
+ 		kfree(gwj);
+ 	}
+-
+-	spin_unlock(&amp;cgw_list_lock);
+ }
+ 
+ static int cgw_remove_job(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
+@@ -896,7 +889,7 @@
+ 
+ 	err = -EINVAL;
+ 
+-	spin_lock(&amp;cgw_list_lock);
++	ASSERT_RTNL();
+ 
+ 	/* remove only the first matching entry */
+ 	hlist_for_each_entry_safe(gwj, n, nx, &amp;cgw_list, list) {
+@@ -918,8 +911,6 @@
+ 		break;
+ 	}
+ 
+-	spin_unlock(&amp;cgw_list_lock);
+-	
+ 	return err;
+ }
+ 
+@@ -956,7 +947,9 @@
+ 
+ 	unregister_netdevice_notifier(&amp;notifier);
+ 
++	rtnl_lock();
+ 	cgw_remove_all_jobs();
++	rtnl_unlock();
+ 
+ 	rcu_barrier(); /* Wait for completion of call_rcu()'s */
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000855.html">r1223 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#854">[ date ]</a>
+              <a href="thread.html#854">[ thread ]</a>
+              <a href="subject.html#854">[ subject ]</a>
+              <a href="author.html#854">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

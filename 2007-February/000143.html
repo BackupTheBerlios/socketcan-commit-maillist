@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r159 - trunk/kernel/2.6/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r159%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200702280541.l1S5ftw7016945%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000142.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r159 - trunk/kernel/2.6/drivers/net/can/sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r159%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200702280541.l1S5ftw7016945%40sheep.berlios.de%3E"
+       TITLE="r159 - trunk/kernel/2.6/drivers/net/can/sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 28 06:41:55 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000142.html">r158 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#143">[ date ]</a>
+              <a href="thread.html#143">[ thread ]</a>
+              <a href="subject.html#143">[ subject ]</a>
+              <a href="author.html#143">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-02-28 06:41:52 +0100 (Wed, 28 Feb 2007)
+New Revision: 159
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sja1000/isa.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/mem.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+Log:
+Fixed initialisation output into kernel log:
+can%d: sja1000 found ... -&gt; can0: sja1000 found ...
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/isa.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/isa.c	2007-02-27 11:39:09 UTC (rev 158)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/isa.c	2007-02-28 05:41:52 UTC (rev 159)
+@@ -159,9 +159,16 @@
+ 	priv-&gt;restart_ms = restart_ms;
+ 	priv-&gt;debug      = debug;
+ 
+-	if (REG_READ(0) == 0xFF)
++	if (REG_READ(0) == 0xFF) {
++		printk(KERN_INFO &quot;%s: probing failed\n&quot;, chip_name);
+ 		goto free_dev;
++	}
+ 
++	if (register_netdev(dev)) {
++		printk(KERN_INFO &quot;%s: register netdev failed\n&quot;, chip_name);
++		goto free_dev;
++	}
++
+ 	/* set chip into reset mode */
+ 	set_reset_mode(dev);
+ 
+@@ -175,10 +182,8 @@
+ 	printk(KERN_INFO &quot;%s: %s found at 0x%X, irq is %d\n&quot;,
+ 	       dev-&gt;name, chip_name, (uint32_t)dev-&gt;base_addr, dev-&gt;irq);
+ 
+-	if (register_netdev(dev) == 0)
+-		return dev;
++	return dev;
+ 
+-	printk(KERN_INFO &quot;%s: probing failed\n&quot;, chip_name);
+  free_dev:
+ 	free_netdev(dev);
+ 	return NULL;
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/mem.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/mem.c	2007-02-27 11:39:09 UTC (rev 158)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/mem.c	2007-02-28 05:41:52 UTC (rev 159)
+@@ -168,9 +168,16 @@
+ 	priv-&gt;restart_ms = restart_ms;
+ 	priv-&gt;debug      = debug;
+ 
+-	if (REG_READ(0) == 0xFF)
++	if (REG_READ(0) == 0xFF) {
++		printk(KERN_INFO &quot;%s: probing failed\n&quot;, chip_name);
+ 		goto free_dev;
++	}
+ 
++	if (register_netdev(dev)) {
++		printk(KERN_INFO &quot;%s: register netdev failed\n&quot;, chip_name);
++		goto free_dev;
++	}
++
+ 	/* set chip into reset mode */
+ 	set_reset_mode(dev);
+ 
+@@ -184,10 +191,8 @@
+ 	printk(KERN_INFO &quot;%s: %s found at 0x%X, irq is %d\n&quot;,
+ 	       dev-&gt;name, chip_name, (uint32_t)dev-&gt;base_addr, dev-&gt;irq);
+ 
+-	if (register_netdev(dev) == 0)
+-		return dev;
++	return dev;
+ 
+-	printk(KERN_INFO &quot;%s: probing failed\n&quot;, chip_name);
+  free_dev:
+ 	free_netdev(dev);
+ 	return NULL;
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2007-02-27 11:39:09 UTC (rev 158)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2007-02-28 05:41:52 UTC (rev 159)
+@@ -180,9 +180,16 @@
+ 	priv-&gt;restart_ms = restart_ms;
+ 	priv-&gt;debug      = debug;
+ 
+-	if (REG_READ(0) == 0xFF)
++	if (REG_READ(0) == 0xFF) {
++		printk(KERN_INFO &quot;%s: probing failed\n&quot;, chip_name);
+ 		goto free_dev;
++	}
+ 
++	if (register_netdev(dev)) {
++		printk(KERN_INFO &quot;%s: register netdev failed\n&quot;, chip_name);
++		goto free_dev;
++	}
++
+ 	/* set chip into reset mode */
+ 	set_reset_mode(dev);
+ 
+@@ -196,10 +203,8 @@
+ 	printk(KERN_INFO &quot;%s: %s found at 0x%X, irq is %d\n&quot;,
+ 	       dev-&gt;name, chip_name, (uint32_t)dev-&gt;base_addr, dev-&gt;irq);
+ 
+-	if (register_netdev(dev) == 0)
+-		return dev;
++	return dev;
+ 
+-	printk(KERN_INFO &quot;%s: probing failed\n&quot;, chip_name);
+  free_dev:
+ 	free_netdev(dev);
+ 	return NULL;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000142.html">r158 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#143">[ date ]</a>
+              <a href="thread.html#143">[ thread ]</a>
+              <a href="subject.html#143">[ subject ]</a>
+              <a href="author.html#143">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

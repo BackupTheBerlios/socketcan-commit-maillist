@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r800 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r800%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200807010847.m618lmsv028992%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000781.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r800 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r800%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200807010847.m618lmsv028992%40sheep.berlios.de%3E"
+       TITLE="r800 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul  1 10:47:48 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000781.html">r801 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#780">[ date ]</a>
+              <a href="thread.html#780">[ thread ]</a>
+              <a href="subject.html#780">[ subject ]</a>
+              <a href="author.html#780">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-07-01 10:47:47 +0200 (Tue, 01 Jul 2008)
+New Revision: 800
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Added some sanity checks to prevent skbuffs from containing inconsistent
+CAN frames.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2008-06-26 14:35:46 UTC (rev 799)
++++ trunk/kernel/2.6/net/can/af_can.c	2008-07-01 08:47:47 UTC (rev 800)
+@@ -268,12 +268,19 @@
+  *  -ENOBUFS on full driver queue (see net_xmit_errno())
+  *  -ENOMEM when local loopback failed at calling skb_clone()
+  *  -EPERM when trying to send on a non-CAN interface
++ *  -EINVAL when the skb-&gt;data does not contain a valid CAN frame
+  */
+ int can_send(struct sk_buff *skb, int loop)
+ {
+ 	struct sk_buff *newskb = NULL;
++	struct can_frame *cf = (struct can_frame *) skb-&gt;data;
+ 	int err;
+ 
++	if (skb-&gt;len != sizeof(struct can_frame) || cf-&gt;can_dlc &gt; 8) {
++		kfree_skb(skb);
++		return -EINVAL;
++	}
++
+ 	if (skb-&gt;dev-&gt;type != ARPHRD_CAN) {
+ 		kfree_skb(skb);
+ 		return -EPERM;
+@@ -681,6 +688,7 @@
+ #endif
+ {
+ 	struct dev_rcv_lists *d;
++	struct can_frame *cf = (struct can_frame *) skb-&gt;data;
+ 	int matches;
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,26)
+@@ -694,6 +702,8 @@
+ 		return 0;
+ 	}
+ 
++	BUG_ON(skb-&gt;len != sizeof(struct can_frame) || cf-&gt;can_dlc &gt; 8);
++
+ 	/* update statistics */
+ 	can_stats.rx_frames++;
+ 	can_stats.rx_frames_delta++;
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2008-06-26 14:35:46 UTC (rev 799)
++++ trunk/kernel/2.6/net/can/bcm.c	2008-07-01 08:47:47 UTC (rev 800)
+@@ -1025,6 +1025,10 @@
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+ 			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ 					       msg-&gt;msg_iov, CFSIZ);
++
++			if (op-&gt;frames[i].can_dlc &gt; 8)
++				err = -EINVAL;
++
+ 			if (err &lt; 0)
+ 				return err;
+ 
+@@ -1057,6 +1061,10 @@
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+ 			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ 					       msg-&gt;msg_iov, CFSIZ);
++
++			if (op-&gt;frames[i].can_dlc &gt; 8)
++				err = -EINVAL;
++
+ 			if (err &lt; 0) {
+ 				if (op-&gt;frames != &amp;op-&gt;sframe)
+ 					kfree(op-&gt;frames);
+@@ -1442,9 +1450,12 @@
+ 
+ 	skb-&gt;dev = dev;
+ 	skb-&gt;sk  = sk;
+-	can_send(skb, 1); /* send with loopback */
++	err = can_send(skb, 1); /* send with loopback */
+ 	dev_put(dev);
+ 
++	if (err)
++		return err;
++
+ 	return CFSIZ + MHSIZ;
+ }
+ 
+@@ -1463,6 +1474,10 @@
+ 	if (!bo-&gt;bound)
+ 		return -ENOTCONN;
+ 
++	/* check for valid message length from userspace */
++	if (size &lt; MHSIZ || (size - MHSIZ) % CFSIZ)
++		return -EINVAL;
++
+ 	/* check for alternative ifindex for this bcm_op */
+ 
+ 	if (!ifindex &amp;&amp; msg-&gt;msg_name) {
+@@ -1537,8 +1552,8 @@
+ 		break;
+ 
+ 	case TX_SEND:
+-		/* we need at least one can_frame */
+-		if (msg_head.nframes &lt; 1)
++		/* we need at exactly one can_frame behind the msg head */
++		if ((msg_head.nframes != 1) || (size != CFSIZ + MHSIZ))
+ 			ret = -EINVAL;
+ 		else
+ 			ret = bcm_tx_send(msg, ifindex, sk);
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2008-06-26 14:35:46 UTC (rev 799)
++++ trunk/kernel/2.6/net/can/raw.c	2008-07-01 08:47:47 UTC (rev 800)
+@@ -665,6 +665,9 @@
+ 	if (!dev)
+ 		return -ENXIO;
+ 
++	if (size != sizeof(struct can_frame))
++		return -EINVAL;
++
+ 	skb = sock_alloc_send_skb(sk, size, msg-&gt;msg_flags &amp; MSG_DONTWAIT,
+ 				  &amp;err);
+ 	if (!skb) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000781.html">r801 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#780">[ date ]</a>
+              <a href="thread.html#780">[ thread ]</a>
+              <a href="subject.html#780">[ subject ]</a>
+              <a href="author.html#780">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

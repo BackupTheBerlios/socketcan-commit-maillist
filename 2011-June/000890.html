@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1259 - branches/j1939/kernel/2.6/net/can trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1259%20-%20branches/j1939/kernel/2.6/net/can%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110602185844.368DF480C67%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000891.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1259 - branches/j1939/kernel/2.6/net/can trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1259%20-%20branches/j1939/kernel/2.6/net/can%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110602185844.368DF480C67%40sheep.berlios.de%3E"
+       TITLE="r1259 - branches/j1939/kernel/2.6/net/can trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun  2 20:58:43 CEST 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000891.html">r1260 - trunk/kernel/2.6/Documentation/networking/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#890">[ date ]</a>
+              <a href="thread.html#890">[ thread ]</a>
+              <a href="subject.html#890">[ subject ]</a>
+              <a href="author.html#890">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-06-02 20:58:43 +0200 (Thu, 02 Jun 2011)
+New Revision: 1259
+
+Modified:
+   branches/j1939/kernel/2.6/net/can/bcm.c
+   branches/j1939/kernel/2.6/net/can/proc.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+net: convert %p usage to %pK
+
+Hide kernel pointer information using %pK in kernel 3.0 and up.
+
+See upstream commits:
+
+<A HREF="http://git.kernel.org/?p=linux/kernel/git/davem/net-2.6.git;a=commitdiff;h=71338aa7d050c86d8765cd36e46be514fb0ebbce">http://git.kernel.org/?p=linux/kernel/git/davem/net-2.6.git;a=commitdiff;h=71338aa7d050c86d8765cd36e46be514fb0ebbce</A>
+<A HREF="http://git.kernel.org/?p=linux/kernel/git/davem/net-2.6.git;a=commitdiff;h=12e6c419b48c4d1803918e5d952ebee07bae7465">http://git.kernel.org/?p=linux/kernel/git/davem/net-2.6.git;a=commitdiff;h=12e6c419b48c4d1803918e5d952ebee07bae7465</A>
+
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+
+
+
+Modified: branches/j1939/kernel/2.6/net/can/bcm.c
+===================================================================
+--- branches/j1939/kernel/2.6/net/can/bcm.c	2011-05-21 12:03:55 UTC (rev 1258)
++++ branches/j1939/kernel/2.6/net/can/bcm.c	2011-06-02 18:58:43 UTC (rev 1259)
+@@ -181,9 +181,15 @@
+ 	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(3,0,0)
+ 	seq_printf(m, &quot;&gt;&gt;&gt; socket %p&quot;, sk-&gt;sk_socket);
+ 	seq_printf(m, &quot; / sk %p&quot;, sk);
+ 	seq_printf(m, &quot; / bo %p&quot;, bo);
++#else
++	seq_printf(m, &quot;&gt;&gt;&gt; socket %pK&quot;, sk-&gt;sk_socket);
++	seq_printf(m, &quot; / sk %pK&quot;, sk);
++	seq_printf(m, &quot; / bo %pK&quot;, bo);
++#endif
+ 	seq_printf(m, &quot; / dropped %lu&quot;, bo-&gt;dropped_usr_msgs);
+ 	seq_printf(m, &quot; / bound %s&quot;, bcm_proc_getifname(ifname, bo-&gt;ifindex));
+ 	seq_printf(m, &quot; &lt;&lt;&lt;\n&quot;);
+
+Modified: branches/j1939/kernel/2.6/net/can/proc.c
+===================================================================
+--- branches/j1939/kernel/2.6/net/can/proc.c	2011-05-21 12:03:55 UTC (rev 1258)
++++ branches/j1939/kernel/2.6/net/can/proc.c	2011-06-02 18:58:43 UTC (rev 1259)
+@@ -212,12 +212,16 @@
+ 
+ 	hlist_for_each_entry_rcu(r, n, rx_list, list) {
+ 		char *fmt = (r-&gt;can_id &amp; CAN_EFF_FLAG)?
+-			&quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+-			&quot;   %-5s     %03X    %08x  %08lx  %08lx  %8ld  %s\n&quot;;
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(3,0,0)
++			&quot;   %-5s  %08x  %08x  %p  %p  %8ld  %s\n&quot; :
++			&quot;   %-5s     %03x    %08x  %p  %p  %8ld  %s\n&quot;;
++#else
++			&quot;   %-5s  %08x  %08x  %pK  %pK  %8ld  %s\n&quot; :
++			&quot;   %-5s     %03x    %08x  %pK  %pK  %8ld  %s\n&quot;;
++#endif
+ 
+ 		seq_printf(m, fmt, DNAME(dev), r-&gt;can_id, r-&gt;mask,
+-				(unsigned long)r-&gt;func, (unsigned long)r-&gt;data,
+-				r-&gt;matches, r-&gt;ident);
++				r-&gt;func, r-&gt;data, r-&gt;matches, r-&gt;ident);
+ 	}
+ }
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2011-05-21 12:03:55 UTC (rev 1258)
++++ trunk/kernel/2.6/net/can/bcm.c	2011-06-02 18:58:43 UTC (rev 1259)
+@@ -181,9 +181,15 @@
+ 	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(3,0,0)
+ 	seq_printf(m, &quot;&gt;&gt;&gt; socket %p&quot;, sk-&gt;sk_socket);
+ 	seq_printf(m, &quot; / sk %p&quot;, sk);
+ 	seq_printf(m, &quot; / bo %p&quot;, bo);
++#else
++	seq_printf(m, &quot;&gt;&gt;&gt; socket %pK&quot;, sk-&gt;sk_socket);
++	seq_printf(m, &quot; / sk %pK&quot;, sk);
++	seq_printf(m, &quot; / bo %pK&quot;, bo);
++#endif
+ 	seq_printf(m, &quot; / dropped %lu&quot;, bo-&gt;dropped_usr_msgs);
+ 	seq_printf(m, &quot; / bound %s&quot;, bcm_proc_getifname(ifname, bo-&gt;ifindex));
+ 	seq_printf(m, &quot; &lt;&lt;&lt;\n&quot;);
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2011-05-21 12:03:55 UTC (rev 1258)
++++ trunk/kernel/2.6/net/can/proc.c	2011-06-02 18:58:43 UTC (rev 1259)
+@@ -212,12 +212,16 @@
+ 
+ 	hlist_for_each_entry_rcu(r, n, rx_list, list) {
+ 		char *fmt = (r-&gt;can_id &amp; CAN_EFF_FLAG)?
+-			&quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+-			&quot;   %-5s     %03X    %08x  %08lx  %08lx  %8ld  %s\n&quot;;
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(3,0,0)
++			&quot;   %-5s  %08x  %08x  %p  %p  %8ld  %s\n&quot; :
++			&quot;   %-5s     %03x    %08x  %p  %p  %8ld  %s\n&quot;;
++#else
++			&quot;   %-5s  %08x  %08x  %pK  %pK  %8ld  %s\n&quot; :
++			&quot;   %-5s     %03x    %08x  %pK  %pK  %8ld  %s\n&quot;;
++#endif
+ 
+ 		seq_printf(m, fmt, DNAME(dev), r-&gt;can_id, r-&gt;mask,
+-				(unsigned long)r-&gt;func, (unsigned long)r-&gt;data,
+-				r-&gt;matches, r-&gt;ident);
++				r-&gt;func, r-&gt;data, r-&gt;matches, r-&gt;ident);
+ 	}
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000891.html">r1260 - trunk/kernel/2.6/Documentation/networking/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#890">[ date ]</a>
+              <a href="thread.html#890">[ thread ]</a>
+              <a href="subject.html#890">[ subject ]</a>
+              <a href="author.html#890">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

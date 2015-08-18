@@ -1,0 +1,461 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r136 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r136%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200701300857.l0U8vBWf005211%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000119.html">
+   <LINK REL="Next"  HREF="000121.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r136 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r136%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200701300857.l0U8vBWf005211%40sheep.berlios.de%3E"
+       TITLE="r136 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 30 09:57:11 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000119.html">r135 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000121.html">r137 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#120">[ date ]</a>
+              <a href="thread.html#120">[ thread ]</a>
+              <a href="subject.html#120">[ subject ]</a>
+              <a href="author.html#120">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-01-30 09:57:08 +0100 (Tue, 30 Jan 2007)
+New Revision: 136
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Removed dynamic memory allocation inside bcm.c for bcm_opt.
+Added init function analogue to behaviour in raw.c.
+Renamed all the user_data stuff to bcm_opt.
+Comming soon: Ability to bind the BCM socket to any CAN device (ifindex=0)
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-01-30 07:12:59 UTC (rev 135)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-01-30 08:57:08 UTC (rev 136)
+@@ -107,15 +107,18 @@
+ 	struct sock *sk;
+ };
+ 
+-struct bcm_user_data {
++struct bcm_opt {
++	int bound;
++	int ifindex;
+ 	struct list_head rx_ops;
+ 	struct list_head tx_ops;
+ 	unsigned long dropped_usr_msgs;
+ 	struct proc_dir_entry *bcm_proc_read;
+-	char procname [9];
++	char procname [9]; /* pointer printed in ASCII with \0 */
+ };
+ 
+ static struct proc_dir_entry *proc_dir = NULL;
++static int bcm_init(struct sock *sk);
+ static int bcm_read_proc(char *page, char **start, off_t off,
+ 			 int count, int *eof, void *data);
+ 
+@@ -178,17 +181,17 @@
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ 
+ struct bcm_sock {
+-	struct sock          sk;
+-	struct bcm_user_data opt;
++	struct sock    sk;
++	struct bcm_opt opt;
+ };
+ 
+-#define bcm_sk(sk) ((struct bcm_user_data *)(sk)-&gt;sk_protinfo)
++#define bcm_sk(sk) (&amp;((struct bcm_sock *)(sk))-&gt;opt)
+ 
+ static struct proto bcm_proto = {
+ 	.name       = &quot;CAN_BCM&quot;,
+ 	.owner      = THIS_MODULE,
+ 	.obj_size   = sizeof(struct bcm_sock),
+-	.init       = NULL,
++	.init       = bcm_init,
+ };
+ 
+ static struct can_proto bcm_can_proto = {
+@@ -201,7 +204,7 @@
+ 
+ #else
+ 
+-#define bcm_sk(sk) ((struct bcm_user_data *)(sk)-&gt;sk_protinfo)
++#define bcm_sk(sk) ((struct bcm_opt *)(sk)-&gt;sk_protinfo)
+ 
+ static struct can_proto bcm_can_proto = {
+ 	.type       = SOCK_DGRAM,
+@@ -209,14 +212,14 @@
+ 	.capability = BCM_CAP,
+ 	.ops        = &amp;bcm_ops,
+ 	.owner      = THIS_MODULE,
+-	.obj_size   = 0,
+-	.init       = NULL,
++	.obj_size   = sizeof(struct bcm_opt),
++	.init       = bcm_init,
+ };
+ 
+ #endif
+ 
+ 
+-static int __init bcm_init(void)
++static int __init bcm_module_init(void)
+ {
+ 	printk(banner);
+ 
+@@ -231,7 +234,7 @@
+ 	return 0;
+ }
+ 
+-static void __exit bcm_exit(void)
++static void __exit bcm_module_exit(void)
+ {
+ 	can_proto_unregister(&amp;bcm_can_proto);
+ 
+@@ -240,6 +243,21 @@
+ 
+ }
+ 
++static int bcm_init(struct sock *sk)
++{
++	struct bcm_opt *bo = bcm_sk(sk);
++
++	bo-&gt;bound            = 0;
++	bo-&gt;ifindex          = 0;
++	bo-&gt;dropped_usr_msgs = 0;
++	bo-&gt;bcm_proc_read    = NULL;
++
++	INIT_LIST_HEAD(&amp;bo-&gt;tx_ops);
++	INIT_LIST_HEAD(&amp;bo-&gt;rx_ops);
++
++	return 0;
++}
++
+ static void bcm_notifier(unsigned long msg, void *data)
+ {
+ 	struct sock *sk = (struct sock *)data;
+@@ -260,46 +278,40 @@
+ static int bcm_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_user_data *ud = bcm_sk(sk);
++	struct bcm_opt *bo = bcm_sk(sk);
+ 	struct bcm_op *op, *n;
+ 
+-	/* many things to do here:
+-	   free all rx_ops and tx_ops, bcm_user_data structure,
+-	   can_rx_unregister(dev, canid, raw_rcv) and can-data in ?x_ops */
+-
+ 	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ 
+-	/* remove userdata, bcm_ops, timer, etc. */
++	/* remove bcm_ops, timer, rx_unregister(), etc. */
+ 
+-	if (ud) {
+-		list_for_each_entry_safe(op, n, &amp;ud-&gt;tx_ops, list) {
+-			DBG(&quot;removing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
+-			bcm_remove_op(op);
+-		}
++	list_for_each_entry_safe(op, n, &amp;bo-&gt;tx_ops, list) {
++		DBG(&quot;removing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++		bcm_remove_op(op);
++	}
+ 
+-		list_for_each_entry_safe(op, n, &amp;ud-&gt;rx_ops, list) {
+-			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++	list_for_each_entry_safe(op, n, &amp;bo-&gt;rx_ops, list) {
++		DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
+ 
+-			if (sk-&gt;sk_bound_dev_if) {
+-				struct net_device *dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
+-				if (dev) {
+-					can_rx_unregister(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
+-					dev_put(dev);
+-				}
+-			} else
+-				DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, sk);
++		if (sk-&gt;sk_bound_dev_if) {
++			struct net_device *dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
++			if (dev) {
++				can_rx_unregister(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
++				dev_put(dev);
++			}
++		} else
++			DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, sk);
+ 
+-			bcm_remove_op(op);
+-		}
++		bcm_remove_op(op);
++	}
+ 
+-		if ((proc_dir) &amp;&amp; (ud-&gt;bcm_proc_read)) {
+-			remove_proc_entry(ud-&gt;procname, proc_dir);
+-		}
+ 
+-		kfree (ud);
+-		sk-&gt;sk_protinfo = NULL;
++	/* remove procfs entry */
++	if ((proc_dir) &amp;&amp; (bo-&gt;bcm_proc_read)) {
++		remove_proc_entry(bo-&gt;procname, proc_dir);
+ 	}
+ 
++	/* remove device notifier */
+ 	if (sk-&gt;sk_bound_dev_if) {
+ 		struct net_device *dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
+ 		if (dev) {
+@@ -319,18 +331,13 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
++	struct bcm_opt *bo = bcm_sk(sk);
+ 	struct net_device *dev;
+-	struct bcm_user_data *ud;
+ 
+-	/* create struct for BCM-specific data for this socket */
+-	if (!(ud = kmalloc(sizeof(struct bcm_user_data), GFP_KERNEL)))
+-		return -ENOMEM;
+-
+ 	/* bind a device to this socket */
+ 	dev = dev_get_by_index(addr-&gt;can_ifindex);
+ 	if (!dev) {
+ 		DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
+-		kfree(ud);
+ 		return -ENODEV;
+ 	}
+ 	sk-&gt;sk_bound_dev_if = dev-&gt;ifindex;
+@@ -339,18 +346,10 @@
+ 
+ 	DBG(&quot;socket %p to device %s (idx %d)\n&quot;, sock, dev-&gt;name, dev-&gt;ifindex);
+ 
+-	/* intitial BCM operations */
+-	INIT_LIST_HEAD(&amp;ud-&gt;tx_ops);
+-	INIT_LIST_HEAD(&amp;ud-&gt;rx_ops);
+-	ud-&gt;bcm_proc_read = NULL;
+-	ud-&gt;dropped_usr_msgs = 0;
+-
+-	sk-&gt;sk_protinfo = ud;
+-
+ 	if (proc_dir) {
+-		sprintf(ud-&gt;procname, &quot;%p&quot;, ud);
+-		ud-&gt;bcm_proc_read = create_proc_read_entry(ud-&gt;procname, 0644,
+-							   proc_dir, bcm_read_proc, ud);
++		sprintf(bo-&gt;procname, &quot;%p&quot;, bo);
++		bo-&gt;bcm_proc_read = create_proc_read_entry(bo-&gt;procname, 0644,
++							   proc_dir, bcm_read_proc, bo);
+ 	}
+ 
+ 	return 0;
+@@ -360,24 +359,24 @@
+ 			 int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct bcm_user_data *ud = (struct bcm_user_data *) data;
++	struct bcm_opt *bo = (struct bcm_opt *) data;
+ 	struct bcm_op *op;
+ 	struct net_device *dev = NULL;
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len,&quot;&gt;&gt;&gt; ud %p&quot;, ud);
+-	len += snprintf(page + len, PAGE_SIZE - len,&quot; / dropped %lu&quot;, ud-&gt;dropped_usr_msgs);
++	len += snprintf(page + len, PAGE_SIZE - len,&quot;&gt;&gt;&gt; bo %p&quot;, bo);
++	len += snprintf(page + len, PAGE_SIZE - len,&quot; / dropped %lu&quot;, bo-&gt;dropped_usr_msgs);
+ 
+-	if (!list_empty(&amp;ud-&gt;rx_ops)) {
++	if (!list_empty(&amp;bo-&gt;rx_ops)) {
+ 		struct sock *sk;
+-		op = list_entry(ud-&gt;rx_ops.next, struct bcm_op, list);
++		op = list_entry(bo-&gt;rx_ops.next, struct bcm_op, list);
+ 		sk = op-&gt;sk;
+ 		if (sk-&gt;sk_bound_dev_if)
+ 			dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; / sk %p / socket %p&quot;, sk, sk-&gt;sk_socket);
+-	} else if (!list_empty(&amp;ud-&gt;tx_ops)) {
++	} else if (!list_empty(&amp;bo-&gt;tx_ops)) {
+ 		struct sock *sk;
+-		op = list_entry(ud-&gt;tx_ops.next, struct bcm_op, list);
++		op = list_entry(bo-&gt;tx_ops.next, struct bcm_op, list);
+ 		sk = op-&gt;sk;
+ 		if (sk-&gt;sk_bound_dev_if)
+ 			dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
+@@ -392,7 +391,7 @@
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; &lt;&lt;&lt;\n&quot;);
+ 
+-	list_for_each_entry(op, &amp;ud-&gt;rx_ops, list) {
++	list_for_each_entry(op, &amp;bo-&gt;rx_ops, list) {
+ 
+ 		unsigned long reduction;
+ 
+@@ -423,7 +422,7 @@
+ 		}
+ 	}
+ 
+-	list_for_each_entry(op, &amp;ud-&gt;tx_ops, list) {
++	list_for_each_entry(op, &amp;bo-&gt;tx_ops, list) {
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;tx_op: %03X [%d] &quot;,
+ 				op-&gt;can_id, op-&gt;nframes);
+@@ -467,7 +466,7 @@
+ 	struct bcm_op *op;
+ 	int err;
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_user_data *ud = bcm_sk(sk);
++	struct bcm_opt *bo = bcm_sk(sk);
+ 	char c;
+ 	int rbytes = 0; /* read bytes as return value */
+ 
+@@ -480,7 +479,7 @@
+ 	DBG(&quot;opcode %d for can_id &lt;%03X&gt;\n&quot;, msg_head.opcode, msg_head.can_id);
+ 
+ 	if (!sk-&gt;sk_bound_dev_if) {
+-		DBG(&quot;sock %p not bound\n&quot;, sk); /* and therefore ud not initialized */
++		DBG(&quot;sock %p not bound\n&quot;, sk);
+ 		return -ENOTCONN;
+ 	}
+ 
+@@ -493,7 +492,7 @@
+ 
+ 		/* check the given can_id */
+ 
+-		if (!(op = bcm_find_op(&amp;ud-&gt;tx_ops, msg_head.can_id))) {
++		if (!(op = bcm_find_op(&amp;bo-&gt;tx_ops, msg_head.can_id))) {
+ 
+ 			/* insert new BCM operation for the given can_id */
+ 
+@@ -535,7 +534,7 @@
+ 			op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
+ 
+ 			/* add this bcm_op to the list of the tx_ops */
+-			list_add(&amp;op-&gt;list, &amp;ud-&gt;tx_ops);
++			list_add(&amp;op-&gt;list, &amp;bo-&gt;tx_ops);
+ 
+ 		} else {
+ 			/* update existing BCM operation */
+@@ -630,7 +629,7 @@
+ 
+ 	case TX_DELETE:
+ 
+-		bcm_delete_tx_op(&amp;ud-&gt;tx_ops, msg_head.can_id);
++		bcm_delete_tx_op(&amp;bo-&gt;tx_ops, msg_head.can_id);
+ 
+ 		rbytes = sizeof(struct bcm_msg_head);
+ 
+@@ -640,7 +639,7 @@
+ 
+ 		/* reuse msg_head for the reply */
+ 		msg_head.opcode  = TX_STATUS; /* reply to TX_READ */
+-		op = bcm_find_op(&amp;ud-&gt;tx_ops, msg_head.can_id);
++		op = bcm_find_op(&amp;bo-&gt;tx_ops, msg_head.can_id);
+ 		c  = 'T'; /* for nice debug output ... */
+ 
+ 		goto TRX_READ;
+@@ -649,7 +648,7 @@
+ 
+ 		/* reuse msg_head for the reply */
+ 		msg_head.opcode  = RX_STATUS; /* reply to RX_READ */
+-		op = bcm_find_op(&amp;ud-&gt;rx_ops, msg_head.can_id);
++		op = bcm_find_op(&amp;bo-&gt;rx_ops, msg_head.can_id);
+ 		c  = 'R'; /* for nice debug output ... */
+ 
+ 	TRX_READ:
+@@ -741,7 +740,7 @@
+ 
+ 		/* check the given can_id */
+ 
+-		if (!(op = bcm_find_op(&amp;ud-&gt;rx_ops, msg_head.can_id))) {
++		if (!(op = bcm_find_op(&amp;bo-&gt;rx_ops, msg_head.can_id))) {
+ 
+ 			/* insert new BCM operation for the given can_id */
+ 
+@@ -809,7 +808,7 @@
+ 			op-&gt;thrtimer.expires = 0; /* mark disabled timer */
+ 
+ 			/* add this bcm_op to the list of the tx_ops */
+-			list_add(&amp;op-&gt;list, &amp;ud-&gt;rx_ops);
++			list_add(&amp;op-&gt;list, &amp;bo-&gt;rx_ops);
+ 
+ 			c=1; /* call can_rx_register() at end of RX_SETUP */
+ 
+@@ -852,7 +851,7 @@
+ 			op-&gt;nframes = msg_head.nframes;
+ 			c=0; /* do not call can_rx_register() at end of RX_SETUP */
+ 
+-		} /* if (!bcm_find_op(&amp;ud-&gt;tx_ops, msg_head.can_id)) */
++		} /* if (!bcm_find_op(&amp;bo-&gt;tx_ops, msg_head.can_id)) */
+ 
+ 
+ 		/* check flags */
+@@ -935,7 +934,7 @@
+ 
+ 	case RX_DELETE:
+ 
+-		bcm_delete_rx_op(&amp;ud-&gt;rx_ops, msg_head.can_id);
++		bcm_delete_rx_op(&amp;bo-&gt;rx_ops, msg_head.can_id);
+ 
+ 		rbytes = sizeof(struct bcm_msg_head);
+ 
+@@ -1364,10 +1363,10 @@
+ 			firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
+ 	}
+ 	if ((err = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
+-		struct bcm_user_data *ud = bcm_sk(sk);
++		struct bcm_opt *bo = bcm_sk(sk);
+ 		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
+ 		kfree_skb(skb);
+-		ud-&gt;dropped_usr_msgs++; /* don't care about overflows */
++		bo-&gt;dropped_usr_msgs++; /* don't care about overflows */
+ 	}
+ }
+ 
+@@ -1434,5 +1433,5 @@
+ 	return;
+ }
+ 
+-module_init(bcm_init);
+-module_exit(bcm_exit);
++module_init(bcm_module_init);
++module_exit(bcm_module_exit);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000119.html">r135 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000121.html">r137 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#120">[ date ]</a>
+              <a href="thread.html#120">[ thread ]</a>
+              <a href="subject.html#120">[ subject ]</a>
+              <a href="author.html#120">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

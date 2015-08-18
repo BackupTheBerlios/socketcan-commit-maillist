@@ -1,0 +1,254 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1237 - in trunk/kernel/2.6: include/socketcan/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1237%20-%20in%20trunk/kernel/2.6%3A%20include/socketcan/can%20net/can&In-Reply-To=%3C20110419130342.914AD481412%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000868.html">
+   <LINK REL="Next"  HREF="000870.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1237 - in trunk/kernel/2.6: include/socketcan/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1237%20-%20in%20trunk/kernel/2.6%3A%20include/socketcan/can%20net/can&In-Reply-To=%3C20110419130342.914AD481412%40sheep.berlios.de%3E"
+       TITLE="r1237 - in trunk/kernel/2.6: include/socketcan/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 19 15:03:42 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000868.html">r1236 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000870.html">r1238 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#869">[ date ]</a>
+              <a href="thread.html#869">[ thread ]</a>
+              <a href="subject.html#869">[ subject ]</a>
+              <a href="author.html#869">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-04-19 15:03:41 +0200 (Tue, 19 Apr 2011)
+New Revision: 1237
+
+Modified:
+   trunk/kernel/2.6/include/socketcan/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/isotp.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+can: make struct proto const
+
+can_ioctl is the only reason for struct proto to be non-const.
+script/check-patch.pl suggests struct proto be const.
+
+Setting the reference to the common can_ioctl() in all CAN protocols directly
+removes the need to make the struct proto writable in af_can.c
+
+Signed-off-by: Kurt Van Dijck &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kurt.van.dijck at eia.be</A>&gt;
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+Signed-off-by: David S. Miller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">davem at davemloft.net</A>&gt;
+
+
+Modified: trunk/kernel/2.6/include/socketcan/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/socketcan/can/core.h	2011-04-19 12:27:58 UTC (rev 1236)
++++ trunk/kernel/2.6/include/socketcan/can/core.h	2011-04-19 13:03:41 UTC (rev 1237)
+@@ -39,18 +39,18 @@
+  * @prot:       pointer to struct proto structure.
+  */
+ struct can_proto {
+-	int              type;
+-	int              protocol;
++	int type;
++	int protocol;
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,33)
+-	int              capability;
++	int capability;
+ #endif
+-	struct proto_ops *ops;
++	const struct proto_ops *ops;
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	struct proto     *prot;
++	struct proto *prot;
+ #else
+-	struct module    *owner;
+-	int              (*init)(struct sock *sk);
+-	size_t           obj_size;
++	struct module *owner;
++	int (*init)(struct sock *sk);
++	size_t obj_size;
+ #endif
+ };
+ 
+@@ -70,5 +70,6 @@
+ 			      void *data);
+ 
+ extern int can_send(struct sk_buff *skb, int loop);
++extern int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg);
+ 
+ #endif /* CAN_CORE_H */
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2011-04-19 12:27:58 UTC (rev 1236)
++++ trunk/kernel/2.6/net/can/af_can.c	2011-04-19 13:03:41 UTC (rev 1237)
+@@ -112,7 +112,7 @@
+  * af_can socket functions
+  */
+ 
+-static int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
++int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+ 
+@@ -129,6 +129,7 @@
+ #endif
+ 	}
+ }
++EXPORT_SYMBOL(can_ioctl);
+ 
+ static void can_sock_destruct(struct sock *sk)
+ {
+@@ -867,13 +868,9 @@
+ 		printk(KERN_ERR &quot;can: protocol %d already registered\n&quot;,
+ 		       proto);
+ 		err = -EBUSY;
+-	} else {
++	} else
+ 		proto_tab[proto] = cp;
+ 
+-		/* use generic ioctl function if not defined by module */
+-		if (!cp-&gt;ops-&gt;ioctl)
+-			cp-&gt;ops-&gt;ioctl = can_ioctl;
+-	}
+ 	spin_unlock(&amp;proto_tab_lock);
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+
+Modified: trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c	2011-04-19 12:27:58 UTC (rev 1236)
++++ trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c	2011-04-19 13:03:41 UTC (rev 1237)
+@@ -1545,7 +1545,7 @@
+ 	return size;
+ }
+ 
+-static struct proto_ops bcm_ops __read_mostly = {
++static const struct proto_ops bcm_ops = {
+ 	.family        = PF_CAN,
+ 	.release       = bcm_release,
+ 	.bind          = sock_no_bind,
+@@ -1554,7 +1554,7 @@
+ 	.accept        = sock_no_accept,
+ 	.getname       = sock_no_getname,
+ 	.poll          = datagram_poll,
+-	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
++	.ioctl         = can_ioctl,	/* use can_ioctl() from af_can.c */
+ 	.listen        = sock_no_listen,
+ 	.shutdown      = sock_no_shutdown,
+ 	.setsockopt    = sock_no_setsockopt,
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2011-04-19 12:27:58 UTC (rev 1236)
++++ trunk/kernel/2.6/net/can/bcm.c	2011-04-19 13:03:41 UTC (rev 1237)
+@@ -1702,7 +1702,7 @@
+ 	return size;
+ }
+ 
+-static struct proto_ops bcm_ops __read_mostly = {
++static const struct proto_ops bcm_ops = {
+ 	.family        = PF_CAN,
+ 	.release       = bcm_release,
+ 	.bind          = sock_no_bind,
+@@ -1711,7 +1711,7 @@
+ 	.accept        = sock_no_accept,
+ 	.getname       = sock_no_getname,
+ 	.poll          = datagram_poll,
+-	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
++	.ioctl         = can_ioctl,	/* use can_ioctl() from af_can.c */
+ 	.listen        = sock_no_listen,
+ 	.shutdown      = sock_no_shutdown,
+ 	.setsockopt    = sock_no_setsockopt,
+
+Modified: trunk/kernel/2.6/net/can/isotp.c
+===================================================================
+--- trunk/kernel/2.6/net/can/isotp.c	2011-04-19 12:27:58 UTC (rev 1236)
++++ trunk/kernel/2.6/net/can/isotp.c	2011-04-19 13:03:41 UTC (rev 1237)
+@@ -1126,7 +1126,7 @@
+ }
+ 
+ 
+-static struct proto_ops isotp_ops __read_mostly = {
++static const struct proto_ops isotp_ops = {
+ 	.family        = PF_CAN,
+ 	.release       = isotp_release,
+ 	.bind          = isotp_bind,
+@@ -1135,7 +1135,7 @@
+ 	.accept        = sock_no_accept,
+ 	.getname       = isotp_getname,
+ 	.poll          = datagram_poll,
+-	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
++	.ioctl         = can_ioctl,	/* use can_ioctl() from af_can.c */
+ 	.listen        = sock_no_listen,
+ 	.shutdown      = sock_no_shutdown,
+ 	.setsockopt    = isotp_setsockopt,
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2011-04-19 12:27:58 UTC (rev 1236)
++++ trunk/kernel/2.6/net/can/raw.c	2011-04-19 13:03:41 UTC (rev 1237)
+@@ -774,7 +774,7 @@
+ 	return size;
+ }
+ 
+-static struct proto_ops raw_ops __read_mostly = {
++static const struct proto_ops raw_ops = {
+ 	.family        = PF_CAN,
+ 	.release       = raw_release,
+ 	.bind          = raw_bind,
+@@ -783,7 +783,7 @@
+ 	.accept        = sock_no_accept,
+ 	.getname       = raw_getname,
+ 	.poll          = datagram_poll,
+-	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
++	.ioctl         = can_ioctl,	/* use can_ioctl() from af_can.c */
+ 	.listen        = sock_no_listen,
+ 	.shutdown      = sock_no_shutdown,
+ 	.setsockopt    = raw_setsockopt,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000868.html">r1236 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000870.html">r1238 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#869">[ date ]</a>
+              <a href="thread.html#869">[ thread ]</a>
+              <a href="subject.html#869">[ subject ]</a>
+              <a href="author.html#869">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

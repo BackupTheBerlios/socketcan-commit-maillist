@@ -1,0 +1,275 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r165 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r165%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/mscan%0A%09drivers/net/can/sja1000%20include/linux%20net/can&In-Reply-To=%3C200703051014.l25AEQkT025851%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000148.html">
+   <LINK REL="Next"  HREF="000150.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r165 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r165%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/mscan%0A%09drivers/net/can/sja1000%20include/linux%20net/can&In-Reply-To=%3C200703051014.l25AEQkT025851%40sheep.berlios.de%3E"
+       TITLE="r165 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar  5 11:14:26 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000148.html">r164 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000150.html">r166 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#149">[ date ]</a>
+              <a href="thread.html#149">[ thread ]</a>
+              <a href="subject.html#149">[ subject ]</a>
+              <a href="author.html#149">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-05 11:14:18 +0100 (Mon, 05 Mar 2007)
+New Revision: 165
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/Makefile
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/include/linux/can.h
+   trunk/kernel/2.6/net/can/Makefile
+Log:
+Moved the definitions of AF_CAN, PF_CAN, ARPHRD_CAN and ETH_P_CAN out of the
+file can.h to make can.h fit for a kernel integration path.
+Therefore i added the 'hack' to the Makefiles which now contain the missing
+defines. Maybe there will be a better solution in the future (when CAN is
+part of the kernel). But currently it helps to maintain sourcecode to be
+copied right into the kernel source tree.
+Additionally added address structures for isotp and bap in sockaddr_can.
+Cleanups. Cosmetics.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Makefile	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/drivers/net/can/Makefile	2007-03-05 10:14:18 UTC (rev 165)
+@@ -34,7 +34,9 @@
+ #CFLAGS		+= -Idrivers/net -Inet
+ 
+ ifneq ($(KBUILD_EXTMOD),)
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include
++EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include \
++		-DETH_P_CAN=0x000C \
++		-DARPHRD_CAN=804
+ endif
+ 
+ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2007-03-05 10:14:18 UTC (rev 165)
+@@ -35,6 +35,8 @@
+ #include &lt;linux/interrupt.h&gt;
+ #include &lt;linux/delay.h&gt;
+ #include &lt;linux/netdevice.h&gt;
++#include &lt;linux/if_arp.h&gt;
++#include &lt;linux/if_ether.h&gt;
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/list.h&gt;
+ #include &lt;asm/io.h&gt;
+@@ -659,11 +661,20 @@
+   priv = can-&gt;priv;
+ 
+   ndev-&gt;watchdog_timeo	= MSCAN_WATCHDOG_TIMEOUT;
+-  ndev-&gt;open			= mscan_open;
+-  ndev-&gt;stop			= mscan_close;
++  ndev-&gt;open		= mscan_open;
++  ndev-&gt;stop		= mscan_close;
+   ndev-&gt;hard_start_xmit	= mscan_hard_start_xmit;
+   ndev-&gt;tx_timeout     	= mscan_tx_timeout;
+ 
++  ndev-&gt;type		= ARPHRD_CAN;
++  ndev-&gt;hard_header_len	= 0;
++  ndev-&gt;mtu		= sizeof(struct can_frame);
++  ndev-&gt;addr_len	= 0;
++  ndev-&gt;tx_queue_len	= 10;
++
++  ndev-&gt;flags		= IFF_NOARP;
++  ndev-&gt;features	= NETIF_F_NO_CSUM;
++
+   ndev-&gt;poll     		= mscan_rx_poll;
+   ndev-&gt;weight     		= 8;
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2007-03-05 10:14:18 UTC (rev 165)
+@@ -54,7 +54,9 @@
+ else
+ 
+ ifneq ($(KBUILD_EXTMOD),)
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include
++EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include \
++		-DETH_P_CAN=0x000C \
++		-DARPHRD_CAN=804
+ endif
+ 
+ obj-m := sja1000-isa.o sja1000-gw2.o sja1000-mem.o
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-03-05 10:14:18 UTC (rev 165)
+@@ -52,6 +52,8 @@
+ #include &lt;linux/ioport.h&gt;
+ #include &lt;linux/slab.h&gt;
+ #include &lt;linux/netdevice.h&gt;
++#include &lt;linux/if_arp.h&gt;
++#include &lt;linux/if_ether.h&gt;
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;asm/io.h&gt;
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2007-03-05 10:14:18 UTC (rev 165)
+@@ -71,6 +71,7 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/rtnetlink.h&gt;
+ #include &lt;linux/if_arp.h&gt;
++#include &lt;linux/if_ether.h&gt;
+ #include &lt;linux/if_slip.h&gt;
+ #include &lt;linux/delay.h&gt;
+ #include &lt;linux/init.h&gt;
+@@ -110,6 +111,8 @@
+  *
+  * Increment NR_LDICS in include/linux/tty.h from 16 to 17
+  *
++ * NEW: Since Kernel 2.6.21 you only have to change include/linux/tty.h
++ *
+  */
+ 
+ #define SLC_CHECK_TRANSMIT
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-03-05 10:14:18 UTC (rev 165)
+@@ -47,6 +47,7 @@
+ #include &lt;linux/init.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/if_arp.h&gt;
++#include &lt;linux/if_ether.h&gt;
+ 
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/can/version.h&gt;
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/include/linux/can.h	2007-03-05 10:14:18 UTC (rev 165)
+@@ -21,24 +21,8 @@
+ #include &lt;linux/types.h&gt;
+ #include &lt;linux/socket.h&gt;
+ 
+-#include &lt;linux/can/error.h&gt;
+-#include &lt;linux/can/ioctl.h&gt;
+-
+ /* controller area network (CAN) kernel definitions */
+ 
+-/* CAN socket protocol family definition */
+-#define PF_CAN		29	/* to be moved to include/linux/socket.h */
+-#define AF_CAN		PF_CAN
+-
+-/* ethernet protocol identifier */
+-#define ETH_P_CAN	0x000C	/* to be moved to include/linux/if_ether.h */
+-
+-/* ARP protocol identifier (dummy type for non ARP hardware) */
+-#define ARPHRD_CAN	804	/* to be moved to include/linux/if_arp.h */
+-
+-
+-
+-
+ /* special address description flags for the CAN_ID */
+ #define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+ #define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+@@ -57,8 +41,6 @@
+ 	__u8    data[8] __attribute__ ((aligned(8)));
+ };
+ 
+-
+-
+ /* particular protocols of the protocol family PF_CAN */
+ #define CAN_RAW		1 /* RAW sockets */
+ #define CAN_BCM		2 /* Broadcast Manager */
+@@ -75,9 +57,11 @@
+ 	sa_family_t   can_family;
+ 	int           can_ifindex;
+ 	union {
+-		struct { canid_t rx_id, tx_id; } tp16;
+-		struct { canid_t rx_id, tx_id; } tp20;
+-		struct { canid_t rx_id, tx_id; } mcnet;
++		struct { canid_t rx_id, tx_id;   } tp16;
++		struct { canid_t rx_id, tx_id;   } tp20;
++		struct { canid_t rx_id, tx_id;   } mcnet;
++		struct { canid_t rx_id, tx_id;   } isotp;
++		struct { int     sg_id, sg_type; } bap;
+ 	} can_addr;
+ };
+ 
+
+Modified: trunk/kernel/2.6/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/net/can/Makefile	2007-03-05 08:45:45 UTC (rev 164)
++++ trunk/kernel/2.6/net/can/Makefile	2007-03-05 10:14:18 UTC (rev 165)
+@@ -66,7 +66,11 @@
+ else
+ 
+ ifneq ($(KBUILD_EXTMOD),)
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../include
++EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../include \
++		-DETH_P_CAN=0x000C \
++		-DPF_CAN=29 \
++		-DAF_CAN=PF_CAN \
++		-DARPHRD_CAN=804
+ endif
+ 
+ obj-$(CONFIG_CAN)	+= can.o
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000148.html">r164 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000150.html">r166 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#149">[ date ]</a>
+              <a href="thread.html#149">[ thread ]</a>
+              <a href="subject.html#149">[ subject ]</a>
+              <a href="author.html#149">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

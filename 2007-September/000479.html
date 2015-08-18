@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r497 - trunk/kernel/2.6
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r497%20-%20trunk/kernel/2.6&In-Reply-To=%3C200709291626.l8TGQUCg032722%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000478.html">
+   <LINK REL="Next"  HREF="000480.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r497 - trunk/kernel/2.6</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r497%20-%20trunk/kernel/2.6&In-Reply-To=%3C200709291626.l8TGQUCg032722%40sheep.berlios.de%3E"
+       TITLE="r497 - trunk/kernel/2.6">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep 29 18:26:30 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000478.html">r496 - in trunk: can-utils kernel/2.4/can kernel/2.4/drivers/mscan	kernel/2.4/drivers/sja1000 kernel/2.6	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/hal	kernel/2.6/drivers/net/can/i82527	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can test
+</A></li>
+        <LI>Next message: <A HREF="000480.html">r498 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#479">[ date ]</a>
+              <a href="thread.html#479">[ thread ]</a>
+              <a href="subject.html#479">[ subject ]</a>
+              <a href="author.html#479">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-29 18:26:29 +0200 (Sat, 29 Sep 2007)
+New Revision: 497
+
+Modified:
+   trunk/kernel/2.6/Makefile.common
+Log:
+Reverted the introduction of -DCONFIG_CAN_DEBUG_CORE which has been 
+committed through an oversight in r496.
+
+
+Modified: trunk/kernel/2.6/Makefile.common
+===================================================================
+--- trunk/kernel/2.6/Makefile.common	2007-09-27 12:29:32 UTC (rev 496)
++++ trunk/kernel/2.6/Makefile.common	2007-09-29 16:26:29 UTC (rev 497)
+@@ -6,7 +6,6 @@
+ 	\
+ 	-DETH_P_CAN=0x000C \
+ 	-DARPHRD_CAN=280 \
+-	-DCONFIG_CAN_DEBUG_CORE \
+ 	-DPF_CAN=29 \
+ 	-DAF_CAN=PF_CAN
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000478.html">r496 - in trunk: can-utils kernel/2.4/can kernel/2.4/drivers/mscan	kernel/2.4/drivers/sja1000 kernel/2.6	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/hal	kernel/2.6/drivers/net/can/i82527	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can test
+</A></li>
+	<LI>Next message: <A HREF="000480.html">r498 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#479">[ date ]</a>
+              <a href="thread.html#479">[ thread ]</a>
+              <a href="subject.html#479">[ subject ]</a>
+              <a href="author.html#479">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

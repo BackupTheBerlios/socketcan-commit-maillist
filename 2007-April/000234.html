@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r250 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r250%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704301114.l3UBEuoK010131%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000233.html">
+   <LINK REL="Next"  HREF="000235.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r250 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r250%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704301114.l3UBEuoK010131%40sheep.berlios.de%3E"
+       TITLE="r250 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr 30 13:14:56 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000233.html">r249 - in trunk: . kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000235.html">r251 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#234">[ date ]</a>
+              <a href="thread.html#234">[ thread ]</a>
+              <a href="subject.html#234">[ subject ]</a>
+              <a href="author.html#234">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-04-30 13:14:50 +0200 (Mon, 30 Apr 2007)
+New Revision: 250
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/dev.c
+Log:
+export functions using EXPORT_SYMBOL_GPL instead of EXPORT_SYMBOL.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-28 13:56:52 UTC (rev 249)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-30 11:14:50 UTC (rev 250)
+@@ -290,7 +290,7 @@
+ 
+ 	return err;
+ }
+-EXPORT_SYMBOL(can_send);
++EXPORT_SYMBOL_GPL(can_send);
+ 
+ /*
+  * af_can rx path
+@@ -431,7 +431,7 @@
+ 
+ 	return ret;
+ }
+-EXPORT_SYMBOL(can_rx_register);
++EXPORT_SYMBOL_GPL(can_rx_register);
+ 
+ static void can_rcv_lists_delete(struct rcu_head *rp)
+ {
+@@ -537,7 +537,7 @@
+ 
+ 	return ret;
+ }
+-EXPORT_SYMBOL(can_rx_unregister);
++EXPORT_SYMBOL_GPL(can_rx_unregister);
+ 
+ static inline void deliver(struct sk_buff *skb, struct receiver *r)
+ {
+@@ -698,7 +698,7 @@
+ 	else
+ 		return jif + sec * HZ;
+ }
+-EXPORT_SYMBOL(timeval2jiffies);
++EXPORT_SYMBOL_GPL(timeval2jiffies);
+ 
+ /*
+  * af_can debugging stuff
+@@ -746,7 +746,7 @@
+ 	buf[len]   = '\0';
+ 	printk(buf);
+ }
+-EXPORT_SYMBOL(can_debug_cframe);
++EXPORT_SYMBOL_GPL(can_debug_cframe);
+ 
+ /**
+  * can_debug_skb - print socket buffer content to kernel log
+@@ -783,7 +783,7 @@
+ 	buf[len]   = '\0';
+ 	printk(buf);
+ }
+-EXPORT_SYMBOL(can_debug_skb);
++EXPORT_SYMBOL_GPL(can_debug_skb);
+ 
+ #endif
+ 
+@@ -831,7 +831,7 @@
+ 
+ 	return err;
+ }
+-EXPORT_SYMBOL(can_proto_register);
++EXPORT_SYMBOL_GPL(can_proto_register);
+ 
+ /**
+  * can_proto_unregister - unregister CAN transport protocol
+@@ -856,7 +856,7 @@
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(can_proto_unregister);
++EXPORT_SYMBOL_GPL(can_proto_unregister);
+ 
+ /**
+  * can_dev_register - subscribe notifier for CAN device status changes
+@@ -897,7 +897,7 @@
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(can_dev_register);
++EXPORT_SYMBOL_GPL(can_dev_register);
+ 
+ /**
+  * can_dev_unregister - unsubscribe notifier for CAN device status changes
+@@ -933,7 +933,7 @@
+ 
+ 	return ret;
+ }
+-EXPORT_SYMBOL(can_dev_unregister);
++EXPORT_SYMBOL_GPL(can_dev_unregister);
+ 
+ static int can_notifier(struct notifier_block *nb,
+ 			unsigned long msg, void *data)
+
+Modified: trunk/kernel/2.6/net/can/dev.c
+===================================================================
+--- trunk/kernel/2.6/net/can/dev.c	2007-04-28 13:56:52 UTC (rev 249)
++++ trunk/kernel/2.6/net/can/dev.c	2007-04-30 11:14:50 UTC (rev 250)
+@@ -141,7 +141,7 @@
+ 		return -EDOM;
+ 	return 0;
+ }
+-EXPORT_SYMBOL(can_calc_bit_time);
++EXPORT_SYMBOL_GPL(can_calc_bit_time);
+ 
+ static struct net_device_stats *can_get_stats(struct net_device *dev)
+ {
+@@ -290,10 +290,10 @@
+ 
+ 	return can;
+ }
+-EXPORT_SYMBOL(alloc_candev);
++EXPORT_SYMBOL_GPL(alloc_candev);
+ 
+ void free_candev(struct can_device *can)
+ {
+ 	free_netdev(can-&gt;net_dev);
+ }
+-EXPORT_SYMBOL(free_candev);
++EXPORT_SYMBOL_GPL(free_candev);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000233.html">r249 - in trunk: . kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000235.html">r251 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#234">[ date ]</a>
+              <a href="thread.html#234">[ thread ]</a>
+              <a href="subject.html#234">[ subject ]</a>
+              <a href="author.html#234">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

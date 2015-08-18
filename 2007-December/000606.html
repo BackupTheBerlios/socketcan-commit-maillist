@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r624 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r624%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712141039.lBEAdcI9015439%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000605.html">
+   <LINK REL="Next"  HREF="000607.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r624 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r624%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712141039.lBEAdcI9015439%40sheep.berlios.de%3E"
+       TITLE="r624 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 14 11:39:38 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000605.html">r623 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000607.html">r625 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#606">[ date ]</a>
+              <a href="thread.html#606">[ thread ]</a>
+              <a href="subject.html#606">[ subject ]</a>
+              <a href="author.html#606">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-14 11:39:33 +0100 (Fri, 14 Dec 2007)
+New Revision: 624
+
+Modified:
+   trunk/kernel/2.4/net/can/bcm.c
+   trunk/kernel/2.4/net/can/compat.h
+   trunk/kernel/2.4/net/can/raw.c
+Log:
+Some add-ons for older 2.4.x kernels.
+
+
+Modified: trunk/kernel/2.4/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/net/can/bcm.c	2007-12-14 10:26:12 UTC (rev 623)
++++ trunk/kernel/2.4/net/can/bcm.c	2007-12-14 10:39:33 UTC (rev 624)
+@@ -46,6 +46,7 @@
+ #include &lt;linux/list.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/net.h&gt;
++#include &lt;linux/uio.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/socket.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+
+Modified: trunk/kernel/2.4/net/can/compat.h
+===================================================================
+--- trunk/kernel/2.4/net/can/compat.h	2007-12-14 10:26:12 UTC (rev 623)
++++ trunk/kernel/2.4/net/can/compat.h	2007-12-14 10:39:33 UTC (rev 624)
+@@ -25,6 +25,7 @@
+ #define round_jiffies(j) (j)
+ 
+ #define __read_mostly
++#define __user
+ 
+ #define   dev_get_by_index(ns, ifindex)   dev_get_by_index(ifindex)
+ #define __dev_get_by_index(ns, ifindex) __dev_get_by_index(ifindex)
+
+Modified: trunk/kernel/2.4/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/net/can/raw.c	2007-12-14 10:26:12 UTC (rev 623)
++++ trunk/kernel/2.4/net/can/raw.c	2007-12-14 10:39:33 UTC (rev 624)
+@@ -43,6 +43,7 @@
+ 
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/uio.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/socket.h&gt;
+@@ -52,6 +53,7 @@
+ #include &lt;linux/can/core.h&gt;
+ #include &lt;linux/can/raw.h&gt;
+ #include &lt;net/sock.h&gt;
++#include &lt;asm/uaccess.h&gt;
+ #include &quot;compat.h&quot;
+ 
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000605.html">r623 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000607.html">r625 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#606">[ date ]</a>
+              <a href="thread.html#606">[ thread ]</a>
+              <a href="subject.html#606">[ subject ]</a>
+              <a href="author.html#606">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

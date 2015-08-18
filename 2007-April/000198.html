@@ -1,0 +1,347 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r214 - in trunk/kernel/2.6: drivers/net/can include/linux	include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r214%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20include/linux%0A%09include/linux/can%20net/can&In-Reply-To=%3C200704171205.l3HC5nHl003160%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000197.html">
+   <LINK REL="Next"  HREF="000199.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r214 - in trunk/kernel/2.6: drivers/net/can include/linux	include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r214%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20include/linux%0A%09include/linux/can%20net/can&In-Reply-To=%3C200704171205.l3HC5nHl003160%40sheep.berlios.de%3E"
+       TITLE="r214 - in trunk/kernel/2.6: drivers/net/can include/linux	include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 17 14:05:49 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000197.html">r213 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000199.html">r215 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#198">[ date ]</a>
+              <a href="thread.html#198">[ thread ]</a>
+              <a href="subject.html#198">[ subject ]</a>
+              <a href="author.html#198">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-04-17 14:05:41 +0200 (Tue, 17 Apr 2007)
+New Revision: 214
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/include/linux/can.h
+   trunk/kernel/2.6/include/linux/can/bcm.h
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Add return values to can_proto_register() and can_proto_unregister().
+Add kernel-doc documentation.
+Minor changes to meet kernel coding style.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-04-17 06:49:00 UTC (rev 213)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-04-17 12:05:41 UTC (rev 214)
+@@ -228,7 +228,9 @@
+ 
+ static __init int vcan_init_module(void)
+ {
+-	int i, ndev = 0, result = 0;
++	int i;
++	int ndev = 0;
++	int result = 0;
+ 
+ 	printk(banner);
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/bcm.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/bcm.h	2007-04-17 06:49:00 UTC (rev 213)
++++ trunk/kernel/2.6/include/linux/can/bcm.h	2007-04-17 12:05:41 UTC (rev 214)
+@@ -16,13 +16,25 @@
+ #ifndef CAN_BCM_H
+ #define CAN_BCM_H
+ 
++/**
++ * struct bcm_msg_head - head of messages to/from the broadcast manager
++ * @opcode:    opcode, see enum below.
++ * @flags:     special flags, see below.
++ * @count:     number of frames to send before changing interval.
++ * @ival1:     interval for the first @count frames.
++ * @ival2:     interval for the following frames.
++ * @can_id:    CAN ID of frames to be sent.
++ * @nframes:   number of frames appended to the message head.
++ * @frames:    array of CAN frames.
++ */
++
+ struct bcm_msg_head {
+-	int opcode;                   /* command */
+-	int flags;                    /* special flags */
+-	int count;                    /* run 'count' times ival1 then ival2 */
+-	struct timeval ival1, ival2;  /* intervals */
+-	canid_t can_id;               /* 32 Bit SFF/EFF. MSB set at EFF */
+-	int nframes;                  /* number of following can_frame's */
++	int opcode;
++	int flags;
++	int count;
++	struct timeval ival1, ival2;
++	canid_t can_id;
++	int nframes;
+ 	struct can_frame frames[0];
+ };
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-04-17 06:49:00 UTC (rev 213)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-04-17 12:05:41 UTC (rev 214)
+@@ -25,6 +25,15 @@
+ 
+ #define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+ 
++/**
++ * struct can_proto - CAN protocol structure
++ * @type:       type argument in socket() syscall, e.g. SOCK_DGRAM.
++ * @protocol:   protocol number in socket() syscall.
++ * @capability: capability needed to open the socket, or -1 for no restriction.
++ * @ops:        pointer to struct proto_ops for sock-&gt;ops.
++ * @prot:       pointer to struct proto structure.
++ */
++
+ struct can_proto {
+ 	int              type;
+ 	int              protocol;
+@@ -44,18 +53,20 @@
+ void can_debug_skb(struct sk_buff *skb);
+ void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
+ 
+-void can_proto_register(struct can_proto *cp);
+-void can_proto_unregister(struct can_proto *cp);
++int can_proto_register(struct can_proto *cp);
++int can_proto_unregister(struct can_proto *cp);
+ 
+ int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		    void (*func)(struct sk_buff *, void *), void *data,
+ 		    char *ident);
+ int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		      void (*func)(struct sk_buff *, void *), void *data);
++
+ int can_dev_register(struct net_device *dev,
+ 		     void (*func)(unsigned long msg, void *), void *data);
+ int can_dev_unregister(struct net_device *dev,
+ 		       void (*func)(unsigned long msg, void *), void *data);
++
+ int can_send(struct sk_buff *skb, int loop);
+ 
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2007-04-17 06:49:00 UTC (rev 213)
++++ trunk/kernel/2.6/include/linux/can.h	2007-04-17 12:05:41 UTC (rev 214)
+@@ -35,6 +35,13 @@
+ 
+ typedef __u32 canid_t;
+ 
++/**
++ * struct can_frame - basic CAN frame structure
++ * @can_id:  the CAN ID of the frame and CAN_*_FLAG flags, see above.
++ * @can_dlc: the data length field of the CAN frame
++ * @data:    the CAN frame payload.
++ */
++
+ struct can_frame {
+ 	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
+ 	__u8    can_dlc; /* data length code: 0 .. 8 */
+@@ -53,20 +60,41 @@
+ 
+ #define SOL_CAN_BASE 100
+ 
++/**
++ * struct sockaddr_can - the sockaddr structure for CAN sockets
++ * @can_family:  address family number AF_CAN.
++ * @can_ifindex: CAN network interface index.
++ * @can_addr:    transport protocol specific address, mostly CAN IDs.
++ */
++
+ struct sockaddr_can {
+ 	sa_family_t   can_family;
+ 	int           can_ifindex;
+ 	union {
+-		struct { canid_t rx_id, tx_id;   } tp16;
+-		struct { canid_t rx_id, tx_id;   } tp20;
+-		struct { canid_t rx_id, tx_id;   } mcnet;
+-		struct { canid_t rx_id, tx_id;   } isotp;
+-		struct { int     sg_id, sg_type; } bap;
++		struct { canid_t rx_id, tx_id; } tp16;
++		struct { canid_t rx_id, tx_id; } tp20;
++		struct { canid_t rx_id, tx_id; } mcnet;
++		struct { canid_t rx_id, tx_id; } isotp;
++		struct { int     lcu,   type;  } bap;
+ 	} can_addr;
+ };
+ 
+ typedef canid_t can_err_mask_t;
+ 
++/**
++ * struct can_filter - CAN ID based filter in can_register().
++ * @can_id:   relevant bits of CAN ID which are not masked out.
++ * @can_mask: CAN mask (see description)
++ *
++ * Description:
++ * A filter matches, when
++ *
++ *          &lt;received_can_id&gt; &amp; mask == can_id &amp; mask
++ *
++ * The filter can be inverted (CAN_INV_FILTER bit set in can_id) or it can
++ * filter for error frames (CAN_ERR_FLAG bit set in mask).
++ */
++
+ struct can_filter {
+ 	canid_t can_id;
+ 	canid_t can_mask;
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-17 06:49:00 UTC (rev 213)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-17 12:05:41 UTC (rev 214)
+@@ -235,46 +235,71 @@
+  * af_can protocol functions
+  */
+ 
+-void can_proto_register(struct can_proto *cp)
++/**
++ * can_proto_register - register CAN transport protocol
++ * @cp: pointer to CAN protocol structure
++ *
++ * Return:
++ *  0 on success
++ *  -EINVAL invalid (out of range) protocol number
++ *  -EBUSY  protocol already in use
++ *  -ENOBUF if proto_register() fails
++ **/
++
++int can_proto_register(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
++	int err = 0;
+ 
+ 	if (proto &lt; 0 || proto &gt;= CAN_NPROTO) {
+ 		printk(KERN_ERR &quot;CAN: protocol number %d out &quot;
+ 		       &quot;of range\n&quot;, proto);
+-		return;
++		return -EINVAL;
+ 	}
+ 	if (proto_tab[proto]) {
+ 		printk(KERN_ERR &quot;CAN: protocol %d already &quot;
+ 		       &quot;registered\n&quot;, proto);
+-		return;
++		return -EBUSY;
+ 	}
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+-	if (proto_register(cp-&gt;prot, 0) != 0) {
+-		return;
+-	}
++	err = proto_register(cp-&gt;prot, 0);
++	if (err &lt; 0)
++		return err;
+ #endif
+ 	proto_tab[proto] = cp;
+ 
+ 	/* use generic ioctl function if the module doesn't bring its own */
+ 	if (!cp-&gt;ops-&gt;ioctl)
+ 		cp-&gt;ops-&gt;ioctl = can_ioctl;
++
++	return err;
+ }
+ EXPORT_SYMBOL(can_proto_register);
+ 
+-void can_proto_unregister(struct can_proto *cp)
++/**
++ * can_proto_unregister - unregister CAN transport protocol
++ * @cp: pointer to CAN protocol structure
++ *
++ * Return:
++ *  0 on success
++ *  -ESRCH protocol number was not registered
++ **/
++
++int can_proto_unregister(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+ 
+ 	if (!proto_tab[proto]) {
+ 		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
+-		return;
++		return -ESRCH;
+ 	}
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ 	proto_unregister(cp-&gt;prot);
+ #endif
+ 	proto_tab[proto] = NULL;
++
++	return 0;
+ }
+ EXPORT_SYMBOL(can_proto_unregister);
+ 
+@@ -587,14 +612,14 @@
+ 		*(struct sock **)skb-&gt;cb = NULL;
+ 	}
+ 
+-	if (skb-&gt;dev-&gt;flags &amp; IFF_UP) {
+-		/* send to netdevice */
+-		err = dev_queue_xmit(skb);
+-		if (err &gt; 0)
+-			err = net_xmit_errno(err);
+-	} else
+-		err = -ENETDOWN;
++	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
++		return -ENETDOWN;
+ 
++	/* send to netdevice */
++	err = dev_queue_xmit(skb);
++	if (err &gt; 0)
++		err = net_xmit_errno(err);
++
+ 	/* update statistics */
+ 	stats.tx_frames++;
+ 	stats.tx_frames_delta++;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000197.html">r213 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000199.html">r215 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#198">[ date ]</a>
+              <a href="thread.html#198">[ thread ]</a>
+              <a href="subject.html#198">[ subject ]</a>
+              <a href="author.html#198">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

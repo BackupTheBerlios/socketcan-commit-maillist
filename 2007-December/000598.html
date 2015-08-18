@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r616 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r616%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712131001.lBDA1WKS008505%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000597.html">
+   <LINK REL="Next"  HREF="000599.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r616 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r616%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712131001.lBDA1WKS008505%40sheep.berlios.de%3E"
+       TITLE="r616 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 13 11:01:32 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000597.html">r615 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000599.html">r617 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#598">[ date ]</a>
+              <a href="thread.html#598">[ thread ]</a>
+              <a href="subject.html#598">[ subject ]</a>
+              <a href="author.html#598">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-13 11:01:32 +0100 (Thu, 13 Dec 2007)
+New Revision: 616
+
+Modified:
+   trunk/kernel/2.4/net/can/bcm.c
+Log:
+cosmetics.
+
+
+Modified: trunk/kernel/2.4/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/net/can/bcm.c	2007-12-13 09:48:09 UTC (rev 615)
++++ trunk/kernel/2.4/net/can/bcm.c	2007-12-13 10:01:32 UTC (rev 616)
+@@ -658,10 +658,10 @@
+ 	del_timer(&amp;op-&gt;timer);
+ 	del_timer(&amp;op-&gt;thrtimer);
+ 
+-	if (op-&gt;frames	&amp;&amp; op-&gt;frames != &amp;op-&gt;sframe)
++	if (op-&gt;frames	&amp;&amp; (op-&gt;frames != &amp;op-&gt;sframe))
+ 		kfree(op-&gt;frames);
+ 
+-	if (op-&gt;last_frames &amp;&amp; op-&gt;last_frames != &amp;op-&gt;last_sframe)
++	if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames != &amp;op-&gt;last_sframe))
+ 		kfree(op-&gt;last_frames);
+ 
+ 	kfree(op);
+@@ -788,7 +788,7 @@
+ 
+ 		/* update can_frames content */
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ 					       msg-&gt;msg_iov, CFSIZ);
+ 			if (err &lt; 0)
+ 				return err;
+@@ -1165,7 +1165,7 @@
+ 
+ 	/* read message head information */
+ 
+-	ret = memcpy_fromiovec((u8*)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
++	ret = memcpy_fromiovec((u8 *)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
+ 	if (ret &lt; 0)
+ 		return ret;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000597.html">r615 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000599.html">r617 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#598">[ date ]</a>
+              <a href="thread.html#598">[ thread ]</a>
+              <a href="subject.html#598">[ subject ]</a>
+              <a href="author.html#598">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

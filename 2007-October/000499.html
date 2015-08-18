@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r517 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r517%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200710041715.l94HFqJR022233%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000498.html">
+   <LINK REL="Next"  HREF="000500.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r517 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r517%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200710041715.l94HFqJR022233%40sheep.berlios.de%3E"
+       TITLE="r517 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Oct  4 19:15:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000498.html">r516 - trunk/kernel/2.6/include/linux
+</A></li>
+        <LI>Next message: <A HREF="000500.html">r518 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#499">[ date ]</a>
+              <a href="thread.html#499">[ thread ]</a>
+              <a href="subject.html#499">[ subject ]</a>
+              <a href="author.html#499">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-10-04 19:15:49 +0200 (Thu, 04 Oct 2007)
+New Revision: 517
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+Log:
+use of module_param_named to have a separate vcan_debug variable as 
+suggested by Arnaldo Carvalho de Melo.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-10-04 17:02:08 UTC (rev 516)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-10-04 17:15:49 UTC (rev 517)
+@@ -63,13 +63,13 @@
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_DEVICES
+-static int debug;
+-module_param(debug, int, S_IRUGO);
++static int vcan_debug;
++module_param_named(debug, vcan_debug, int, S_IRUGO);
+ #endif
+ 
+ /* To be moved to linux/can/dev.h */
+ #ifdef CONFIG_CAN_DEBUG_DEVICES
+-#define DBG(fmt, args...)  (debug &amp; 1 ? \
++#define DBG(fmt, args...)  (vcan_debug &amp; 1 ? \
+ 				printk(KERN_DEBUG &quot;vcan %s: &quot; fmt, \
+ 				__func__, ##args) : 0)
+ #else
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000498.html">r516 - trunk/kernel/2.6/include/linux
+</A></li>
+	<LI>Next message: <A HREF="000500.html">r518 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#499">[ date ]</a>
+              <a href="thread.html#499">[ thread ]</a>
+              <a href="subject.html#499">[ subject ]</a>
+              <a href="author.html#499">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r546 - trunk/kernel/2.6/Documentation/networking
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r546%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200711151300.lAFD0GH2020350%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000527.html">
+   <LINK REL="Next"  HREF="000529.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r546 - trunk/kernel/2.6/Documentation/networking</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r546%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200711151300.lAFD0GH2020350%40sheep.berlios.de%3E"
+       TITLE="r546 - trunk/kernel/2.6/Documentation/networking">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 15 14:00:16 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000527.html">r545 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000529.html">r547 - in trunk/kernel/2.6: drivers/net/can include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#528">[ date ]</a>
+              <a href="thread.html#528">[ thread ]</a>
+              <a href="subject.html#528">[ subject ]</a>
+              <a href="author.html#528">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-15 14:00:14 +0100 (Thu, 15 Nov 2007)
+New Revision: 546
+
+Modified:
+   trunk/kernel/2.6/Documentation/networking/can.txt
+Log:
+Due to discussions on netdev ML the CAN core debugging facilities are 
+removed. The stuff is quite stable and clarified now - therfore the 
+debugging macros became obsolete anyhow.
+
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2007-11-15 12:56:54 UTC (rev 545)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2007-11-15 13:00:14 UTC (rev 546)
+@@ -483,16 +483,8 @@
+     invoked at can.ko module start time by default. This timer can be
+     disabled by using stattimer=0 on the module comandline.
+ 
+-  - debug: When the Kconfig option CONFIG_CAN_DEBUG_CORE is set at
+-    compile time, the debug output code is compiled into the module.
+-    debug = 0x01 =&gt; print general debug information
+-    debug = 0x02 =&gt; print content of processed CAN frames
+-    debug = 0x04 =&gt; print content of processed socket buffers
++  - debug: (removed since SocketCAN SVN r546)
+ 
+-    It is possible to use ORed values e.g. 3 or 7 for an output of
+-    all available debug information. Using 0x02 and 0x04 may flood
+-    your kernel log - so be careful.
+-
+   5.2 procfs content
+ 
+   As described in chapter 3.1 the Socket CAN core uses several filter
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000527.html">r545 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000529.html">r547 - in trunk/kernel/2.6: drivers/net/can include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#528">[ date ]</a>
+              <a href="thread.html#528">[ thread ]</a>
+              <a href="subject.html#528">[ subject ]</a>
+              <a href="author.html#528">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

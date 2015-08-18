@@ -1,0 +1,241 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r105 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r105%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200611271934.kARJYa8e032500%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000087.html">
+   <LINK REL="Next"  HREF="000089.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r105 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r105%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200611271934.kARJYa8e032500%40sheep.berlios.de%3E"
+       TITLE="r105 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 27 20:34:36 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000087.html">r104 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000089.html">r106 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#88">[ date ]</a>
+              <a href="thread.html#88">[ thread ]</a>
+              <a href="subject.html#88">[ subject ]</a>
+              <a href="author.html#88">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-11-27 20:34:34 +0100 (Mon, 27 Nov 2006)
+New Revision: 105
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+add and change some comments.
+simplify the code for CAN_RAW_FILTER socket option.
+don't remove filters in CAN_RAW_FILTER when an invalid address for a single
+filter was given causing -EFAULT.
+bug fix in CAN_RAW_FILTER: changed &amp; to &amp;&amp;.
+disallow optlen == 0 for CAN_RAW_LOOPBACK and CAN_RAW_RECV_OWN_MSGS.
+remove a couple unnecessary type casts.
+change prefix &quot;af_can&quot; to &quot;CAN&quot; in printk message.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-11-27 11:47:38 UTC (rev 104)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-11-27 19:34:34 UTC (rev 105)
+@@ -316,7 +316,7 @@
+ 		char module_name[30];
+ 		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+ 		if (request_module(module_name) == -ENOSYS)
+-			printk(KERN_INFO &quot;af_can: request_module(%s) not implemented.\n&quot;,
++			printk(KERN_INFO &quot;CAN: request_module(%s) not implemented.\n&quot;,
+ 			       module_name);
+ 	}
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-11-27 11:47:38 UTC (rev 104)
++++ trunk/kernel/2.6/net/can/raw.c	2006-11-27 19:34:34 UTC (rev 105)
+@@ -125,13 +125,22 @@
+ };
+ 
+ 
++/* A raw socket has a list of can_filters attached to it, each receiving
++   the CAN frames matching that filter.  If the filter list is empty,
++   no CAN frames will be received by the socket.  The default after
++   opening the socket, is to have one filter which receives all frames.
++   The filter list is allocated dynamically with the exception of the
++   list containing only one item.  This common case is optimized by
++   storing the single filter in dfilter, to avoid using dynamic memory.
++*/
++
+ struct raw_opt {
+ 	int bound;
+ 	int ifindex;
+ 	int loopback;
+ 	int recv_own_msgs;
+ 	int count;                 /* number of active filters */
+-	struct can_filter dfilter; /* default/single filter space */
++	struct can_filter dfilter; /* default/single filter */
+ 	struct can_filter *filter; /* pointer to filter(s) */
+ 	can_err_mask_t err_mask;
+ };
+@@ -207,7 +216,7 @@
+ 	canraw_sk(sk)-&gt;filter           = &amp;canraw_sk(sk)-&gt;dfilter;
+ 	canraw_sk(sk)-&gt;count            = 1;
+ 
+-	/* set default message behaviour */
++	/* set default loopback behaviour */
+ 	canraw_sk(sk)-&gt;loopback         = 1;
+ 	canraw_sk(sk)-&gt;recv_own_msgs    = 0;
+ 
+@@ -233,7 +242,7 @@
+ 
+ 	/* remove current error mask */
+ 	if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-		can_rx_unregister(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk);
++		can_rx_unregister(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
+ 
+ 	if (dev) {
+ 		can_dev_unregister(dev, raw_notifier, sk);
+@@ -280,8 +289,6 @@
+ 		/* unregister current filters for this device */
+ 		raw_remove_filters(dev, sk);
+ 
+-		/* the filter(s) content is just available here */
+-
+ 		if (dev)
+ 			dev_put(dev);
+ 
+@@ -309,7 +316,7 @@
+ 	raw_add_filters(dev, sk); /* filters set by default/setsockopt */
+ 
+ 	if (canraw_sk(sk)-&gt;err_mask) /* error frame filter set by setsockopt */
+-		can_rx_register(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk, IDENT);
++		can_rx_register(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
+ 
+ 	canraw_sk(sk)-&gt;bound = 1;
+ 
+@@ -351,7 +358,8 @@
+ 			  char __user *optval, int optlen)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct can_filter *filter = NULL;
++	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
++	struct can_filter sfilter;         /* single filter */
+ 	struct net_device *dev = NULL;
+ 	can_err_mask_t err_mask = 0;
+ 	int count = 0;
+@@ -374,6 +382,9 @@
+ 				kfree(filter);
+ 				return err;
+ 			}
++		} else if (count == 1) {
++			if ((err = copy_from_user(&amp;sfilter, optval, optlen)))
++				return err;
+ 		}
+ 
+ 		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+@@ -386,14 +397,8 @@
+ 			kfree(canraw_sk(sk)-&gt;filter);
+ 
+ 		if (count == 1) { /* copy data for single filter */
++			canraw_sk(sk)-&gt;dfilter = sfilter;
+ 			filter = &amp;canraw_sk(sk)-&gt;dfilter;
+-			if ((err = copy_from_user(filter, optval, optlen))) {
+-				/* zero filters to prevent double kfree */
+-				canraw_sk(sk)-&gt;count = 0;
+-				if (dev)
+-					dev_put(dev);
+-				return err;
+-			}
+ 		}
+ 
+ 		/* add new filters &amp; register */
+@@ -422,13 +427,13 @@
+ 
+ 		/* remove current error mask */
+ 		if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-			can_rx_unregister(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk);
++			can_rx_unregister(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
+ 
+ 		/* add new error mask */
+ 		if (optlen) {
+ 			canraw_sk(sk)-&gt;err_mask = err_mask;
+-			if (canraw_sk(sk)-&gt;err_mask &amp; canraw_sk(sk)-&gt;bound)
+-				can_rx_register(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk, IDENT);
++			if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
++				can_rx_register(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
+ 		}
+ 
+ 		if (dev)
+@@ -437,21 +442,17 @@
+ 		break;
+ 
+ 	case CAN_RAW_LOOPBACK:
+-		if (optlen) {
+-			if (optlen != sizeof(canraw_sk(sk)-&gt;loopback))
+-				return -EINVAL;
+-			if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;loopback, optval, optlen)))
+-				return err;
+-		}
++		if (optlen != sizeof(canraw_sk(sk)-&gt;loopback))
++			return -EINVAL;
++		if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;loopback, optval, optlen)))
++			return err;
+ 		break;
+ 
+ 	case CAN_RAW_RECV_OWN_MSGS:
+-		if (optlen) {
+-			if (optlen != sizeof(canraw_sk(sk)-&gt;recv_own_msgs))
+-				return -EINVAL;
+-			if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;recv_own_msgs, optval, optlen)))
+-				return err;
+-		}
++		if (optlen != sizeof(canraw_sk(sk)-&gt;recv_own_msgs))
++			return -EINVAL;
++		if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;recv_own_msgs, optval, optlen)))
++			return err;
+ 		break;
+ 
+ 	default:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000087.html">r104 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000089.html">r106 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#88">[ date ]</a>
+              <a href="thread.html#88">[ thread ]</a>
+              <a href="subject.html#88">[ subject ]</a>
+              <a href="author.html#88">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r540 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r540%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711051258.lA5CwVKr011425%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000521.html">
+   <LINK REL="Next"  HREF="000523.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r540 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r540%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711051258.lA5CwVKr011425%40sheep.berlios.de%3E"
+       TITLE="r540 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov  5 13:58:31 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000521.html">r539 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000523.html">r541 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#522">[ date ]</a>
+              <a href="thread.html#522">[ thread ]</a>
+              <a href="subject.html#522">[ subject ]</a>
+              <a href="author.html#522">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-05 13:58:26 +0100 (Mon, 05 Nov 2007)
+New Revision: 540
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+round_jiffies() has been introduced in 2.6.20.
+Added version depended code for older Kernels.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-11-05 12:30:55 UTC (rev 539)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-11-05 12:58:26 UTC (rev 540)
+@@ -1026,7 +1026,11 @@
+ 		stattimer.function = can_stat_update;
+ 		stattimer.data = 0;
+ 		/* update every second */
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+ 		stattimer.expires = round_jiffies(jiffies + HZ);
++#else
++		stattimer.expires = jiffies + HZ;
++#endif
+ 		/* start statistics timer */
+ 		add_timer(&amp;stattimer);
+ 	} else
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-11-05 12:30:55 UTC (rev 539)
++++ trunk/kernel/2.6/net/can/proc.c	2007-11-05 12:58:26 UTC (rev 540)
+@@ -187,7 +187,11 @@
+ 	stats.matches_delta   = 0;
+ 
+ 	/* restart timer (one second) */
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+ 	stattimer.expires = round_jiffies(jiffies + HZ);
++#else
++	stattimer.expires = jiffies + HZ;
++#endif
+ 	add_timer(&amp;stattimer);
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000521.html">r539 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000523.html">r541 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#522">[ date ]</a>
+              <a href="thread.html#522">[ thread ]</a>
+              <a href="subject.html#522">[ subject ]</a>
+              <a href="author.html#522">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

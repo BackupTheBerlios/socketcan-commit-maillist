@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1264 - trunk/test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1264%20-%20trunk/test&In-Reply-To=%3C20110709180447.EBD9A480B8A%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000894.html">
+   <LINK REL="Next"  HREF="000896.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1264 - trunk/test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1264%20-%20trunk/test&In-Reply-To=%3C20110709180447.EBD9A480B8A%40sheep.berlios.de%3E"
+       TITLE="r1264 - trunk/test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Jul  9 20:04:47 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000894.html">r1263 - trunk/test
+</A></li>
+        <LI>Next message: <A HREF="000896.html">r1265 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#895">[ date ]</a>
+              <a href="thread.html#895">[ thread ]</a>
+              <a href="subject.html#895">[ subject ]</a>
+              <a href="author.html#895">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-07-09 20:04:47 +0200 (Sat, 09 Jul 2011)
+New Revision: 1264
+
+Modified:
+   trunk/test/gwtest.c
+   trunk/test/tst-raw-sendto.c
+Log:
+Remove unused variables detected by -Wunused-but-set-variable ...
+
+
+Modified: trunk/test/gwtest.c
+===================================================================
+--- trunk/test/gwtest.c	2011-07-09 18:00:41 UTC (rev 1263)
++++ trunk/test/gwtest.c	2011-07-09 18:04:47 UTC (rev 1264)
+@@ -47,7 +47,6 @@
+ int main(int argc, char **argv)
+ {
+ 	int s;
+-	int err = 0;
+ 
+ 	struct {
+ 		struct nlmsghdr n;
+@@ -110,8 +109,8 @@
+ 	nladdr.nl_pid    = 0;
+ 	nladdr.nl_groups = 0;
+ 
+-	err = sendto(s, &amp;req, req.n.nlmsg_len, 0,
+-		     (struct sockaddr*)&amp;nladdr, sizeof(nladdr));
++	sendto(s, &amp;req, req.n.nlmsg_len, 0,
++	       (struct sockaddr*)&amp;nladdr, sizeof(nladdr));
+ 
+ 	perror(&quot;netlink says &quot;);
+ 	close(s);
+
+Modified: trunk/test/tst-raw-sendto.c
+===================================================================
+--- trunk/test/tst-raw-sendto.c	2011-07-09 18:00:41 UTC (rev 1263)
++++ trunk/test/tst-raw-sendto.c	2011-07-09 18:04:47 UTC (rev 1264)
+@@ -63,7 +63,6 @@
+ 	int s;
+ 	struct sockaddr_can addr;
+ 	struct can_frame frame;
+-	int nbytes;
+ 	struct ifreq ifr;
+ 	char *ifname = &quot;vcan2&quot;;
+ 	int ifindex;
+@@ -109,7 +108,7 @@
+ 	addr.can_family  = AF_CAN;
+ 	addr.can_ifindex = ifindex; /* send via this interface */
+  
+-	nbytes = sendto(s, &amp;frame, sizeof(struct can_frame), 0, (struct sockaddr*)&amp;addr, sizeof(addr));
++	sendto(s, &amp;frame, sizeof(struct can_frame), 0, (struct sockaddr*)&amp;addr, sizeof(addr));
+ 
+ 	close(s);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000894.html">r1263 - trunk/test
+</A></li>
+	<LI>Next message: <A HREF="000896.html">r1265 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#895">[ date ]</a>
+              <a href="thread.html#895">[ thread ]</a>
+              <a href="subject.html#895">[ subject ]</a>
+              <a href="author.html#895">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

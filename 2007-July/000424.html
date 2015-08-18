@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r442 - trunk/kernel/2.6/drivers/net/can/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r442%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200707251108.l6PB8CUi027324%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000423.html">
+   <LINK REL="Next"  HREF="000425.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r442 - trunk/kernel/2.6/drivers/net/can/mscan</H1>
+    <B>wolf at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r442%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200707251108.l6PB8CUi027324%40sheep.berlios.de%3E"
+       TITLE="r442 - trunk/kernel/2.6/drivers/net/can/mscan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 25 13:08:12 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000423.html">r441 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+        <LI>Next message: <A HREF="000425.html">r443 - in trunk: . kernel/2.6/drivers/net/can	kernel/2.6/drivers/net/can/i82527 kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#424">[ date ]</a>
+              <a href="thread.html#424">[ thread ]</a>
+              <a href="subject.html#424">[ subject ]</a>
+              <a href="author.html#424">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2007-07-25 13:08:11 +0200 (Wed, 25 Jul 2007)
+New Revision: 442
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+Log:
+MSCAN: fix bug with retry counter in mscan_set_mode()
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2007-07-25 10:59:49 UTC (rev 441)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2007-07-25 11:08:11 UTC (rev 442)
+@@ -49,7 +49,9 @@
+ #define MSCAN_SLEEP_MODE	MSCAN_SLPRQ
+ #define MSCAN_INIT_MODE		(MSCAN_INITRQ | MSCAN_SLPRQ)
+ #define MSCAN_POWEROFF_MODE	(MSCAN_CSWAI | MSCAN_SLPRQ)
++#define MSCAN_SET_MODE_RETRIES	255
+ 
++
+ #define BTR0_BRP_MASK		0x3f
+ #define BTR0_SJW_SHIFT		6
+ #define BTR0_SJW_MASK		(0x3 &lt;&lt; BTR0_SJW_SHIFT)
+@@ -109,12 +111,12 @@
+ 		if ((mode &amp; MSCAN_SLPRQ) &amp;&amp; (canctl1 &amp; MSCAN_SLPAK) == 0) {
+ 			out_8(&amp;regs-&gt;canctl0,
+ 			      in_8(&amp;regs-&gt;canctl0) | MSCAN_SLPRQ);
+-			for (i = 0; i &lt; 255; i++) {
++			for (i = 0; i &lt; MSCAN_SET_MODE_RETRIES; i++) {
+ 				if (in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_SLPAK)
+ 					break;
+ 				udelay(100);
+ 			}
+-			if (i &gt; 255)
++			if (i &gt;= MSCAN_SET_MODE_RETRIES)
+ 				ret = -ENODEV;
+ 		}
+ 
+@@ -122,11 +124,11 @@
+ 		    &amp;&amp; (canctl1 &amp; MSCAN_INITAK) == 0) {
+ 			out_8(&amp;regs-&gt;canctl0,
+ 			      in_8(&amp;regs-&gt;canctl0) | MSCAN_INITRQ);
+-			for (i = 0; i &lt; 255; i++) {
++			for (i = 0; i &lt; MSCAN_SET_MODE_RETRIES; i++) {
+ 				if (in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_INITAK)
+ 					break;
+ 			}
+-			if (i &gt; 255)
++			if (i &gt;= MSCAN_SET_MODE_RETRIES)
+ 				ret = -ENODEV;
+ 		}
+ 
+@@ -139,12 +141,12 @@
+ 		if (canctl1 &amp; (MSCAN_SLPAK | MSCAN_INITAK)) {
+ 			out_8(&amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) &amp;
+ 			      ~(MSCAN_SLPRQ | MSCAN_INITRQ));
+-			for (i = 0; i &lt; 255; i++) {
++			for (i = 0; i &lt; MSCAN_SET_MODE_RETRIES; i++) {
+ 				canctl1 = in_8(&amp;regs-&gt;canctl1);
+ 				if (!(canctl1 &amp; (MSCAN_INITAK | MSCAN_SLPAK)))
+ 					break;
+ 			}
+-			if (i &gt; 255)
++			if (i &gt;= MSCAN_SET_MODE_RETRIES)
+ 				ret = -ENODEV;
+ 		}
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000423.html">r441 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+	<LI>Next message: <A HREF="000425.html">r443 - in trunk: . kernel/2.6/drivers/net/can	kernel/2.6/drivers/net/can/i82527 kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#424">[ date ]</a>
+              <a href="thread.html#424">[ thread ]</a>
+              <a href="subject.html#424">[ subject ]</a>
+              <a href="author.html#424">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

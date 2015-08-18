@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r591 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r591%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101445.lBAEj9aJ005162%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000572.html">
+   <LINK REL="Next"  HREF="000574.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r591 - trunk/kernel/2.4/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r591%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101445.lBAEj9aJ005162%40sheep.berlios.de%3E"
+       TITLE="r591 - trunk/kernel/2.4/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 10 15:45:09 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000572.html">r590 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000574.html">r592 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#573">[ date ]</a>
+              <a href="thread.html#573">[ thread ]</a>
+              <a href="subject.html#573">[ subject ]</a>
+              <a href="author.html#573">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-10 15:45:04 +0100 (Mon, 10 Dec 2007)
+New Revision: 591
+
+Modified:
+   trunk/kernel/2.4/can/vcan.c
+Log:
+Updated startup banner. Removed debug code.
+
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2007-12-10 14:03:34 UTC (rev 590)
++++ trunk/kernel/2.4/can/vcan.c	2007-12-10 14:45:04 UTC (rev 591)
+@@ -51,27 +51,13 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-static __initdata const char banner[] = KERN_INFO &quot;CAN: virtual CAN &quot;
+-					&quot;interface &quot; VERSION &quot;\n&quot;;
++static __initdata const char banner[] =
++	KERN_INFO &quot;vcan: Virtual CAN interface driver\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;virtual CAN interface&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+-#ifdef DEBUG
+-static int debug = 0;
+-MODULE_PARM(debug, &quot;1i&quot;);
+-#define DBG(args...)       (debug &amp; 1 ? \
+-			       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
+-				printk(args)) : 0)
+-#define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+-#define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+-#else
+-#define DBG(args...)
+-#define DBG_FRAME(args...)
+-#define DBG_SKB(skb)
+-#endif
+-
+ /* Indicate if this VCAN driver should do a real loopback, or if this */
+ /* should be done in af_can.c */
+ #undef  DO_LOOPBACK
+@@ -89,16 +75,12 @@
+ 
+ static int vcan_open(struct net_device *dev)
+ {
+-	DBG(&quot;%s: interface up\n&quot;, dev-&gt;name);
+-
+ 	netif_start_queue(dev);
+ 	return 0;
+ }
+ 
+ static int vcan_stop(struct net_device *dev)
+ {
+-	DBG(&quot;%s: interface down\n&quot;, dev-&gt;name);
+-
+ 	netif_stop_queue(dev);
+ 	return 0;
+ }
+@@ -115,9 +97,6 @@
+ 	skb-&gt;dev       = dev;
+ 	skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 
+-	DBG(&quot;received skbuff on interface %d\n&quot;, dev-&gt;ifindex);
+-	DBG_SKB(skb);
+-
+ 	netif_rx(skb);
+ }
+ 
+@@ -128,10 +107,6 @@
+ 	struct net_device_stats *stats = netdev_priv(dev);
+ 	int loop;
+ 
+-	DBG(&quot;sending skbuff on interface %s\n&quot;, dev-&gt;name);
+-	DBG_SKB(skb);
+-	DBG_FRAME(&quot;VCAN: transmit CAN frame&quot;, (struct can_frame *)skb-&gt;data);
+-
+ 	stats-&gt;tx_packets++;
+ 	stats-&gt;tx_bytes += skb-&gt;len;
+ 
+@@ -174,8 +149,6 @@
+ 
+ static int vcan_rebuild_header(struct sk_buff *skb)
+ {
+-	DBG(&quot;skbuff %p\n&quot;, skb);
+-	DBG_SKB(skb);
+ 	return 0;
+ }
+ 
+@@ -183,8 +156,6 @@
+ 		       unsigned short type, void *daddr, void *saddr,
+ 		       unsigned int len)
+ {
+-	DBG(&quot;skbuff %p device %p\n&quot;, skb, dev);
+-	DBG_SKB(skb);
+ 	return 0;
+ }
+ 
+@@ -197,8 +168,6 @@
+ 
+ static int vcan_init(struct net_device *dev)
+ {
+-	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+-
+ 	ether_setup(dev);
+ 
+ 	dev-&gt;priv              = kmalloc(STATSIZE, GFP_KERNEL);
+@@ -266,11 +235,8 @@
+ 			printk(KERN_ERR &quot;vcan: error %d registering &quot;
+ 			       &quot;interface %s\n&quot;, result, vcan_devs[i]-&gt;name);
+ 			goto out;
+-		} else {
+-			DBG(&quot;successfully registered interface %s\n&quot;,
+-			    vcan_devs[i]-&gt;name);
++		} else
+ 			ndev++;
+-		}
+ 	}
+ 
+ 	if (ndev)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000572.html">r590 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000574.html">r592 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#573">[ date ]</a>
+              <a href="thread.html#573">[ thread ]</a>
+              <a href="subject.html#573">[ subject ]</a>
+              <a href="author.html#573">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

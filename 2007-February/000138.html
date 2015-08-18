@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r154 - in trunk/kernel: 2.4/can 2.6/drivers/net/can	2.6/include/linux/can 2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r154%20-%20in%20trunk/kernel%3A%202.4/can%202.6/drivers/net/can%0A%092.6/include/linux/can%202.6/net/can&In-Reply-To=%3C200702211340.l1LDeGHj029655%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000137.html">
+   <LINK REL="Next"  HREF="000139.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r154 - in trunk/kernel: 2.4/can 2.6/drivers/net/can	2.6/include/linux/can 2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r154%20-%20in%20trunk/kernel%3A%202.4/can%202.6/drivers/net/can%0A%092.6/include/linux/can%202.6/net/can&In-Reply-To=%3C200702211340.l1LDeGHj029655%40sheep.berlios.de%3E"
+       TITLE="r154 - in trunk/kernel: 2.4/can 2.6/drivers/net/can	2.6/include/linux/can 2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 21 14:40:16 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000137.html">r153 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000139.html">r155 - in trunk/kernel: 2.4/can 2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#138">[ date ]</a>
+              <a href="thread.html#138">[ thread ]</a>
+              <a href="subject.html#138">[ subject ]</a>
+              <a href="author.html#138">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-02-21 14:39:52 +0100 (Wed, 21 Feb 2007)
+New Revision: 154
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.4/can/vcan.c
+   trunk/kernel/2.4/can/version.h
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/include/linux/can/version.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Changed banner strings.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.4/can/af_can.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -63,11 +63,10 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define NAME &quot;Volkswagen AG - Low Level CAN Framework (LLCF)&quot;
+ #define IDENT &quot;af_can&quot;
+-static __initdata const char banner[] = BANNER(NAME);
++static __initdata const char banner[] = KERN_INFO &quot;CAN: PF_CAN core &quot; VERSION &quot;\n&quot;; 
+ 
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;PF_CAN core&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;, &quot;
+ 	      &quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.4/can/bcm.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -76,11 +76,11 @@
+ #define BCM_CAN_DLC_MASK 0x0F /* clean flags by masking with BCM_CAN_DLC_MASK */
+ #define BCM_RX_REGMASK (CAN_EFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG)
+ 
+-#define NAME &quot;Broadcast Manager (BCM) for LLCF&quot;
+ #define IDENT &quot;bcm&quot;
+-static __initdata const char banner[] = BANNER(NAME);
++static __initdata const char banner[] =
++	KERN_INFO &quot;CAN: broadcast manager (bcm) socket protocol &quot; VERSION &quot;\n&quot;; 
+ 
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;PF_CAN bcm sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.4/can/raw.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -58,11 +58,10 @@
+ RCSID(&quot;$Id$&quot;);
+ 
+ 
+-#define NAME &quot;RAW sockets for LLCF&quot;
+ #define IDENT &quot;raw&quot;
+-static __initdata const char banner[] = BANNER(NAME);
++static __initdata const char banner[] = KERN_INFO &quot;CAN: raw socket protocol &quot; VERSION &quot;\n&quot;; 
+ 
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;PF_CAN raw sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.4/can/vcan.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -52,11 +52,9 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
++static __initdata const char banner[] = KERN_INFO &quot;CAN: virtual CAN interface &quot; VERSION &quot;\n&quot;; 
+ 
+-#define NAME &quot;VCAN loopback interface for LLCF&quot;
+-static __initdata const char banner[] = BANNER(NAME);
+-
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;virtual CAN interface&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+
+Modified: trunk/kernel/2.4/can/version.h
+===================================================================
+--- trunk/kernel/2.4/can/version.h	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.4/can/version.h	2007-02-21 13:39:52 UTC (rev 154)
+@@ -67,6 +67,5 @@
+ 
+ #define VERSION str(MAJORVERSION) &quot;.&quot; str(MINORVERSION) &quot;.&quot; str(PATCHLEVEL) \
+ 	EXTRAVERSION
+-#define BANNER(name) KERN_INFO name &quot; v&quot; VERSION &quot;\n&quot;
+ 
+ #endif /* VERSION_H */
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -53,11 +53,9 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
++static __initdata const char banner[] = KERN_INFO &quot;CAN: virtual CAN interface &quot; VERSION &quot;\n&quot;; 
+ 
+-#define NAME &quot;VCAN loopback interface for LLCF&quot;
+-static __initdata const char banner[] = BANNER(NAME);
+-
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;virtual CAN interface&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/version.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/version.h	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.6/include/linux/can/version.h	2007-02-21 13:39:52 UTC (rev 154)
+@@ -67,6 +67,5 @@
+ 
+ #define VERSION str(MAJORVERSION) &quot;.&quot; str(MINORVERSION) &quot;.&quot; str(PATCHLEVEL) \
+ 	EXTRAVERSION
+-#define BANNER(name) KERN_INFO name &quot; v&quot; VERSION &quot;\n&quot;
+ 
+ #endif /* CAN_VERSION_H */
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -66,11 +66,10 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define NAME &quot;Volkswagen AG - Low Level CAN Framework (LLCF)&quot;
+ #define IDENT &quot;af_can&quot;
+-static __initdata const char banner[] = BANNER(NAME);
++static __initdata const char banner[] = KERN_INFO &quot;CAN: PF_CAN core &quot; VERSION &quot;\n&quot;; 
+ 
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;PF_CAN core&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;, &quot;
+ 	      &quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -79,11 +79,11 @@
+ #define BCM_CAN_DLC_MASK 0x0F /* clean flags by masking with BCM_CAN_DLC_MASK */
+ #define BCM_RX_REGMASK (CAN_EFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG)
+ 
+-#define NAME &quot;Broadcast Manager (BCM) for LLCF&quot;
+ #define IDENT &quot;bcm&quot;
+-static __initdata const char banner[] = BANNER(NAME);
++static __initdata const char banner[] =
++	KERN_INFO &quot;CAN: broadcast manager (bcm) socket protocol &quot; VERSION &quot;\n&quot;; 
+ 
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;PF_CAN bcm sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-02-18 09:07:41 UTC (rev 153)
++++ trunk/kernel/2.6/net/can/raw.c	2007-02-21 13:39:52 UTC (rev 154)
+@@ -62,11 +62,10 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define NAME &quot;RAW sockets for LLCF&quot;
+ #define IDENT &quot;raw&quot;
+-static __initdata const char banner[] = BANNER(NAME);
++static __initdata const char banner[] = KERN_INFO &quot;CAN: raw socket protocol &quot; VERSION &quot;\n&quot;; 
+ 
+-MODULE_DESCRIPTION(NAME);
++MODULE_DESCRIPTION(&quot;PF_CAN raw sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000137.html">r153 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000139.html">r155 - in trunk/kernel: 2.4/can 2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#138">[ date ]</a>
+              <a href="thread.html#138">[ thread ]</a>
+              <a href="subject.html#138">[ subject ]</a>
+              <a href="author.html#138">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

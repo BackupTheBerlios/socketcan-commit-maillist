@@ -1,0 +1,363 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r50 - branches/ut/hlist/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r50%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C200606280424.k5S4Oldo005016%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000026.html">
+   <LINK REL="Next"  HREF="000028.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r50 - branches/ut/hlist/kernel/2.6/net/can</H1>
+    <B>thuermann at berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r50%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C200606280424.k5S4Oldo005016%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r50 - branches/ut/hlist/kernel/2.6/net/can">thuermann at berlios.de
+       </A><BR>
+    <I>Wed Jun 28 06:24:47 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000026.html">[Socketcan-commit] r49 - in trunk/kernel: 2.4/can 2.4/drivers/mscan 2.4/drivers/sja1000 2.6/drivers/net/can 2.6/drivers/net/can/sja1000 2.6/include/linux/can 2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000028.html">[Socketcan-commit] r51 - in trunk/kernel: 2.4/can 2.4/drivers/sja1000 2.6/drivers/net/can 2.6/drivers/net/can/mscan 2.6/drivers/net/can/sja1000 2.6/include/linux/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#27">[ date ]</a>
+              <a href="thread.html#27">[ thread ]</a>
+              <a href="subject.html#27">[ subject ]</a>
+              <a href="author.html#27">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-06-28 06:24:43 +0200 (Wed, 28 Jun 2006)
+New Revision: 50
+
+Modified:
+   branches/ut/hlist/kernel/2.6/net/can/bcm.c
+Log:
+Use kernel list implementation for BCM lists.
+
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/bcm.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/bcm.c	2006-06-27 19:23:38 UTC (rev 49)
++++ branches/ut/hlist/kernel/2.6/net/can/bcm.c	2006-06-28 04:24:43 UTC (rev 50)
+@@ -88,7 +88,7 @@
+ #define GET_U64(p) (*(unsigned long long*)(p)-&gt;data)
+ 
+ struct bcm_op {
+-	struct bcm_op *next;
++	struct list_head list;
+ 	canid_t can_id;
+ 	int flags;
+ 	unsigned long j_ival1, j_ival2, j_lastmsg;
+@@ -104,8 +104,8 @@
+ };
+ 
+ struct bcm_user_data {
+-	struct bcm_op *rx_ops;
+-	struct bcm_op *tx_ops;
++	struct list_head rx_ops;
++	struct list_head tx_ops;
+ 	struct proc_dir_entry *bcm_proc_read;
+ 	char procname [9];
+ };
+@@ -129,10 +129,9 @@
+ static void bcm_rx_handler(struct sk_buff *skb, void *op);
+ static void bcm_rx_timeout_handler(unsigned long data);
+ static void bcm_rx_thr_handler(unsigned long data);
+-static struct bcm_op *bcm_find_op(struct bcm_op *ops, canid_t can_id);
+-static void bcm_insert_op(struct bcm_op **ops, struct bcm_op *op);
+-static void bcm_delete_tx_op(struct bcm_op **ops, canid_t can_id);
+-static void bcm_delete_rx_op(struct bcm_op **ops, canid_t can_id);
++static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id);
++static void bcm_delete_tx_op(struct list_head *ops, canid_t can_id);
++static void bcm_delete_rx_op(struct list_head *ops, canid_t can_id);
+ static void bcm_remove_op(struct bcm_op *op);
+ static void bcm_can_tx(struct bcm_op *op);
+ static void bcm_send_to_user(struct sock *sk, struct bcm_msg_head *head,
+@@ -241,7 +240,7 @@
+ {
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct bcm_user_data *ud = bcm_sk(sk);
+-	struct bcm_op *op,*next;
++	struct bcm_op *op, *n;
+ 
+ 	/* many things to do here:
+ 	   free all rx_ops and tx_ops, bcm_user_data structure,
+@@ -252,15 +251,13 @@
+ 	/* remove userdata, bcm_ops, timer, etc. */
+ 
+ 	if (ud) {
+-		for (op = ud-&gt;tx_ops; op ; op = next) {
++		list_for_each_entry_safe(op, n, &amp;ud-&gt;tx_ops, list) {
+ 			DBG(&quot;removing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
+-			next = op-&gt;next;
+ 			bcm_remove_op(op);
+ 		}
+ 
+-		for (op = ud-&gt;rx_ops; op ; op = next) {
++		list_for_each_entry_safe(op, n, &amp;ud-&gt;rx_ops, list) {
+ 			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
+-			next = op-&gt;next;
+ 
+ 			if (sk-&gt;sk_bound_dev_if) {
+ 				struct net_device *dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
+@@ -323,8 +320,8 @@
+ 		return -ENOMEM;
+ 
+ 	/* intitial BCM operations */
+-	ud-&gt;tx_ops = NULL;
+-	ud-&gt;rx_ops = NULL;
++	INIT_LIST_HEAD(&amp;ud-&gt;tx_ops);
++	INIT_LIST_HEAD(&amp;ud-&gt;rx_ops);
+ 	ud-&gt;bcm_proc_read = NULL;
+ 
+ 	sk-&gt;sk_protinfo = ud;
+@@ -347,19 +344,23 @@
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,&quot;&gt;&gt;&gt; ud %p&quot;, ud);
+ 
+-	if (ud-&gt;rx_ops) {
+-		if (ud-&gt;rx_ops-&gt;sk-&gt;sk_bound_dev_if)
+-			dev = dev_get_by_index(ud-&gt;rx_ops-&gt;sk-&gt;sk_bound_dev_if);
++	if (!list_empty(&amp;ud-&gt;rx_ops)) {
++		struct sock *sk;
++		op = list_entry(ud-&gt;rx_ops.next, struct bcm_op, list);
++		sk = op-&gt;sk;
++		if (sk-&gt;sk_bound_dev_if)
++			dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+-				&quot; / sk %p / socket %p&quot;, ud-&gt;rx_ops-&gt;sk, ud-&gt;rx_ops-&gt;sk-&gt;sk_socket);
++				&quot; / sk %p / socket %p&quot;, sk, sk-&gt;sk_socket);
++	} else if (!list_empty(&amp;ud-&gt;tx_ops)) {
++		struct sock *sk;
++		op = list_entry(ud-&gt;tx_ops.next, struct bcm_op, list);
++		sk = op-&gt;sk;
++		if (sk-&gt;sk_bound_dev_if)
++			dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
++		len += snprintf(page + len, PAGE_SIZE - len,
++				&quot; / sk %p / socket %p&quot;, sk, sk-&gt;sk_socket);
+ 	}
+-	else
+-		if (ud-&gt;tx_ops) {
+-			if (ud-&gt;tx_ops-&gt;sk-&gt;sk_bound_dev_if)
+-				dev = dev_get_by_index(ud-&gt;tx_ops-&gt;sk-&gt;sk_bound_dev_if);
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot; / sk %p / socket %p&quot;, ud-&gt;tx_ops-&gt;sk, ud-&gt;tx_ops-&gt;sk-&gt;sk_socket);
+-		}
+ 
+ 	if (dev) {
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot; / %s&quot;, dev-&gt;name);
+@@ -368,10 +369,16 @@
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; &lt;&lt;&lt;\n&quot;);
+ 
+-	for (op = ud-&gt;rx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
++	list_for_each_entry(op, &amp;ud-&gt;rx_ops, list) {
+ 
+ 		unsigned long reduction;
+ 
++		if (len &gt;= PAGE_SIZE - 100) {
++			/* mark output cut off */
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
++			break;
++		} 
++
+ 		/* print only active entries &amp; prevent division by zero */
+ 		if (!op-&gt;frames_abs)
+ 			continue;
+@@ -391,13 +398,16 @@
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;%s%ld%%\n&quot;,
+ 				(reduction == 100)?&quot;near &quot;:&quot;&quot;, reduction);
+-
+-		if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
+ 	}
+ 
+-	for (op = ud-&gt;tx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
++	list_for_each_entry(op, &amp;ud-&gt;tx_ops, list) {
+ 
++		if (len &gt;= PAGE_SIZE - 100) {
++			/* mark output cut off */
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
++			break;
++		}
++
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;tx_op: %03X [%d] &quot;,
+ 				op-&gt;can_id, op-&gt;nframes);
+ 		if (op-&gt;j_ival1)
+@@ -407,9 +417,6 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;t2=%ld &quot;, op-&gt;j_ival2);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
+-
+-		if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -463,7 +470,7 @@
+ 
+ 		/* check the given can_id */
+ 
+-		if (!(op = bcm_find_op(ud-&gt;tx_ops, msg_head.can_id))) {
++		if (!(op = bcm_find_op(&amp;ud-&gt;tx_ops, msg_head.can_id))) {
+ 
+ 			/* insert new BCM operation for the given can_id */
+ 
+@@ -500,7 +507,7 @@
+ 			op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
+ 
+ 			/* add this bcm_op to the list of the tx_ops */
+-			bcm_insert_op(&amp;ud-&gt;tx_ops, op);
++			list_add(&amp;op-&gt;list, &amp;ud-&gt;tx_ops);
+ 
+ 		} else {
+ 			/* update existing BCM operation */
+@@ -605,7 +612,7 @@
+ 
+ 		/* reuse msg_head for the reply */
+ 		msg_head.opcode  = TX_STATUS; /* reply to TX_READ */
+-		op = bcm_find_op(ud-&gt;tx_ops, msg_head.can_id);
++		op = bcm_find_op(&amp;ud-&gt;tx_ops, msg_head.can_id);
+ 		c  = 'T'; /* for nice debug output ... */
+ 
+ 		goto TRX_READ;
+@@ -614,7 +621,7 @@
+ 
+ 		/* reuse msg_head for the reply */
+ 		msg_head.opcode  = RX_STATUS; /* reply to RX_READ */
+-		op = bcm_find_op(ud-&gt;rx_ops, msg_head.can_id);
++		op = bcm_find_op(&amp;ud-&gt;rx_ops, msg_head.can_id);
+ 		c  = 'R'; /* for nice debug output ... */
+ 
+ 	TRX_READ:
+@@ -702,7 +709,7 @@
+ 
+ 		/* check the given can_id */
+ 
+-		if (!(op = bcm_find_op(ud-&gt;rx_ops, msg_head.can_id))) {
++		if (!(op = bcm_find_op(&amp;ud-&gt;rx_ops, msg_head.can_id))) {
+ 
+ 			/* insert new BCM operation for the given can_id */
+ 
+@@ -766,7 +773,7 @@
+ 			op-&gt;thrtimer.expires = 0; /* mark disabled timer */
+ 
+ 			/* add this bcm_op to the list of the tx_ops */
+-			bcm_insert_op(&amp;ud-&gt;rx_ops, op);
++			list_add(&amp;op-&gt;list, &amp;ud-&gt;rx_ops);
+ 
+ 			c=1; /* call can_rx_register() at end of RX_SETUP */
+ 
+@@ -809,7 +816,7 @@
+ 			op-&gt;nframes = msg_head.nframes;
+ 			c=0; /* do not call can_rx_register() at end of RX_SETUP */
+ 
+-		} /* if (!bcm_find_op(ud-&gt;tx_ops, msg_head.can_id)) */
++		} /* if (!bcm_find_op(&amp;ud-&gt;tx_ops, msg_head.can_id)) */
+ 
+ 
+ 		/* check flags */
+@@ -1322,24 +1329,23 @@
+ 	}
+ }
+ 
+-static struct bcm_op *bcm_find_op(struct bcm_op *ops, canid_t can_id)
++static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id)
+ {
+ 	struct bcm_op *p;
+ 
+-	for (p = ops; p; p = p-&gt;next)
++	list_for_each_entry(p, ops, list)
+ 		if (p-&gt;can_id == can_id)
+ 			return p;
+ 
+ 	return NULL;
+ }
+ 
+-static void bcm_delete_rx_op(struct bcm_op **ops, canid_t can_id)
++static void bcm_delete_rx_op(struct list_head *ops, canid_t can_id)
+ {
+-	struct bcm_op *p, **q;
++	struct bcm_op *p;
+ 
+-	for (q = ops; p = *q; q = &amp;p-&gt;next)
++	list_for_each_entry(p, ops, list) {
+ 		if (p-&gt;can_id == can_id) {
+-			*q = p-&gt;next;
+ 			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, p, p-&gt;can_id);
+ 
+ 			if (p-&gt;sk-&gt;sk_bound_dev_if) {
+@@ -1354,20 +1360,21 @@
+ 			bcm_remove_op(p);
+ 			return;
+ 		}
++	}
+ }
+ 
+-static void bcm_delete_tx_op(struct bcm_op **ops, canid_t can_id)
++static void bcm_delete_tx_op(struct list_head *ops, canid_t can_id)
+ {
+-	struct bcm_op *p, **q;
++	struct bcm_op *p;
+ 
+-	for (q = ops; p = *q; q = &amp;p-&gt;next)
++	list_for_each_entry(p, ops, list) {
+ 		if (p-&gt;can_id == can_id) {
+-			*q = p-&gt;next;
+ 			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
+ 			    p, p-&gt;can_id);
+ 			bcm_remove_op(p);
+ 			return;
+ 		}
++	}
+ }
+ 
+ static void bcm_remove_op(struct bcm_op *op)
+@@ -1383,11 +1390,5 @@
+ 	return;
+ }
+ 
+-static void bcm_insert_op(struct bcm_op **ops, struct bcm_op *op)
+-{
+-	op-&gt;next = *ops;
+-	*ops = op;
+-}
+-
+ module_init(bcm_init);
+ module_exit(bcm_exit);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000026.html">[Socketcan-commit] r49 - in trunk/kernel: 2.4/can 2.4/drivers/mscan 2.4/drivers/sja1000 2.6/drivers/net/can 2.6/drivers/net/can/sja1000 2.6/include/linux/can 2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000028.html">[Socketcan-commit] r51 - in trunk/kernel: 2.4/can 2.4/drivers/sja1000 2.6/drivers/net/can 2.6/drivers/net/can/mscan 2.6/drivers/net/can/sja1000 2.6/include/linux/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#27">[ date ]</a>
+              <a href="thread.html#27">[ thread ]</a>
+              <a href="subject.html#27">[ subject ]</a>
+              <a href="author.html#27">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

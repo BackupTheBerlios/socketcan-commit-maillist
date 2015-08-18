@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r664 - branches/cannetdriver26/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r664%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801271745.m0RHjT1Q015683%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000645.html">
+   <LINK REL="Next"  HREF="000647.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r664 - branches/cannetdriver26/drivers/net/can/sja1000</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r664%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801271745.m0RHjT1Q015683%40sheep.berlios.de%3E"
+       TITLE="r664 - branches/cannetdriver26/drivers/net/can/sja1000">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 18:45:29 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000645.html">r663 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000647.html">r665 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan drivers/net/can/sja1000 net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#646">[ date ]</a>
+              <a href="thread.html#646">[ thread ]</a>
+              <a href="subject.html#646">[ subject ]</a>
+              <a href="author.html#646">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 18:45:26 +0100 (Sun, 27 Jan 2008)
+New Revision: 664
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+Log:
+Cleanup debugging code of the SJA1000 driver
+
+This is work ins progress. A lot more debugging should be removed but
+for the time being it might still be useful. To be done later.
+
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 17:44:55 UTC (rev 663)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 17:45:26 UTC (rev 664)
+@@ -187,8 +187,7 @@
+ 		udelay(10);
+ 	}
+ 
+-	printk(KERN_ERR &quot;%s: setting sja1000 into reset mode failed!\n&quot;,
+-	       dev-&gt;name);
++	dev_err(ND2D(dev), &quot;setting SJA1000 into reset mode failed!\n&quot;);
+ 	return 1;
+ 
+ }
+@@ -222,8 +221,7 @@
+ 		udelay(10);
+ 	}
+ 
+-	printk(KERN_ERR &quot;%s: setting sja1000 into normal mode failed!\n&quot;,
+-	       dev-&gt;name);
++	dev_err(ND2D(dev), &quot;setting SJA1000 into normal mode failed!\n&quot;);
+ 	return 1;
+ 
+ }
+@@ -301,9 +299,9 @@
+ #ifdef CONFIG_CAN_DEBUG_DEVICES
+ 	/* Check state */
+ 	if (*state != priv-&gt;can.state)
+-		printk(KERN_ERR
+-		       &quot;%s: Oops, state mismatch: hard %d != soft %d\n&quot;,
+-		       dev-&gt;name, *state, priv-&gt;can.state);
++		dev_err(ND2D(dev),
++			&quot;Oops, state mismatch: hard %d != soft %d\n&quot;,
++			*state, priv-&gt;can.state);
+ #endif
+ 	spin_unlock_irq(&amp;priv-&gt;can.irq_lock);
+ 	return 0;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000645.html">r663 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000647.html">r665 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan drivers/net/can/sja1000 net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#646">[ date ]</a>
+              <a href="thread.html#646">[ thread ]</a>
+              <a href="subject.html#646">[ subject ]</a>
+              <a href="author.html#646">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

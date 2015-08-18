@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r667 - branches/cannetdriver26/drivers/net/can/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r667%20-%20branches/cannetdriver26/drivers/net/can/mscan&In-Reply-To=%3C200801271747.m0RHlJhp018423%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000648.html">
+   <LINK REL="Next"  HREF="000650.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r667 - branches/cannetdriver26/drivers/net/can/mscan</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r667%20-%20branches/cannetdriver26/drivers/net/can/mscan&In-Reply-To=%3C200801271747.m0RHlJhp018423%40sheep.berlios.de%3E"
+       TITLE="r667 - branches/cannetdriver26/drivers/net/can/mscan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 18:47:19 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000648.html">r666 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000650.html">r668 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#649">[ date ]</a>
+              <a href="thread.html#649">[ thread ]</a>
+              <a href="subject.html#649">[ subject ]</a>
+              <a href="author.html#649">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 18:47:18 +0100 (Sun, 27 Jan 2008)
+New Revision: 667
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+Log:
+More fixes for MSCAN driver to comply to with the new device interface
+
+- Remove TX timeout function
+- Implement proper CAN (re-)start
+- Fix various issues with error frame generation
+
+This is work ins progress. More patches are required.
+
+
+Modified: branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-27 17:46:51 UTC (rev 666)
++++ branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-27 17:47:18 UTC (rev 667)
+@@ -86,6 +86,7 @@
+ 
+ struct mscan_priv {
+ 	struct can_priv can;
++	long open_time;
+ 	volatile unsigned long flags;
+ 	u8 shadow_statflg;
+ 	u8 shadow_canrier;
+@@ -104,6 +105,13 @@
+ #define F_TX_PROGRESS	1
+ #define F_TX_WAIT_ALL	2
+ 
++static can_state_t state_map[] = {
++	CAN_STATE_ACTIVE,
++	CAN_STATE_BUS_WARNING,
++	CAN_STATE_BUS_PASSIVE,
++	CAN_STATE_BUS_OFF
++};
++
+ static int mscan_set_mode(struct net_device *dev, u8 mode)
+ {
+ 	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
+@@ -173,6 +181,37 @@
+ 	return ret;
+ }
+ 
++static int mscan_start(struct net_device *dev)
++{
++	struct mscan_priv *priv = netdev_priv(dev);
++	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
++	u8 canrflg;
++	int err;
++
++	out_8(&amp;regs-&gt;canrier, 0);
++
++	INIT_LIST_HEAD(&amp;priv-&gt;tx_head);
++	priv-&gt;cur_pri = 0;
++	priv-&gt;tx_active = 0;
++	priv-&gt;shadow_canrier = 0;
++	priv-&gt;flags = 0;
++
++	if ((err = mscan_set_mode(dev, MSCAN_NORMAL_MODE)))
++		return err;
++
++	canrflg = in_8(&amp;regs-&gt;canrflg);
++	priv-&gt;shadow_statflg = canrflg &amp; MSCAN_STAT_MSK;
++	priv-&gt;can.state = state_map[max(MSCAN_STATE_RX(canrflg),
++				    MSCAN_STATE_TX(canrflg))];
++	out_8(&amp;regs-&gt;cantier, 0);
++
++	/* Enable receive interrupts. */
++	out_8(&amp;regs-&gt;canrier, MSCAN_OVRIE | MSCAN_RXFIE | MSCAN_CSCIE |
++	      MSCAN_RSTATE1 | MSCAN_RSTATE0 | MSCAN_TSTATE1 | MSCAN_TSTATE0);
++
++	return 0;
++}
++
+ static int mscan_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct can_frame *frame = (struct can_frame *)skb-&gt;data;
+@@ -257,49 +296,6 @@
+ 	return NETDEV_TX_OK;
+ }
+ 
+-static void mscan_tx_timeout(struct net_device *dev)
+-{
+-	struct sk_buff *skb;
+-	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
+-	struct mscan_priv *priv = netdev_priv(dev);
+-	struct can_frame *frame;
+-	u8 mask;
+-
+-	printk(&quot;%s\n&quot;, __FUNCTION__);
+-
+-	out_8(&amp;regs-&gt;cantier, 0);
+-
+-	mask = list_entry(priv-&gt;tx_head.next, tx_queue_entry_t, list)-&gt;mask;
+-	dev-&gt;trans_start = jiffies;
+-	out_8(&amp;regs-&gt;cantarq, mask);
+-	out_8(&amp;regs-&gt;cantier, priv-&gt;tx_active);
+-
+-	skb = dev_alloc_skb(sizeof(struct can_frame));
+-	if (!skb) {
+-		if (printk_ratelimit())
+-			dev_notice(ND2D(dev), &quot;TIMEOUT packet dropped\n&quot;);
+-		return;
+-	}
+-	frame = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
+-
+-	frame-&gt;can_id = CAN_ERR_FLAG | CAN_ERR_TX_TIMEOUT;
+-	frame-&gt;can_dlc = CAN_ERR_DLC;
+-
+-	skb-&gt;dev = dev;
+-	skb-&gt;protocol = __constant_htons(ETH_P_CAN);
+-	skb-&gt;pkt_type = PACKET_BROADCAST;
+-	skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+-
+-	netif_rx(skb);
+-}
+-
+-static can_state_t state_map[] = {
+-	CAN_STATE_ACTIVE,
+-	CAN_STATE_BUS_WARNING,
+-	CAN_STATE_BUS_PASSIVE,
+-	CAN_STATE_BUS_OFF
+-};
+-
+ static inline int check_set_state(struct net_device *dev, u8 canrflg)
+ {
+ 	struct mscan_priv *priv = netdev_priv(dev);
+@@ -354,8 +350,8 @@
+ 			continue;
+ 		}
+ 
+-		frame = (struct can_frame *)skb_put(skb,
+-						    sizeof(struct can_frame));
++		frame = (struct can_frame *)skb_put(skb, sizeof(*frame));
++		memset(frame, 0, sizeof(*frame));
+ 
+ 		if (canrflg &amp; MSCAN_RXF) {
+ 			can_id = in_be16(&amp;regs-&gt;rx.idr1_0);
+@@ -461,8 +457,13 @@
+ 		netif_rx_complete(dev);
+ #endif
+ 		clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
++#if 0
+ 		out_8(&amp;regs-&gt;canrier,
+ 		      in_8(&amp;regs-&gt;canrier) | MSCAN_ERR_IF | MSCAN_RXFIE);
++#else
++		if (priv-&gt;can.state &lt; CAN_STATE_BUS_OFF)
++			out_8(&amp;regs-&gt;canrier, priv-&gt;shadow_canrier);
++#endif
+ 		ret = 0;
+ 	}
+ 	return ret;
+@@ -495,16 +496,10 @@
+ 			if (!(cantflg &amp; mask))
+ 				continue;
+ 
+-			if (in_8(&amp;regs-&gt;cantaak) &amp; mask) {
+-				stats-&gt;tx_dropped++;
+-				stats-&gt;tx_aborted_errors++;
+-			} else {
+-				out_8(&amp;regs-&gt;cantbsel, mask);
+-				stats-&gt;tx_bytes += in_8(&amp;regs-&gt;tx.dlr);
+-				stats-&gt;tx_packets++;
+-				printk(&quot;TX buf %d done\n&quot;, entry-&gt;id);
+-				can_get_echo_skb(dev, entry-&gt;id);
+-			}
++			out_8(&amp;regs-&gt;cantbsel, mask);
++			stats-&gt;tx_bytes += in_8(&amp;regs-&gt;tx.dlr);
++			stats-&gt;tx_packets++;
++			can_get_echo_skb(dev, entry-&gt;id);
+ 			priv-&gt;tx_active &amp;= ~mask;
+ 			list_del(pos);
+ 		}
+@@ -525,10 +520,16 @@
+ 
+ 	if ((((canrflg = in_8(&amp;regs-&gt;canrflg)) &amp; ~MSCAN_STAT_MSK)) &amp;&amp;
+ 	    !test_and_set_bit(F_RX_PROGRESS, &amp;priv-&gt;flags)) {
++#if 0
++		printk(&quot;%s: canrflg=%#02x canrier=%#02x\n&quot;, dev-&gt;name, canrflg,
++		       in_8(&amp;regs-&gt;canrier));
++#endif
++#if 0
+ 		if (check_set_state(dev, canrflg)) {
+ 			out_8(&amp;regs-&gt;canrflg, MSCAN_CSCIF);
+ 			ret = IRQ_HANDLED;
+ 		}
++#endif
+ 		if (canrflg &amp; ~MSCAN_STAT_MSK) {
+ 			priv-&gt;shadow_canrier = in_8(&amp;regs-&gt;canrier);
+ 			out_8(&amp;regs-&gt;canrier, 0);
+@@ -546,6 +547,13 @@
+ 
+ static int mscan_do_set_mode(struct net_device *dev, can_mode_t mode)
+ {
++
++	struct mscan_priv *priv = netdev_priv(dev);
++	int ret = 0;
++
++	if (!priv-&gt;open_time)
++		return -EINVAL;
++
+ 	switch (mode) {
+ 	case CAN_MODE_SLEEP:
+ 	case CAN_MODE_STOP:
+@@ -556,15 +564,19 @@
+ 			       MSCAN_SLEEP_MODE);
+ 		break;
+ 	case CAN_MODE_START:
+-		printk(&quot;%s: CAN_MODE_START requested\n&quot;, __FUNCTION__);
+-		mscan_set_mode(dev, MSCAN_NORMAL_MODE);
+-		netif_wake_queue(dev);
++		if (priv-&gt;can.state &lt;= CAN_STATE_BUS_OFF)
++			mscan_set_mode(dev, MSCAN_INIT_MODE);
++		if ((ret = mscan_start(dev)))
++			break;
++		if (netif_queue_stopped(dev))
++			netif_wake_queue(dev);
+ 		break;
+ 
+ 	default:
+-		return -EOPNOTSUPP;
++		ret = -EOPNOTSUPP;
++		break;
+ 	}
+-	return 0;
++	return ret;
+ }
+ 
+ static int mscan_do_set_bittime(struct net_device *dev, struct can_bittime *bt)
+@@ -586,7 +598,6 @@
+ 		break;
+ 
+ 	default:
+-		printk(&quot;bt-&gt;type=%d\n&quot;, bt-&gt;type);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -620,36 +631,29 @@
+ 		return ret;
+ 	}
+ 
+-	INIT_LIST_HEAD(&amp;priv-&gt;tx_head);
++	priv-&gt;open_time = jiffies;
++
+ 	out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_LISTEN);
+-	mscan_set_mode(dev, MSCAN_NORMAL_MODE);
+-
+-	priv-&gt;shadow_statflg = in_8(&amp;regs-&gt;canrflg) &amp; MSCAN_STAT_MSK;
+-	priv-&gt;cur_pri = 0;
+-	priv-&gt;tx_active = 0;
+-
+-	out_8(&amp;regs-&gt;cantier, 0);
+-	/* Enable receive interrupts. */
+-	out_8(&amp;regs-&gt;canrier, MSCAN_OVRIE | MSCAN_RXFIE | MSCAN_CSCIE |
+-	      MSCAN_RSTATE1 | MSCAN_RSTATE0 | MSCAN_TSTATE1 | MSCAN_TSTATE0);
+-
+-	netif_start_queue(dev);
+-
+-	return 0;
++	return mscan_start(dev);
+ }
+ 
+ static int mscan_close(struct net_device *dev)
+ {
+ 	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
++	struct mscan_priv *priv = netdev_priv(dev);
+ 
+-	netif_stop_queue(dev);
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++	napi_disable(&amp;priv-&gt;napi);
++#endif
+ 
+-	/* disable interrupts */
+ 	out_8(&amp;regs-&gt;cantier, 0);
+ 	out_8(&amp;regs-&gt;canrier, 0);
+ 	free_irq(dev-&gt;irq, dev);
++	mscan_set_mode(dev, MSCAN_INIT_MODE);
++	can_close_cleanup(dev);
++	netif_stop_queue(dev);
++	priv-&gt;open_time = 0;
+ 
+-	mscan_set_mode(dev, MSCAN_INIT_MODE);
+ 	return 0;
+ }
+ 
+@@ -709,11 +713,9 @@
+ 		return NULL;
+ 	priv = netdev_priv(dev);
+ 
+-	dev-&gt;watchdog_timeo = MSCAN_WATCHDOG_TIMEOUT;
+ 	dev-&gt;open = mscan_open;
+ 	dev-&gt;stop = mscan_close;
+ 	dev-&gt;hard_start_xmit = mscan_hard_start_xmit;
+-	dev-&gt;tx_timeout = mscan_tx_timeout;
+ 
+ 	dev-&gt;flags |= IFF_ECHO;	/* we support local echo */
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000648.html">r666 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000650.html">r668 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#649">[ date ]</a>
+              <a href="thread.html#649">[ thread ]</a>
+              <a href="subject.html#649">[ subject ]</a>
+              <a href="author.html#649">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

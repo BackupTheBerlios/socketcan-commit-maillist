@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1223 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1223%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101206164400.4CE46480D42%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000854.html">
+   <LINK REL="Next"  HREF="000856.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1223 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1223%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101206164400.4CE46480D42%40sheep.berlios.de%3E"
+       TITLE="r1223 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec  6 17:44:00 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000854.html">r1222 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000856.html">r1224 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#855">[ date ]</a>
+              <a href="thread.html#855">[ thread ]</a>
+              <a href="subject.html#855">[ subject ]</a>
+              <a href="author.html#855">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-12-06 17:44:00 +0100 (Mon, 06 Dec 2010)
+New Revision: 1223
+
+Modified:
+   trunk/kernel/2.6/net/can/gw.c
+Log:
+skb-&gt;sk is used in dev_pick_tx() which is called from dev_queue_xmit(). If
+sk points to an arbitrary magic value, dev_pick_tx() returns a wrong value,
+which can lead to various memory corruption bugs.
+
+In commit a4ee3ce3293dc931fab19beb472a8bde1295aebe dev_pick_tx() was
+changed  to look the new field in socket called sk_tx_queue_mapping.
+
+Original patch provided by Michal Sojka &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">sojkam1 at fel.cvut.cz</A>&gt;
+
+
+Modified: trunk/kernel/2.6/net/can/gw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/gw.c	2010-12-05 19:37:16 UTC (rev 1222)
++++ trunk/kernel/2.6/net/can/gw.c	2010-12-06 16:44:00 UTC (rev 1223)
+@@ -58,6 +58,7 @@
+ #include &lt;socketcan/can/gw.h&gt;
+ #include &lt;net/rtnetlink.h&gt;
+ #include &lt;net/net_namespace.h&gt;
++#include &lt;net/sock.h&gt;
+ 
+ #include &lt;socketcan/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+@@ -76,7 +77,7 @@
+ 
+ static struct kmem_cache *cgw_cache __read_mostly;
+ 
+-#define CGW_SK_MAGIC ((void *)(&amp;notifier))
++static struct sock gw_dummy_sk;
+ 
+ /* structure that contains the (on-the-fly) CAN frame modifications */
+ struct cf_mod {
+@@ -346,7 +347,7 @@
+ 	int modidx = 0;
+ 
+ 	/* do not handle already routed frames */
+-	if (skb-&gt;sk == CGW_SK_MAGIC)
++	if (skb-&gt;sk == &amp;gw_dummy_sk)
+ 		return;
+ 
+ 	if (!(gwj-&gt;dst.dev-&gt;flags &amp; IFF_UP)) {
+@@ -371,7 +372,7 @@
+ 	}
+ 
+ 	/* mark routed frames with a 'special' sk value */
+-	nskb-&gt;sk = CGW_SK_MAGIC;
++	nskb-&gt;sk = &amp;gw_dummy_sk;
+ 	nskb-&gt;dev = gwj-&gt;dst.dev;
+ 
+ 	/* pointer to modifiable CAN frame */
+@@ -928,6 +929,11 @@
+ 	notifier.notifier_call = cgw_notifier;
+ 	register_netdevice_notifier(&amp;notifier);
+ 
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,33)
++	/* initialize struct for dev_pick_tx() */
++	sk_tx_queue_clear(&amp;gw_dummy_sk);
++#endif
++
+ 	if (__rtnl_register(PF_CAN, RTM_GETROUTE, NULL, cgw_dump_jobs)) {
+ 		unregister_netdevice_notifier(&amp;notifier);
+ 		kmem_cache_destroy(cgw_cache);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000854.html">r1222 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000856.html">r1224 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#855">[ date ]</a>
+              <a href="thread.html#855">[ thread ]</a>
+              <a href="subject.html#855">[ subject ]</a>
+              <a href="author.html#855">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,912 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r56 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r56%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/mscan%0A%09drivers/net/can/sja1000%20include/linux/can%20net/can&In-Reply-To=%3C200608221227.k7MCRNSG009126%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000035.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r56 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r56%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/mscan%0A%09drivers/net/can/sja1000%20include/linux/can%20net/can&In-Reply-To=%3C200608221227.k7MCRNSG009126%40sheep.berlios.de%3E"
+       TITLE="r56 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 22 14:27:23 CEST 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000035.html">[Socketcan-commit] r53 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#34">[ date ]</a>
+              <a href="thread.html#34">[ thread ]</a>
+              <a href="subject.html#34">[ subject ]</a>
+              <a href="author.html#34">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-08-22 14:27:04 +0200 (Tue, 22 Aug 2006)
+New Revision: 56
+
+Added:
+   trunk/kernel/2.6/drivers/net/can/sja1000/mem.c
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+   trunk/kernel/2.6/drivers/net/can/sja1000/isa.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+   trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/include/linux/can/can.h
+   trunk/kernel/2.6/include/linux/can/can_ioctl.h
+   trunk/kernel/2.6/net/can/Kconfig
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+added sja1000_mem due to hint of Pavel Pisa.
+fixed bcm.c handling of error frames.
+added CAN_RAW_USER in Kconfig
+added include of linux/config.h in most files and therefore
+changed some local DEBUG-defines in CONFIG_CAN_DEBUG_*
+removed MODULE_PARM-macros.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -366,11 +366,11 @@
+ 
+ 			dev_dbg(ND2D(ndev), &quot;received pkt: id: %u dlc: %u data: &quot;,
+ 				frame-&gt;can_id,frame-&gt;can_dlc);
+-		#ifdef DEBUG
++#ifdef DEBUG
+ 			for(i=0; i&lt;frame-&gt;can_dlc &amp;&amp; !(frame-&gt;can_id &amp; CAN_FLAG_RTR ); i++)
+-				printk( &quot;%2x &quot;,frame-&gt;payload.data[i]);
++				printk( &quot;%2x &quot;,frame-&gt;data[i]);
+ 			printk(&quot;\n&quot;);
+-		#endif
++#endif
+ 
+ 			out_8(&amp;regs-&gt;canrflg, MSCAN_RXF);
+ 			ndev-&gt;last_rx = jiffies;
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2006-08-22 12:27:04 UTC (rev 56)
+@@ -58,8 +58,9 @@
+ EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../../include
+ endif
+ 
+-obj-m := sja1000-isa.o sja1000-gw2.o
++obj-m := sja1000-isa.o sja1000-gw2.o sja1000-mem.o
+ 
++sja1000-mem-objs := mem.o        sja1000.o proc.o
+ sja1000-isa-objs := isa.o        sja1000.o proc.o
+ sja1000-gw2-objs := trajet-gw2.o sja1000.o proc.o
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/isa.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/isa.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/isa.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -99,7 +99,22 @@
+ /* array of all can chips */
+ static struct net_device	*can_dev[MAX_CAN];
+ 
++static int base_addr_n;
++static int irq_n;
++static int speed_n;
++static int btr_n;
++static int rx_probe_n;
+ 
++module_param_array(base_addr, int, &amp;base_addr_n, 0);
++module_param_array(irq, int, &amp;irq_n, 0);
++module_param_array(speed, int, &amp;speed_n, 0);
++module_param_array(btr, int, &amp;btr_n, 0);
++module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
++
++module_param(clk, int, 0);
++module_param(debug, int, 0);
++module_param(restart_ms, int, 0);
++
+ /* special functions to access the chips registers */
+ static uint8_t reg_read(struct net_device *dev, int reg)
+ {
+@@ -111,15 +126,6 @@
+ 	outb(val, dev-&gt;base_addr + reg);
+ }
+ 
+-MODULE_PARM(base_addr, &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(irq,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(speed,     &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(btr,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(rx_probe,  &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(clk, &quot;i&quot;);
+-MODULE_PARM(debug, &quot;i&quot;);
+-MODULE_PARM(restart_ms, &quot;i&quot;);
+-
+ static struct net_device* sja1000_isa_probe(uint32_t base, int irq, int speed,
+ 					    int btr, int rx_probe, int clk,
+ 					    int debug, int restart_ms)
+@@ -187,7 +193,7 @@
+ 			struct can_priv *priv = netdev_priv(can_dev[i]);
+ 			unregister_netdev(can_dev[i]);
+ 			del_timer(&amp;priv-&gt;timer);
+-			release_region(base_addr[i], SJA1000_IO_SIZE_ISA);
++			release_region(base_addr[i], SJA1000_IO_SIZE_BASIC);
+ 			free_netdev(can_dev[i]);
+ 		}
+ 	}
+@@ -213,7 +219,7 @@
+ 	for (i = 0; base_addr[i]; i++) {
+ 		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%X ...\n&quot;,
+ 		       chip_name, chip_name, base_addr[i]);
+-		if (!request_region(base_addr[i], SJA1000_IO_SIZE_ISA, chip_name)) {
++		if (!request_region(base_addr[i], SJA1000_IO_SIZE_BASIC, chip_name)) {
+ 			printk(KERN_ERR &quot;%s: memory already in use\n&quot;, chip_name);
+ 			sja1000_isa_cleanup_module();
+ 			return -EBUSY;
+@@ -225,7 +231,7 @@
+ 			sja1000_proc_init(drv_name, can_dev, MAX_CAN);
+ 		} else {
+ 			can_dev[i] = NULL;
+-			release_region(base_addr[i], SJA1000_IO_SIZE_ISA);
++			release_region(base_addr[i], SJA1000_IO_SIZE_BASIC);
+ 		}
+ 	}
+ 	return 0;
+
+Added: trunk/kernel/2.6/drivers/net/can/sja1000/mem.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/mem.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/mem.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -0,0 +1,257 @@
++/*
++ * $Id$
++ *
++ * mem.c - Philips SJA1000 network device driver for IOMEM
++ *
++ * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;linux/module.h&gt;
++#include &lt;linux/init.h&gt;
++#include &lt;linux/kernel.h&gt;
++#include &lt;linux/sched.h&gt;
++#include &lt;linux/types.h&gt;
++#include &lt;linux/fcntl.h&gt;
++#include &lt;linux/interrupt.h&gt;
++#include &lt;linux/ptrace.h&gt;
++#include &lt;linux/ioport.h&gt;
++#include &lt;linux/in.h&gt;
++#include &lt;linux/slab.h&gt;
++#include &lt;linux/string.h&gt;
++#include &lt;linux/errno.h&gt;
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/skbuff.h&gt;
++#include &lt;asm/io.h&gt;
++
++#include &lt;linux/can/can.h&gt;
++#include &lt;linux/can/can_ioctl.h&gt; /* for struct can_device_stats */
++#include &quot;sja1000.h&quot;
++
++#define MAX_CAN		8
++#define CAN_DEV_NAME	&quot;can%d&quot;
++#define DRV_NAME        &quot;sja1000-mem&quot;
++
++#define DEFAULT_KBIT_PER_SEC 500
++#define SJA1000_HW_CLOCK 16000000
++
++/* driver and version information */
++static const char *drv_name	= DRV_NAME;
++static const char *drv_version	= &quot;0.0.1&quot;;
++static const char *drv_reldate	= &quot;2006-08-22&quot;;
++static const char *chip_name	= SJA1000_CHIP_NAME;
++
++MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;, Pavel Pisa &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">pisa at cmp.felk.cvut.cz</A>&gt;&quot;);
++MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
++MODULE_DESCRIPTION(&quot;LLCF SJA1000 network device driver '&quot; DRV_NAME &quot;'&quot;);
++
++/* module parameters */
++static uint32_t base_addr[MAX_CAN] = { (uint32_t)0xda000L, 0};
++
++static int irq[MAX_CAN] = { 9, 0 };
++
++static int speed[MAX_CAN] = { DEFAULT_KBIT_PER_SEC, DEFAULT_KBIT_PER_SEC, 0};
++
++static int btr[MAX_CAN] = { 0 };
++static int rx_probe[MAX_CAN] = { 0 };
++
++static int clk = SJA1000_HW_CLOCK;
++static int debug = 0;
++static int restart_ms = 100;
++
++/* array of all can chips */
++static struct net_device	*can_dev[MAX_CAN];
++
++static int base_addr_n;
++static int irq_n;
++static int speed_n;
++static int btr_n;
++static int rx_probe_n;
++
++module_param_array(base_addr, int, &amp;base_addr_n, 0);
++module_param_array(irq, int, &amp;irq_n, 0);
++module_param_array(speed, int, &amp;speed_n, 0);
++module_param_array(btr, int, &amp;btr_n, 0);
++module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
++
++module_param(clk, int, 0);
++module_param(debug, int, 0);
++module_param(restart_ms, int, 0);
++
++/* special functions to access the chips registers */
++static uint8_t reg_read(struct net_device *dev, int reg)
++{
++	static uint8_t val;
++	void __iomem *addr = (void __iomem *)dev-&gt;base_addr + reg;
++
++	val = (uint8_t)readw(addr);
++	rmb();
++
++	return val;
++}
++
++static void reg_write(struct net_device *dev, int reg, uint8_t val)
++{
++	void __iomem *addr = (void __iomem *)dev-&gt;base_addr + reg;
++
++	writew(val, addr);
++	wmb();
++}
++
++static struct net_device* sja1000_mem_probe(uint32_t base, int irq, int speed,
++					    int btr, int rx_probe, int clk,
++					    int debug, int restart_ms)
++{
++	struct net_device	*dev;
++	struct can_priv		*priv;
++
++	if (!(dev = alloc_netdev(sizeof(struct can_priv), CAN_DEV_NAME,
++				 sja1000_setup))) {
++		printk(KERN_ERR &quot;%s: out of memory\n&quot;, chip_name);
++		return NULL;
++	}
++
++	printk(KERN_INFO &quot;%s: base 0x%X / irq %d / speed %d / btr 0x%X / rx_probe %d\n&quot;,
++	       chip_name, base, irq, speed, btr, rx_probe);
++
++	/* fill net_device structure */
++
++	priv             = netdev_priv(dev);
++
++	dev-&gt;irq         = irq;
++	dev-&gt;base_addr   = base;
++
++	priv-&gt;reg_read   = reg_read;
++	priv-&gt;reg_write  = reg_write;
++
++	priv-&gt;speed      = speed;
++	priv-&gt;btr        = btr;
++	priv-&gt;rx_probe   = rx_probe;
++	priv-&gt;clock      = clk;
++	priv-&gt;restart_ms = restart_ms;
++	priv-&gt;debug      = debug;
++
++	if (REG_READ(0) == 0xFF)
++		goto free_dev;
++
++	/* set chip into reset mode */
++	set_reset_mode(dev);
++
++	/* go into Pelican mode, disable clkout, disable comparator */
++	REG_WRITE(REG_CDR, 0xCF);
++
++	/* output control */
++	/* connected to external transceiver */
++	REG_WRITE(REG_OCR, 0x1A);
++
++	printk(KERN_INFO &quot;%s: %s found at 0x%X, irq is %d\n&quot;,
++	       dev-&gt;name, chip_name, (uint32_t)dev-&gt;base_addr, dev-&gt;irq);
++
++	if (register_netdev(dev) == 0)
++		return dev;
++
++	printk(KERN_INFO &quot;%s: probing failed\n&quot;, chip_name);
++ free_dev:
++	free_netdev(dev);
++	return NULL;
++}
++
++static __exit void sja1000_mem_cleanup_module(void)
++{
++	int i;
++
++	for (i = 0; i &lt; MAX_CAN; i++) {
++		if (can_dev[i] != NULL) {
++			struct can_priv *priv = netdev_priv(can_dev[i]);
++			unregister_netdev(can_dev[i]);
++			del_timer(&amp;priv-&gt;timer);
++			iounmap((void __iomem *)can_dev[i]-&gt;base_addr);
++			release_mem_region(base_addr[i], SJA1000_IO_SIZE_BASIC);
++			free_netdev(can_dev[i]);
++		}
++	}
++	sja1000_proc_delete(drv_name);
++}
++
++static __init int sja1000_mem_init_module(void)
++{
++	int i;
++
++	if (clk &lt; 1000 ) /* MHz command line value */
++		clk *= 1000000;
++
++	if (clk &lt; 1000000 ) /* kHz command line value */
++		clk *= 1000;
++
++	printk(KERN_INFO &quot;%s - %s driver v%s (%s)\n&quot;,
++	       chip_name, drv_name, drv_version, drv_reldate);
++	printk(KERN_INFO &quot;%s - options [clk %d.%06d MHz] [restart_ms %dms] [debug %d]\n&quot;,
++	       chip_name, clk/1000000, clk%1000000, restart_ms, debug);
++
++	for (i = 0; base_addr[i]; i++) {
++
++		struct net_device *dev = NULL;
++		void *base;
++
++		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%X ...\n&quot;,
++		       chip_name, chip_name, base_addr[i]);
++		if (!request_mem_region(base_addr[i], SJA1000_IO_SIZE_BASIC, chip_name)) {
++			printk(KERN_ERR &quot;%s: memory already in use\n&quot;, chip_name);
++			sja1000_mem_cleanup_module();
++			return -EBUSY;
++		}
++
++		base = ioremap(base_addr[i], SJA1000_IO_SIZE_BASIC);
++		if (base)
++			dev = sja1000_mem_probe((uint32_t)base, irq[i], speed[i], btr[i], rx_probe[i], clk, debug, restart_ms);
++		if (dev != NULL) {
++			can_dev[i] = dev;
++			sja1000_proc_init(drv_name, can_dev, MAX_CAN);
++		} else {
++			can_dev[i] = NULL;
++			iounmap(base);
++			release_mem_region(base_addr[i], SJA1000_IO_SIZE_BASIC);
++		}
++	}
++	return 0;
++}
++
++module_init(sja1000_mem_init_module);
++module_exit(sja1000_mem_cleanup_module);
+
+
+Property changes on: trunk/kernel/2.6/drivers/net/can/sja1000/mem.c
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -47,8 +47,8 @@
+  *
+  */
+ 
++#include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+-
+ #include &lt;linux/ioport.h&gt;
+ #include &lt;linux/slab.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+@@ -59,9 +59,7 @@
+ #include &lt;linux/can/can_ioctl.h&gt;
+ #include &quot;sja1000.h&quot;
+ 
+-#define DEBUG
+-
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ #define DBG(args...)   ((priv-&gt;debug &gt; 0) ? printk(args) : 0)
+ #define iDBG(args...)  ((priv-&gt;debug &gt; 1) ? printk(args) : 0)  /* logging in interrupt context */
+ #define iiDBG(args...) ((priv-&gt;debug &gt; 2) ? printk(args) : 0)  /* logging in interrupt context */
+@@ -71,9 +69,7 @@
+ #define iiDBG(args...)
+ #endif
+ 
+-
+-static const char *chip_name	= SJA1000_CHIP_NAME;
+-
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ static const char *ecc_errors[] = {
+ 	NULL,
+ 	NULL,
+@@ -115,6 +111,7 @@
+ 	&quot;stuff error&quot;,
+ 	&quot;other type of error&quot;
+ };
++#endif
+ 
+ /* declarations */
+ 
+@@ -237,17 +234,19 @@
+ 
+ static int set_normal_mode(struct net_device *dev)
+ {
+-	struct can_priv *priv = netdev_priv(dev);
+ 	unsigned char status = REG_READ(REG_MOD);
+ 	int i;
+ 
+ 	for (i = 0; i &lt; 10; i++) {
+ 		/* check reset bit */
+ 		if ((status &amp; MOD_RM) == 0) {
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ 			if (i &gt; 1) {
++				struct can_priv *priv = netdev_priv(dev);
+ 				iDBG(KERN_INFO &quot;%s: %s looped %d times\n&quot;,
+ 				     dev-&gt;name, __FUNCTION__, i);
+ 			}
++#endif
+ 			return 0;
+ 		}
+ 
+@@ -262,17 +261,19 @@
+ 
+ static int set_listen_mode(struct net_device *dev)
+ {
+-	struct can_priv *priv = netdev_priv(dev);
+ 	unsigned char status = REG_READ(REG_MOD);
+ 	int i;
+ 
+ 	for (i = 0; i &lt; 10; i++) {
+ 		/* check reset mode bit */
+ 		if ((status &amp; MOD_RM) == 0) {
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ 			if (i &gt; 1) {
++				struct can_priv *priv = netdev_priv(dev);
+ 				iDBG(KERN_INFO &quot;%s: %s looped %d times\n&quot;,
+ 				     dev-&gt;name, __FUNCTION__, i);
+ 			}
++#endif
+ 			return 0;
+ 		}
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-08-22 12:27:04 UTC (rev 56)
+@@ -53,8 +53,6 @@
+ #define SJA1000_IO_SIZE_BASIC   0x20
+ #define SJA1000_IO_SIZE_PELICAN 0x80
+ 
+-#define SJA1000_IO_SIZE_ISA     0x20
+-
+ #define DEFAULT_SPEED	100 /* kBit/s */
+ 
+ #define TX_TIMEOUT	(HZ/20) /* 50ms */
+@@ -191,4 +189,6 @@
+ void sja1000_proc_init(const char *drv_name, struct net_device **dev, int max);
+ void sja1000_proc_delete(const char *drv_name);
+ 
++int set_reset_mode(struct net_device *dev);
++
+ #endif /* __SJA1000_H__ */
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -79,8 +79,8 @@
+ 
+ /* driver and version information */
+ static const char *drv_name	= DRV_NAME;
+-static const char *drv_version	= &quot;0.0.11&quot;;
+-static const char *drv_reldate	= &quot;2005-10-11&quot;;
++static const char *drv_version	= &quot;0.0.12&quot;;
++static const char *drv_reldate	= &quot;2005-08-22&quot;;
+ static const char *chip_name	= SJA1000_CHIP_NAME;
+ 
+ MODULE_AUTHOR(&quot;Matthias Brukner &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">M.Brukner at trajet.de</A>&gt;&quot;);
+@@ -111,13 +111,29 @@
+ /* array of all can chips */
+ static struct net_device	*can_dev[MAX_CAN];
+ 
++static int base_addr_n;
++static int irq_n;
++static int speed_n;
++static int btr_n;
++static int rx_probe_n;
+ 
++module_param_array(base_addr, int, &amp;base_addr_n, 0);
++module_param_array(irq, int, &amp;irq_n, 0);
++module_param_array(speed, int, &amp;speed_n, 0);
++module_param_array(btr, int, &amp;btr_n, 0);
++module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
++
++module_param(clk, int, 0);
++module_param(debug, int, 0);
++module_param(restart_ms, int, 0);
++
+ /* special functions to access the chips registers */
+ static uint8_t reg_read(struct net_device *dev, int reg)
+ {
+ 	static uint8_t val;
++	void __iomem *addr = (void __iomem *)dev-&gt;base_addr + reg * (ADDR_GAP + 1) + ADDR_GAP;
+ 
+-	val = (uint8_t)readw(dev-&gt;base_addr + reg * (ADDR_GAP + 1) + ADDR_GAP);
++	val = (uint8_t)readw(addr);
+ 	rmb();
+ 
+ 	return val;
+@@ -125,19 +141,12 @@
+ 
+ static void reg_write(struct net_device *dev, int reg, uint8_t val)
+ {
+-	writew(val, dev-&gt;base_addr + reg * 2 + 1);
++	void __iomem *addr = (void __iomem *)dev-&gt;base_addr + reg * (ADDR_GAP + 1) + ADDR_GAP;
++
++	writew(val, addr);
+ 	wmb();
+ }
+ 
+-MODULE_PARM(base_addr, &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(irq,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(speed,     &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(btr,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(rx_probe,  &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(clk, &quot;i&quot;);
+-MODULE_PARM(debug, &quot;i&quot;);
+-MODULE_PARM(restart_ms, &quot;i&quot;);
+-
+ static struct net_device* sja1000_gw2_probe(uint32_t base, int irq, int speed,
+ 					    int btr, int rx_probe, int clk,
+ 					    int debug, int restart_ms)
+@@ -205,7 +214,7 @@
+ 			struct can_priv *priv = netdev_priv(can_dev[i]);
+ 			unregister_netdev(can_dev[i]);
+ 			del_timer(&amp;priv-&gt;timer);
+-			iounmap((void*)can_dev[i]-&gt;base_addr);
++			iounmap((void __iomem *)can_dev[i]-&gt;base_addr);
+ 			release_mem_region(base_addr[i], RSIZE);
+ 			free_netdev(can_dev[i]);
+ 		}
+@@ -216,8 +225,6 @@
+ static __init int sja1000_gw2_init_module(void)
+ {
+ 	int i;
+-	struct net_device *dev;
+-	void *base;
+ 
+ 	if (clk &lt; 1000 ) /* MHz command line value */
+ 		clk *= 1000000;
+@@ -231,6 +238,10 @@
+ 	       chip_name, clk/1000000, clk%1000000, restart_ms, debug);
+ 
+ 	for (i = 0; base_addr[i]; i++) {
++
++		struct net_device *dev = NULL;
++		void *base;
++
+ 		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%X ...\n&quot;,
+ 		       chip_name, chip_name, base_addr[i]);
+ 		if (!request_mem_region(base_addr[i], RSIZE, chip_name)) {
+@@ -238,8 +249,11 @@
+ 			sja1000_gw2_cleanup_module();
+ 			return -EBUSY;
+ 		}
++
+ 		base = ioremap(base_addr[i], RSIZE);
+-		dev = sja1000_gw2_probe((uint32_t)base, irq[i], speed[i], btr[i], rx_probe[i], clk, debug, restart_ms);
++		if (base)
++			dev = sja1000_gw2_probe((uint32_t)base, irq[i], speed[i], btr[i], rx_probe[i], clk, debug, restart_ms);
++
+ 		if (dev != NULL) {
+ 			can_dev[i] = dev;
+ 			sja1000_proc_init(drv_name, can_dev, MAX_CAN);
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -42,6 +42,7 @@
+  *
+  */
+ 
++#include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+@@ -60,7 +61,7 @@
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+
+Modified: trunk/kernel/2.6/include/linux/can/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can.h	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/include/linux/can/can.h	2006-08-22 12:27:04 UTC (rev 56)
+@@ -68,8 +68,8 @@
+ typedef __u32 canid_t;
+ 
+ struct can_frame {
+-	canid_t can_id;	/* 32 bit CAN_ID + EFF/RTR flags */
+-	__u8    can_dlc;	/* data length code: 0 .. 8 */
++	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
++	__u8    can_dlc; /* data length code: 0 .. 8 */
+ 	__u8    data[8] __attribute__ ((aligned(8)));
+ };
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can_ioctl.h	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/include/linux/can/can_ioctl.h	2006-08-22 12:27:04 UTC (rev 56)
+@@ -68,6 +68,9 @@
+ #define SIOCGCANSTATE		(SIOCDEVPRIVATE+10)
+ #define SIOCGCANSTATS		(SIOCDEVPRIVATE+11)
+ 
++#define SIOCSCANERRORCONFIG	(SIOCDEVPRIVATE+12)
++#define SIOCGCANERRORCONFIG	(SIOCDEVPRIVATE+13)
++
+ /* parameters for ioctls */
+ 
+ /* SIOC[SG]CANBAUDRATE */
+@@ -108,7 +111,8 @@
+ 		struct can_bittime_btr btr;
+ 	};
+ };
+-#define CAN_BAUDRATE_UNCONFIGURED	((__u32)-1)
++
++#define CAN_BAUDRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
+ #define CAN_BAUDRATE_UNKNOWN		0
+ 
+ /* SIOC[SG]CANMODE */
+@@ -167,4 +171,14 @@
+ 	int bus_error_at_init;
+ };
+ 
++/* SIOC[SG]CANERRORCONFIG */
++
++typedef enum CAN_ERRCFG_TYPE {
++	CAN_ERRCFG_MASK,
++	CAN_ERRCFG_BUSERR,
++	CAN_ERRCFG_BUSOFF
++} can_errcfg_type_t;
++
++/* tbd */
++
+ #endif /* CAN_IOCTL_H */
+
+Modified: trunk/kernel/2.6/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/net/can/Kconfig	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/net/can/Kconfig	2006-08-22 12:27:04 UTC (rev 56)
+@@ -29,6 +29,14 @@
+ 	  socket has several filter options e.g. ID-Masking / Errorframes.
+ 	  To receive/send raw CAN messages, use AF_CAN with protocol CAN_RAW.
+ 
++config CAN_RAW_USER
++	bool &quot;Allow non-root users to access Raw CAN Protocol sockets&quot;
++	depends on CAN_RAW
++	default N
++	---help---
++	  Say Y here if you want non-root users to be able to access CAN_RAW-
++	  sockets.
++
+ config CAN_BCM
+ 	tristate &quot;Broadcast Manager (BCM)&quot;
+ 	depends on CAN
+@@ -45,7 +53,7 @@
+ config CAN_DEBUG_CORE
+        bool &quot;CAN Core debugging messages&quot;
+        depends on CAN
+-       help
++       ---help---
+          Say Y here if you want the CAN core to produce a bunch of debug
+          messages to the system log.  Select this if you are having a
+          problem with CAN support and want to see more of what is going on.
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -42,6 +42,7 @@
+  *
+  */
+ 
++#include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/version.h&gt;
+ #include &lt;linux/kmod.h&gt;
+@@ -72,7 +73,7 @@
+ int stats_timer = 1; /* default: on */
+ module_param(stats_timer, int, S_IRUGO);
+ 
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_CORE
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+@@ -305,8 +306,10 @@
+ 	case SOCK_RAW:
+ 		switch (protocol) {
+ 		case CAN_RAW:
++#ifndef CONFIG_CAN_RAW_USER
+ 			if (!capable(CAP_NET_RAW))
+ 				return -EPERM;
++#endif
+ 			break;
+ 		default:
+ 			return -EPROTONOSUPPORT;
+@@ -752,7 +755,7 @@
+ /* af_can debugging stuff                         */
+ /**************************************************/
+ 
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_CORE
+ 
+ void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+ {
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/net/can/bcm.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -42,6 +42,7 @@
+  *
+  */
+ 
++#include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
+ #include &lt;linux/net.h&gt;
+@@ -57,7 +58,7 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_CORE
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+@@ -75,6 +76,7 @@
+ #define RX_RECV    0x40 /* received data for this element */
+ #define RX_THR     0x80 /* this element has not been sent due to throttle functionality */
+ #define BCM_CAN_DLC_MASK 0x0F /* clean flags by masking with BCM_CAN_DLC_MASK */
++#define BCM_RX_REGMASK (CAN_EFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG)
+ 
+ #define NAME &quot;Broadcast Manager (BCM) for LLCF&quot;
+ #define IDENT &quot;bcm&quot;
+@@ -265,7 +267,7 @@
+ 			if (sk-&gt;sk_bound_dev_if) {
+ 				struct net_device *dev = dev_get_by_index(sk-&gt;sk_bound_dev_if);
+ 				if (dev) {
+-					can_rx_unregister(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op);
++					can_rx_unregister(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
+ 					dev_put(dev);
+ 				}
+ 			} else
+@@ -881,7 +883,7 @@
+ 			DBG(&quot;RX_SETUP: can_rx_register() for can_id &lt;%03X&gt;. rx_op is (%p)\n&quot;, op-&gt;can_id, op);
+ 
+ 			if (dev) {
+-				can_rx_register(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op, IDENT);
++				can_rx_register(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op, IDENT);
+ 				dev_put(dev);
+ 			}
+ 		}
+@@ -1345,7 +1347,7 @@
+ 			if (p-&gt;sk-&gt;sk_bound_dev_if) {
+ 				struct net_device *dev = dev_get_by_index(p-&gt;sk-&gt;sk_bound_dev_if);
+ 				if (dev) {
+-					can_rx_unregister(dev, p-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, p);
++					can_rx_unregister(dev, p-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, p);
+ 					dev_put(dev);
+ 				}
+ 			} else
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-07-10 13:09:52 UTC (rev 55)
++++ trunk/kernel/2.6/net/can/raw.c	2006-08-22 12:27:04 UTC (rev 56)
+@@ -42,6 +42,7 @@
+  *
+  */
+ 
++#include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/version.h&gt;
+ #include &lt;linux/init.h&gt;
+@@ -67,7 +68,7 @@
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_CORE
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000035.html">[Socketcan-commit] r53 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#34">[ date ]</a>
+              <a href="thread.html#34">[ thread ]</a>
+              <a href="subject.html#34">[ subject ]</a>
+              <a href="author.html#34">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

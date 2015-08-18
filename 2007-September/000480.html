@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r498 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r498%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/sja1000%0A%09net/can&In-Reply-To=%3C200709301021.l8UALZWK006510%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000479.html">
+   <LINK REL="Next"  HREF="000481.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r498 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r498%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/sja1000%0A%09net/can&In-Reply-To=%3C200709301021.l8UALZWK006510%40sheep.berlios.de%3E"
+       TITLE="r498 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 30 12:21:35 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000479.html">r497 - trunk/kernel/2.6
+</A></li>
+        <LI>Next message: <A HREF="000481.html">r499 - trunk/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#480">[ date ]</a>
+              <a href="thread.html#480">[ thread ]</a>
+              <a href="subject.html#480">[ subject ]</a>
+              <a href="author.html#480">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-30 12:21:32 +0200 (Sun, 30 Sep 2007)
+New Revision: 498
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Introduced new interface flags IFF_ECHO which is to be used, when the 
+code hits the kernel. See discussion at
+<A HREF="http://marc.info/?l=linux-netdev&amp;m=119100461315453&amp;w=2">http://marc.info/?l=linux-netdev&amp;m=119100461315453&amp;w=2</A>
+
+Due to the masking of interface flags with IFF_VOLATILE in core/net/dev.c
+IFF_ECHO cannot be used for external compilation, so we still use
+IFF_LOOPBACK in older kernels and external compilation.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-09-29 16:26:29 UTC (rev 497)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-09-30 10:21:32 UTC (rev 498)
+@@ -183,7 +183,7 @@
+  * (see Documentation/networking/can.txt). To test the handling of CAN
+  * interfaces that do not support the loopback both driver types are
+  * implemented inside this sja1000 driver. In the case that the driver does
+- * not support the loopback the IFF_LOOPBACK remains clear in dev-&gt;flags.
++ * not support the loopback the IFF_ECHO remains clear in dev-&gt;flags.
+  * This causes the PF_CAN core to perform the loopback as a fallback solution.
+  */
+ 
+@@ -1028,9 +1028,12 @@
+ 
+ 	dev-&gt;flags			= IFF_NOARP;
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
++#define IFF_ECHO IFF_LOOPBACK
++#endif
+ 	/* set flags according to driver capabilities */
+ 	if (loopback)
+-		dev-&gt;flags |= IFF_LOOPBACK;
++		dev-&gt;flags |= IFF_ECHO;
+ 
+ 	dev-&gt;features			= NETIF_F_NO_CSUM;
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-09-29 16:26:29 UTC (rev 497)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-09-30 10:21:32 UTC (rev 498)
+@@ -222,9 +222,12 @@
+ 	dev-&gt;tx_queue_len      = 0;
+ 	dev-&gt;flags             = IFF_NOARP;
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
++#define IFF_ECHO IFF_LOOPBACK
++#endif
+ 	/* set flags according to driver capabilities */
+ 	if (loopback)
+-		dev-&gt;flags |= IFF_LOOPBACK;
++		dev-&gt;flags |= IFF_ECHO;
+ 
+ 	dev-&gt;open              = vcan_open;
+ 	dev-&gt;stop              = vcan_stop;
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-09-29 16:26:29 UTC (rev 497)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-09-30 10:21:32 UTC (rev 498)
+@@ -324,7 +324,10 @@
+ 		 * after each skb_clone() or skb_orphan() usage.
+ 		 */
+ 
+-		if (!(skb-&gt;dev-&gt;flags &amp; IFF_LOOPBACK)) {
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
++#define IFF_ECHO IFF_LOOPBACK
++#endif
++		if (!(skb-&gt;dev-&gt;flags &amp; IFF_ECHO)) {
+ 			/*
+ 			 * If the interface is not capable to do loopback
+ 			 * itself, we do it here.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000479.html">r497 - trunk/kernel/2.6
+</A></li>
+	<LI>Next message: <A HREF="000481.html">r499 - trunk/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#480">[ date ]</a>
+              <a href="thread.html#480">[ thread ]</a>
+              <a href="subject.html#480">[ subject ]</a>
+              <a href="author.html#480">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

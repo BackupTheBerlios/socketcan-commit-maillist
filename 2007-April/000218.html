@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r234 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r234%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704231654.l3NGsPuH020057%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000217.html">
+   <LINK REL="Next"  HREF="000219.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r234 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r234%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704231654.l3NGsPuH020057%40sheep.berlios.de%3E"
+       TITLE="r234 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr 23 18:54:25 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000217.html">r233 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000219.html">r235 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#218">[ date ]</a>
+              <a href="thread.html#218">[ thread ]</a>
+              <a href="subject.html#218">[ subject ]</a>
+              <a href="author.html#218">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-23 18:54:21 +0200 (Mon, 23 Apr 2007)
+New Revision: 234
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+removed several blank lines.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-20 20:28:51 UTC (rev 233)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-23 16:54:21 UTC (rev 234)
+@@ -231,7 +231,6 @@
+ 	return ret;
+ }
+ 
+-
+ /*
+  * af_can tx path
+  */
+@@ -246,7 +245,6 @@
+  *  -ENETDOWN when the selected interface is down
+  *  -ENOBUFS on full driver queue (see net_xmit_errno())
+  **/
+-
+ int can_send(struct sk_buff *skb, int loop)
+ {
+ 	int err;
+@@ -293,7 +291,6 @@
+ }
+ EXPORT_SYMBOL(can_send);
+ 
+-
+ /*
+  * af_can rx path
+  */
+@@ -385,7 +382,6 @@
+  *  -ENOMEM on missing cache mem to create subscription entry
+  *  -ENODEV unknown device
+  **/
+-
+ int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		    void (*func)(struct sk_buff *, void *), void *data,
+ 		    char *ident)
+@@ -475,7 +471,6 @@
+  *  -EINVAL on missing subscription entry
+  *  -ENODEV unknown device
+  **/
+-
+ int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		      void (*func)(struct sk_buff *, void *), void *data)
+ {
+@@ -668,7 +663,6 @@
+ 	return 0;
+ }
+ 
+-
+ /*
+  * af_can utility stuff
+  */
+@@ -681,7 +675,6 @@
+  * Return:
+  *  calculated jiffies (max: ULONG_MAX)
+  **/
+-
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up)
+ {
+ 	unsigned long jif;
+@@ -706,7 +699,6 @@
+ }
+ EXPORT_SYMBOL(timeval2jiffies);
+ 
+-
+ /*
+  * af_can debugging stuff
+  */
+@@ -718,7 +710,6 @@
+  * @msg: pointer to message printed before the given CAN frame
+  * @cf: pointer to CAN frame
+  **/
+-
+ void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+ {
+ 	va_list ap;
+@@ -760,7 +751,6 @@
+  * can_debug_skb - print socket buffer content to kernel log
+  * @skb: pointer to socket buffer
+  **/
+-
+ void can_debug_skb(struct sk_buff *skb)
+ {
+ 	int len, nbytes, i;
+@@ -796,7 +786,6 @@
+ 
+ #endif
+ 
+-
+ /*
+  * af_can protocol functions
+  */
+@@ -811,7 +800,6 @@
+  *  -EBUSY  protocol already in use
+  *  -ENOBUF if proto_register() fails
+  **/
+-
+ int can_proto_register(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+@@ -852,7 +840,6 @@
+  *  0 on success
+  *  -ESRCH protocol number was not registered
+  **/
+-
+ int can_proto_unregister(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+@@ -885,7 +872,6 @@
+  *  -ENOMEM on missing mem to create subscription entry
+  *  -ENODEV unknown device
+  **/
+-
+ int can_dev_register(struct net_device *dev,
+ 		     void (*func)(unsigned long msg, void *), void *data)
+ {
+@@ -925,7 +911,6 @@
+  *  0 on success
+  *  -EINVAL on missing subscription entry
+  **/
+-
+ int can_dev_unregister(struct net_device *dev,
+ 		       void (*func)(unsigned long msg, void *), void *data)
+ {
+@@ -1029,7 +1014,6 @@
+ 	return NOTIFY_DONE;
+ }
+ 
+-
+ /*
+  * af_can module init/exit functions
+  */
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-04-20 20:28:51 UTC (rev 233)
++++ trunk/kernel/2.6/net/can/raw.c	2007-04-23 16:54:21 UTC (rev 234)
+@@ -74,7 +74,6 @@
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+-
+ #ifdef CONFIG_CAN_RAW_USER
+ #define RAW_CAP (-1)
+ #else
+@@ -117,7 +116,6 @@
+ #define raw_sk(sk) ((struct raw_opt *)(sk)-&gt;sk_protinfo)
+ #endif
+ 
+-
+ static void raw_notifier(unsigned long msg, void *data)
+ {
+ 	struct sock *sk = (struct sock *)data;
+@@ -722,7 +720,6 @@
+ };
+ #endif
+ 
+-
+ static __init int raw_module_init(void)
+ {
+ 	printk(banner);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000217.html">r233 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000219.html">r235 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#218">[ date ]</a>
+              <a href="thread.html#218">[ thread ]</a>
+              <a href="subject.html#218">[ subject ]</a>
+              <a href="author.html#218">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

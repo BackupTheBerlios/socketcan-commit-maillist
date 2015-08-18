@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r582 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r582%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082227.lB8MRUK3010476%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000563.html">
+   <LINK REL="Next"  HREF="000565.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r582 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r582%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082227.lB8MRUK3010476%40sheep.berlios.de%3E"
+       TITLE="r582 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  8 23:27:30 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000563.html">r581 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000565.html">r583 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#564">[ date ]</a>
+              <a href="thread.html#564">[ thread ]</a>
+              <a href="subject.html#564">[ subject ]</a>
+              <a href="author.html#564">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-12-08 23:27:27 +0100 (Sat, 08 Dec 2007)
+New Revision: 582
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/can_core.h
+   trunk/kernel/2.4/can/proc.c
+Log:
+Change some function arguements and return types.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-08 22:26:44 UTC (rev 581)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-08 22:27:27 UTC (rev 582)
+@@ -386,18 +386,19 @@
+  *  -EINVAL on missing subscription entry
+  *  -ENODEV unknown device
+  */
+-int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		      void (*func)(struct sk_buff *, void *), void *data)
++void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++		       void (*func)(struct sk_buff *, void *), void *data)
+ {
+ 	struct receiver *r, **rl;
+ 	struct dev_rcv_lists *d;
+-	int err = 0;
+ 
+ 	write_lock_bh(&amp;can_rcvlists_lock);
+ 
+ 	d = find_dev_rcv_lists(dev);
+ 	if (!d) {
+-		err = -ENODEV;
++		printk(KERN_ERR &quot;BUG: receive list not found for &quot;
++		       &quot;dev %s, id %03X, mask %03X\n&quot;,
++		       DNAME(dev), can_id, mask);
+ 		goto out;
+ 	}
+ 
+@@ -421,7 +422,9 @@
+ 	 */
+ 
+ 	if (!r) {
+-		err = -EINVAL;
++		printk(KERN_ERR &quot;BUG: receive list entry not found for &quot;
++		       &quot;dev %s, id %03X, mask %03X\n&quot;,
++		       DNAME(dev), can_id, mask);
+ 		goto out;
+ 	}
+ 
+@@ -434,8 +437,6 @@
+ 
+  out:
+ 	write_unlock_bh(&amp;can_rcvlists_lock);
+-
+-	return err;
+ }
+ 
+ static inline void deliver(struct sk_buff *skb, struct receiver *r)
+
+Modified: trunk/kernel/2.4/can/can_core.h
+===================================================================
+--- trunk/kernel/2.4/can/can_core.h	2007-12-08 22:26:44 UTC (rev 581)
++++ trunk/kernel/2.4/can/can_core.h	2007-12-08 22:27:27 UTC (rev 582)
+@@ -74,7 +74,7 @@
+ int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		     void (*func)(struct sk_buff *, void *), void *data,
+ 		     char *ident);
+-int  can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		       void (*func)(struct sk_buff *, void *), void *data);
+ void can_dev_register(struct net_device *dev,
+ 		      void (*func)(unsigned long msg, void *), void *data);
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-12-08 22:26:44 UTC (rev 581)
++++ trunk/kernel/2.4/can/proc.c	2007-12-08 22:27:27 UTC (rev 582)
+@@ -96,7 +96,7 @@
+  * af_can statistics stuff
+  */
+ 
+-static void can_init_stats(int caller)
++static void can_init_stats(void)
+ {
+ 	memset(&amp;can_stats, 0, sizeof(can_stats));
+ 	can_stats.jiffies_init = jiffies;
+@@ -129,15 +129,15 @@
+ 
+ 	/* restart counting on jiffies overflow */
+ 	if (j &lt; can_stats.jiffies_init)
+-		can_init_stats(2);
++		can_init_stats();
+ 
+ 	/* prevent overflow in calc_rate() */
+ 	if (can_stats.rx_frames &gt; (ULONG_MAX / HZ))
+-		can_init_stats(3);
++		can_init_stats();
+ 
+ 	/* matches overflow - very improbable */
+ 	if (can_stats.matches &gt; (ULONG_MAX / 100))
+-		can_init_stats(4);
++		can_init_stats();
+ 
+ 	/* calc total values */
+ 	if (can_stats.rx_frames)
+@@ -312,7 +312,7 @@
+ 
+ 	MOD_INC_USE_COUNT;
+ 
+-	can_init_stats(1);
++	can_init_stats();
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot;CAN statistic reset #%ld done.\n&quot;,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000563.html">r581 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000565.html">r583 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#564">[ date ]</a>
+              <a href="thread.html#564">[ thread ]</a>
+              <a href="subject.html#564">[ subject ]</a>
+              <a href="author.html#564">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

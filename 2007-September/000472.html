@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r490 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r490%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200709240915.l8O9FmaX017280%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000471.html">
+   <LINK REL="Next"  HREF="000473.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r490 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r490%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200709240915.l8O9FmaX017280%40sheep.berlios.de%3E"
+       TITLE="r490 - in trunk/kernel/2.6: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Sep 24 11:15:48 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000471.html">r489 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000473.html">r491 - trunk/kernel/2.6
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#472">[ date ]</a>
+              <a href="thread.html#472">[ thread ]</a>
+              <a href="subject.html#472">[ subject ]</a>
+              <a href="author.html#472">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-24 11:15:43 +0200 (Mon, 24 Sep 2007)
+New Revision: 490
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Removed capability defines.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-09-23 17:14:29 UTC (rev 489)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-09-24 09:15:43 UTC (rev 490)
+@@ -28,9 +28,6 @@
+ 
+ #define CAN_VERSION_STRING &quot;rev &quot; CAN_VERSION &quot; abi &quot; CAN_ABI_VERSION
+ 
+-/* CAN default capability needs (-1 == none) */
+-#define CAN_CAP (-1)
+-
+ #define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
+ 
+ /**
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-09-23 17:14:29 UTC (rev 489)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-09-24 09:15:43 UTC (rev 490)
+@@ -123,9 +123,6 @@
+ 
+ static struct proc_dir_entry *proc_dir;
+ 
+-/* CAN BCM sockets capability needs */
+-#define CAN_BCM_CAP CAN_CAP
+-
+ struct bcm_sock {
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	struct sock sk;
+@@ -1841,7 +1838,7 @@
+ static struct can_proto bcm_can_proto __read_mostly = {
+ 	.type       = SOCK_DGRAM,
+ 	.protocol   = CAN_BCM,
+-	.capability = CAN_BCM_CAP,
++	.capability = -1,
+ 	.ops        = &amp;bcm_ops,
+ 	.prot       = &amp;bcm_proto,
+ };
+@@ -1849,7 +1846,7 @@
+ static struct can_proto bcm_can_proto __read_mostly = {
+ 	.type       = SOCK_DGRAM,
+ 	.protocol   = CAN_BCM,
+-	.capability = CAN_BCM_CAP,
++	.capability = -1,
+ 	.ops        = &amp;bcm_ops,
+ 	.owner      = THIS_MODULE,
+ 	.obj_size   = sizeof(struct bcm_sock),
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-09-23 17:14:29 UTC (rev 489)
++++ trunk/kernel/2.6/net/can/raw.c	2007-09-24 09:15:43 UTC (rev 490)
+@@ -78,9 +78,6 @@
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+-/* CAN RAW sockets capability needs */
+-#define CAN_RAW_CAP CAN_CAP
+-
+ #define MASK_ALL 0
+ 
+ /*
+@@ -846,7 +843,7 @@
+ static struct can_proto raw_can_proto __read_mostly = {
+ 	.type       = SOCK_RAW,
+ 	.protocol   = CAN_RAW,
+-	.capability = CAN_RAW_CAP,
++	.capability = -1,
+ 	.ops        = &amp;raw_ops,
+ 	.prot       = &amp;raw_proto,
+ };
+@@ -854,7 +851,7 @@
+ static struct can_proto raw_can_proto __read_mostly = {
+ 	.type       = SOCK_RAW,
+ 	.protocol   = CAN_RAW,
+-	.capability = CAN_RAW_CAP,
++	.capability = -1,
+ 	.ops        = &amp;raw_ops,
+ 	.owner      = THIS_MODULE,
+ 	.obj_size   = sizeof(struct raw_sock),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000471.html">r489 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000473.html">r491 - trunk/kernel/2.6
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#472">[ date ]</a>
+              <a href="thread.html#472">[ thread ]</a>
+              <a href="subject.html#472">[ subject ]</a>
+              <a href="author.html#472">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,788 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r798 - in trunk: . mkseries-dev mkseries-dev/headers	mkseries-dev/patches
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r798%20-%20in%20trunk%3A%20.%20mkseries-dev%20mkseries-dev/headers%0A%09mkseries-dev/patches&In-Reply-To=%3C200806250908.m5P98cPt024656%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000777.html">
+   <LINK REL="Next"  HREF="000779.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r798 - in trunk: . mkseries-dev mkseries-dev/headers	mkseries-dev/patches</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r798%20-%20in%20trunk%3A%20.%20mkseries-dev%20mkseries-dev/headers%0A%09mkseries-dev/patches&In-Reply-To=%3C200806250908.m5P98cPt024656%40sheep.berlios.de%3E"
+       TITLE="r798 - in trunk: . mkseries-dev mkseries-dev/headers	mkseries-dev/patches">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 25 11:08:38 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000777.html">r797 - in trunk/kernel/2.6: drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/old/i82527	drivers/net/can/old/mscan drivers/net/can/old/sja1000	drivers/net/can/sja1000 net/can
+</A></li>
+        <LI>Next message: <A HREF="000779.html">r799 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#778">[ date ]</a>
+              <a href="thread.html#778">[ thread ]</a>
+              <a href="subject.html#778">[ subject ]</a>
+              <a href="author.html#778">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-06-25 11:07:06 +0200 (Wed, 25 Jun 2008)
+New Revision: 798
+
+Added:
+   trunk/mkseries-dev/
+   trunk/mkseries-dev/headers/
+   trunk/mkseries-dev/headers/DRIVER_MSCAN.txt
+   trunk/mkseries-dev/mkseries
+   trunk/mkseries-dev/patches/
+   trunk/mkseries-dev/patches/DEVICE.diff
+   trunk/mkseries-dev/patches/DRIVER_MSCAN.diff
+   trunk/mkseries-dev/patches/DRIVER_SJA1000.diff
+   trunk/mkseries-dev/patches/DRIVER_SJA1000_EMS_PCI.diff
+   trunk/mkseries-dev/patches/DRIVER_SJA1000_IXXAT_PCI.diff
+   trunk/mkseries-dev/patches/DRIVER_SJA1000_KVASER_PCI.diff
+   trunk/mkseries-dev/patches/DRIVER_SJA1000_PCM027.diff
+   trunk/mkseries-dev/patches/DRIVER_SJA1000_PEAK_PCI.diff
+   trunk/mkseries-dev/patches/DRIVER_SJA1000_PIPCAN.diff
+   trunk/mkseries-dev/patches/SYSFS.diff
+   trunk/mkseries-dev/patches/series
+Log:
+Add script mkseries to create kernel patches from the trunk
+
+To continue developing Socket-CAN on the SVN trunk, the script mkseries
+has been provided to create kernel patches suitible for posting on the
+netdev mailing list. It requires a kernel version &gt;= 2.6.25 against
+which patches will be created.
+
+Signed-off-by: Wolfgang Grandeger &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">wg at grandegger.com</A>&gt;
+
+
+Added: trunk/mkseries-dev/headers/DRIVER_MSCAN.txt
+===================================================================
+--- trunk/mkseries-dev/headers/DRIVER_MSCAN.txt	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/headers/DRIVER_MSCAN.txt	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,5 @@
++Subject: MSCAN driver
++
++Bla Bla
++
++Signed-off-by: Wolfgang Grandegger
+\ No newline at end of file
+
+Added: trunk/mkseries-dev/mkseries
+===================================================================
+--- trunk/mkseries-dev/mkseries	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/mkseries	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,188 @@
++#!/bin/bash
++
++#set -x
++
++#
++# New files of CAN device interface and drivers
++#
++PATCH_DEVICE_NAME=socketcan-device.diff
++PATCH_DEVICE_FILES=&quot;\
++include/linux/can/dev.h \
++drivers/net/can/dev.c&quot;
++
++PATCH_SYSFS_NAME=socketcan-sysfs.diff
++PATCH_SYSFS_FILES=&quot;\
++drivers/net/can/sysfs.c \
++drivers/net/can/sysfs.h&quot;
++
++PATCH_DRIVER_SJA1000_NAME=socketcan-driver-sja1000.diff
++PATCH_DRIVER_SJA1000_FILES=&quot;\
++drivers/net/can/sja1000/sja1000.c \
++drivers/net/can/sja1000/sja1000.h &quot;
++
++PATCH_DRIVER_SJA1000_EMS_PCI_NAME=socketcan-driver-sja1000-ems-pci.diff
++PATCH_DRIVER_SJA1000_EMS_PCI_FILES=&quot;\
++drivers/net/can/sja1000/ems_pci.c&quot;
++
++PATCH_DRIVER_SJA1000_IXXAT_PCI_NAME=socketcan-driver-sja1000-ixxat-pci.diff
++PATCH_DRIVER_SJA1000_IXXAT_PCI_FILES=&quot;\
++drivers/net/can/sja1000/ixxat_pci.c&quot;
++
++PATCH_DRIVER_SJA1000_KVASER_PCI_NAME=socketcan-driver-sja1000-kvaser-pci.diff
++PATCH_DRIVER_SJA1000_KVASER_PCI_FILES=&quot;\
++drivers/net/can/sja1000/kvaser_pci.c&quot;
++
++PATCH_DRIVER_SJA1000_PIPCAN_NAME=socketcan-driver-sja1000-pipcan.diff
++PATCH_DRIVER_SJA1000_PIPCAN_FILES=&quot;\
++drivers/net/can/sja1000/pipcan.c&quot;
++
++PATCH_DRIVER_SJA1000_PCM027_NAME=socketcan-driver-sja1000-pcm027.diff
++PATCH_DRIVER_SJA1000_PCM027_FILES=&quot;\
++drivers/net/can/sja1000/pcm027.c&quot;
++
++PATCH_DRIVER_SJA1000_PEAK_PCI_NAME=socketcan-driver-sja1000-peak-pci.diff
++PATCH_DRIVER_SJA1000_PEAK_PCI_FILES=&quot;\
++drivers/net/can/sja1000/peak_pci.c&quot;
++
++PATCH_DRIVER_MSCAN_NAME=socketcan-driver-mscan.diff
++PATCH_DRIVER_MSCAN_FILES=&quot;\
++drivers/net/can/mscan/mscan.c \
++drivers/net/can/mscan/mscan.h \
++drivers/net/can/mscan/mpc52xx_can.c&quot;
++
++#
++# Old files of CAN core and VCAN driver
++#
++PATCH_CORE_NAME=socketcan-core.diff
++PATCH_CORE_FILES=&quot;\
++include/linux/can.h \
++include/linux/can/raw.h \
++include/linux/can/bcm.h \
++include/linux/can/core.h \
++include/linux/can/error.h \
++net/can/af_can.c \
++net/can/af_can.h \
++net/can/proc.c \
++net/can/raw.c \
++net/can/bcm.c&quot;
++
++PATCH_DRIVER_VCAN_NAME=socketcan-driver-vcan.diff
++PATCH_DRIVER_VCAN_FILES=&quot;\
++drivers/net/can/vcan.c&quot;
++
++usage() {
++    echo &quot;usage: $0 &lt;path-to-kernel-dir&gt; &lt;patch-to-output-dir&gt;&quot; &gt;&amp;2
++    exit 1
++}
++
++#
++# Main
++#
++HERE=$(pwd)
++SRC_DIR=$HERE/kernel/2.6
++SCR_DIR=$HERE/`dirname $0`
++PATCH_DIR=$SCR_DIR/patches
++HDR_DIR=$SCR_DIR/headers
++
++[ ! -e $1/MAINTAINERS ] &amp;&amp; usage
++KERNEL_DIR=$1
++
++if [ $# -gt 1 ]; then
++    DEST_DIR=$2
++else
++    DEST_DIR=${HERE}/socketcan-patches
++fi
++
++echo $DEST_DIR
++if [ -e $DEST_DIR ]; then
++    echo &quot;error: $DEST_DIR does already exist, exiting&quot; &gt;&amp;2
++    exit 1
++fi
++
++# determine kernel version
++KERNEL_MAJOR=$(grep &quot;^VERSION =&quot; ${KERNEL_DIR}/Makefile | sed -e &quot;s/[ \t]//g&quot; | sed -e &quot;s/VERSION=//g&quot;)
++KERNEL_MINOR=$(grep &quot;^PATCHLEVEL =&quot; ${KERNEL_DIR}/Makefile | sed -e &quot;s/[ \t]//g&quot; | sed -e &quot;s/PATCHLEVEL=//g&quot;)
++KERNEL_MICRO=$(grep &quot;^SUBLEVEL =&quot; ${KERNEL_DIR}/Makefile | sed -e &quot;s/[ \t]//g&quot; | sed -e &quot;s/SUBLEVEL=//g&quot;)
++KERNEL_EXTRA=$(grep &quot;^EXTRAVERSION =&quot; ${KERNEL_DIR}/Makefile | sed -e &quot;s/[ \t]//g&quot; | sed -e &quot;s/EXTRAVERSION=//g&quot;)
++
++mkdir -p $DEST_DIR
++export QUILT_PATCHES=$DEST_DIR
++
++echo &quot;Creating patches against kernel in $KERNEL_DIR&quot;
++
++num=0
++
++
++for patch in \
++    DEVICE \
++    SYSFS \
++    DRIVER_SJA1000 \
++    DRIVER_SJA1000_EMS_PCI \
++    DRIVER_SJA1000_IXXAT_PCI \
++    DRIVER_SJA1000_KVASER_PCI \
++    DRIVER_SJA1000_PIPCAN \
++    DRIVER_SJA1000_PCM027 \
++    DRIVER_SJA1000_PEAK_PCI \
++    DRIVER_MSCAN \
++    DRIVER_VCAN \
++    CORE
++  do
++  name=PATCH_${patch}_NAME
++  files=PATCH_${patch}_FILES
++  append=PATCH_${patch}_APPEND
++
++  num=$((num + 1))
++
++  [ -z &quot;${!name}&quot; ] &amp;&amp; continue
++
++  patch_name=$(printf &quot;%02i&quot; $num)-${!name}
++  echo &quot;${patch_name}...&quot;
++
++  cd ${KERNEL_DIR}
++  quilt new ${patch_name} &gt; /dev/null
++
++  for file in ${!files}; do
++      quilt add ${file} &gt; /dev/null
++      mkdir -p $(dirname ${KERNEL_DIR}/${file})
++      ${HERE}/strip-src \
++	  -v ${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_MICRO} \
++	  -i \
++	  ${SRC_DIR}/${file} &gt; ${KERNEL_DIR}/${file}
++  done
++
++  file=$PATCH_DIR/$patch.diff
++  if [ -r $file ]; then
++      ok=n
++      patch -p1 --dry-run &lt; $file &gt; /dev/null &amp;&amp; ok=y
++      if [ $ok = y ]; then
++	  quilt add `grep &quot;Index: &quot; $file | cut -d&quot;/&quot; -f 2-` &gt; /dev/null
++	  patch -p1 &lt; $file
++      else
++	  echo &quot;Couldn't apply patch $file, please fix!&quot;
++      fi
++  fi
++
++  quilt refresh --diffstat &gt; /dev/null
++
++  file=$HDR_DIR/$patch.txt
++  if [ -r $file ]; then
++      quilt header --strip-trailing-whitespace -r &lt; $file &gt; /dev/null
++  fi
++done
++
++quilt pop -a &gt; /dev/null
++
++#
++# Check patches and add patch description
++#
++file=$DEST_DIR/checkpatch.log
++echo &quot;Checking patches, please inspect $file&quot;
++echo &quot;Linux coding style issues reported by checkpatch.pl&quot; &gt; $file
++for patch in $DEST_DIR/*.diff; do
++    echo &gt;&gt; $file
++    echo &quot;***************************************************&quot; &gt;&gt; $file
++    echo &quot;$patch&quot; &gt;&gt; $file
++    echo &gt;&gt; $file
++    ${KERNEL_DIR}/scripts/checkpatch.pl ${patch} &gt;&gt; $file
++done
++
+
+
+Property changes on: trunk/mkseries-dev/mkseries
+___________________________________________________________________
+Name: svn:executable
+   + *
+
+Added: trunk/mkseries-dev/patches/DEVICE.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DEVICE.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DEVICE.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,65 @@
++---
++ drivers/net/can/Kconfig  |    9 +++++++++
++ drivers/net/can/Makefile |    3 +++
++ drivers/net/can/dev.c    |    8 --------
++ 3 files changed, 12 insertions(+), 8 deletions(-)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -12,6 +12,15 @@ config CAN_VCAN
++ 	  This driver can also be built as a module.  If so, the module
++ 	  will be called vcan.
++ 
+++config CAN_DEV
+++	tristate &quot;Prompt for platform CAN drivers with sysfs support&quot;
+++	depends on CAN
+++	default Y
+++	---help---
+++	  Enables the common framework for platform CAN drivers with sysfs
+++	  support. This is the standard library for CAN drivers.
+++	  If unsure, say Y.
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/Makefile
++@@ -3,3 +3,6 @@
++ #
++ 
++ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+++
+++obj-$(CONFIG_CAN_DEV)		+= can-dev.o
+++can-dev-y			:= dev.o
++Index: linux-2.6.25.6.OLD/drivers/net/can/dev.c
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/dev.c
+++++ linux-2.6.25.6.OLD/drivers/net/can/dev.c
++@@ -23,8 +23,6 @@
++ #include &lt;linux/can.h&gt;
++ #include &lt;linux/can/dev.h&gt;
++ 
++-#include &quot;sysfs.h&quot;
++-
++ #define MOD_DESC &quot;CAN netdevice library&quot;
++ 
++ MODULE_DESCRIPTION(MOD_DESC);
++@@ -440,14 +438,8 @@ static int can_netdev_notifier_call(stru
++ 			if (can_set_bitrate(dev, CAN_BITRATE_DEFAULT))
++ 				dev_err(ND2D(dev), &quot;failed to set bitrate\n&quot;);
++ 		}
++-#ifdef CONFIG_SYSFS
++-		can_create_sysfs(dev);
++-#endif
++ 		break;
++ 	case NETDEV_UNREGISTER:
++-#ifdef CONFIG_SYSFS
++-		can_remove_sysfs(dev);
++-#endif
++ 		break;
++ 	}
++ 	return 0;
+
+Added: trunk/mkseries-dev/patches/DRIVER_MSCAN.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_MSCAN.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_MSCAN.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,58 @@
++---
++ drivers/net/can/Kconfig        |   20 ++++++++++++++++++++
++ drivers/net/can/Makefile       |    1 +
++ drivers/net/can/mscan/Makefile |    7 +++++++
++ 3 files changed, 28 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -74,6 +74,26 @@ config CAN_PEAK_PCI
++ 	  This driver is for the PCAN PCI, the PC-PCI CAN plug-in card (1 or
++ 	  2 channel) from PEAK Systems (<A HREF="http://www.peak-system.com">http://www.peak-system.com</A>).
++ 
+++config CAN_MSCAN
+++	depends on CAN_DEV &amp;&amp; (PPC || M68K || M68KNOMMU)
+++	tristate &quot;Support for a Freescale MSCAN based chips&quot;
+++	---help---
+++	  The Motorola Scalable Controller Area Network (MSCAN) definition
+++	  is based on the MSCAN12 definition which is the specific
+++	  implementation of the Motorola Scalable CAN concept targeted for
+++	  the Motorola MC68HC12 Microcontroller Family.
+++
+++config CAN_MPC52XX
+++	tristate &quot;Freescale MPC5200 onboard CAN controller&quot;
+++	depends on CAN_MSCAN &amp;&amp; (PPC_MPC52xx || PPC_52xx)
+++	default n
+++	---help---
+++	  If you say yes here you get support for Freescale MPC5200
+++	  onboard dualCAN controller.
+++
+++	  This driver can also be built as a module.  If so, the module
+++	  will be called mpc52xx_can.
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/Makefile
++@@ -8,3 +8,4 @@ obj-$(CONFIG_CAN_DEV)		+= can-dev.o
++ can-dev-y			:= dev.o sysfs.o
++ 
++ obj-$(CONFIG_CAN_SJA1000)	+= sja1000/
+++obj-$(CONFIG_CAN_MSCAN)		+= mscan/
++Index: linux-2.6.25.6.OLD/drivers/net/can/mscan/Makefile
++===================================================================
++--- /dev/null
+++++ linux-2.6.25.6.OLD/drivers/net/can/mscan/Makefile
++@@ -0,0 +1,7 @@
+++#
+++#  Makefile for Freescale MSCAN drivers
+++#
+++
+++obj-$(CONFIG_CAN_MPC52XX)	+= mscan-mpc52xx.o
+++
+++mscan-mpc52xx-objs	:= mscan.o mpc52xx_can.o
+
+Added: trunk/mkseries-dev/patches/DRIVER_SJA1000.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_SJA1000.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_SJA1000.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,48 @@
++---
++ drivers/net/can/Kconfig          |   11 +++++++++++
++ drivers/net/can/Makefile         |    2 ++
++ drivers/net/can/sja1000/Makefile |    5 +++++
++ 3 files changed, 18 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -21,6 +21,17 @@ config CAN_DEV
++ 	  support. This is the standard library for CAN drivers.
++ 	  If unsure, say Y.
++ 
+++config CAN_SJA1000
+++ 	depends on CAN_DEV
+++	tristate &quot;Philips SJA1000&quot;
+++	---help---
+++	  The SJA1000 is one of the top CAN controllers out there. As it
+++	  has a multiplexed interface it fits directly to 8051
+++	  microcontrollers or into the PC I/O port space. The SJA1000
+++	  is a full CAN controller, with shadow registers for RX and TX.
+++	  It can send and receive any kinds of CAN frames (SFF/EFF/RTR)
+++	  with a single (simple) filter setup.
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++===================================================================
++--- /dev/null
+++++ linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++@@ -0,0 +1,5 @@
+++#
+++#  Makefile for Philips SJA1000 CAN Controller drivers.
+++#
+++
+++obj-$(CONFIG_CAN_SJA1000) += sja1000.o
++Index: linux-2.6.25.6.OLD/drivers/net/can/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/Makefile
++@@ -6,3 +6,5 @@ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
++ 
++ obj-$(CONFIG_CAN_DEV)		+= can-dev.o
++ can-dev-y			:= dev.o sysfs.o
+++
+++obj-$(CONFIG_CAN_SJA1000)	+= sja1000/
+
+Added: trunk/mkseries-dev/patches/DRIVER_SJA1000_EMS_PCI.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_SJA1000_EMS_PCI.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_SJA1000_EMS_PCI.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,33 @@
++---
++ drivers/net/can/Kconfig          |    7 +++++++
++ drivers/net/can/sja1000/Makefile |    2 ++
++ 2 files changed, 9 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -32,6 +32,13 @@ config CAN_SJA1000
++ 	  It can send and receive any kinds of CAN frames (SFF/EFF/RTR)
++ 	  with a single (simple) filter setup.
++ 
+++config CAN_EMS_PCI
+++	tristate &quot;EMS CPC-PCI and CPC-PCIe Card&quot;
+++	depends on PCI &amp;&amp; CAN_SJA1000
+++	---help---
+++	  This driver is for the one or two channel CPC-PCI and CPC-PCIe
+++	  cards from EMS Dr. Thomas Wuensche (<A HREF="http://www.ems-wuensche.de">http://www.ems-wuensche.de</A>).
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/sja1000/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++@@ -3,3 +3,5 @@
++ #
++ 
++ obj-$(CONFIG_CAN_SJA1000) += sja1000.o
+++
+++obj-$(CONFIG_CAN_EMS_PCI) += ems_pci.o
+
+Added: trunk/mkseries-dev/patches/DRIVER_SJA1000_IXXAT_PCI.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_SJA1000_IXXAT_PCI.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_SJA1000_IXXAT_PCI.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,32 @@
++---
++ drivers/net/can/Kconfig          |    7 +++++++
++ drivers/net/can/sja1000/Makefile |    1 +
++ 2 files changed, 8 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -39,6 +39,13 @@ config CAN_EMS_PCI
++ 	  This driver is for the one or two channel CPC-PCI and CPC-PCIe
++ 	  cards from EMS Dr. Thomas Wuensche (<A HREF="http://www.ems-wuensche.de">http://www.ems-wuensche.de</A>).
++ 
+++config CAN_IXXAT_PCI
+++	tristate &quot;IXXAT PCI Card&quot;
+++	depends on PCI &amp;&amp; CAN_SJA1000
+++	---help---
+++	  This driver is for the IXXAT PC-I 04/PCI card (1 or 2 channel)
+++	  from the IXXAT Automation GmbH (<A HREF="http://www.ixxat.de">http://www.ixxat.de</A>).
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/sja1000/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++@@ -5,3 +5,4 @@
++ obj-$(CONFIG_CAN_SJA1000) += sja1000.o
++ 
++ obj-$(CONFIG_CAN_EMS_PCI) += ems_pci.o
+++obj-$(CONFIG_CAN_IXXAT_PCI) += ixxat_pci.o
+
+Added: trunk/mkseries-dev/patches/DRIVER_SJA1000_KVASER_PCI.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_SJA1000_KVASER_PCI.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_SJA1000_KVASER_PCI.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,32 @@
++---
++ drivers/net/can/Kconfig          |    7 +++++++
++ drivers/net/can/sja1000/Makefile |    1 +
++ 2 files changed, 8 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -46,6 +46,13 @@ config CAN_IXXAT_PCI
++ 	  This driver is for the IXXAT PC-I 04/PCI card (1 or 2 channel)
++ 	  from the IXXAT Automation GmbH (<A HREF="http://www.ixxat.de">http://www.ixxat.de</A>).
++ 
+++config CAN_KVASER_PCI
+++	tristate &quot;Kvaser PCIcanx and Kvaser PCIcan PCI Cards&quot;
+++	depends on PCI &amp;&amp; CAN_SJA1000
+++	---help---
+++	  This driver is for the the PCIcanx and PCIcan cards (1, 2 or
+++	  4 channel) from Kvaser (<A HREF="http://www.kvaser.com">http://www.kvaser.com</A>).
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/sja1000/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++@@ -6,3 +6,4 @@ obj-$(CONFIG_CAN_SJA1000) += sja1000.o
++ 
++ obj-$(CONFIG_CAN_EMS_PCI) += ems_pci.o
++ obj-$(CONFIG_CAN_IXXAT_PCI) += ixxat_pci.o
+++obj-$(CONFIG_CAN_KVASER_PCI) += kvaser_pci.o
+
+Added: trunk/mkseries-dev/patches/DRIVER_SJA1000_PCM027.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_SJA1000_PCM027.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_SJA1000_PCM027.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,32 @@
++---
++ drivers/net/can/Kconfig          |    7 +++++++
++ drivers/net/can/sja1000/Makefile |    1 +
++ 2 files changed, 8 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -60,6 +60,13 @@ config CAN_PIPCAN
++ 	  This driver adds support for the PIPCAN module used on some SBC
++ 	  boards from MPL AG (<A HREF="http://www.mpl.ch">http://www.mpl.ch</A>).
++ 
+++config CAN_PCM027
+++	depends on CAN_SJA1000 &amp;&amp; MACH_PCM027
+++	tristate &quot;Phytec pcm027 can driver (SJA1000)&quot;
+++	---help---
+++	  This driver adds support for the SJA1000 chip on the PCM027 board
+++	  from Phytec (<A HREF="http://www.phytec.de">http://www.phytec.de</A>).
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/sja1000/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++@@ -8,3 +8,4 @@ obj-$(CONFIG_CAN_EMS_PCI) += ems_pci.o
++ obj-$(CONFIG_CAN_IXXAT_PCI) += ixxat_pci.o
++ obj-$(CONFIG_CAN_KVASER_PCI) += kvaser_pci.o
++ obj-$(CONFIG_CAN_PIPCAN) += pipcan.o
+++obj-$(CONFIG_CAN_PCM027) += pcm027.o
+
+Added: trunk/mkseries-dev/patches/DRIVER_SJA1000_PEAK_PCI.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_SJA1000_PEAK_PCI.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_SJA1000_PEAK_PCI.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,32 @@
++---
++ drivers/net/can/Kconfig          |    7 +++++++
++ drivers/net/can/sja1000/Makefile |    1 +
++ 2 files changed, 8 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -67,6 +67,13 @@ config CAN_PCM027
++ 	  This driver adds support for the SJA1000 chip on the PCM027 board
++ 	  from Phytec (<A HREF="http://www.phytec.de">http://www.phytec.de</A>).
++ 
+++config CAN_PEAK_PCI
+++	tristate &quot;PEAK PCAN PCI Card&quot;
+++	depends on PCI &amp;&amp; CAN_SJA1000
+++	---help---
+++	  This driver is for the PCAN PCI, the PC-PCI CAN plug-in card (1 or
+++	  2 channel) from PEAK Systems (<A HREF="http://www.peak-system.com">http://www.peak-system.com</A>).
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/sja1000/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++@@ -9,3 +9,4 @@ obj-$(CONFIG_CAN_IXXAT_PCI) += ixxat_pci
++ obj-$(CONFIG_CAN_KVASER_PCI) += kvaser_pci.o
++ obj-$(CONFIG_CAN_PIPCAN) += pipcan.o
++ obj-$(CONFIG_CAN_PCM027) += pcm027.o
+++obj-$(CONFIG_CAN_PEAK_PCI) += peak_pci.o
+
+Added: trunk/mkseries-dev/patches/DRIVER_SJA1000_PIPCAN.diff
+===================================================================
+--- trunk/mkseries-dev/patches/DRIVER_SJA1000_PIPCAN.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/DRIVER_SJA1000_PIPCAN.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,32 @@
++---
++ drivers/net/can/Kconfig          |    7 +++++++
++ drivers/net/can/sja1000/Makefile |    1 +
++ 2 files changed, 8 insertions(+)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Kconfig
+++++ linux-2.6.25.6.OLD/drivers/net/can/Kconfig
++@@ -53,6 +53,13 @@ config CAN_KVASER_PCI
++ 	  This driver is for the the PCIcanx and PCIcan cards (1, 2 or
++ 	  4 channel) from Kvaser (<A HREF="http://www.kvaser.com">http://www.kvaser.com</A>).
++ 
+++config CAN_PIPCAN
+++	depends on CAN_SJA1000
+++	tristate &quot;MPL PIPCAN CAN module driver (SJA1000)&quot;
+++	---help---
+++	  This driver adds support for the PIPCAN module used on some SBC
+++	  boards from MPL AG (<A HREF="http://www.mpl.ch">http://www.mpl.ch</A>).
+++
++ config CAN_DEBUG_DEVICES
++ 	bool &quot;CAN devices debugging messages&quot;
++ 	depends on CAN
++Index: linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/sja1000/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/sja1000/Makefile
++@@ -7,3 +7,4 @@ obj-$(CONFIG_CAN_SJA1000) += sja1000.o
++ obj-$(CONFIG_CAN_EMS_PCI) += ems_pci.o
++ obj-$(CONFIG_CAN_IXXAT_PCI) += ixxat_pci.o
++ obj-$(CONFIG_CAN_KVASER_PCI) += kvaser_pci.o
+++obj-$(CONFIG_CAN_PIPCAN) += pipcan.o
+
+Added: trunk/mkseries-dev/patches/SYSFS.diff
+===================================================================
+--- trunk/mkseries-dev/patches/SYSFS.diff	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/SYSFS.diff	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,43 @@
++---
++ drivers/net/can/Makefile |    2 +-
++ drivers/net/can/dev.c    |    8 ++++++++
++ 2 files changed, 9 insertions(+), 1 deletion(-)
++
++Index: linux-2.6.25.6.OLD/drivers/net/can/dev.c
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/dev.c
+++++ linux-2.6.25.6.OLD/drivers/net/can/dev.c
++@@ -23,6 +23,8 @@
++ #include &lt;linux/can.h&gt;
++ #include &lt;linux/can/dev.h&gt;
++ 
+++#include &quot;sysfs.h&quot;
+++
++ #define MOD_DESC &quot;CAN netdevice library&quot;
++ 
++ MODULE_DESCRIPTION(MOD_DESC);
++@@ -438,8 +440,14 @@ static int can_netdev_notifier_call(stru
++ 			if (can_set_bitrate(dev, CAN_BITRATE_DEFAULT))
++ 				dev_err(ND2D(dev), &quot;failed to set bitrate\n&quot;);
++ 		}
+++#ifdef CONFIG_SYSFS
+++		can_create_sysfs(dev);
+++#endif
++ 		break;
++ 	case NETDEV_UNREGISTER:
+++#ifdef CONFIG_SYSFS
+++		can_remove_sysfs(dev);
+++#endif
++ 		break;
++ 	}
++ 	return 0;
++Index: linux-2.6.25.6.OLD/drivers/net/can/Makefile
++===================================================================
++--- linux-2.6.25.6.OLD.orig/drivers/net/can/Makefile
+++++ linux-2.6.25.6.OLD/drivers/net/can/Makefile
++@@ -5,4 +5,4 @@
++ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
++ 
++ obj-$(CONFIG_CAN_DEV)		+= can-dev.o
++-can-dev-y			:= dev.o
+++can-dev-y			:= dev.o sysfs.o
+
+Added: trunk/mkseries-dev/patches/series
+===================================================================
+--- trunk/mkseries-dev/patches/series	2008-06-24 06:12:18 UTC (rev 797)
++++ trunk/mkseries-dev/patches/series	2008-06-25 09:07:06 UTC (rev 798)
+@@ -0,0 +1,10 @@
++DEVICE.diff
++SYSFS.diff
++DRIVER_SJA1000.diff
++DRIVER_SJA1000_EMS_PCI.diff
++DRIVER_SJA1000_IXXAT_PCI.diff
++DRIVER_SJA1000_KVASER_PCI.diff
++DRIVER_SJA1000_PIPCAN.diff
++DRIVER_SJA1000_PCM027.diff
++DRIVER_SJA1000_PEAK_PCI.diff
++DRIVER_MSCAN.diff
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000777.html">r797 - in trunk/kernel/2.6: drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/old/i82527	drivers/net/can/old/mscan drivers/net/can/old/sja1000	drivers/net/can/sja1000 net/can
+</A></li>
+	<LI>Next message: <A HREF="000779.html">r799 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#778">[ date ]</a>
+              <a href="thread.html#778">[ thread ]</a>
+              <a href="subject.html#778">[ subject ]</a>
+              <a href="author.html#778">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

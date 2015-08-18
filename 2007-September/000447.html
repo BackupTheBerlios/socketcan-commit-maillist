@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r465 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r465%20-%20trunk&In-Reply-To=%3C200709170759.l8H7xZDp013539%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000446.html">
+   <LINK REL="Next"  HREF="000448.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r465 - trunk</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r465%20-%20trunk&In-Reply-To=%3C200709170759.l8H7xZDp013539%40sheep.berlios.de%3E"
+       TITLE="r465 - trunk">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Sep 17 09:59:35 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000446.html">r464 - trunk/kernel/2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000448.html">r466 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#447">[ date ]</a>
+              <a href="thread.html#447">[ thread ]</a>
+              <a href="subject.html#447">[ subject ]</a>
+              <a href="author.html#447">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-09-17 09:59:34 +0200 (Mon, 17 Sep 2007)
+New Revision: 465
+
+Modified:
+   trunk/strip-src
+Log:
+Add support for #elif.
+
+
+Modified: trunk/strip-src
+===================================================================
+--- trunk/strip-src	2007-09-16 16:42:29 UTC (rev 464)
++++ trunk/strip-src	2007-09-17 07:59:34 UTC (rev 465)
+@@ -28,8 +28,10 @@
+ 
+ require(&quot;getopts.pl&quot;);
+ 
+-$re = &quot;^\\#if LINUX_VERSION_CODE (&lt;|&lt;=|&gt;|&gt;=) &quot; .
++$re_if = &quot;^\\#if LINUX_VERSION_CODE (&lt;|&lt;=|&gt;|&gt;=) &quot; .
+     &quot;KERNEL_VERSION\\((\\d+),(\\d+),(\\d+)\\)&quot;;
++$re_elif = &quot;^\\#elif LINUX_VERSION_CODE (&lt;|&lt;=|&gt;|&gt;=) &quot; .
++    &quot;KERNEL_VERSION\\((\\d+),(\\d+),(\\d+)\\)&quot;;
+ 
+ Getopts(&quot;div:&quot;);
+ $debug = $opt_d;
+@@ -86,18 +88,25 @@
+     $level   = 0;
+     $state   = -1;
+ 
+-    for ($i = 1; $i &lt;= $#lines; $i++) {
++    for $i (1..$#lines) {
+ 	$_ = $lines[$i];
+ 	if ($state == -1) {
+-	    if (/$re/) {
++	    if (/$re_if/) {
+ 		$state = compare($version, $1, $2, $3, $4);
++		$done  = $state;
+ 		delete_line($i, &quot;&lt;del&gt;&quot;);
+ 		$skip = ($lines[$i-1] eq &quot;\n&quot;);
+ 	    }
+ 	} else {
+-	    if ($level == 0 &amp;&amp; /^\#else/) {
+-		$state = !$state;
++	    if ($level == 0 &amp;&amp; /$re_elif/) {
++		$state = compare($version, $1, $2, $3, $4);
++		$state &amp;= !$done;
++		$done  |= $state;
+ 		delete_line($i, &quot;&lt;del&gt;&quot;);
++	    } elsif ($level == 0 &amp;&amp; /^\#else/) {
++		$state  = !$done;
++		$done  |= $state;
++		delete_line($i, &quot;&lt;del&gt;&quot;);
+ 	    } elsif ($level == 0 &amp;&amp; /^\#endif/) {
+ 		$state = -1;
+ 		delete_line($i, &quot;&lt;del&gt;&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000446.html">r464 - trunk/kernel/2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000448.html">r466 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#447">[ date ]</a>
+              <a href="thread.html#447">[ thread ]</a>
+              <a href="subject.html#447">[ subject ]</a>
+              <a href="author.html#447">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r371 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r371%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706190635.l5J6ZBKn006096%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000353.html">
+   <LINK REL="Next"  HREF="000355.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r371 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r371%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706190635.l5J6ZBKn006096%40sheep.berlios.de%3E"
+       TITLE="r371 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 19 08:35:11 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000353.html">r370 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000355.html">r372 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#354">[ date ]</a>
+              <a href="thread.html#354">[ thread ]</a>
+              <a href="subject.html#354">[ subject ]</a>
+              <a href="author.html#354">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-19 08:35:07 +0200 (Tue, 19 Jun 2007)
+New Revision: 371
+
+Modified:
+   branches/ha/locktest/net/can/af_can.c
+   branches/ha/locktest/net/can/bcm.c
+   branches/ha/locktest/net/can/raw.c
+Log:
+Moved debug message output to start of function to track every function call.
+
+
+Modified: branches/ha/locktest/net/can/af_can.c
+===================================================================
+--- branches/ha/locktest/net/can/af_can.c	2007-06-18 20:04:23 UTC (rev 370)
++++ branches/ha/locktest/net/can/af_can.c	2007-06-19 06:35:07 UTC (rev 371)
+@@ -882,12 +882,12 @@
+ 	struct net_device *dev = (struct net_device *)data;
+ 	struct dev_rcv_lists *d;
+ 
++	DBG(&quot;msg %ld for dev %p (%s idx %d)\n&quot;,
++	    msg, dev, dev-&gt;name, dev-&gt;ifindex);
++
+ 	if (dev-&gt;type != ARPHRD_CAN)
+ 		return NOTIFY_DONE;
+ 
+-	DBG(&quot;msg %ld for dev %p (%s idx %d)\n&quot;,
+-	    msg, dev, dev-&gt;name, dev-&gt;ifindex);
+-
+ 	switch (msg) {
+ 
+ 	case NETDEV_REGISTER:
+
+Modified: branches/ha/locktest/net/can/bcm.c
+===================================================================
+--- branches/ha/locktest/net/can/bcm.c	2007-06-18 20:04:23 UTC (rev 370)
++++ branches/ha/locktest/net/can/bcm.c	2007-06-19 06:35:07 UTC (rev 371)
+@@ -1510,12 +1510,12 @@
+ 	struct bcm_op *op;
+ 	int notify_enodev = 0;
+ 
++	DBG(&quot;msg %ld for dev %p (%s idx %d) # sk %p bo-&gt;ifindex %d\n&quot;,
++	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, bo-&gt;ifindex);
++
+ 	if (dev-&gt;type != ARPHRD_CAN)
+ 		return NOTIFY_DONE;
+ 
+-	DBG(&quot;msg %ld for dev %p (%s idx %d) # sk %p bo-&gt;ifindex %d\n&quot;,
+-	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, bo-&gt;ifindex);
+-
+ 	switch (msg) {
+ 
+ 	case NETDEV_UNREGISTER:
+
+Modified: branches/ha/locktest/net/can/raw.c
+===================================================================
+--- branches/ha/locktest/net/can/raw.c	2007-06-18 20:04:23 UTC (rev 370)
++++ branches/ha/locktest/net/can/raw.c	2007-06-19 06:35:07 UTC (rev 371)
+@@ -213,12 +213,12 @@
+ #error TODO (if needed): Notifier support for Kernel Versions &lt; 2.6.12
+ #endif
+ 
++	DBG(&quot;msg %ld for dev %p (%s idx %d) # sk %p ro-&gt;ifindex %d\n&quot;,
++	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, ro-&gt;ifindex);
++
+ 	if (dev-&gt;type != ARPHRD_CAN)
+ 		return NOTIFY_DONE;
+ 
+-	DBG(&quot;msg %ld for dev %p (%s idx %d) # sk %p ro-&gt;ifindex %d\n&quot;,
+-	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, ro-&gt;ifindex);
+-
+ 	if (ro-&gt;ifindex != dev-&gt;ifindex)
+ 		return NOTIFY_DONE;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000353.html">r370 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000355.html">r372 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#354">[ date ]</a>
+              <a href="thread.html#354">[ thread ]</a>
+              <a href="subject.html#354">[ subject ]</a>
+              <a href="author.html#354">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

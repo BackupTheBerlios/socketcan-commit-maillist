@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r109 - in trunk/kernel: 2.4/can 2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r109%20-%20in%20trunk/kernel%3A%202.4/can%202.6/net/can&In-Reply-To=%3C200612011205.kB1C5iN8001019%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000093.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r109 - in trunk/kernel: 2.4/can 2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r109%20-%20in%20trunk/kernel%3A%202.4/can%202.6/net/can&In-Reply-To=%3C200612011205.kB1C5iN8001019%40sheep.berlios.de%3E"
+       TITLE="r109 - in trunk/kernel: 2.4/can 2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  1 13:05:44 CET 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000093.html">r110 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#92">[ date ]</a>
+              <a href="thread.html#92">[ thread ]</a>
+              <a href="subject.html#92">[ subject ]</a>
+              <a href="author.html#92">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-12-01 13:05:39 +0100 (Fri, 01 Dec 2006)
+New Revision: 109
+
+Modified:
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Fixed socket error reporting due to problems in hot-unplugging CAN-netdevices
+like USB or PCMCIA. The fix is taken from the packet socket source.
+
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2006-11-29 14:36:49 UTC (rev 108)
++++ trunk/kernel/2.4/can/bcm.c	2006-12-01 12:05:39 UTC (rev 109)
+@@ -214,9 +214,11 @@
+ 	switch (msg) {
+ 	case NETDEV_UNREGISTER:
+ 		sk-&gt;bound_dev_if = 0;
++		/* fallthrough */
+ 	case NETDEV_DOWN:
+ 		sk-&gt;err = ENETDOWN;
+-		sk-&gt;error_report(sk);
++		if (!sk-&gt;dead)
++			sk-&gt;error_report(sk);
+ 	}
+ }
+ 
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2006-11-29 14:36:49 UTC (rev 108)
++++ trunk/kernel/2.4/can/raw.c	2006-12-01 12:05:39 UTC (rev 109)
+@@ -602,7 +602,8 @@
+ 		/* fallthrough */
+ 	case NETDEV_DOWN:
+ 		sk-&gt;err = ENETDOWN;
+-		sk-&gt;error_report(sk);
++		if (!sk-&gt;dead)
++			sk-&gt;error_report(sk);
+ 		break;
+ 	}
+ }
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2006-11-29 14:36:49 UTC (rev 108)
++++ trunk/kernel/2.6/net/can/bcm.c	2006-12-01 12:05:39 UTC (rev 109)
+@@ -249,9 +249,11 @@
+ 	switch (msg) {
+ 	case NETDEV_UNREGISTER:
+ 		sk-&gt;sk_bound_dev_if = 0;
++		/* fallthrough */
+ 	case NETDEV_DOWN:
+ 		sk-&gt;sk_err = ENETDOWN;
+-		sk-&gt;sk_error_report(sk);
++		if (!sock_flag(sk, SOCK_DEAD))
++			sk-&gt;sk_error_report(sk);
+ 	}
+ }
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-11-29 14:36:49 UTC (rev 108)
++++ trunk/kernel/2.6/net/can/raw.c	2006-12-01 12:05:39 UTC (rev 109)
+@@ -711,7 +711,8 @@
+ 		/* fallthrough */
+ 	case NETDEV_DOWN:
+ 		sk-&gt;sk_err = ENETDOWN;
+-		sk-&gt;sk_error_report(sk);
++		if (!sock_flag(sk, SOCK_DEAD))
++			sk-&gt;sk_error_report(sk);
+ 		break;
+ 	}
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000093.html">r110 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#92">[ date ]</a>
+              <a href="thread.html#92">[ thread ]</a>
+              <a href="subject.html#92">[ subject ]</a>
+              <a href="author.html#92">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,827 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r66 - in branches/ut/hlist/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r66%20-%20in%20branches/ut/hlist/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200609040925.k849Plgw014353%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000045.html">
+   <LINK REL="Next"  HREF="000047.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r66 - in branches/ut/hlist/kernel/2.6: include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r66%20-%20in%20branches/ut/hlist/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200609040925.k849Plgw014353%40sheep.berlios.de%3E"
+       TITLE="r66 - in branches/ut/hlist/kernel/2.6: include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Sep  4 11:25:47 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000045.html">r65 - in branches/ut/hlist/kernel/2.6: include/linux/can net/ can
+</A></li>
+        <LI>Next message: <A HREF="000047.html">r67 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#46">[ date ]</a>
+              <a href="thread.html#46">[ thread ]</a>
+              <a href="subject.html#46">[ subject ]</a>
+              <a href="author.html#46">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-09-04 11:25:36 +0200 (Mon, 04 Sep 2006)
+New Revision: 66
+
+Modified:
+   branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h
+   branches/ut/hlist/kernel/2.6/net/can/af_can.c
+   branches/ut/hlist/kernel/2.6/net/can/bcm.c
+   branches/ut/hlist/kernel/2.6/net/can/proc.c
+Log:
+revert changes bewteen r64:65 made by Oliver.
+
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h	2006-09-01 09:42:27 UTC (rev 65)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h	2006-09-04 09:25:36 UTC (rev 66)
+@@ -132,7 +132,7 @@
+ 
+ /* af_can rx dispatcher structures */
+ 
+-struct rcv_entry {
++struct rcv_list {
+ 	struct hlist_node list;
+ 	canid_t can_id;
+ 	canid_t mask;
+@@ -142,7 +142,7 @@
+ 	char *ident;
+ };
+ 
+-struct rcv_dev_entry {
++struct rcv_dev_list {
+ 	struct hlist_node list;
+ 	struct net_device *dev;
+ 	struct hlist_head rx_err;
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/af_can.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/af_can.c	2006-09-01 09:42:27 UTC (rev 65)
++++ branches/ut/hlist/kernel/2.6/net/can/af_can.c	2006-09-04 09:25:36 UTC (rev 66)
+@@ -103,60 +103,46 @@
+ static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+ 		   struct packet_type *pt);
+ #endif
+-static int can_rcv_filter(struct rcv_dev_entry *rd, struct sk_buff *skb);
++static int can_rcv_filter(struct rcv_dev_list *q, struct sk_buff *skb);
+ static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
+ 					struct net_device *dev);
+ 
+-/* notification for netdevice status changes */
+-
+-struct notifier_entry {
++struct notifier_list {
+ 	struct list_head list;
+ 	struct net_device *dev;
+ 	void (*func)(unsigned long msg, void *data);
+ 	void *data;
+ };
+ 
+-static LIST_HEAD(notifier_list);
++static LIST_HEAD(nlist);
+ static rwlock_t notifier_lock = RW_LOCK_UNLOCKED;
+ 
+-/* receive lists for CAN-frame delivery to the CAN protocols */
+-
+-HLIST_HEAD(rx_dev_list); /* receive lists per device (ifindex != 0) */
+-struct rcv_dev_entry rx_alldev_list; /* receive list reading all devices */
++HLIST_HEAD(rx_dev_list);
++struct rcv_dev_list rx_alldev_list;
+ static spinlock_t rcv_lists_lock  = SPIN_LOCK_UNLOCKED;
+ 
+-/* for registering skbs received from CAN netdevices */
+-
+ static struct packet_type can_packet = {
+ 	.type = __constant_htons(ETH_P_CAN),
+ 	.dev  = NULL,
+ 	.func = can_rcv,
+ };
+ 
+-/* for handle socket creations for PF_CAN sockets */
+-
+ static struct net_proto_family can_family_ops = {
+ 	.family = PF_CAN,
+ 	.create = can_create,
+ 	.owner  = THIS_MODULE,
+ };
+ 
+-/* for handling of CAN netdevice status changes */
+-
+ static struct notifier_block can_netdev_notifier = {
+ 	.notifier_call = can_notifier,
+ };
+ 
+-/* table of known/loaded CAN protocols inside PF_CAN */
+-
+ static struct can_proto *proto_tab[CAN_MAX];
+ 
+- /* statistics */
++extern struct timer_list stattimer; /* timer for statistics update */
++extern struct s_stats  stats;       /* statistics */
++extern struct s_pstats pstats;
+ 
+-extern struct timer_list stattimer; /* for cyclic updates */
+-extern struct s_stats  stats;       /* packet statistics */
+-extern struct s_pstats pstats;      /* receivelist statistics */
+-
+ module_init(can_init);
+ module_exit(can_exit);
+ 
+@@ -244,34 +230,34 @@
+ void can_dev_register(struct net_device *dev,
+ 		      void (*func)(unsigned long msg, void *), void *data)
+ {
+-	struct notifier_entry *ne = kmalloc(sizeof(*ne), GFP_KERNEL);
++	struct notifier_list *p = kmalloc(sizeof(*p), GFP_KERNEL);
+ 
+ 	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+ 
+-	if (!ne)
++	if (!p)
+ 		return;
+ 
+-	ne-&gt;dev  = dev;
+-	ne-&gt;func = func;
+-	ne-&gt;data = data;
++	p-&gt;dev  = dev;
++	p-&gt;func = func;
++	p-&gt;data = data;
+ 
+ 	write_lock(&amp;notifier_lock);
+-	list_add(&amp;ne-&gt;list, &amp;notifier_list);
++	list_add(&amp;p-&gt;list, &amp;nlist);
+ 	write_unlock(&amp;notifier_lock);
+ }
+ 
+ void can_dev_unregister(struct net_device *dev,
+ 			void (*func)(unsigned long msg, void *), void *data)
+ {
+-	struct notifier_entry *ne, *safe;
++	struct notifier_list *p;
+ 
+ 	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+ 
+ 	write_lock(&amp;notifier_lock);
+-	list_for_each_entry_safe(ne, safe, &amp;notifier_list, list) {
+-		if (ne-&gt;dev == dev &amp;&amp; ne-&gt;func == func &amp;&amp; ne-&gt;data == data) {
+-			list_del(&amp;ne-&gt;list);
+-			kfree(ne);
++	list_for_each_entry (p, &amp;nlist, list) {
++		if (p-&gt;dev == dev &amp;&amp; p-&gt;func == func &amp;&amp; p-&gt;data == data) {
++			list_del(&amp;p-&gt;list);
++			kfree(p);
+ 			break;
+ 		}
+ 	}
+@@ -409,14 +395,14 @@
+ 			unsigned long msg, void *data)
+ {
+ 	struct net_device *dev = (struct net_device *)data;
+-	struct notifier_entry *ne;
++	struct notifier_list *p;
+ 
+ 	DBG(&quot;called for %s, msg = %lu\n&quot;, dev-&gt;name, msg);
+ 
+ 	read_lock(&amp;notifier_lock);
+-	list_for_each_entry (ne, &amp;notifier_list, list) {
+-		if (ne-&gt;dev == dev)
+-			ne-&gt;func(msg, ne-&gt;data);
++	list_for_each_entry (p, &amp;nlist, list) {
++		if (p-&gt;dev == dev)
++			p-&gt;func(msg, p-&gt;data);
+ 	}
+ 	read_unlock(&amp;notifier_lock);
+ 
+@@ -476,19 +462,19 @@
+ 		     void (*func)(struct sk_buff *, void *), void *data,
+ 		     char *ident)
+ {
+-	struct rcv_entry *re;
+-	struct hlist_head *rcvlist;
++	struct rcv_list *p;
++	struct hlist_head *q;
+ 	struct hlist_node *n;
+-	struct rcv_dev_entry *rd = NULL;
++	struct rcv_dev_list *d;
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
+ 	    dev, can_id, mask, func, data, ident);
+ 
+ 	spin_lock(&amp;rcv_lists_lock);
+ 
+-	rcvlist = find_rcv_list(&amp;can_id, &amp;mask, dev);
++	q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+ 
+-	if (!rcvlist) {
++	if (!q) {
+ 		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+ 		       &quot;dev %s, id %03X, mask %03X, ident %s\n&quot;,
+ 		       dev-&gt;name, can_id, mask, ident);
+@@ -496,27 +482,28 @@
+ 	}
+ 
+ 	/* insert   (dev,canid,mask) -&gt; (func,data) */
+-	if (!(re = kmalloc(sizeof(struct rcv_entry), GFP_KERNEL)))
++	if (!(p = kmalloc(sizeof(struct rcv_list), GFP_KERNEL)))
+ 		goto out;
+ 
+-	re-&gt;can_id  = can_id;
+-	re-&gt;mask    = mask;
+-	re-&gt;matches = 0;
+-	re-&gt;func    = func;
+-	re-&gt;data    = data;
+-	re-&gt;ident   = ident;
++	p-&gt;can_id  = can_id;
++	p-&gt;mask    = mask;
++	p-&gt;matches = 0;
++	p-&gt;func    = func;
++	p-&gt;data    = data;
++	p-&gt;ident   = ident;
+ 
+-	hlist_add_head_rcu(&amp;re-&gt;list, rcvlist);
++	hlist_add_head_rcu(&amp;p-&gt;list, q);
+ 
+ 	if (!dev)
+-		rd = &amp;rx_alldev_list; /* for read 'all' devices only */
+-	else
+-		hlist_for_each_entry(rd, n, &amp;rx_dev_list, list)
+-			if (rd-&gt;dev == dev) /* one match is sure! */
++		d = &amp;rx_alldev_list;
++	else {
++		d = NULL;
++		hlist_for_each_entry(d, n, &amp;rx_dev_list, list)
++			if (d-&gt;dev == dev)
+ 				break;
++	}
++	d-&gt;entries++;
+ 
+-	rd-&gt;entries++; /* entries for this/all device(s) */
+-
+ 	pstats.rcv_entries++;
+ 	if (pstats.rcv_entries_max &lt; pstats.rcv_entries)
+ 		pstats.rcv_entries_max = pstats.rcv_entries;
+@@ -528,59 +515,62 @@
+ void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		       void (*func)(struct sk_buff *, void *), void *data)
+ {
+-	struct rcv_entry *re = NULL;
+-	struct hlist_head *rcvlist;
++	struct rcv_list *p;
++	struct hlist_head *q;
+ 	struct hlist_node *n;
+-	struct rcv_dev_entry *rd = NULL;
++	struct rcv_dev_list *d;
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+ 	    dev, can_id, mask, func, data);
+ 
++	p = NULL;
++
+ 	spin_lock(&amp;rcv_lists_lock);
+ 
+-	rcvlist = find_rcv_list(&amp;can_id, &amp;mask, dev);
++	q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+ 
+-	if (!rcvlist) {
++	if (!q) {
+ 		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+ 		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
+ 		goto out;
+ 	}
+ 
+-	hlist_for_each_entry(re, n, rcvlist, list) {
+-		if (re-&gt;can_id == can_id &amp;&amp; re-&gt;mask == mask
+-		    &amp;&amp; re-&gt;func == func &amp;&amp; re-&gt;data == data)
++	hlist_for_each_entry(p, n, q, list) {
++		if (p-&gt;can_id == can_id &amp;&amp; p-&gt;mask == mask
++		    &amp;&amp; p-&gt;func == func &amp;&amp; p-&gt;data == data)
+ 			break;
+ 	}
+ 
+-	if (!n) { /* why n?: see comment in can_rcv() */
++	if (!p) {
+ 		printk(KERN_ERR &quot;CAN: receive list entry not found for &quot;
+ 		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
+ 		goto out;
+ 	}
+ 
+-	hlist_del_rcu(&amp;re-&gt;list);
++	hlist_del_rcu(&amp;p-&gt;list);
+ 
+ 	if (pstats.rcv_entries &gt; 0)
+ 		pstats.rcv_entries--;
+ 
+ 	if (!dev)
+-		rd = &amp;rx_alldev_list; /* for read 'all' devices only */
+-	else
+-		hlist_for_each_entry(rd, n, &amp;rx_dev_list, list)
+-			if (rd-&gt;dev == dev) /* one match is sure! */
++		d = &amp;rx_alldev_list;
++	else {
++		d = NULL;
++		hlist_for_each_entry(d, n, &amp;rx_dev_list, list)
++			if (d-&gt;dev == dev)
+ 				break;
++	}
++	d-&gt;entries--;
+ 
+-	rd-&gt;entries--; /* entries for this/all device(s) */
++	if (!d-&gt;entries)
++		d-&gt;dev = NULL; /* mark unused */
+ 
+-	if (!rd-&gt;entries)
+-		rd-&gt;dev = NULL; /* mark this receive device entry unused */
+-
+  out:
+ 	spin_unlock(&amp;rcv_lists_lock);
+ 
+-	if (re) {
++	if (p) {
+ 		synchronize_rcu();
+-		kfree(re);
++		kfree(p);
+ 	}
+ }
+ 
+@@ -592,7 +582,7 @@
+ 		   struct packet_type *pt)
+ #endif
+ {
+-	struct rcv_dev_entry *rd;
++	struct rcv_dev_list *q;
+ 	struct hlist_node *n;
+ 	int matches;
+ 
+@@ -608,7 +598,6 @@
+ 
+ 	rcu_read_lock();
+ 
+-	/* process listeners for 'all' CAN netdevices */
+ 	matches = can_rcv_filter(&amp;rx_alldev_list, skb);
+ 
+ 	/*  find receive list for this device
+@@ -623,18 +612,17 @@
+ 	 *  cursor variable n to decide if a match was found.
+ 	 */
+ 
+-	hlist_for_each_entry_rcu(rd, n, &amp;rx_dev_list, list)
+-		if (rd-&gt;dev == dev)
++	hlist_for_each_entry_rcu(q, n, &amp;rx_dev_list, list)
++		if (q-&gt;dev == dev)
+ 			break;
+ 
+ 	if (n)
+-		matches += can_rcv_filter(rd, skb); /* process this device */
++		matches += can_rcv_filter(q, skb);
+ 
+ 	rcu_read_unlock();
+ 
+-	/* the skb may have been cloned or not due to rcv_entries */
+ 	DBG(&quot;freeing skbuff %p\n&quot;, skb);
+-	kfree_skb(skb); /* remove original skb received from netdev */
++	kfree_skb(skb);
+ 
+ 	if (matches &gt; 0) {
+ 		stats.matches++;
+@@ -645,34 +633,33 @@
+ }
+ 
+ 
+-static inline void deliver(struct sk_buff *skb, struct rcv_entry *re)
++static inline void deliver(struct sk_buff *skb, struct rcv_list *p)
+ {
+ 	struct sk_buff *clone = skb_clone(skb, GFP_ATOMIC);
+ 	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ 	if (clone) {
+-		re-&gt;func(clone, re-&gt;data);
+-		re-&gt;matches++;    /* update specific statistics */
++		p-&gt;func(clone, p-&gt;data);
++		p-&gt;matches++;    /* update specific statistics */
+ 	}
+ }
+ 
+-/* process different filters for one specific CAN netdevice */
+-static int can_rcv_filter(struct rcv_dev_entry *rd, struct sk_buff *skb)
++static int can_rcv_filter(struct rcv_dev_list *q, struct sk_buff *skb)
+ {
+-	struct rcv_entry *re;
++	struct rcv_list *p;
+ 	struct hlist_node *n;
+ 	int matches = 0;
+ 	struct can_frame *cf = (struct can_frame*)skb-&gt;data;
+ 	canid_t can_id = cf-&gt;can_id;
+ 
+-	if (rd-&gt;entries == 0) /* relevant when processing rx_alldev_list */
++	if (q-&gt;entries == 0)
+ 		return 0;
+ 
+ 	if (can_id &amp; CAN_ERR_FLAG) {
+ 		/* check for error frame entries only */
+-		hlist_for_each_entry_rcu(re, n, &amp;rd-&gt;rx_err, list) {
+-			if (can_id &amp; re-&gt;mask) {
++		hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_err, list) {
++			if (can_id &amp; p-&gt;mask) {
+ 				DBG(&quot;match on rx_err skbuff %p\n&quot;, skb);
+-				deliver(skb, re);
++				deliver(skb, p);
+ 				matches++;
+ 			}
+ 		}
+@@ -680,44 +667,44 @@
+ 	}
+ 
+ 	/* check for unfiltered entries */
+-	hlist_for_each_entry_rcu(re, n, &amp;rd-&gt;rx_all, list) {
++	hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_all, list) {
+ 		DBG(&quot;match on rx_all skbuff %p\n&quot;, skb);
+-		deliver(skb, re);
++		deliver(skb, p);
+ 		matches++;
+ 	}
+ 
+ 	/* check for can_id/mask entries */
+-	hlist_for_each_entry_rcu(re, n, &amp;rd-&gt;rx_fil, list) {
+-		if ((can_id &amp; re-&gt;mask) == re-&gt;can_id) {
++	hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_fil, list) {
++		if ((can_id &amp; p-&gt;mask) == p-&gt;can_id) {
+ 			DBG(&quot;match on rx_fil skbuff %p\n&quot;, skb);
+-			deliver(skb, re);
++			deliver(skb, p);
+ 			matches++;
+ 		}
+ 	}
+ 
+ 	/* check for inverted can_id/mask entries */
+-	hlist_for_each_entry_rcu(re, n, &amp;rd-&gt;rx_inv, list) {
+-		if ((can_id &amp; re-&gt;mask) != re-&gt;can_id) {
++	hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_inv, list) {
++		if ((can_id &amp; p-&gt;mask) != p-&gt;can_id) {
+ 			DBG(&quot;match on rx_inv skbuff %p\n&quot;, skb);
+-			deliver(skb, re);
++			deliver(skb, p);
+ 			matches++;
+ 		}
+ 	}
+ 
+ 	/* check CAN_ID specific entries */
+ 	if (can_id &amp; CAN_EFF_FLAG) {
+-		hlist_for_each_entry_rcu(re, n, &amp;rd-&gt;rx_eff, list) {
+-			if (re-&gt;can_id == can_id) {
++		hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_eff, list) {
++			if (p-&gt;can_id == can_id) {
+ 				DBG(&quot;match on rx_eff skbuff %p\n&quot;, skb);
+-				deliver(skb, re);
++				deliver(skb, p);
+ 				matches++;
+ 			}
+ 		}
+ 	} else {
+ 		can_id &amp;= CAN_SFF_MASK;
+-		hlist_for_each_entry_rcu(re, n, &amp;rd-&gt;rx_sff[can_id], list) {
++		hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_sff[can_id], list) {
+ 			DBG(&quot;match on rx_sff skbuff %p\n&quot;, skb);
+-			deliver(skb, re);
++			deliver(skb, p);
+ 			matches++;
+ 		}
+ 	}
+@@ -726,8 +713,6 @@
+ 	return matches;
+ }
+ 
+-/* find for the wanted device the best matching receive list type inside */
+-/* the associated receive device structure (see struct rcv_dev_entry)    */
+ static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
+ 					struct net_device *dev)
+ {
+@@ -736,7 +721,7 @@
+ 	canid_t rtr = *can_id &amp; *mask &amp; CAN_RTR_FLAG; /* correct RTR check? */
+ 	canid_t err = *mask &amp; CAN_ERR_FLAG; /* mask for error frames only */
+ 
+-	struct rcv_dev_entry *rd = NULL;
++	struct rcv_dev_list *p;
+ 	struct hlist_node *n;
+ 
+ 	/* make some paranoic operations */
+@@ -749,29 +734,29 @@
+ 
+ 	/* find receive list for this device */
+ 	if (!dev)
+-		rd = &amp;rx_alldev_list;
++		p = &amp;rx_alldev_list;
+ 	else {
+ 		/* find the list for dev or an unused list entry, otherwise */
+-		struct rcv_dev_entry *q = NULL;
+-
++		struct rcv_dev_list *q;
++		p = NULL;
+ 		hlist_for_each_entry(q, n, &amp;rx_dev_list, list)
+ 			if (!q-&gt;dev)
+-				rd = q; /* reactivating: 2nd best choice */
++				p = q;
+ 			else if (q-&gt;dev == dev) {
+-				rd = q; /* found device: best choice */
++				p = q;
+ 				break;
+ 			}
+ 
+-		if (rd &amp;&amp; !rd-&gt;dev) {
+-			DBG(&quot;reactivating rcv_dev_entry for %s\n&quot;, dev-&gt;name);
+-			rd-&gt;dev = dev;
++		if (p &amp;&amp; !p-&gt;dev) {
++			DBG(&quot;reactivating rcv_dev_list for %s\n&quot;, dev-&gt;name);
++			p-&gt;dev = dev;
+ 		}
+ 	}
+ 
+-	if (!rd) {
+-		/* create new rcv_dev_entry for this device */
+-		DBG(&quot;creating new rcv_dev_entry for %s\n&quot;, dev-&gt;name);
+-		if (!(rd = kmalloc(sizeof(struct rcv_dev_entry), GFP_KERNEL))) {
++	if (!p) {
++		/* create new rcv_dev_list for this device */
++		DBG(&quot;creating new rcv_dev_list for %s\n&quot;, dev-&gt;name);
++		if (!(p = kmalloc(sizeof(struct rcv_dev_list), GFP_KERNEL))) {
+ 			printk(KERN_ERR &quot;CAN: allocation of receive list failed\n&quot;);
+ 			return NULL;
+ 		}
+@@ -779,37 +764,33 @@
+ 		        for the embedded hlist_head structs.
+ 			Another list type, e.g. list_head, would require
+ 			explicit initialization. */
+-		memset (rd, 0, sizeof(struct rcv_dev_entry));
++		memset (p, 0, sizeof(struct rcv_dev_list));
+ 
+-		rd-&gt;dev = dev;
+-		hlist_add_head(&amp;rd-&gt;list, &amp;rx_dev_list);
++		p-&gt;dev = dev;
++		hlist_add_head(&amp;p-&gt;list, &amp;rx_dev_list);
+ 	}
+ 
+ 	if (err) /* error frames */
+-		return &amp;rd-&gt;rx_err;
++		return &amp;p-&gt;rx_err;
+ 
+ 	if (inv) /* inverse can_id/can_mask filter and RTR */
+-		return &amp;rd-&gt;rx_inv;
++		return &amp;p-&gt;rx_inv;
+ 
+ 	if (*can_id &amp; CAN_RTR_FLAG) /* positive filter RTR */
+-		return &amp;rd-&gt;rx_fil;
++		return &amp;p-&gt;rx_fil;
+ 
+ 	if (!(*mask)) /* mask == 0 =&gt; no filter */
+-		return &amp;rd-&gt;rx_all;
++		return &amp;p-&gt;rx_all;
+ 
+ 	if (*can_id &amp; CAN_EFF_FLAG) {
+ 		if (*mask == CAN_EFF_MASK) /* filter exact EFF can_id */
+-			return &amp;rd-&gt;rx_eff;
+-		/* remark: This is only a simple linear list and not a   */
+-		/* 'fast access' sollution like for SFF-frames (below).  */
+-		/* A hash table would be suggested here, if anyone needs */
+-		/* to access lots of single exact EFF frames. O.Hartkopp */
++			return &amp;p-&gt;rx_eff;
+ 	} else {
+ 		if (*mask == CAN_SFF_MASK) /* filter exact SFF can_id */
+-			return &amp;rd-&gt;rx_sff[*can_id];
++			return &amp;p-&gt;rx_sff[*can_id];
+ 	}
+ 
+-	return &amp;rd-&gt;rx_fil;  /* default: filter via can_id/can_mask */
++	return &amp;p-&gt;rx_fil;  /* filter via can_id/can_mask */
+ }
+ 
+ /**************************************************/
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/bcm.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/bcm.c	2006-09-01 09:42:27 UTC (rev 65)
++++ branches/ut/hlist/kernel/2.6/net/can/bcm.c	2006-09-04 09:25:36 UTC (rev 66)
+@@ -375,6 +375,12 @@
+ 
+ 		unsigned long reduction;
+ 
++		if (len &gt;= PAGE_SIZE - 100) {
++			/* mark output cut off */
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
++			break;
++		} 
++
+ 		/* print only active entries &amp; prevent division by zero */
+ 		if (!op-&gt;frames_abs)
+ 			continue;
+@@ -394,16 +400,16 @@
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;%s%ld%%\n&quot;,
+ 				(reduction == 100)?&quot;near &quot;:&quot;&quot;, reduction);
++	}
+ 
++	list_for_each_entry(op, &amp;ud-&gt;tx_ops, list) {
++
+ 		if (len &gt;= PAGE_SIZE - 100) {
+ 			/* mark output cut off */
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
+ 			break;
+-		} 
+-	}
++		}
+ 
+-	list_for_each_entry(op, &amp;ud-&gt;tx_ops, list) {
+-
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;tx_op: %03X [%d] &quot;,
+ 				op-&gt;can_id, op-&gt;nframes);
+ 		if (op-&gt;j_ival1)
+@@ -413,12 +419,6 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;t2=%ld &quot;, op-&gt;j_ival2);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
+-
+-		if (len &gt;= PAGE_SIZE - 100) {
+-			/* mark output cut off */
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
+-			break;
+-		}
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -1335,34 +1335,34 @@
+ 
+ static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id)
+ {
+-	struct bcm_op *op;
++	struct bcm_op *p;
+ 
+-	list_for_each_entry(op, ops, list)
+-		if (op-&gt;can_id == can_id)
+-			return op;
++	list_for_each_entry(p, ops, list)
++		if (p-&gt;can_id == can_id)
++			return p;
+ 
+ 	return NULL;
+ }
+ 
+ static void bcm_delete_rx_op(struct list_head *ops, canid_t can_id)
+ {
+-	struct bcm_op *op, *n;
++	struct bcm_op *p, *n;
+ 
+-	list_for_each_entry_safe(op, n, ops, list) {
+-		if (op-&gt;can_id == can_id) {
+-			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++	list_for_each_entry_safe(p, n, ops, list) {
++		if (p-&gt;can_id == can_id) {
++			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, p, p-&gt;can_id);
+ 
+-			if (op-&gt;sk-&gt;sk_bound_dev_if) {
+-				struct net_device *dev = dev_get_by_index(op-&gt;sk-&gt;sk_bound_dev_if);
++			if (p-&gt;sk-&gt;sk_bound_dev_if) {
++				struct net_device *dev = dev_get_by_index(p-&gt;sk-&gt;sk_bound_dev_if);
+ 				if (dev) {
+-					can_rx_unregister(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
++					can_rx_unregister(dev, p-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, p);
+ 					dev_put(dev);
+ 				}
+ 			} else
+-				DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, op-&gt;sk);
++				DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, p-&gt;sk);
+ 
+-			list_del(&amp;op-&gt;list);
+-			bcm_remove_op(op);
++			list_del(&amp;p-&gt;list);
++			bcm_remove_op(p);
+ 			return;
+ 		}
+ 	}
+@@ -1370,14 +1370,14 @@
+ 
+ static void bcm_delete_tx_op(struct list_head *ops, canid_t can_id)
+ {
+-	struct bcm_op *op, *n;
++	struct bcm_op *p, *n;
+ 
+-	list_for_each_entry_safe(op, n, ops, list) {
+-		if (op-&gt;can_id == can_id) {
++	list_for_each_entry_safe(p, n, ops, list) {
++		if (p-&gt;can_id == can_id) {
+ 			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
+-			    op, op-&gt;can_id);
+-			list_del(&amp;op-&gt;list);
+-			bcm_remove_op(op);
++			    p, p-&gt;can_id);
++			list_del(&amp;p-&gt;list);
++			bcm_remove_op(p);
+ 			return;
+ 		}
+ 	}
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/proc.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/proc.c	2006-09-01 09:42:27 UTC (rev 65)
++++ branches/ut/hlist/kernel/2.6/net/can/proc.c	2006-09-04 09:25:36 UTC (rev 66)
+@@ -202,7 +202,7 @@
+ static int can_print_recv_list(char *page, int len, struct hlist_head *rx_list,
+ 			       struct net_device *dev)
+ {
+-	struct rcv_entry *p;
++	struct rcv_list *p;
+ 	struct hlist_node *n;
+ 
+ 	rcu_read_lock();
+@@ -344,7 +344,7 @@
+ 				     int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct rcv_dev_entry *p;
++	struct rcv_dev_list *p;
+ 	struct hlist_node *n;
+ 
+ 	/* RX_ALL */
+@@ -374,7 +374,7 @@
+ 				     int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct rcv_dev_entry *p;
++	struct rcv_dev_list *p;
+ 	struct hlist_node *n;
+ 
+ 	/* RX_FIL */
+@@ -404,7 +404,7 @@
+ 				     int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct rcv_dev_entry *p;
++	struct rcv_dev_list *p;
+ 	struct hlist_node *n;
+ 
+ 	/* RX_INV */
+@@ -434,7 +434,7 @@
+ 				     int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct rcv_dev_entry *p;
++	struct rcv_dev_list *p;
+ 	struct hlist_node *n;
+ 
+ 	/* RX_SFF */
+@@ -474,7 +474,7 @@
+ 				     int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct rcv_dev_entry *p;
++	struct rcv_dev_list *p;
+ 	struct hlist_node *n;
+ 
+ 	/* RX_EFF */
+@@ -504,7 +504,7 @@
+ 				     int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct rcv_dev_entry *p;
++	struct rcv_dev_list *p;
+ 	struct hlist_node *n;
+ 
+ 	/* RX_ERR */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000045.html">r65 - in branches/ut/hlist/kernel/2.6: include/linux/can net/ can
+</A></li>
+	<LI>Next message: <A HREF="000047.html">r67 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#46">[ date ]</a>
+              <a href="thread.html#46">[ thread ]</a>
+              <a href="subject.html#46">[ subject ]</a>
+              <a href="author.html#46">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

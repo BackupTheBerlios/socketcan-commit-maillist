@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1184 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1184%20-%20trunk/can-utils&In-Reply-To=%3C20100720134301.6080B480CBA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000815.html">
+   <LINK REL="Next"  HREF="000817.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1184 - trunk/can-utils</H1>
+    <B>bet-frogger at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1184%20-%20trunk/can-utils&In-Reply-To=%3C20100720134301.6080B480CBA%40sheep.berlios.de%3E"
+       TITLE="r1184 - trunk/can-utils">bet-frogger at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul 20 15:43:01 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000815.html">r1183 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000817.html">r1185 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#816">[ date ]</a>
+              <a href="thread.html#816">[ thread ]</a>
+              <a href="subject.html#816">[ subject ]</a>
+              <a href="author.html#816">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bet-frogger
+Date: 2010-07-20 15:43:01 +0200 (Tue, 20 Jul 2010)
+New Revision: 1184
+
+Modified:
+   trunk/can-utils/.gitignore
+   trunk/can-utils/GNUmakefile.am
+   trunk/can-utils/Makefile
+Log:
+add can-calc-bit-timing to Makefiles + gitignore
+
+Signed-off-by: Marc Kleine-Budde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">mkl at pengutronix.de</A>&gt;
+
+Modified: trunk/can-utils/.gitignore
+===================================================================
+--- trunk/can-utils/.gitignore	2010-07-20 13:42:57 UTC (rev 1183)
++++ trunk/can-utils/.gitignore	2010-07-20 13:43:01 UTC (rev 1184)
+@@ -23,6 +23,7 @@
+ 
+ /asc2log
+ /bcmserver
++/can-calc-bit-timing
+ /canbusload
+ /candump
+ /canfdtest
+
+Modified: trunk/can-utils/GNUmakefile.am
+===================================================================
+--- trunk/can-utils/GNUmakefile.am	2010-07-20 13:42:57 UTC (rev 1183)
++++ trunk/can-utils/GNUmakefile.am	2010-07-20 13:43:01 UTC (rev 1184)
+@@ -22,6 +22,7 @@
+ bin_PROGRAMS = \
+ 	asc2log \
+ 	bcmserver \
++	can-calc-bit-timing \
+ 	canbusload \
+ 	candump \
+ 	canfdtest \
+
+Modified: trunk/can-utils/Makefile
+===================================================================
+--- trunk/can-utils/Makefile	2010-07-20 13:42:57 UTC (rev 1183)
++++ trunk/can-utils/Makefile	2010-07-20 13:43:01 UTC (rev 1184)
+@@ -56,7 +56,7 @@
+ PROGRAMS_ISOTP = isotpdump isotprecv isotpsend isotpsniffer isotptun isotpserver
+ PROGRAMS_CANGW = cangw
+ PROGRAMS_SLCAN = slcan_attach slcand
+-PROGRAMS = candump cansniffer cansend canplayer cangen canbusload\
++PROGRAMS = can-calc-bit-timing candump cansniffer cansend canplayer cangen canbusload\
+ 	   log2long log2asc asc2log\
+ 	   canlogserver bcmserver\
+ 	   $(PROGRAMS_ISOTP)\
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000815.html">r1183 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000817.html">r1185 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#816">[ date ]</a>
+              <a href="thread.html#816">[ thread ]</a>
+              <a href="subject.html#816">[ subject ]</a>
+              <a href="author.html#816">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

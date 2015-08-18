@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r190 - in trunk/kernel/2.6: . drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r190%20-%20in%20trunk/kernel/2.6%3A%20.%20drivers/net/can%20net/can&In-Reply-To=%3C200703230832.l2N8Wiqp016048%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000174.html">
+   <LINK REL="Next"  HREF="000176.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r190 - in trunk/kernel/2.6: . drivers/net/can net/can</H1>
+    <B>rschwebel at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r190%20-%20in%20trunk/kernel/2.6%3A%20.%20drivers/net/can%20net/can&In-Reply-To=%3C200703230832.l2N8Wiqp016048%40sheep.berlios.de%3E"
+       TITLE="r190 - in trunk/kernel/2.6: . drivers/net/can net/can">rschwebel at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar 23 09:32:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000174.html">r189 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000176.html">r191 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#175">[ date ]</a>
+              <a href="thread.html#175">[ thread ]</a>
+              <a href="subject.html#175">[ subject ]</a>
+              <a href="author.html#175">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: rschwebel
+Date: 2007-03-23 09:32:41 +0100 (Fri, 23 Mar 2007)
+New Revision: 190
+
+Added:
+   trunk/kernel/2.6/Makefile
+Modified:
+   trunk/kernel/2.6/drivers/net/can/Makefile
+   trunk/kernel/2.6/net/can/Makefile
+Log:
+* add toplevel makefile
+* make sure 'make &amp;&amp; make clean' is consistent
+
+
+Added: trunk/kernel/2.6/Makefile
+===================================================================
+--- trunk/kernel/2.6/Makefile	2007-03-23 08:29:04 UTC (rev 189)
++++ trunk/kernel/2.6/Makefile	2007-03-23 08:32:41 UTC (rev 190)
+@@ -0,0 +1,42 @@
++TOPDIR		= $(shell pwd)
++KERNELDIR	= /lib/modules/`uname -r`/build
++
++SUBDIRS 	= \
++	$(TOPDIR)/net/can \
++	$(TOPDIR)/drivers/net/can
++
++#
++# targetinfo
++#
++# Print out the targetinfo line on the terminal
++#
++# $1: name of the target to be printed out
++#
++targetinfo = \
++	echo; \
++	TG=`echo &quot;$(1)&quot; | sed -e &quot;s,$(TOPDIR)/,,g&quot;`; \
++	LINE=`echo target: $$TG |sed -e &quot;s/./-/g&quot;`; \
++	echo $$LINE; \
++	echo target: $$TG; \
++	echo $$LINE; \
++	echo
++
++.PHONY: net drivers
++
++all: net drivers
++
++net:
++	@$(call targetinfo, &quot;running make in net/can&quot;)
++	cd net/can &amp;&amp; make KERNELDIR=$(KERNELDIR)
++
++drivers:
++	@$(call targetinfo, &quot;running make in drivers/net/can&quot;)
++	cd drivers/net/can &amp;&amp; make KERNELDIR=$(KERNELDIR)
++
++clean:
++	@for dir in $(SUBDIRS); do \
++		$(call targetinfo, &quot;cleaning in $$dir&quot;); \
++		cd $$dir; \
++		make clean KERNELDIR=$(KERNELDIR); \
++	done
++
+
+Modified: trunk/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Makefile	2007-03-23 08:29:04 UTC (rev 189)
++++ trunk/kernel/2.6/drivers/net/can/Makefile	2007-03-23 08:32:41 UTC (rev 190)
+@@ -24,6 +24,7 @@
+ 
+ clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
++	rm -f Module.symvers
+ 
+ .PHONY: clean all vcan slcan sja1000 mscan
+ 
+
+Modified: trunk/kernel/2.6/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/net/can/Makefile	2007-03-23 08:29:04 UTC (rev 189)
++++ trunk/kernel/2.6/net/can/Makefile	2007-03-23 08:32:41 UTC (rev 190)
+@@ -60,6 +60,7 @@
+ 
+ clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
++	rm -f Module.symvers
+ 
+ .PHONY: clean all can raw bcm
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000174.html">r189 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000176.html">r191 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#175">[ date ]</a>
+              <a href="thread.html#175">[ thread ]</a>
+              <a href="subject.html#175">[ subject ]</a>
+              <a href="author.html#175">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

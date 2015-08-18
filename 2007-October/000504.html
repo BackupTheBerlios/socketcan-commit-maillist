@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r522 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r522%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200710050904.l95945Q3014632%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000503.html">
+   <LINK REL="Next"  HREF="000505.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r522 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r522%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200710050904.l95945Q3014632%40sheep.berlios.de%3E"
+       TITLE="r522 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct  5 11:04:05 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000503.html">r521 - trunk/kernel/2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000505.html">r523 - trunk/patch-series/net-2.6.24
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#504">[ date ]</a>
+              <a href="thread.html#504">[ thread ]</a>
+              <a href="subject.html#504">[ subject ]</a>
+              <a href="author.html#504">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-10-05 11:04:03 +0200 (Fri, 05 Oct 2007)
+New Revision: 522
+
+Modified:
+   trunk/kernel/2.6/net/can/Kconfig
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Minor changes: Typos, comments, docs.
+
+
+Modified: trunk/kernel/2.6/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/net/can/Kconfig	2007-10-04 21:16:45 UTC (rev 521)
++++ trunk/kernel/2.6/net/can/Kconfig	2007-10-05 09:04:03 UTC (rev 522)
+@@ -7,13 +7,13 @@
+ 	tristate &quot;CAN bus subsystem support&quot;
+ 	---help---
+ 	  Controller Area Network (CAN) is a slow (up to 1Mbit/s) serial
+-	  communications protocol, which was developed by Bosch at
+-	  1991 mainly for automotive, but now widely used in marine
+-	  (NMEA2000), industrial and medical applications.
++	  communications protocol which was developed by Bosch in
++	  1991, mainly for automotive, but now widely used in marine
++	  (NMEA2000), industrial, and medical applications.
+ 	  More information on the CAN network protocol family PF_CAN
+ 	  is contained in &lt;Documentation/networking/can.txt&gt;.
+ 
+-	  If you want CAN support, you should say Y here and also to the
++	  If you want CAN support you should say Y here and also to the
+ 	  specific driver for your controller(s) below.
+ 
+ config CAN_RAW
+@@ -21,10 +21,10 @@
+ 	depends on CAN
+ 	default N
+ 	---help---
+-	  The Raw CAN protocol option offers access to the CAN bus via
++	  The raw CAN protocol option offers access to the CAN bus via
+ 	  the BSD socket API. You probably want to use the raw socket in
+ 	  most cases where no higher level protocol is being used. The raw
+-	  socket has several filter options e.g. ID-Masking / Errorframes.
++	  socket has several filter options e.g. ID masking / error frames.
+ 	  To receive/send raw CAN messages, use AF_CAN with protocol CAN_RAW.
+ 
+ config CAN_BCM
+@@ -33,7 +33,7 @@
+ 	default N
+ 	---help---
+ 	  The Broadcast Manager offers content filtering, timeout monitoring,
+-	  sending of RTR-frames and cyclic CAN messages without permanent user
++	  sending of RTR frames, and cyclic CAN messages without permanent user
+ 	  interaction. The BCM can be 'programmed' via the BSD socket API and
+ 	  informs you on demand e.g. only on content updates / timeouts.
+ 	  You probably want to use the bcm socket in most cases where cyclic
+@@ -45,8 +45,8 @@
+ 	depends on CAN
+ 	---help---
+ 	  Say Y here if you want the CAN core to produce a bunch of debug
+-	  messages to the system log.  Select this if you are having a
+-	  problem with CAN support and want to see more of what is going on.
++	  messages.  Select this if you are having a problem with CAN
++	  support and want to see more of what is going on.
+ 
+ 
+ source &quot;drivers/net/can/Kconfig&quot;
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-10-04 21:16:45 UTC (rev 521)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-10-05 09:04:03 UTC (rev 522)
+@@ -579,7 +579,7 @@
+ 	}
+ 
+ 	/*
+-	 * Check for bug in CAN protocol implementations:
++	 * Check for bugs in CAN protocol implementations:
+ 	 * If no matching list item was found, the list cursor variable next
+ 	 * will be NULL, while r will point to the last item of the list.
+ 	 */
+@@ -1021,7 +1021,6 @@
+ 	} else
+ 		stattimer.function = NULL;
+ 
+-	/* procfs init */
+ 	can_init_proc();
+ 
+ 	/* protocol register */
+@@ -1040,7 +1039,6 @@
+ 	if (stats_timer)
+ 		del_timer(&amp;stattimer);
+ 
+-	/* procfs remove */
+ 	can_remove_proc();
+ 
+ 	/* protocol unregister */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000503.html">r521 - trunk/kernel/2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000505.html">r523 - trunk/patch-series/net-2.6.24
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#504">[ date ]</a>
+              <a href="thread.html#504">[ thread ]</a>
+              <a href="subject.html#504">[ subject ]</a>
+              <a href="author.html#504">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

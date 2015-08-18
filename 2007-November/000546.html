@@ -1,0 +1,195 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r564 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r564%20-%20trunk&In-Reply-To=%3C200711230753.lAN7rh4V012997%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000545.html">
+   <LINK REL="Next"  HREF="000547.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r564 - trunk</H1>
+    <B>wolf at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r564%20-%20trunk&In-Reply-To=%3C200711230753.lAN7rh4V012997%40sheep.berlios.de%3E"
+       TITLE="r564 - trunk">wolf at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 23 08:53:43 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000545.html">r563 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000547.html">r565 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#546">[ date ]</a>
+              <a href="thread.html#546">[ thread ]</a>
+              <a href="subject.html#546">[ subject ]</a>
+              <a href="author.html#546">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2007-11-23 08:53:43 +0100 (Fri, 23 Nov 2007)
+New Revision: 564
+
+Added:
+   trunk/TODO
+Log:
+Add TODO and wish list
+
+Added: trunk/TODO
+===================================================================
+--- trunk/TODO	2007-11-22 10:35:03 UTC (rev 563)
++++ trunk/TODO	2007-11-23 07:53:43 UTC (rev 564)
+@@ -0,0 +1,118 @@
++TO-DO and Wish list for the Socket-CAN-Project:
++==============================================
++
++
++o CAN bit rate setting:
++
++  Default CAN bit rate calculation and custom bit rate setting in a
++  more hardware independent way should re-worked. See thread
++  <A HREF="https://lists.berlios.de/pipermail/socketcan-core/2007-October/000715.html.">https://lists.berlios.de/pipermail/socketcan-core/2007-October/000715.html.</A>
++
++
++o CAN state management:
++
++  How should the CAN state be managed? We have the common &quot;state&quot;
++  variable of the CAN device interface and the do_get_state() method.
++  I see two methods:
++
++  - the common &quot;state&quot; variable is updated in the ISR and it always
++    hold the proper state. There's no need for do_get_state().
++
++  - if do_get_state(), it should return the proper state.
++
++  Part of it could be handled in common code.
++
++
++o Controller start, stop and re-start (mode setting):
++
++  When and how should the controller be restarted? I see the following
++  three methods:
++
++  - via ifconfig up/down
++
++  - via automatic restart in case of persistent error condition or
++    TX timeout (do we really need that?).
++
++  - via ioctl request SIOCGCANCTRLMODE / CAN_MODE_START
++
++  A restart may also be triggered by a baud-rate setting. The restart
++  behavior should also be configurable when the driver is statically
++  linked into the kernel (no module parameters).
++
++
++o Feature RX-Probe:
++
++  See <A HREF="https://lists.berlios.de/pipermail/socketcan-core/2007-November/000789.html">https://lists.berlios.de/pipermail/socketcan-core/2007-November/000789.html</A>
++
++
++o CAN controller mode setting:
++
++  Currently we have defined:
++
++  #define CAN_CTRLMODE_LOOPBACK   0x1
++  #define CAN_CTRLMODE_LISTENONLY 0x2
++  #define CAN_CTRLMODE_SINGLESHOT 0x3
++
++  How should the mode be set and handled by the driver.
++
++
++o PROCFS or SYSFS support:
++
++  How to set/get common and specific device properties like the CAN
++  baudrate, ctrlmode or device statistics?
++
++  $ cat /proc/net/dev_can
++  i-face can-clock bitrate canstate err-warn err-pass buserrors overruns arb-lost wakeups restarts
++    can0   8000000  125000   active        5        3        92        0        0       0        6
++    can1   8000000  500000  stopped        0        0         0        0        0       0        0
++
++
++o Driver options/parameters:
++
++  So far driver options have been set through module parameters. Does
++  it work with static linking as well? Should we switch to SYSFS.
++
++
++o Naming issues:
++
++  - baudrate, speed -&gt; bitrate
++  - bit_time -&gt; bittime
++  - names of CAN devices and modules
++  - prefix in variables and definitions of the SJA1000 driver
++
++
++o CAN device statistics:
++
++  I think it is to much biased by the SJA1000. It actually counts
++  the error interrupt sources of the SJA1000.
++
++
++o Debugging code:
++
++  The debugging code should be reviewed and used consistantly.
++
++
++
++Further wishes:
++--------------
++
++o Using (N)NAPI, rx-poll for SJA1000 to deal better with high interrupt
++  load, especially bus error flooding (check MSCAN driver).
++
++
++o Purge Tx queue before restarting the CAN [Vladislav Gribov]
++
++
++o Automatic bit rate detection [Vladislav Gribov]
++
++
++o Support for CAN tranceivers  [Vladislav Gribov]
++
++  There are CAN interface boards which allows to switch CAN transceiver
++  between low-speed / high-speed . Shall be selection done over IOCTL or
++  other module parameter?
++  Are there any boards with termination resistance which may be switched
++  on/off? If yes, the same question: ioctl or module parameters?
++
++
++o Interface to query the capabilities of the CAN controllers.
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000545.html">r563 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000547.html">r565 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#546">[ date ]</a>
+              <a href="thread.html#546">[ thread ]</a>
+              <a href="subject.html#546">[ subject ]</a>
+              <a href="author.html#546">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,492 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r652 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r652%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/mscan%0A%09drivers/net/can/sja1000%20include/linux/can%20net/can&In-Reply-To=%3C200801091135.m09BZWLI028970%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000633.html">
+   <LINK REL="Next"  HREF="000635.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r652 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r652%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/mscan%0A%09drivers/net/can/sja1000%20include/linux/can%20net/can&In-Reply-To=%3C200801091135.m09BZWLI028970%40sheep.berlios.de%3E"
+       TITLE="r652 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:35:32 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000633.html">r651 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000635.html">r653 - in branches/cannetdriver26: drivers/net/can/sja1000	include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#634">[ date ]</a>
+              <a href="thread.html#634">[ thread ]</a>
+              <a href="subject.html#634">[ subject ]</a>
+              <a href="author.html#634">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:35:24 +0100 (Wed, 09 Jan 2008)
+New Revision: 652
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h
+   branches/cannetdriver26/include/linux/can/dev.h
+   branches/cannetdriver26/net/can/dev.c
+Log:
+Add common bus-off interface
+
+Modified: branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-09 11:34:13 UTC (rev 651)
++++ branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-09 11:35:24 UTC (rev 652)
+@@ -323,10 +323,7 @@
+ 	if (priv-&gt;can.state &lt; state)
+ 		ret = 1;
+ 	if (state == CAN_STATE_BUS_OFF)
+-		netif_carrier_off(dev);
+-	else if (priv-&gt;can.state == CAN_STATE_BUS_OFF
+-		 &amp;&amp; state != CAN_STATE_BUS_OFF)
+-		netif_carrier_on(dev);
++		can_bus_off(dev);
+ 	priv-&gt;can.state = state;
+ 	return ret;
+ }
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:34:13 UTC (rev 651)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:35:24 UTC (rev 652)
+@@ -160,7 +160,6 @@
+ 
+ /* function declarations */
+ 
+-static void can_restart_dev(unsigned long data);
+ static void chipset_init(struct net_device *dev, int wake);
+ static void chipset_init_trx(struct net_device *dev);
+ int set_reset_mode(struct net_device *dev);
+@@ -177,50 +176,12 @@
+ 	return 1;
+ }
+ 
+-static void can_restart_now(struct net_device *dev)
+-{
+-	struct sja1000_priv *priv = netdev_priv(dev);
+-	struct net_device_stats *stats = dev-&gt;get_stats(dev);
+-	struct sk_buff *skb;
+-	struct can_frame *cf;
+-
+-	/* Cancel restart in progress */
+-	if (priv-&gt;timer.expires) {
+-		del_timer(&amp;priv-&gt;timer);
+-		/* mark inactive timer */
+-		priv-&gt;timer.expires = 0;
+-	}
+-
+-	/* count number of restarts */
+-	priv-&gt;can.can_stats.restarts++;
+-	chipset_init(dev, 1);
+-
+-	/* send restart message upstream */
+-	skb = dev_alloc_skb(sizeof(struct can_frame));
+-	if (skb == NULL)
+-		return;
+-	skb-&gt;dev = dev;
+-	skb-&gt;protocol = htons(ETH_P_CAN);
+-	cf = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
+-	memset(cf, 0, sizeof(struct can_frame));
+-	cf-&gt;can_id = CAN_ERR_FLAG | CAN_ERR_RESTARTED;
+-	cf-&gt;can_dlc = CAN_ERR_DLC;
+-
+-	netif_rx(skb);
+-
+-	dev-&gt;last_rx = jiffies;
+-	stats-&gt;rx_packets++;
+-	stats-&gt;rx_bytes += cf-&gt;can_dlc;
+-}
+-
+ int set_reset_mode(struct net_device *dev)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+ 	unsigned char status = priv-&gt;read_reg(dev, REG_MOD);
+ 	int i;
+ 
+-	priv-&gt;can.can_stats.bus_error_at_init = priv-&gt;can.can_stats.bus_error;
+-
+ 	/* disable interrupts */
+ 	priv-&gt;write_reg(dev, REG_IER, IRQ_OFF);
+ 
+@@ -290,8 +251,7 @@
+ 		DBG(&quot;%s: CAN_MODE_START requested\n&quot;, __FUNCTION__);
+ 		if (!priv-&gt;open_time)
+ 			return -EINVAL;
+-		set_reset_mode(dev);
+-		can_restart_now(dev);
++		chipset_init_trx(dev);
+ 		break;
+ 
+ 	default:
+@@ -345,7 +305,7 @@
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+ 	u8 btr0, btr1;
+-	int state;
++
+ 	switch (bt-&gt;type) {
+ 	case CAN_BITTIME_BTR:
+ 		btr0 = bt-&gt;btr.btr0;
+@@ -366,17 +326,9 @@
+ 	}
+ 	DBG(&quot;%s: BTR0 0x%02x BTR1 0x%02x\n&quot;, dev-&gt;name, btr0, btr1);
+ 
+-	spin_lock_irq(&amp;priv-&gt;can.irq_lock);
+-	state = priv-&gt;can.state;
+-	if (state != CAN_STATE_STOPPED)
+-		set_reset_mode(dev);
+ 	priv-&gt;write_reg(dev, REG_BTR0, btr0);
+ 	priv-&gt;write_reg(dev, REG_BTR1, btr1);
+-	spin_unlock_irq(&amp;priv-&gt;can.irq_lock);
+ 
+-	if (state != CAN_STATE_STOPPED)
+-		can_restart_now(dev);
+-
+ 	return 0;
+ }
+ 
+@@ -441,7 +393,7 @@
+ 
+ 	iDBG(KERN_INFO &quot;%s: %s()\n&quot;, dev-&gt;name, __FUNCTION__);
+ 
+-	/* set chip into reset mode */
++	/* leave reset mode */
+ 	if (priv-&gt;can.state != CAN_STATE_STOPPED)
+ 		set_reset_mode(dev);
+ 
+@@ -551,42 +503,6 @@
+ 	return 0;
+ }
+ 
+-static void can_restart_on(struct net_device *dev)
+-{
+-	struct sja1000_priv *priv = netdev_priv(dev);
+-
+-	if (!(priv-&gt;timer.expires)) {	/* no restart on the run */
+-
+-		set_reset_mode(dev);
+-
+-		priv-&gt;timer.function = can_restart_dev;
+-		priv-&gt;timer.data = (unsigned long)dev;
+-
+-		/* restart chip on persistent error in &lt;xxx&gt; ms */
+-		priv-&gt;timer.expires =
+-			jiffies + (priv-&gt;can.restart_ms * HZ) / 1000;
+-		add_timer(&amp;priv-&gt;timer);
+-
+-		iDBG(KERN_INFO &quot;%s: %s start (%ld)\n&quot;,
+-		     dev-&gt;name, __FUNCTION__, jiffies);
+-	} else
+-		iDBG(KERN_INFO &quot;%s: %s already (%ld)\n&quot;,
+-		     dev-&gt;name, __FUNCTION__, jiffies);
+-}
+-
+-static void can_restart_dev(unsigned long data)
+-{
+-	struct net_device *dev = (struct net_device *)data;
+-	struct sja1000_priv *priv = netdev_priv(dev);
+-
+-	DBG(KERN_INFO &quot;%s: can_restart_dev (%ld)\n&quot;, dev-&gt;name, jiffies);
+-
+-	/* mark inactive timer */
+-	priv-&gt;timer.expires = 0;
+-
+-	can_restart_now(dev);
+-}
+-
+ static void sja1000_rx(struct net_device *dev)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+@@ -655,7 +571,6 @@
+ 	struct sk_buff *skb;
+ 	can_state_t state = priv-&gt;can.state;
+ 	uint8_t ecc, alc;
+-	int restart = 0;
+ 
+ 	skb = dev_alloc_skb(sizeof(struct can_frame));
+ 	if (skb == NULL)
+@@ -688,8 +603,8 @@
+ 		if (status &amp; SR_BS) {
+ 			state = CAN_STATE_BUS_OFF;
+ 			cf-&gt;can_id |= CAN_ERR_BUSOFF;
++			can_bus_off(dev);
+ 			iDBG(KERN_INFO &quot;%s: BUS OFF\n&quot;, dev-&gt;name);
+-			restart++;
+ 		} else if (status &amp; SR_ES) {
+ 			state = CAN_STATE_BUS_WARNING;
+ 			cf-&gt;can_id |= CAN_ERR_BUSOFF;
+@@ -702,8 +617,7 @@
+ 		iiDBG(KERN_INFO &quot;%s: bus error isrc=0x%02X &quot;
+ 		      &quot;status=0x%02X\n&quot;, dev-&gt;name, isrc, status);
+ 		iDBG(KERN_INFO &quot;%s: BEI #%d# [%d]\n&quot;, dev-&gt;name, n,
+-		     priv-&gt;can.can_stats.bus_error -
+-		     priv-&gt;can.can_stats.bus_error_at_init);
++		     priv-&gt;can.can_stats.bus_error);
+ 		priv-&gt;can.can_stats.bus_error++;
+ 		ecc = priv-&gt;read_reg(dev, REG_ECC);
+ 		iDBG(KERN_INFO &quot;%s: ECC = 0x%02X (%s, %s, %s)\n&quot;,
+@@ -732,23 +646,6 @@
+ 		/* Error occured during transmission? */
+ 		if ((ecc &amp; ECC_DIR) == 0)
+ 			cf-&gt;data[2] |= CAN_ERR_PROT_TX;
+-
+-		/* when the bus errors flood the system, */
+-		/* restart the controller                */
+-		if ((priv-&gt;can.can_stats.bus_error_at_init +
+-		     MAX_BUS_ERRORS &lt; priv-&gt;can.can_stats.bus_error)) {
+-			iDBG(KERN_INFO &quot;%s: heavy bus errors\n&quot;, dev-&gt;name);
+-			restart++;
+-		}
+-#if 1
+-		/* don't know, if this is a good idea, */
+-		/* but it works fine ...               */
+-		if (priv-&gt;read_reg(dev, REG_RXERR) &gt; 128) {
+-			iDBG(KERN_INFO &quot;%s: RX_ERR &gt; 128\n&quot;, dev-&gt;name);
+-			state = CAN_STATE_BUS_PASSIVE;
+-			restart++;
+-		}
+-#endif
+ 	}
+ 	if (isrc &amp; IRQ_EPI) {
+ 		/* error passive interrupt */
+@@ -759,7 +656,6 @@
+ 		if (status &amp; SR_ES) {
+ 			iDBG(KERN_INFO &quot;%s: ERROR PASSIVE\n&quot;, dev-&gt;name);
+ 			state = CAN_STATE_BUS_PASSIVE;
+-			restart++;
+ 		} else {
+ 			iDBG(KERN_INFO &quot;%s: ERROR ACTIVE\n&quot;, dev-&gt;name);
+ 			state = CAN_STATE_BUS_WARNING;
+@@ -801,12 +697,6 @@
+ 	stats-&gt;rx_packets++;
+ 	stats-&gt;rx_bytes += cf-&gt;can_dlc;
+ 
+-	if (priv-&gt;can.restart_ms &gt; 0 &amp;&amp; restart) {
+-		iDBG(KERN_INFO &quot;%s: restarting device\n&quot;, dev-&gt;name);
+-		can_restart_on(dev);
+-		return restart;
+-	}
+-
+ 	return 0;
+ }
+ 
+@@ -919,20 +809,12 @@
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+ 
+-	/* set chip into reset mode */
+ 	set_reset_mode(dev);
+-
++	netif_stop_queue(dev);
+ 	priv-&gt;open_time = 0;
+-
+-	if (priv-&gt;timer.expires) {
+-		del_timer(&amp;priv-&gt;timer);
+-		priv-&gt;timer.expires = 0;
+-	}
+-
++	can_close_cleanup(dev);
+ 	free_irq(dev-&gt;irq, (void *)dev);
+ 
+-	netif_stop_queue(dev);
+-
+ 	return 0;
+ }
+ 
+@@ -974,9 +856,6 @@
+ 	if (!sja1000_probe_chip(dev))
+ 		return -ENODEV;
+ 
+-	init_timer(&amp;priv-&gt;timer);
+-	priv-&gt;timer.expires = 0;
+-
+ 	dev-&gt;open = sja1000_open;
+ 	dev-&gt;stop = sja1000_close;
+ 	dev-&gt;hard_start_xmit = sja1000_start_xmit;
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h	2008-01-09 11:34:13 UTC (rev 651)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h	2008-01-09 11:35:24 UTC (rev 652)
+@@ -174,7 +174,6 @@
+ 	struct can_priv can;	/* must be the first member! */
+ 	long open_time;
+ 	int debug;
+-	struct timer_list timer;
+ 	struct sk_buff *echo_skb;
+ 	u8 (*read_reg) (struct net_device * dev, int reg);
+ 	void (*write_reg) (struct net_device * dev, int reg, u8 val);
+
+Modified: branches/cannetdriver26/include/linux/can/dev.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:34:13 UTC (rev 651)
++++ branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:35:24 UTC (rev 652)
+@@ -50,7 +50,9 @@
+ 	can_state_t state;
+ 	can_mode_t mode;
+ 	u32 ctrlmode;
++
+ 	int restart_ms;
++	struct timer_list timer;
+ 
+ 	int (*do_set_bittime)(struct net_device * dev,
+ 			      struct can_bittime * br);
+@@ -72,4 +74,8 @@
+ int can_calc_bittime(struct can_priv *can, u32 bitrate,
+ 		     struct can_bittime_std *bittime);
+ 
++void can_bus_off(struct net_device *dev);
++
++void can_close_cleanup(struct net_device *dev);
++
+ #endif /* CAN_DEVICE_H */
+
+Modified: branches/cannetdriver26/net/can/dev.c
+===================================================================
+--- branches/cannetdriver26/net/can/dev.c	2008-01-09 11:34:13 UTC (rev 651)
++++ branches/cannetdriver26/net/can/dev.c	2008-01-09 11:35:24 UTC (rev 652)
+@@ -205,6 +205,9 @@
+ 	priv-&gt;max_sjw = DEFAULT_MAX_SJW;
+ 	spin_lock_init(&amp;priv-&gt;irq_lock);
+ 
++	init_timer(&amp;priv-&gt;timer);
++	priv-&gt;timer.expires = 0;
++
+ 	return dev;
+ }
+ 
+@@ -217,6 +220,89 @@
+ 
+ EXPORT_SYMBOL(free_candev);
+ 
++/*
++ * CAN bus-off handling
++ * FIXME: we need some synchronization
++ */
++int can_restart_now(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++	struct sk_buff *skb;
++	struct can_frame *cf;
++	int err;
++
++	/* Cancel restart in progress */
++	if (priv-&gt;timer.expires) {
++		del_timer(&amp;priv-&gt;timer);
++		priv-&gt;timer.expires = 0; /* mark inactive timer */
++	}
++
++	if ((err = priv-&gt;do_set_mode(dev, CAN_MODE_START)))
++		return err;
++
++	if (!netif_carrier_ok(dev))
++		netif_carrier_on(dev);
++
++	priv-&gt;can_stats.restarts++;
++
++	/* send restart message upstream */
++	skb = dev_alloc_skb(sizeof(struct can_frame));
++	if (skb == NULL)
++		return -ENOMEM;
++	skb-&gt;dev = dev;
++	skb-&gt;protocol = htons(ETH_P_CAN);
++	cf = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
++	memset(cf, 0, sizeof(struct can_frame));
++	cf-&gt;can_id = CAN_ERR_FLAG | CAN_ERR_RESTARTED;
++	cf-&gt;can_dlc = CAN_ERR_DLC;
++
++	netif_rx(skb);
++
++	dev-&gt;last_rx = jiffies;
++	stats-&gt;rx_packets++;
++	stats-&gt;rx_bytes += cf-&gt;can_dlc;
++
++	return 0;
++}
++
++static void can_restart_after(unsigned long data)
++{
++	struct net_device *dev = (struct net_device *)data;
++	struct can_priv *priv = netdev_priv(dev);
++
++	priv-&gt;timer.expires = 0; /* mark inactive timer */
++	can_restart_now(dev);
++}
++
++void can_bus_off(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	netif_carrier_off(dev);
++
++	if (priv-&gt;restart_ms &gt; 0 &amp;&amp; !priv-&gt;timer.expires) {
++
++		priv-&gt;timer.function = can_restart_after;
++		priv-&gt;timer.data = (unsigned long)dev;
++		priv-&gt;timer.expires =
++			jiffies + (priv-&gt;restart_ms * HZ) / 1000;
++		add_timer(&amp;priv-&gt;timer);
++	}
++}
++EXPORT_SYMBOL(can_bus_off);
++
++void can_close_cleanup(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	if (priv-&gt;timer.expires) {
++		del_timer(&amp;priv-&gt;timer);
++		priv-&gt;timer.expires = 0;
++	}
++}
++EXPORT_SYMBOL(can_close_cleanup);
++
+ static __init int can_dev_init(void)
+ {
+ 	return can_sysfs_init();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000633.html">r651 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000635.html">r653 - in branches/cannetdriver26: drivers/net/can/sja1000	include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#634">[ date ]</a>
+              <a href="thread.html#634">[ thread ]</a>
+              <a href="subject.html#634">[ subject ]</a>
+              <a href="author.html#634">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

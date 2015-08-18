@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r403 - branches/ut/vcan-rtnl
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r403%20-%20branches/ut/vcan-rtnl&In-Reply-To=%3C200707050127.l651RiLF011403%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000385.html">
+   <LINK REL="Next"  HREF="000387.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r403 - branches/ut/vcan-rtnl</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r403%20-%20branches/ut/vcan-rtnl&In-Reply-To=%3C200707050127.l651RiLF011403%40sheep.berlios.de%3E"
+       TITLE="r403 - branches/ut/vcan-rtnl">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul  5 03:27:44 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000385.html">r402 - branches/ut/vcan-rtnl
+</A></li>
+        <LI>Next message: <A HREF="000387.html">r404 - branches/ut/vcan-rtnl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#386">[ date ]</a>
+              <a href="thread.html#386">[ thread ]</a>
+              <a href="subject.html#386">[ subject ]</a>
+              <a href="author.html#386">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-05 03:27:43 +0200 (Thu, 05 Jul 2007)
+New Revision: 403
+
+Modified:
+   branches/ut/vcan-rtnl/vcan.c
+Log:
+Append newly created device to vcan_devs only if registered sucessfully.
+Unregister vcan_link_ops if vcan_module_init() fails.
+Remove unnecessary #include.
+Remove unnecessary call to memset().
+
+
+Modified: branches/ut/vcan-rtnl/vcan.c
+===================================================================
+--- branches/ut/vcan-rtnl/vcan.c	2007-07-04 15:09:29 UTC (rev 402)
++++ branches/ut/vcan-rtnl/vcan.c	2007-07-05 01:27:43 UTC (rev 403)
+@@ -50,7 +50,6 @@
+ #include &lt;linux/if_ether.h&gt;
+ #include &lt;linux/can.h&gt;
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
+-#include &lt;linux/rtnetlink.h&gt;
+ #include &lt;net/rtnetlink.h&gt;
+ #endif
+ 
+@@ -233,8 +232,6 @@
+ 
+ 	ether_setup(dev);
+ 
+-	memset(dev-&gt;priv, 0, PRIVSIZE);
+-
+ 	dev-&gt;type              = ARPHRD_CAN;
+ 	dev-&gt;mtu               = sizeof(struct can_frame);
+ 	dev-&gt;flags             = IFF_NOARP;
+@@ -260,10 +257,15 @@
+ 			struct nlattr *tb[], struct nlattr *data[])
+ {
+ 	struct vcan_priv *priv = netdev_priv(dev);
++	int err;
+ 
++	err = register_netdev(dev);
++	if (err &lt; 0)
++		return err;
++
+ 	priv-&gt;dev = dev;
+ 	list_add_tail(&amp;priv-&gt;list, &amp;vcan_devs);
+-	return register_netdev(dev);
++	return 0;
+ }
+ 
+ static void vcan_dellink(struct net_device *dev)
+@@ -325,9 +327,11 @@
+ 		}
+ 	}
+ 
+-	if (err &lt; 0)
++	if (err &lt; 0) {
+ 		list_for_each_entry_safe(priv, n, &amp;vcan_devs, list)
+ 			vcan_dellink(priv-&gt;dev);
++		__rtnl_link_unregister(&amp;vcan_link_ops);
++	}
+  out:
+ 	rtnl_unlock();
+ 	return err;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000385.html">r402 - branches/ut/vcan-rtnl
+</A></li>
+	<LI>Next message: <A HREF="000387.html">r404 - branches/ut/vcan-rtnl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#386">[ date ]</a>
+              <a href="thread.html#386">[ thread ]</a>
+              <a href="subject.html#386">[ subject ]</a>
+              <a href="author.html#386">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

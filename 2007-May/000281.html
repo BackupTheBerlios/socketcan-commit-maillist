@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r297 - in trunk/kernel/2.6: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r297%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200705091908.l49J8JAn005832%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000280.html">
+   <LINK REL="Next"  HREF="000282.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r297 - in trunk/kernel/2.6: drivers/net/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r297%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200705091908.l49J8JAn005832%40sheep.berlios.de%3E"
+       TITLE="r297 - in trunk/kernel/2.6: drivers/net/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed May  9 21:08:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000280.html">r296 - trunk/kernel/2.6/include/linux
+</A></li>
+        <LI>Next message: <A HREF="000282.html">r298 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#281">[ date ]</a>
+              <a href="thread.html#281">[ thread ]</a>
+              <a href="subject.html#281">[ subject ]</a>
+              <a href="author.html#281">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-05-09 21:08:14 +0200 (Wed, 09 May 2007)
+New Revision: 297
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/af_can.h
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/dev.c
+   trunk/kernel/2.6/net/can/proc.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Reorder #include directives.
+Remove superfluous braces.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-09 17:40:55 UTC (rev 296)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-09 19:08:14 UTC (rev 297)
+@@ -47,7 +47,6 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+ #include &lt;linux/if_ether.h&gt;
+-
+ #include &lt;linux/can.h&gt;
+ 
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+@@ -178,9 +177,8 @@
+ 			    &quot;using new skbuff %p\n&quot;,
+ 			    dev-&gt;name, __FUNCTION__, old_skb, skb);
+ 			kfree_skb(old_skb);
+-			if (!skb) {
++			if (!skb)
+ 				return 0;
+-			}
+ 		} else
+ 			skb_orphan(skb);
+ 
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-05-09 17:40:55 UTC (rev 296)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-05-09 19:08:14 UTC (rev 297)
+@@ -57,11 +57,11 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/core.h&gt;
+ #include &lt;net/sock.h&gt;
+ #include &lt;asm/uaccess.h&gt;
+ 
+-#include &lt;linux/can.h&gt;
+-#include &lt;linux/can/core.h&gt;
+ #include &quot;af_can.h&quot;
+ 
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+
+Modified: trunk/kernel/2.6/net/can/af_can.h
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.h	2007-05-09 17:40:55 UTC (rev 296)
++++ trunk/kernel/2.6/net/can/af_can.h	2007-05-09 19:08:14 UTC (rev 297)
+@@ -49,7 +49,6 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/list.h&gt;
+ #include &lt;linux/rcupdate.h&gt;
+-
+ #include &lt;linux/can.h&gt;
+ 
+ /* af_can rx dispatcher structures */
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-05-09 17:40:55 UTC (rev 296)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-05-09 19:08:14 UTC (rev 297)
+@@ -48,11 +48,10 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/poll.h&gt;
+-#include &lt;net/sock.h&gt;
+-
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/can/core.h&gt;
+ #include &lt;linux/can/bcm.h&gt;
++#include &lt;net/sock.h&gt;
+ 
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+
+Modified: trunk/kernel/2.6/net/can/dev.c
+===================================================================
+--- trunk/kernel/2.6/net/can/dev.c	2007-05-09 17:40:55 UTC (rev 296)
++++ trunk/kernel/2.6/net/can/dev.c	2007-05-09 19:08:14 UTC (rev 297)
+@@ -21,7 +21,6 @@
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+-
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/can/dev.h&gt;
+ 
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-05-09 17:40:55 UTC (rev 296)
++++ trunk/kernel/2.6/net/can/proc.c	2007-05-09 19:08:14 UTC (rev 297)
+@@ -46,8 +46,8 @@
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/list.h&gt;
+ #include &lt;linux/rcupdate.h&gt;
++#include &lt;linux/can/core.h&gt;
+ 
+-#include &lt;linux/can/core.h&gt;
+ #include &quot;af_can.h&quot;
+ 
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-05-09 17:40:55 UTC (rev 296)
++++ trunk/kernel/2.6/net/can/raw.c	2007-05-09 19:08:14 UTC (rev 297)
+@@ -49,11 +49,10 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/uio.h&gt;
+ #include &lt;linux/poll.h&gt;
+-#include &lt;net/sock.h&gt;
+-
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/can/core.h&gt;
+ #include &lt;linux/can/raw.h&gt;
++#include &lt;net/sock.h&gt;
+ 
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000280.html">r296 - trunk/kernel/2.6/include/linux
+</A></li>
+	<LI>Next message: <A HREF="000282.html">r298 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#281">[ date ]</a>
+              <a href="thread.html#281">[ thread ]</a>
+              <a href="subject.html#281">[ subject ]</a>
+              <a href="author.html#281">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

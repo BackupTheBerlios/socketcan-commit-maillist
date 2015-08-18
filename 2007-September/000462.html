@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r480 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r480%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200709200702.l8K727x0011328%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000461.html">
+   <LINK REL="Next"  HREF="000463.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r480 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r480%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200709200702.l8K727x0011328%40sheep.berlios.de%3E"
+       TITLE="r480 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep 20 09:02:07 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000461.html">r479 - trunk/kernel/2.6/include/linux
+</A></li>
+        <LI>Next message: <A HREF="000463.html">r481 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#462">[ date ]</a>
+              <a href="thread.html#462">[ thread ]</a>
+              <a href="subject.html#462">[ subject ]</a>
+              <a href="author.html#462">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-20 09:02:05 +0200 (Thu, 20 Sep 2007)
+New Revision: 480
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Fixed error handling in the case of can_rx_register() failure.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-09-19 19:05:18 UTC (rev 479)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-09-20 07:02:05 UTC (rev 480)
+@@ -1268,7 +1268,7 @@
+ 		/* mark disabled timer */
+ 		op-&gt;thrtimer.expires = 0;
+ 
+-		/* add this bcm_op to the list of the tx_ops */
++		/* add this bcm_op to the list of the rx_ops */
+ 		list_add(&amp;op-&gt;list, &amp;bo-&gt;rx_ops);
+ 
+ 		/* call can_rx_register() */
+@@ -1360,9 +1360,8 @@
+ 						      REGMASK(op-&gt;can_id),
+ 						      bcm_rx_handler, op,
+ 						      IDENT);
+-				if (!err)
+-					op-&gt;rx_reg_dev = dev;
+ 
++				op-&gt;rx_reg_dev = dev;
+ 				dev_put(dev);
+ 			}
+ 
+@@ -1370,8 +1369,12 @@
+ 			err = can_rx_register(NULL, op-&gt;can_id,
+ 					      REGMASK(op-&gt;can_id),
+ 					      bcm_rx_handler, op, IDENT);
+-		if (err)
++		if (err) {
++			/* this bcm rx op is broken -&gt; remove it */
++			list_del(&amp;op-&gt;list);
++			bcm_remove_op(op);
+ 			return err;
++		}
+ 	}
+ 
+ 	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000461.html">r479 - trunk/kernel/2.6/include/linux
+</A></li>
+	<LI>Next message: <A HREF="000463.html">r481 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#462">[ date ]</a>
+              <a href="thread.html#462">[ thread ]</a>
+              <a href="subject.html#462">[ subject ]</a>
+              <a href="author.html#462">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

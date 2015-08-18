@@ -1,0 +1,277 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r646 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r646%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/ccan%0A%09drivers/net/can/mscan%20include/linux/can%20net/can&In-Reply-To=%3C200801091126.m09BQAda015763%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000627.html">
+   <LINK REL="Next"  HREF="000629.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r646 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan include/linux/can net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r646%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/ccan%0A%09drivers/net/can/mscan%20include/linux/can%20net/can&In-Reply-To=%3C200801091126.m09BQAda015763%40sheep.berlios.de%3E"
+       TITLE="r646 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan include/linux/can net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:26:10 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000627.html">r645 - in branches/cannetdriver26: drivers/net/can/ccan	include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000629.html">r647 - branches/cannetdriver26/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#628">[ date ]</a>
+              <a href="thread.html#628">[ thread ]</a>
+              <a href="subject.html#628">[ subject ]</a>
+              <a href="author.html#628">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:26:06 +0100 (Wed, 09 Jan 2008)
+New Revision: 646
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/ccan/ccan.c
+   branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+   branches/cannetdriver26/include/linux/can/dev.h
+   branches/cannetdriver26/net/can/dev.c
+Log:
+Rename bit_time to bittime
+
+Modified: branches/cannetdriver26/drivers/net/can/ccan/ccan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/ccan/ccan.c	2008-01-09 11:25:41 UTC (rev 645)
++++ branches/cannetdriver26/drivers/net/can/ccan/ccan.c	2008-01-09 11:26:06 UTC (rev 646)
+@@ -234,7 +234,7 @@
+ 	priv-&gt;can.net_stats.tx_errors++;
+ }
+ 
+-static int ccan_set_bit_time(struct net_device *dev, struct can_bittime *br)
++static int ccan_set_bittime(struct net_device *dev, struct can_bittime *br)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+ 	unsigned int reg_timing, ctrl_save;
+@@ -473,14 +473,14 @@
+ static int ccan_chip_config(struct net_device *dev)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+-	struct can_bittime bit_time;
++	struct can_bittime bittime;
+ 	int ret, i;
+ 	
+ 	/* set bit timing */
+-	bit_time.type = CAN_BITTIME_STD;
+-	ret = can_calc_bit_time(&amp;priv-&gt;can, priv-&gt;can.bitrate, &amp;bit_time.std);
++	bittime.type = CAN_BITTIME_STD;
++	ret = can_calc_bittime(&amp;priv-&gt;can, priv-&gt;can.bitrate, &amp;bittime.std);
+ 	if (ret == 0)
+-		ret = ccan_set_bit_time(dev, &amp;bit_time);
++		ret = ccan_set_bittime(dev, &amp;bittime);
+ 	if (ret)
+ 		dev_err(ND2D(dev), &quot;failed to config bit timing\n&quot;);
+ 
+@@ -521,7 +521,7 @@
+ 
+ 	priv-&gt;can.bitrate = 500000;
+ 
+-	priv-&gt;can.do_set_bit_time = ccan_set_bit_time;
++	priv-&gt;can.do_set_bittime = ccan_set_bittime;
+ 	priv-&gt;can.do_get_state = ccan_get_state;
+ 	priv-&gt;can.do_set_mode = ccan_set_mode;
+ 
+
+Modified: branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-09 11:25:41 UTC (rev 645)
++++ branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-09 11:26:06 UTC (rev 646)
+@@ -550,8 +550,7 @@
+ 	return 0;
+ }
+ 
+-static int mscan_do_set_bit_time(struct net_device *dev,
+-				 struct can_bittime *bt)
++static int mscan_do_set_bittime(struct net_device *dev, struct can_bittime *bt)
+ {
+ 	struct mscan_priv *priv = netdev_priv(dev);
+ 	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
+@@ -698,7 +697,7 @@
+ 	dev-&gt;poll = mscan_rx_poll;
+ 	dev-&gt;weight = 8;
+ 
+-	priv-&gt;can.do_set_bit_time = mscan_do_set_bit_time;
++	priv-&gt;can.do_set_bittime = mscan_do_set_bittime;
+ 	priv-&gt;can.do_set_mode = mscan_do_set_mode;
+ 
+ 	for (i = 0; i &lt; TX_QUEUE_SIZE; i++)
+
+Modified: branches/cannetdriver26/include/linux/can/dev.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:25:41 UTC (rev 645)
++++ branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:26:06 UTC (rev 646)
+@@ -41,7 +41,7 @@
+ 	u8 max_sjw;
+ 
+ 	u32 bitrate;
+-	struct can_bittime bit_time;
++	struct can_bittime bittime;
+ 
+ 	spinlock_t irq_lock;
+ 	/* Please hold this lock when touching net_stats/can_stats */
+@@ -51,8 +51,8 @@
+ 	can_mode_t mode;
+ 	u32 ctrlmode;
+ 
+-	int (*do_set_bit_time)(struct net_device * dev,
+-			       struct can_bittime * br);
++	int (*do_set_bittime)(struct net_device * dev,
++			      struct can_bittime * br);
+ 	int (*do_get_state)(struct net_device * dev, u32* state);
+ 	int (*do_set_mode)(struct net_device * dev, u32 mode);
+ 	int (*do_set_ctrlmode)(struct net_device * dev, u32 ctrlmode);
+@@ -68,7 +68,7 @@
+ struct net_device *alloc_candev(int sizeof_priv);
+ void free_candev(struct net_device *dev);
+ 
+-int can_calc_bit_time(struct can_priv *can, u32 bitrate,
+-		      struct can_bittime_std *bit_time);
++int can_calc_bittime(struct can_priv *can, u32 bitrate,
++		     struct can_bittime_std *bittime);
+ 
+ #endif /* CAN_DEVICE_H */
+
+Modified: branches/cannetdriver26/net/can/dev.c
+===================================================================
+--- branches/cannetdriver26/net/can/dev.c	2008-01-09 11:25:41 UTC (rev 645)
++++ branches/cannetdriver26/net/can/dev.c	2008-01-09 11:26:06 UTC (rev 646)
+@@ -40,25 +40,25 @@
+  *
+  *  Parameters:
+  *  [in]
+- *    bit_time_nsec - expected bit time in nanosecs
++ *    bittime_nsec - expected bit time in nanosecs
+  *
+  *  [out]
+- *    bit_time      - calculated time segments, for meaning of
+- * 		      each field read CAN standard.
++ *    bittime      - calculated time segments, for meaning of
++ * 		     each field read CAN standard.
+  */
+ 
+ #define DEFAULT_MAX_BRP	64U
+ #define DEFAULT_MAX_SJW	4U
+ 
+ /* All below values in tq units */
+-#define MAX_BIT_TIME	25U
+-#define MIN_BIT_TIME	8U
++#define MAX_BITTIME	25U
++#define MIN_BITTIME	8U
+ #define MAX_PROP_SEG	8U
+ #define MAX_PHASE_SEG1	8U
+ #define MAX_PHASE_SEG2	8U
+ 
+-int can_calc_bit_time(struct can_priv *can, u32 bitrate,
+-		      struct can_bittime_std *bit_time)
++int can_calc_bittime(struct can_priv *can, u32 bitrate,
++		     struct can_bittime_std *bittime)
+ {
+ 	int best_error = -1;	/* Ariphmetic error */
+ 	int df, best_df = -1;	/* oscillator's tolerance range,
+@@ -76,13 +76,13 @@
+ 	do_div(tmp, bitrate);
+ 	brp_expected = (u32) tmp;
+ 
+-	brp_min = brp_expected / (1000 * MAX_BIT_TIME);
++	brp_min = brp_expected / (1000 * MAX_BITTIME);
+ 	if (brp_min == 0)
+ 		brp_min = 1;
+ 	if (brp_min &gt; can-&gt;max_brp)
+ 		return -ERANGE;
+ 
+-	brp_max = (brp_expected + 500 * MIN_BIT_TIME) / (1000 * MIN_BIT_TIME);
++	brp_max = (brp_expected + 500 * MIN_BITTIME) / (1000 * MIN_BITTIME);
+ 	if (brp_max == 0)
+ 		brp_max = 1;
+ 	if (brp_max &gt; can-&gt;max_brp)
+@@ -90,10 +90,10 @@
+ 
+ 	for (brp = brp_min; brp &lt;= brp_max; brp++) {
+ 		quanta = brp_expected / (brp * 1000);
+-		if (quanta &lt; MAX_BIT_TIME
++		if (quanta &lt; MAX_BITTIME
+ 		    &amp;&amp; quanta * brp * 1000 != brp_expected)
+ 			quanta++;
+-		if (quanta &lt; MIN_BIT_TIME || quanta &gt; MAX_BIT_TIME)
++		if (quanta &lt; MIN_BITTIME || quanta &gt; MAX_BITTIME)
+ 			continue;
+ 
+ 		phase_seg2 = min((quanta - 3) / 2, MAX_PHASE_SEG2);
+@@ -133,18 +133,18 @@
+ 						continue;
+ 
+ 					if (error == best_error
+-					    &amp;&amp; prop_seg &lt; bit_time-&gt;prop_seg)
++					    &amp;&amp; prop_seg &lt; bittime-&gt;prop_seg)
+ 						continue;
+ 
+ 					best_error = error;
+ 					best_df = df;
+-					bit_time-&gt;brp = brp;
+-					bit_time-&gt;prop_seg = prop_seg;
+-					bit_time-&gt;phase_seg1 = phase_seg1;
+-					bit_time-&gt;phase_seg2 = phase_seg2;
+-					bit_time-&gt;sjw = sjw;
+-					bit_time-&gt;sam =
+-						(bit_time-&gt;phase_seg1 &gt; 3);
++					bittime-&gt;brp = brp;
++					bittime-&gt;prop_seg = prop_seg;
++					bittime-&gt;phase_seg1 = phase_seg1;
++					bittime-&gt;phase_seg2 = phase_seg2;
++					bittime-&gt;sjw = sjw;
++					bittime-&gt;sam =
++						(bittime-&gt;phase_seg1 &gt; 3);
+ 				}
+ 			}
+ 		}
+@@ -155,7 +155,7 @@
+ 		return -EDOM;
+ 	return 0;
+ }
+-EXPORT_SYMBOL(can_calc_bit_time);
++EXPORT_SYMBOL(can_calc_bittime);
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ static struct net_device_stats *can_get_stats(struct net_device *dev)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000627.html">r645 - in branches/cannetdriver26: drivers/net/can/ccan	include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000629.html">r647 - branches/cannetdriver26/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#628">[ date ]</a>
+              <a href="thread.html#628">[ thread ]</a>
+              <a href="subject.html#628">[ subject ]</a>
+              <a href="author.html#628">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

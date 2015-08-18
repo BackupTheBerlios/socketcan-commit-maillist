@@ -1,0 +1,761 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r49 - in trunk/kernel: 2.4/can 2.4/drivers/mscan 2.4/drivers/sja1000 2.6/drivers/net/can 2.6/drivers/net/can/sja1000 2.6/include/linux/can 2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r49%20-%20in%20trunk/kernel%3A%202.4/can%202.4/drivers/mscan%202.4/drivers/sja1000%202.6/drivers/net/can%202.6/drivers/net/can/sja1000%202.6/include/linux/can%202.6/net/can&In-Reply-To=%3C200606271923.k5RJNo57009975%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000025.html">
+   <LINK REL="Next"  HREF="000027.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r49 - in trunk/kernel: 2.4/can 2.4/drivers/mscan 2.4/drivers/sja1000 2.6/drivers/net/can 2.6/drivers/net/can/sja1000 2.6/include/linux/can 2.6/net/can</H1>
+    <B>thuermann at berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r49%20-%20in%20trunk/kernel%3A%202.4/can%202.4/drivers/mscan%202.4/drivers/sja1000%202.6/drivers/net/can%202.6/drivers/net/can/sja1000%202.6/include/linux/can%202.6/net/can&In-Reply-To=%3C200606271923.k5RJNo57009975%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r49 - in trunk/kernel: 2.4/can 2.4/drivers/mscan 2.4/drivers/sja1000 2.6/drivers/net/can 2.6/drivers/net/can/sja1000 2.6/include/linux/can 2.6/net/can">thuermann at berlios.de
+       </A><BR>
+    <I>Tue Jun 27 21:23:50 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000025.html">[Socketcan-commit] r48 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000027.html">[Socketcan-commit] r50 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#26">[ date ]</a>
+              <a href="thread.html#26">[ thread ]</a>
+              <a href="subject.html#26">[ subject ]</a>
+              <a href="author.html#26">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-06-27 21:23:38 +0200 (Tue, 27 Jun 2006)
+New Revision: 49
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/can_error.h
+   trunk/kernel/2.4/can/can_ioctl.h
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.4/can/vcan.c
+   trunk/kernel/2.4/drivers/mscan/mscan.h
+   trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+   trunk/kernel/2.4/drivers/mscan/mscan_net.c
+   trunk/kernel/2.4/drivers/mscan/mscan_proc.c
+   trunk/kernel/2.4/drivers/sja1000/proc.c
+   trunk/kernel/2.4/drivers/sja1000/sja1000.c
+   trunk/kernel/2.4/drivers/sja1000/sja1000.h
+   trunk/kernel/2.6/drivers/net/can/sja1000/proc.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/include/linux/can/can_error.h
+   trunk/kernel/2.6/include/linux/can/can_ioctl.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+whitespace fixes.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/can/af_can.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -76,8 +76,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;CAN %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;CAN %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+@@ -539,7 +539,7 @@
+ 	p-&gt;matches++;    /* update specific statistics */
+     }
+ }
+-    
++
+ static int can_rcv_filter(struct rcv_dev_list *q, struct sk_buff *skb)
+ {
+     struct rcv_list *p;
+@@ -641,7 +641,7 @@
+ 	    }
+ 
+ 	if (p &amp;&amp; !p-&gt;dev) {
+-	    DBG(&quot;reactivating rcv_dev_list for %s\n&quot;, dev-&gt;name); 
++	    DBG(&quot;reactivating rcv_dev_list for %s\n&quot;, dev-&gt;name);
+ 	    p-&gt;dev = dev;
+ 	}
+     }
+@@ -719,7 +719,7 @@
+     int len;
+     int dlc, i;
+     char buf[1024];
+-    
++
+     len = sprintf(buf, KERN_DEBUG);
+     va_start(ap, cf);
+     len += snprintf(buf + len, sizeof(buf) - 64, msg, ap);
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/can/bcm.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -60,8 +60,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;BCM %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;BCM %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+@@ -450,7 +450,7 @@
+ 
+ 	    /* create array for can_frames and copy the data */
+ 	    if (!(op-&gt;frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
+-	        kfree(op);
++		kfree(op);
+ 		return -ENOMEM;
+ 	    }
+ 
+@@ -624,9 +624,9 @@
+ 	{
+ 	    struct sk_buff *skb;
+ 	    struct net_device *dev;
+-	    
++
+ 	    /* just copy and send one can_frame */
+-	    
++
+ 	    if (msg_head.nframes &lt; 1) /* we need at least one can_frame */
+ 		return -EINVAL;
+ 
+@@ -637,7 +637,7 @@
+ 
+ 	    memcpy_fromiovec(skb_put(skb, sizeof(struct can_frame)), msg-&gt;msg_iov, sizeof(struct can_frame));
+ 
+-	    DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;, 
++	    DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;,
+ 		      (struct can_frame *)skb-&gt;data);
+ 	    dev = dev_get_by_index(sk-&gt;bound_dev_if);
+ 
+
+Modified: trunk/kernel/2.4/can/can_error.h
+===================================================================
+--- trunk/kernel/2.4/can/can_error.h	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/can/can_error.h	2006-06-27 19:23:38 UTC (rev 49)
+@@ -65,7 +65,7 @@
+ 
+ /* arbitration lost in bit ... / data[0] */
+ #define CAN_ERR_LOSTARB_UNSPEC   0x00 /* unspecified */
+-                                      /* else bit number in bitstream */
++				      /* else bit number in bitstream */
+ 
+ /* error status of CAN-controller / data[1] */
+ #define CAN_ERR_CRTL_UNSPEC      0x00 /* unspecified */
+
+Modified: trunk/kernel/2.4/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.4/can/can_ioctl.h	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/can/can_ioctl.h	2006-06-27 19:23:38 UTC (rev 49)
+@@ -87,10 +87,10 @@
+ 
+ /* filter modes (may vary due to controller specific capabilities) */
+ #define FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
+-#define FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */  
++#define FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
+ #define FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
+ 
+-                              /* filters 3 - 31 currently undefined */
++			      /* filters 3 - 31 currently undefined */
+ 
+ #define FILTER_MAX         31 /* max. filter type value */
+ 
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/can/proc.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -193,7 +193,7 @@
+ 	char *fmt = p-&gt;can_id &amp; CAN_EFF_FLAG ? /* EFF &amp; CAN_ID_ALL */
+ 	    &quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+ 	    &quot;   %-5s     %03X    %08x  %08x  %08x  %8ld  %s\n&quot;;
+-	
++
+ 	len += snprintf(page + len, PAGE_SIZE - len, fmt,
+ 			dev-&gt;name, p-&gt;can_id, p-&gt;mask, (unsigned int)p-&gt;func,
+ 			(unsigned int)p-&gt;data, p-&gt;matches, p-&gt;ident);
+@@ -414,7 +414,7 @@
+ 		all_empty = 0;
+ 		break;
+ 	    }
+-	
++
+ 	if (!all_empty) {
+ 	    len = can_print_recv_banner(page, len);
+ 	    for(i = 0; i &lt; 0x800; i++) {
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/can/raw.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -70,8 +70,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;RAW %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;RAW %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+ #define DBG(args...)
+@@ -253,7 +253,7 @@
+ 
+     if (peer)
+ 	return -EOPNOTSUPP;
+-	
++
+     addr-&gt;can_family  = AF_CAN;
+     addr-&gt;can_ifindex = canraw_sk(sk)-&gt;ifindex;
+     *len = sizeof(*addr);
+@@ -307,7 +307,7 @@
+ 
+ 	    if (canraw_sk(sk)-&gt;bound)
+ 		raw_remove_filters(dev, sk);
+-	    
++
+ 	    kfree(canraw_sk(sk)-&gt;filter);
+ 	    canraw_sk(sk)-&gt;count = 0;
+ 	    canraw_sk(sk)-&gt;filter = NULL;
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/can/vcan.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -64,8 +64,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan.h
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan.h	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/drivers/mscan/mscan.h	2006-06-27 19:23:38 UTC (rev 49)
+@@ -57,7 +57,7 @@
+ 
+ #define DEFAULT_KBIT_PER_SEC 500
+ #define MSCAN_DEFAULT_CLOCK  132000000
+-#define TX_TIMEOUT           (HZ/20) /* 50ms */ 
++#define TX_TIMEOUT           (HZ/20) /* 50ms */
+ 
+ /* private data structure */
+ 
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -90,7 +90,7 @@
+ {
+     struct can_priv *priv = (struct can_priv*)dev-&gt;priv;
+     struct mpc5xxx_mscan *regs = priv-&gt;regs;
+-	
++
+     if (priv-&gt;state == STATE_UNINITIALIZED) /* no bla bla when restarting the device */
+ 	printk(KERN_INFO &quot;%s: setting BTR0=%02X BTR1=%02X\n&quot;,
+ 	       dev-&gt;name, btr0, btr1);
+@@ -200,7 +200,7 @@
+ 
+     return 0;
+ }
+-	
++
+ static int set_normal_mode(struct net_device *dev)
+ {
+     struct can_priv *priv = (struct can_priv*)dev-&gt;priv;
+@@ -365,7 +365,7 @@
+     }
+     skb-&gt;dev = dev;
+     skb-&gt;protocol = htons(ETH_P_CAN);
+-    
++
+     if (regs-&gt;canrxfg.idr[1] &amp; BUFFER_EXTENDED) {
+ 	/* extended frame format (EFF) */
+ 
+@@ -374,7 +374,7 @@
+ 	    |((regs-&gt;canrxfg.idr[1] &amp; 0x07) &lt;&lt; 15)
+ 	    |(regs-&gt;canrxfg.idr[4] &lt;&lt; 7)
+ 	    |(regs-&gt;canrxfg.idr[5] &gt;&gt; 1);
+-	
++
+ 	id |= CAN_EFF_FLAG;
+ 
+ 	if (regs-&gt;canrxfg.idr[5] &amp; BUFFER_EXT_RTR)
+@@ -422,7 +422,7 @@
+ {
+     if (!netif_running(dev))
+ 	return -EINVAL;
+-    
++
+     switch (cmd) {
+     case SIOCSRATE:
+ 	;
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_net.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_net.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/drivers/mscan/mscan_net.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -150,7 +150,7 @@
+ 	    gpio-&gt;port_config |= 0x00000010;   // set PSC2 function to CAN
+ 	}
+ 	else if(!strncmp(pins,&quot;i2c1/tmr01&quot;,11))
+-	    gpio-&gt;port_config |= 0x10000000;  // set ALT for CAN, leave PSC2 untouched 
++	    gpio-&gt;port_config |= 0x10000000;  // set ALT for CAN, leave PSC2 untouched
+ 	else
+ 	    printk(KERN_ERR &quot;\n!!!Invalid kernel module parameter \&quot;%s\&quot; ignored.&quot;
+ 		   &quot; Use \&quot;psc2\&quot; or \&quot;i2c1/tmr01\&quot;\n&quot;, pins);
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_proc.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_proc.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/drivers/mscan/mscan_proc.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -66,12 +66,12 @@
+ #define DEV_PORT_REGS_U8(reg) &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int) (regs-&gt;reg)
+ 
+ #define GPIO_REG_U32(reg)  &quot; &quot; #reg &quot; 0x%08X\n&quot;, 0xFFFFFFFF &amp; (int)(gpio-&gt;reg)
+-#define GPIO_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(gpio-&gt;reg) 
+-#define GPIO_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(gpio-&gt;reg) 
++#define GPIO_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(gpio-&gt;reg)
++#define GPIO_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(gpio-&gt;reg)
+ 
+ #define CDM_REG_U32(reg)  &quot; &quot; #reg &quot; 0x%08X\n&quot;, 0xFFFFFFFF &amp; (int)(cdm-&gt;reg)
+-#define CDM_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(cdm-&gt;reg) 
+-#define CDM_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(cdm-&gt;reg) 
++#define CDM_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(cdm-&gt;reg)
++#define CDM_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(cdm-&gt;reg)
+ 
+ extern struct net_device *can_dev[];
+ 
+@@ -140,7 +140,7 @@
+     const u8 canctl1_listen = 0x08;
+     const u8 canctl1_wump   = 0x20;
+     const u8 canctl1_slpak  = 0x40;
+-    const u8 canctl1_initak = 0x80; 
++    const u8 canctl1_initak = 0x80;
+ 
+     MOD_INC_USE_COUNT;
+ 
+@@ -150,8 +150,8 @@
+ 	    priv = (struct can_priv*)can_dev[i]-&gt;priv;
+ 	    regs = priv-&gt;regs;
+ 
+-	    len += sprintf(page + len, &quot;\n&quot;); 
+-	    len += sprintf(page + len, &quot;----------- MSCAN MODULE %s --------------\n&quot;, dev-&gt;name); 
++	    len += sprintf(page + len, &quot;\n&quot;);
++	    len += sprintf(page + len, &quot;----------- MSCAN MODULE %s --------------\n&quot;, dev-&gt;name);
+ 	    len += sprintf(page + len, DEV_PORT_REGS_U8( canctl0 ) );
+ 	    len += sprintf(page + len, DEV_PORT_REGS_U8( canctl1 ) );
+ 	    len += sprintf(page + len, DEV_PORT_REGS_U8( canbtr0 ) );
+@@ -197,7 +197,7 @@
+ 	    len += sprintf(page + len, &quot; Synchronized Status : %s\n&quot;, canctl0 &amp; canctl0_synch ? &quot;Not synchronized&quot; : &quot;Synchronized&quot;);
+ 
+ 	    len += sprintf(page + len, &quot; MSCAN Clock : %u (use clk=&lt;value&gt; as kernel module parameter)\n&quot;,priv-&gt;clk);
+-	    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;); 
++	    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;);
+ 	}
+     }
+ 
+@@ -215,7 +215,7 @@
+ 
+     MOD_INC_USE_COUNT;
+ 
+-    len += sprintf(page + len, &quot;\n--------------- GPIO MODULE -----------------\n&quot;); 
++    len += sprintf(page + len, &quot;\n--------------- GPIO MODULE -----------------\n&quot;);
+     len += sprintf(page + len, GPIO_REG_U32( port_config ) );
+     len += sprintf(page + len, GPIO_REG_U32( simple_gpioe ) );
+     len += sprintf(page + len, GPIO_REG_U32( simple_ode ) );
+@@ -239,12 +239,12 @@
+     if (gpio-&gt;port_config &amp; 0x10000000)
+ 	len += sprintf(page + len, &quot; CAN1 on I2C1 Pins, CAN2 on TMR0/1 Pins\n&quot;);
+     else
+-        if (((gpio-&gt;port_config &amp; 0x00000030)&gt;&gt;4) == 1)
++	if (((gpio-&gt;port_config &amp; 0x00000030)&gt;&gt;4) == 1)
+ 	    len += sprintf(page + len, &quot; CAN1&amp;2 on PSC2 Pins\n&quot;);
+ 	else
+ 	    len += sprintf(page + len, &quot; CAN1&amp;2 not routed to any IO Pin.\n&quot;);
+ 
+-    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;); 
++    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;);
+ 
+     MOD_DEC_USE_COUNT;
+ 
+@@ -259,7 +259,7 @@
+ 
+     MOD_INC_USE_COUNT;
+ 
+-    len += sprintf(page + len, &quot;\n--------------- CDM MODULE ------------------\n&quot;); 
++    len += sprintf(page + len, &quot;\n--------------- CDM MODULE ------------------\n&quot;);
+     len += sprintf(page + len, CDM_REG_U32 ( jtag_id ) );
+     len += sprintf(page + len, CDM_REG_U32 ( rstcfg ) );
+     len += sprintf(page + len, CDM_REG_U32 ( breadcrumb ) );
+@@ -299,18 +299,18 @@
+ 
+     len += sprintf(page + len,           &quot; System Clock (@ XTAL 27.0   33.0 MHz)\n&quot;);
+     switch (((cdm-&gt;rstcfg)&gt;&gt;6) &amp; 0x3) { // sys_pll_cfg[0:1]
+-	case 0: len += sprintf(page + len, &quot;                      432    528  MHz\n&quot;);break; 
++	case 0: len += sprintf(page + len, &quot;                      432    528  MHz\n&quot;);break;
+ 	case 1: len += sprintf(page + len, &quot;                      324    396  MHz\n&quot;); break;
+-	case 2: len += sprintf(page + len, &quot;                     (486    528  MHz, invalid)\n&quot;);break; 
+-	case 3: len += sprintf(page + len, &quot;                      324    396  MHz\n&quot;);break; 
++	case 2: len += sprintf(page + len, &quot;                     (486    528  MHz, invalid)\n&quot;);break;
++	case 3: len += sprintf(page + len, &quot;                      324    396  MHz\n&quot;);break;
+     }
+ 
+     len += sprintf(page + len, &quot; XLB Clock  = %s System Clock \n&quot;, cdm-&gt;xlb_clk_sel ? &quot;1/4&quot; : &quot;1/8&quot;);
+     len += sprintf(page + len, &quot; IPB Clock  = 1/%i System Clock \n&quot;, 0x4&lt;&lt;(((cdm-&gt;xlb_clk_sel?1:0) + (cdm-&gt;ipg_clk_sel?1:0))));
+     len += sprintf(page + len, &quot; PCI Clock  = 1/%i System Clock \n&quot;, 0x8&lt;&lt;(((cdm-&gt;xlb_clk_sel?1:0) + (cdm-&gt;pci_clk_sel?1:0))));
+-  
+-    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;); 
+ 
++    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;);
++
+     MOD_DEC_USE_COUNT;
+ 
+     *eof = 1;
+
+Modified: trunk/kernel/2.4/drivers/sja1000/proc.c
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/proc.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/drivers/sja1000/proc.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -183,8 +183,8 @@
+ 			priv = netdev_priv(can_dev[i]);
+ 			if ((priv-&gt;state != STATE_UNINITIALIZED) &amp;&amp; (priv-&gt;state != STATE_RESET_MODE)) {
+ 				len += snprintf(page + len, PAGE_SIZE - len, &quot;%s &quot;, dev-&gt;name);
+-                                dev-&gt;stop(dev);
+-                                dev-&gt;open(dev);
++				dev-&gt;stop(dev);
++				dev-&gt;open(dev);
+ 				/* count number of restarts */
+ 				priv-&gt;can_stats.restarts++;
+ 
+
+Modified: trunk/kernel/2.4/drivers/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/sja1000.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/drivers/sja1000/sja1000.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -130,7 +130,7 @@
+ static void set_btr(struct net_device *dev, int btr0, int btr1)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) /* no bla bla when restarting the device */
+ 		printk(KERN_INFO &quot;%s: setting BTR0=%02X BTR1=%02X\n&quot;,
+ 		       dev-&gt;name, btr0, btr1);
+@@ -234,7 +234,7 @@
+ 	return 1;
+ 
+ }
+-	
++
+ static int set_normal_mode(struct net_device *dev)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+@@ -490,7 +490,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -506,7 +506,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -603,7 +603,7 @@
+ 	struct can_priv *priv = netdev_priv(dev);
+ 	uint8_t isrc, status, ecc, alc;
+ 	int n = 0;
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) {
+ 		printk(KERN_ERR &quot;%s: %s: uninitialized controller!\n&quot;, dev-&gt;name, __FUNCTION__);
+ 		chipset_init(dev, 1); /* this should be possible at this stage */
+@@ -677,7 +677,7 @@
+ 			     (ecc &amp; ECC_DIR) ? &quot;RX&quot; : &quot;TX&quot;,
+ 			     ecc_types[ecc &gt;&gt; ECC_ERR],
+ 			     ecc_errors[ecc &amp; ECC_SEG]);
+-			
++
+ 			/* when the bus errors flood the system, restart the controller */
+ 			if (priv-&gt;can_stats.bus_error_at_init + MAX_BUS_ERRORS &lt; priv-&gt;can_stats.bus_error) {
+ 				iDBG(KERN_INFO &quot;%s: heavy bus errors, restarting device\n&quot;, dev-&gt;name);
+
+Modified: trunk/kernel/2.4/drivers/sja1000/sja1000.h
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/sja1000.h	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.4/drivers/sja1000/sja1000.h	2006-06-27 19:23:38 UTC (rev 49)
+@@ -57,7 +57,7 @@
+ 
+ #define DEFAULT_SPEED	100 /* kBit/s */
+ 
+-#define TX_TIMEOUT	(HZ/20) /* 50ms */ 
++#define TX_TIMEOUT	(HZ/20) /* 50ms */
+ #define RESTART_MS      100 	/* restart chip on persistent errors in 100ms */
+ #define MAX_BUS_ERRORS  200     /* prevent from flooding bus error interrupts */
+ 
+@@ -175,7 +175,7 @@
+ 	int			speed;
+ 	int			btr;
+ 	int			rx_probe;
+-        struct timer_list       timer;
++	struct timer_list       timer;
+ 	uint8_t			(*reg_read)(struct net_device *dev, int reg);
+ 	void			(*reg_write)(struct net_device *dev, int reg, uint8_t val);
+ 	struct can_device_stats	can_stats;
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/proc.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/proc.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/proc.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -185,8 +185,8 @@
+ 			    &amp;&amp; (priv-&gt;state != STATE_RESET_MODE)) {
+ 				len += snprintf(page + len, PAGE_SIZE - len,
+ 						&quot;%s &quot;, dev-&gt;name);
+-                                dev-&gt;stop(dev);
+-                                dev-&gt;open(dev);
++				dev-&gt;stop(dev);
++				dev-&gt;open(dev);
+ 				/* count number of restarts */
+ 				priv-&gt;can_stats.restarts++;
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -130,7 +130,7 @@
+ static void set_btr(struct net_device *dev, int btr0, int btr1)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) /* no bla bla when restarting the device */
+ 		printk(KERN_INFO &quot;%s: setting BTR0=%02X BTR1=%02X\n&quot;,
+ 		       dev-&gt;name, btr0, btr1);
+@@ -234,7 +234,7 @@
+ 	return 1;
+ 
+ }
+-	
++
+ static int set_normal_mode(struct net_device *dev)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+@@ -490,7 +490,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -506,7 +506,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -603,7 +603,7 @@
+ 	struct can_priv *priv = netdev_priv(dev);
+ 	uint8_t isrc, status, ecc, alc;
+ 	int n = 0;
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) {
+ 		printk(KERN_ERR &quot;%s: %s: uninitialized controller!\n&quot;, dev-&gt;name, __FUNCTION__);
+ 		chipset_init(dev, 1); /* this should be possible at this stage */
+@@ -677,7 +677,7 @@
+ 			     (ecc &amp; ECC_DIR) ? &quot;RX&quot; : &quot;TX&quot;,
+ 			     ecc_types[ecc &gt;&gt; ECC_ERR],
+ 			     ecc_errors[ecc &amp; ECC_SEG]);
+-			
++
+ 			/* when the bus errors flood the system, restart the controller */
+ 			if (priv-&gt;can_stats.bus_error_at_init + MAX_BUS_ERRORS &lt; priv-&gt;can_stats.bus_error) {
+ 				iDBG(KERN_INFO &quot;%s: heavy bus errors, restarting device\n&quot;, dev-&gt;name);
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-06-27 19:23:38 UTC (rev 49)
+@@ -57,7 +57,7 @@
+ 
+ #define DEFAULT_SPEED	100 /* kBit/s */
+ 
+-#define TX_TIMEOUT	(HZ/20) /* 50ms */ 
++#define TX_TIMEOUT	(HZ/20) /* 50ms */
+ #define RESTART_MS      100 	/* restart chip on persistent errors in 100ms */
+ #define MAX_BUS_ERRORS  200     /* prevent from flooding bus error interrupts */
+ 
+@@ -172,7 +172,7 @@
+ 	int			speed;
+ 	int			btr;
+ 	int			rx_probe;
+-        struct timer_list       timer;
++	struct timer_list       timer;
+ 	uint8_t			(*reg_read)(struct net_device *dev, int reg);
+ 	void			(*reg_write)(struct net_device *dev, int reg, uint8_t val);
+ 	struct can_device_stats	can_stats;
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -64,8 +64,8 @@
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+
+Modified: trunk/kernel/2.6/include/linux/can/can_error.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can_error.h	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/include/linux/can/can_error.h	2006-06-27 19:23:38 UTC (rev 49)
+@@ -60,7 +60,7 @@
+ 
+ /* arbitration lost in bit ... / data[0] */
+ #define CAN_ERR_LOSTARB_UNSPEC   0x00 /* unspecified */
+-                                      /* else bit number in bitstream */
++				      /* else bit number in bitstream */
+ 
+ /* error status of CAN-controller / data[1] */
+ #define CAN_ERR_CRTL_UNSPEC      0x00 /* unspecified */
+
+Modified: trunk/kernel/2.6/include/linux/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can_ioctl.h	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/include/linux/can/can_ioctl.h	2006-06-27 19:23:38 UTC (rev 49)
+@@ -136,7 +136,7 @@
+ #define CAN_FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
+ #define CAN_FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
+ #define CAN_FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
+-                                  /* filters 3 - 31 currently undefined */
++				  /* filters 3 - 31 currently undefined */
+ 
+ #define CAN_FILTER_MAX         31 /* max. filter type value */
+ 
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -76,8 +76,8 @@
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;CAN %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;CAN %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/net/can/bcm.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -61,8 +61,8 @@
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;BCM %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;BCM %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-06-27 17:28:31 UTC (rev 48)
++++ trunk/kernel/2.6/net/can/raw.c	2006-06-27 19:23:38 UTC (rev 49)
+@@ -72,8 +72,8 @@
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;RAW %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;RAW %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+ #define DBG(args...)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000025.html">[Socketcan-commit] r48 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000027.html">[Socketcan-commit] r50 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#26">[ date ]</a>
+              <a href="thread.html#26">[ thread ]</a>
+              <a href="subject.html#26">[ subject ]</a>
+              <a href="author.html#26">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

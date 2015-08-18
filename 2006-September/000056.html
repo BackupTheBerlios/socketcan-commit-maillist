@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r76 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r76%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609141400.k8EE00hj026158%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000055.html">
+   <LINK REL="Next"  HREF="000057.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r76 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r76%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609141400.k8EE00hj026158%40sheep.berlios.de%3E"
+       TITLE="r76 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep 14 16:00:00 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000055.html">r75 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000057.html">r77 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#56">[ date ]</a>
+              <a href="thread.html#56">[ thread ]</a>
+              <a href="subject.html#56">[ subject ]</a>
+              <a href="author.html#56">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-09-14 15:59:59 +0200 (Thu, 14 Sep 2006)
+New Revision: 76
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+removed obsolete parameter for find_rcv_list() which makes the
+change form Urs even more clearly.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-09-14 13:26:14 UTC (rev 75)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-09-14 13:59:59 UTC (rev 76)
+@@ -106,8 +106,8 @@
+ static int can_rcv_filter(struct dev_rcv_lists *d, struct sk_buff *skb);
+ static struct dev_rcv_lists *find_dev_rcv_lists(struct net_device *dev,
+ 						int create);
+-static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *,
+-		   struct net_device *dev, struct dev_rcv_lists *d);
++static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
++					struct dev_rcv_lists *d);
+ 
+ struct notifier {
+ 	struct list_head list;
+@@ -476,7 +476,7 @@
+ 	spin_lock(&amp;rcv_lists_lock);
+ 
+ 	d  = find_dev_rcv_lists(dev, 1);
+-	rl = find_rcv_list(&amp;can_id, &amp;mask, dev, d);
++	rl = find_rcv_list(&amp;can_id, &amp;mask, d);
+ 
+ 	if (!rl) {
+ 		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+@@ -534,7 +534,7 @@
+ 		goto out;
+ 	}
+ 
+-	rl = find_rcv_list(&amp;can_id, &amp;mask, dev, d);
++	rl = find_rcv_list(&amp;can_id, &amp;mask, d);
+ 
+ 	if (!rl) {
+ 		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+@@ -769,7 +769,7 @@
+ }
+ 
+ static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
+-	struct net_device *dev, struct dev_rcv_lists *d)
++					struct dev_rcv_lists *d)
+ {
+ 	canid_t inv = *can_id &amp; CAN_INV_FILTER; /* save flag before masking values */
+ 	canid_t eff = *can_id &amp; *mask &amp; CAN_EFF_FLAG; /* correct EFF check? */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000055.html">r75 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000057.html">r77 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#56">[ date ]</a>
+              <a href="thread.html#56">[ thread ]</a>
+              <a href="subject.html#56">[ subject ]</a>
+              <a href="author.html#56">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r752 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r752%20-%20trunk/can-utils&In-Reply-To=%3C200806022006.m52K6dib008840%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000734.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r752 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r752%20-%20trunk/can-utils&In-Reply-To=%3C200806022006.m52K6dib008840%40sheep.berlios.de%3E"
+       TITLE="r752 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun  2 22:06:39 CEST 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000734.html">r754 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#733">[ date ]</a>
+              <a href="thread.html#733">[ thread ]</a>
+              <a href="subject.html#733">[ subject ]</a>
+              <a href="author.html#733">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-02 22:06:37 +0200 (Mon, 02 Jun 2008)
+New Revision: 752
+
+Modified:
+   trunk/can-utils/candump.c
+   trunk/can-utils/lib.c
+   trunk/can-utils/lib.h
+Log:
+Added binary output option to candump.c and sprint_long_canframe() in lib.c .
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2008-05-27 13:47:20 UTC (rev 751)
++++ trunk/can-utils/candump.c	2008-06-02 20:06:37 UTC (rev 752)
+@@ -102,6 +102,7 @@
+     fprintf(stderr, &quot;  (use CTRL-C to terminate %s)\n\n&quot;, prg);
+     fprintf(stderr, &quot;Options: -t &lt;type&gt;   (timestamp: (a)bsolute/(d)elta/(z)ero/(A)bsolute w date)\n&quot;);
+     fprintf(stderr, &quot;         -c          (increment color mode level)\n&quot;);
++    fprintf(stderr, &quot;         -i          (binary output - may exceed 80 chars/line)\n&quot;);
+     fprintf(stderr, &quot;         -a          (enable additional ASCII output)\n&quot;);
+     fprintf(stderr, &quot;         -s &lt;level&gt;  (silent mode - 1: animation 2: completely silent)\n&quot;);
+     fprintf(stderr, &quot;         -b &lt;can&gt;    (bridge mode - send received frames to &lt;can&gt;)\n&quot;);
+@@ -187,7 +188,7 @@
+     unsigned char silent = 0;
+     unsigned char silentani = 0;
+     unsigned char color = 0;
+-    unsigned char ascii = 0;
++    unsigned char view = 0;
+     unsigned char log = 0;
+     unsigned char logfrmt = 0;
+     int opt, ret;
+@@ -209,7 +210,7 @@
+     last_tv.tv_sec  = 0;
+     last_tv.tv_usec = 0;
+ 
+-    while ((opt = getopt(argc, argv, &quot;t:cas:b:B:lLh?&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;t:cias:b:B:lLh?&quot;)) != -1) {
+ 	switch (opt) {
+ 	case 't':
+ 	    timestamp = optarg[0];
+@@ -225,8 +226,12 @@
+ 	    color++;
+ 	    break;
+ 
++	case 'i':
++	    view |= CANLIB_VIEW_BINARY;
++	    break;
++
+ 	case 'a':
+-	    ascii = 1;
++	    view |= CANLIB_VIEW_ASCII;
+ 	    break;
+ 
+ 	case 's':
+@@ -544,7 +549,7 @@
+ 		printf(&quot;%*s&quot;, max_devname_len, devname[idx]);
+ 		printf(&quot;%s  &quot;, (color==1)?col_off:&quot;&quot;);
+ 
+-		fprint_long_canframe(stdout, &amp;frame, NULL, ascii);
++		fprint_long_canframe(stdout, &amp;frame, NULL, view);
+ 
+ 		printf(&quot;%s&quot;, (color&gt;1)?col_off:&quot;&quot;);
+ 		printf(&quot;\n&quot;);
+
+Modified: trunk/can-utils/lib.c
+===================================================================
+--- trunk/can-utils/lib.c	2008-05-27 13:47:20 UTC (rev 751)
++++ trunk/can-utils/lib.c	2008-06-02 20:06:37 UTC (rev 752)
+@@ -57,7 +57,7 @@
+ #define DATA_SEPERATOR '.'
+ 
+ #define MAX_CANFRAME      &quot;12345678#01.23.45.67.89.AB.CD.EF&quot;
+-#define MAX_LONG_CANFRAME &quot;12345678  [8] 01 23 45 67 89 AB CD EF   '........'&quot;
++#define MAX_LONG_CANFRAME &quot;12345678  [8] 10101010 10101010 10101010 10101010 10101010 10101010 10101010 10101010   '........'&quot;
+ 
+ static int asc2nibble(char c) {
+ 
+@@ -177,21 +177,21 @@
+ 
+ }
+ 
+-void fprint_long_canframe(FILE *stream , struct can_frame *cf, char *eol, int ascii) {
++void fprint_long_canframe(FILE *stream , struct can_frame *cf, char *eol, int view) {
+     /* documentation see lib.h */
+ 
+     char buf[sizeof(MAX_LONG_CANFRAME)+1]; /* max length */
+ 
+-    sprint_long_canframe(buf, cf, ascii);
++    sprint_long_canframe(buf, cf, view);
+     fprintf(stream, &quot;%s&quot;, buf);
+     if (eol)
+ 	fprintf(stream, &quot;%s&quot;, eol);
+ }
+ 
+-void sprint_long_canframe(char *buf , struct can_frame *cf, int ascii) {
++void sprint_long_canframe(char *buf , struct can_frame *cf, int view) {
+     /* documentation see lib.h */
+ 
+-    int i, offset;
++    int i, j, dlen, offset;
+ 
+     if (cf-&gt;can_id &amp; CAN_ERR_FLAG) {
+ 	sprintf(buf, &quot;%8X  &quot;, cf-&gt;can_id &amp; (CAN_ERR_MASK|CAN_ERR_FLAG));
+@@ -207,26 +207,41 @@
+     sprintf(buf+offset, &quot;[%d]&quot;, cf-&gt;can_dlc);
+     offset += 3;
+ 
+-    if (cf-&gt;can_id &amp; CAN_RTR_FLAG) /* there are no ERR frames with RTR */
++    if (cf-&gt;can_id &amp; CAN_RTR_FLAG) { /* there are no ERR frames with RTR */
+ 	sprintf(buf+offset, &quot; remote request&quot;);
+-    else {
++	return;
++    }
++
++    if (view &amp; CANLIB_VIEW_BINARY) {
++	dlen = 9; /* _10101010 */
+ 	for (i = 0; i &lt; cf-&gt;can_dlc; i++) {
++	    buf[offset++] = ' ';
++	    for (j = 7; j &gt;= 0; j--)
++		buf[offset++] = (1&lt;&lt;j &amp; cf-&gt;data[i])?'1':'0';
++	}
++	buf[offset] = 0; /* terminate string */
++    } else {
++	dlen = 3; /* _AA */
++	for (i = 0; i &lt; cf-&gt;can_dlc; i++) {
+ 	    sprintf(buf+offset, &quot; %02X&quot;, cf-&gt;data[i]);
+-	    offset += 3;
++	    offset += dlen;
+ 	}
+-	if (cf-&gt;can_id &amp; CAN_ERR_FLAG)
+-	    sprintf(buf+offset, &quot;%*s&quot;, 3*(8-cf-&gt;can_dlc)+13, &quot;ERRORFRAME&quot;);
+-	else if (ascii) {
+-	    sprintf(buf+offset, &quot;%*s&quot;, 3*(8-cf-&gt;can_dlc)+4, &quot;'&quot;);
+-	    offset += 3*(8-cf-&gt;can_dlc)+4;
++    }
+ 
+-	    for (i = 0; i &lt; cf-&gt;can_dlc; i++)
+-		if ((cf-&gt;data[i] &gt; 0x1F) &amp;&amp; (cf-&gt;data[i] &lt; 0x7F))
+-		    buf[offset++] = cf-&gt;data[i];
+-		else
+-		    buf[offset++] = '.';
+-	    sprintf(buf+offset, &quot;'&quot;);
+-	} 
+-    }
++    if (cf-&gt;can_id &amp; CAN_ERR_FLAG)
++	sprintf(buf+offset, &quot;%*s&quot;, dlen*(8-cf-&gt;can_dlc)+13, &quot;ERRORFRAME&quot;);
++    else if (view &amp; CANLIB_VIEW_ASCII) {
++	j = dlen*(8-cf-&gt;can_dlc)+4;
++	sprintf(buf+offset, &quot;%*s&quot;, j, &quot;'&quot;);
++	offset += j;
++
++	for (i = 0; i &lt; cf-&gt;can_dlc; i++)
++	    if ((cf-&gt;data[i] &gt; 0x1F) &amp;&amp; (cf-&gt;data[i] &lt; 0x7F))
++		buf[offset++] = cf-&gt;data[i];
++	    else
++		buf[offset++] = '.';
++
++	sprintf(buf+offset, &quot;'&quot;);
++    } 
+ }
+ 
+
+Modified: trunk/can-utils/lib.h
+===================================================================
+--- trunk/can-utils/lib.h	2008-05-27 13:47:20 UTC (rev 751)
++++ trunk/can-utils/lib.h	2008-06-02 20:06:37 UTC (rev 752)
+@@ -96,8 +96,11 @@
+  *
+  */
+ 
+-void fprint_long_canframe(FILE *stream , struct can_frame *cf, char *eol, int ascii);
+-void sprint_long_canframe(char *buf , struct can_frame *cf, int ascii);
++#define CANLIB_VIEW_ASCII	0x1
++#define CANLIB_VIEW_BINARY	0x2
++
++void fprint_long_canframe(FILE *stream , struct can_frame *cf, char *eol, int view);
++void sprint_long_canframe(char *buf , struct can_frame *cf, int view);
+ /*
+  * Creates a CAN frame hexadecimal output in user readable format.
+  *
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000734.html">r754 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#733">[ date ]</a>
+              <a href="thread.html#733">[ thread ]</a>
+              <a href="subject.html#733">[ subject ]</a>
+              <a href="author.html#733">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

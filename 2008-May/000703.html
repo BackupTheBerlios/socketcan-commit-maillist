@@ -1,0 +1,336 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r721 - branches/ha/hrtimer/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r721%20-%20branches/ha/hrtimer/can-utils&In-Reply-To=%3C200805041025.m44APs2R002646%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000702.html">
+   <LINK REL="Next"  HREF="000704.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r721 - branches/ha/hrtimer/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r721%20-%20branches/ha/hrtimer/can-utils&In-Reply-To=%3C200805041025.m44APs2R002646%40sheep.berlios.de%3E"
+       TITLE="r721 - branches/ha/hrtimer/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun May  4 12:25:54 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000702.html">r720 - branches/ha/hrtimer/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000704.html">r722 - branches/ha/hrtimer/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#703">[ date ]</a>
+              <a href="thread.html#703">[ thread ]</a>
+              <a href="subject.html#703">[ subject ]</a>
+              <a href="author.html#703">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-04 12:25:53 +0200 (Sun, 04 May 2008)
+New Revision: 721
+
+Modified:
+   branches/ha/hrtimer/can-utils/candump.c
+Log:
+Rework of candump tool part1:
+- Allow 16 CAN interfaces to be specified on the cmdline (was 6).
+- Extend the interface name cache from 6 to 30 different interfaces.
+- reduce animation character array.
+- removed one per interface filter handling (to be reworked in part 2)
+- removal of obsolete code &amp; cosmetics
+
+
+Modified: branches/ha/hrtimer/can-utils/candump.c
+===================================================================
+--- branches/ha/hrtimer/can-utils/candump.c	2008-05-03 12:51:56 UTC (rev 720)
++++ branches/ha/hrtimer/can-utils/candump.c	2008-05-04 10:25:53 UTC (rev 721)
+@@ -67,10 +67,15 @@
+ #include &quot;terminal.h&quot;
+ #include &quot;lib.h&quot;
+ 
+-#define MAXDEV 6 /* change sscanf()'s manually if changed here */
+-#define ANYDEV &quot;any&quot;
+-#define ANL &quot;\r\n&quot; /* newline in ASC mode */
++#define DEBUG
+ 
++#define MAXSOCK 16    /* max. number of CAN interfaces given on the cmdline */
++#define MAXFILTER 30  /* max. number of possible filters for each socket */
++#define MAXIFNAMES 30 /* size of receive name index to omit ioctls */
++#define MAXCOL 6      /* number of different colors for colorized output */
++#define ANYDEV &quot;any&quot;  /* name of interface to receive from any CAN interface */
++#define ANL &quot;\r\n&quot;    /* newline in ASC mode */
++
+ #define BOLD    ATTBOLD
+ #define RED     ATTBOLD FGRED
+ #define GREEN   ATTBOLD FGGREEN
+@@ -79,15 +84,15 @@
+ #define MAGENTA ATTBOLD FGMAGENTA
+ #define CYAN    ATTBOLD FGCYAN
+ 
+-const char col_on [MAXDEV][19] = {BLUE, RED, GREEN, BOLD, MAGENTA, CYAN};
++const char col_on [MAXCOL][19] = {BLUE, RED, GREEN, BOLD, MAGENTA, CYAN};
+ const char col_off [] = ATTRESET;
+ 
+-static char devname[MAXDEV][IFNAMSIZ+1];
+-static int  dindex[MAXDEV];
+-static int  max_devname_len;
++static char devname[MAXIFNAMES][IFNAMSIZ+1];
++static int  dindex[MAXIFNAMES];
++static int  max_devname_len; /* to prevent frazzled device name output */ 
+ 
+-#define MAXANI 8
+-const char anichar[MAXANI] = {'|', '/', '-', '\\', '|', '/', '-', '\\'};
++#define MAXANI 4
++const char anichar[MAXANI] = {'|', '/', '-', '\\'};
+ 
+ extern int optind, opterr, optopt;
+ 
+@@ -97,12 +102,8 @@
+ {
+     fprintf(stderr, &quot;\nUsage: %s [options] &lt;CAN interface&gt;+\n&quot;, prg);
+     fprintf(stderr, &quot;  (use CTRL-C to terminate %s)\n\n&quot;, prg);
+-    fprintf(stderr, &quot;Options: -m &lt;mask&gt;   (ID filter mask.  Default 0x00000000) *\n&quot;);
+-    fprintf(stderr, &quot;         -v &lt;value&gt;  (ID filter value. Default 0x00000000) *\n&quot;);
+-    fprintf(stderr, &quot;         -i &lt;0|1&gt;    (invert the specified ID filter) *\n&quot;);
+-    fprintf(stderr, &quot;         -e &lt;emask&gt;  (mask for error frames)\n&quot;);
+-    fprintf(stderr, &quot;         -t &lt;type&gt;   (timestamp: Absolute/Delta/Zero)\n&quot;);
+-    fprintf(stderr, &quot;         -c          (color mode)\n&quot;);
++    fprintf(stderr, &quot;Options: -t &lt;type&gt;   (timestamp: Absolute/Delta/Zero)\n&quot;);
++    fprintf(stderr, &quot;         -c          (increment color mode level)\n&quot;);
+     fprintf(stderr, &quot;         -a          (enable additional ASCII output)\n&quot;);
+     fprintf(stderr, &quot;         -s &lt;level&gt;  (silent mode - 1: animation 2: nothing)\n&quot;);
+     fprintf(stderr, &quot;         -b &lt;can&gt;    (bridge mode - send received frames to &lt;can&gt;)\n&quot;);
+@@ -113,9 +114,7 @@
+     fprintf(stderr, &quot;* The CAN ID filter matches, when ...\n&quot;);
+     fprintf(stderr, &quot;       &lt;received_can_id&gt; &amp; mask == value &amp; mask\n&quot;);
+     fprintf(stderr, &quot;\n&quot;);
+-    fprintf(stderr, &quot;When using more than one CAN interface the options\n&quot;);
+-    fprintf(stderr, &quot;m/v/i/e have comma seperated values e.g. '-m 0,7FF,0'\n&quot;);
+-    fprintf(stderr, &quot;\nUse interface name '%s' to receive from all CAN interfaces.\n\n&quot;, ANYDEV);
++    fprintf(stderr, &quot;Use interface name '%s' to receive from all CAN interfaces.\n\n&quot;, ANYDEV);
+ }
+ 
+ void sigterm(int signo)
+@@ -128,7 +127,7 @@
+     int i;
+     struct ifreq ifr;
+ 
+-    for (i=0; i&lt;MAXDEV; i++) {
++    for (i=0; i&lt;MAXIFNAMES; i++) {
+ 	if (dindex[i] == ifidx)
+ 	    return i;
+     }
+@@ -136,7 +135,7 @@
+     /* create new interface index cache entry */
+ 
+     /* remove index cache zombies first */
+-    for (i=0; i &lt; MAXDEV; i++) {
++    for (i=0; i &lt; MAXIFNAMES; i++) {
+ 	if (dindex[i]) {
+ 	    ifr.ifr_ifindex = dindex[i];
+ 	    if (ioctl(socket, SIOCGIFNAME, &amp;ifr) &lt; 0)
+@@ -144,12 +143,13 @@
+ 	}
+     }
+ 
+-    for (i=0; i &lt; MAXDEV; i++)
++    for (i=0; i &lt; MAXIFNAMES; i++)
+ 	if (!dindex[i]) /* free entry */
+ 	    break;
+ 
+-    if (i == MAXDEV) {
+-	printf(&quot;Interface index cache only supports %d interfaces.\n&quot;, MAXDEV);
++    if (i == MAXIFNAMES) {
++	printf(&quot;Interface index cache only supports %d interfaces.\n&quot;,
++	       MAXIFNAMES);
+ 	exit(1);
+     }
+ 
+@@ -174,12 +174,8 @@
+ int main(int argc, char **argv)
+ {
+     fd_set rdfs;
+-    int s[MAXDEV];
++    int s[MAXSOCK];
+     int bridge = 0;
+-    canid_t mask[MAXDEV] = {0};
+-    canid_t value[MAXDEV] = {0};
+-    int inv_filter[MAXDEV] = {0};
+-    can_err_mask_t err_mask[MAXDEV] = {0};
+     unsigned char timestamp = 0;
+     unsigned char silent = 0;
+     unsigned char silentani = 0;
+@@ -188,9 +184,10 @@
+     unsigned char log = 0;
+     unsigned char logfrmt = 0;
+     int opt, ret;
+-    int currmax = 1; /* we assume at least one can bus ;-) */
++    int currmax, numfilter;
+     struct sockaddr_can addr;
+-    struct can_filter rfilter;
++    struct can_filter rfilter[MAXFILTER];
++    can_err_mask_t err_mask;
+     struct can_frame frame;
+     int nbytes, i, j;
+     struct ifreq ifr;
+@@ -204,40 +201,8 @@
+     last_tv.tv_sec  = 0;
+     last_tv.tv_usec = 0;
+ 
+-    while ((opt = getopt(argc, argv, &quot;m:v:i:e:t:cas:b:B:lL?&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;t:cas:b:B:lLh?&quot;)) != -1) {
+ 	switch (opt) {
+-	case 'm':
+-	    i = sscanf(optarg, &quot;%x,%x,%x,%x,%x,%x&quot;,
+-		       &amp;mask[0], &amp;mask[1], &amp;mask[2],
+-		       &amp;mask[3], &amp;mask[4], &amp;mask[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+-	case 'v':
+-	    i = sscanf(optarg, &quot;%x,%x,%x,%x,%x,%x&quot;,
+-		       &amp;value[0], &amp;value[1], &amp;value[2],
+-		       &amp;value[3], &amp;value[4], &amp;value[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+-	case 'i':
+-	    i = sscanf(optarg, &quot;%d,%d,%d,%d,%d,%d&quot;,
+-		       &amp;inv_filter[0], &amp;inv_filter[1], &amp;inv_filter[2],
+-		       &amp;inv_filter[3], &amp;inv_filter[4], &amp;inv_filter[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+-	case 'e':
+-	    i = sscanf(optarg, &quot;%x,%x,%x,%x,%x,%x&quot;,
+-		       &amp;err_mask[0], &amp;err_mask[1], &amp;err_mask[2],
+-		       &amp;err_mask[3], &amp;err_mask[4], &amp;err_mask[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+ 	case 't':
+ 	    timestamp = optarg[0];
+ 	    if ((timestamp != 'a') &amp;&amp; (timestamp != 'A') &amp;&amp;
+@@ -267,7 +232,8 @@
+ 		return 1;
+ 	    }
+ 	    else {
+-		if ((bridge = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
++		bridge = socket(PF_CAN, SOCK_RAW, CAN_RAW);
++		if (bridge &lt; 0) {
+ 		    perror(&quot;bridge socket&quot;);
+ 		    return 1;
+ 		}
+@@ -285,7 +251,8 @@
+ 		if (opt == 'B') {
+ 		    int loopback = 0;
+ 
+-		    setsockopt(bridge, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &amp;loopback, sizeof(loopback));
++		    setsockopt(bridge, SOL_CAN_RAW, CAN_RAW_LOOPBACK,
++			       &amp;loopback, sizeof(loopback));
+ 		}
+ 
+ 		if (bind(bridge, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+@@ -315,32 +282,24 @@
+ 	exit(0);
+     }
+ 	
+-    /* count in options higher than device count ? */
+-    if (optind + currmax &gt; argc) {
+-	printf(&quot;low count of CAN devices!\n&quot;);
+-	return 1;
+-    }
+-
+     currmax = argc - optind; /* find real number of CAN devices */
+ 
+-    if (currmax &gt; MAXDEV) {
+-	printf(&quot;More than %d CAN devices!\n&quot;, MAXDEV);
++    if (currmax &gt; MAXSOCK) {
++	printf(&quot;More than %d CAN devices given on commandline!\n&quot;, MAXSOCK);
+ 	return 1;
+     }
+ 
+     for (i=0; i&lt;currmax; i++) {
+ 
+ #ifdef DEBUG
+-	printf(&quot;open %d '%s' m%08X v%08X i%d e%d.\n&quot;,
+-	       i, argv[optind+i], mask[i], value[i],
+-	       inv_filter[i], err_mask[i]);
++	printf(&quot;open %d '%s'.\n&quot;, i, argv[optind+i]);
+ #endif
+ 
+ 	if ((s[i] = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
+ 	    perror(&quot;socket&quot;);
+ 	    return 1;
+ 	}
+-
++#if 0
+ 	if (mask[i] || value[i]) {
+ 
+ 	    printf(&quot;CAN ID filter[%d] for %s set to &quot;
+@@ -360,7 +319,7 @@
+ 	if (err_mask[i])
+ 	    setsockopt(s[i], SOL_CAN_RAW, CAN_RAW_ERR_FILTER,
+ 		       &amp;err_mask[i], sizeof(err_mask[i]));
+-
++#endif
+ 	j = strlen(argv[optind+i]);
+ 
+ 	if (!(j &lt; IFNAMSIZ)) {
+@@ -492,7 +451,7 @@
+ 		    goto out_fflush; /* no other output to stdout */
+ 		}
+ 		      
+-		printf(&quot; %s&quot;, (color&gt;2)?col_on[idx]:&quot;&quot;);
++		printf(&quot; %s&quot;, (color&gt;2)?col_on[idx%MAXCOL]:&quot;&quot;);
+ 
+ 		switch (timestamp) {
+ 
+@@ -535,7 +494,7 @@
+ 		    break;
+ 		}
+ 
+-		printf(&quot; %s&quot;, (color &amp;&amp; (color&lt;3))?col_on[idx]:&quot;&quot;);
++		printf(&quot; %s&quot;, (color &amp;&amp; (color&lt;3))?col_on[idx%MAXCOL]:&quot;&quot;);
+ 		printf(&quot;%*s&quot;, max_devname_len, devname[idx]);
+ 		printf(&quot;%s  &quot;, (color==1)?col_off:&quot;&quot;);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000702.html">r720 - branches/ha/hrtimer/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000704.html">r722 - branches/ha/hrtimer/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#703">[ date ]</a>
+              <a href="thread.html#703">[ thread ]</a>
+              <a href="subject.html#703">[ subject ]</a>
+              <a href="author.html#703">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

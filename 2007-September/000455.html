@@ -1,0 +1,400 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r473 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r473%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200709191208.l8JC8lHJ012631%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000454.html">
+   <LINK REL="Next"  HREF="000456.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r473 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r473%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200709191208.l8JC8lHJ012631%40sheep.berlios.de%3E"
+       TITLE="r473 - in trunk/kernel/2.6: include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 19 14:08:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000454.html">r472 - in trunk/kernel/2.6: Documentation/networking include/linux	net/can
+</A></li>
+        <LI>Next message: <A HREF="000456.html">r474 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#455">[ date ]</a>
+              <a href="thread.html#455">[ thread ]</a>
+              <a href="subject.html#455">[ subject ]</a>
+              <a href="author.html#455">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-09-19 14:08:38 +0200 (Wed, 19 Sep 2007)
+New Revision: 473
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+A couple of changes, mostly suggested by Patrick McHardy:
+* use round_jiffies() for statistics timer.
+* make stats_timer static.
+* add __read_mostly to a number of variables.
+* in can_create() check for net namespace before loading modules.
+* the NETDEV_REGISTER notifier can't run in interrupt context, so we
+  don't need to check that and call kzalloc() with GFP_KERNEL always.
+* check that the sizeof(skb-&gt;cb) &gt;= sizeof(struct sockaddr_can).
+* use return values of can_proto_{un,}register().
+* fix some comments.
+* update version number.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-09-19 10:52:18 UTC (rev 472)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-09-19 12:08:38 UTC (rev 473)
+@@ -21,7 +21,7 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ 
+-#define CAN_VERSION &quot;20070916&quot;
++#define CAN_VERSION &quot;20070919&quot;
+ 
+ /* increment this number each time you change some user-space interface */
+ #define CAN_ABI_VERSION &quot;8&quot;
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-09-19 10:52:18 UTC (rev 472)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-09-19 12:08:38 UTC (rev 473)
+@@ -85,12 +85,12 @@
+ 
+ MODULE_ALIAS_NETPROTO(PF_CAN);
+ 
+-int stats_timer = 1; /* default: on */
++static int stats_timer __read_mostly = 1;
+ module_param(stats_timer, int, S_IRUGO);
+ MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug;
++static int debug __read_mostly;
+ module_param(debug, int, S_IRUGO);
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+@@ -106,7 +106,7 @@
+ #endif
+ 
+ /* table of registered CAN protocols */
+-static struct can_proto *proto_tab[CAN_NPROTO];
++static struct can_proto *proto_tab[CAN_NPROTO] __read_mostly;
+ 
+ struct timer_list stattimer; /* timer for statistics update */
+ struct s_stats  stats;       /* packet statistics */
+@@ -171,6 +171,11 @@
+ 	if (protocol &lt; 0 || protocol &gt;= CAN_NPROTO)
+ 		return -EINVAL;
+ 
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
++	if (net != &amp;init_net)
++		return -EAFNOSUPPORT;
++#endif
++
+ 	DBG(&quot;looking up proto %d in proto_tab[]\n&quot;, protocol);
+ 
+ 	/* try to load protocol module, when CONFIG_KMOD is defined */
+@@ -196,11 +201,6 @@
+ 	if (!cp || cp-&gt;type != sock-&gt;type)
+ 		return -EPROTONOSUPPORT;
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+-	if (net != &amp;init_net)
+-		return -EAFNOSUPPORT;
+-#endif
+-
+ 	if (cp-&gt;capability &gt;= 0 &amp;&amp; !capable(cp-&gt;capability))
+ 		return -EPERM;
+ 
+@@ -836,8 +836,8 @@
+ 
+ 		DBG(&quot;creating new dev_rcv_lists for %s\n&quot;, dev-&gt;name);
+ 
+-		d = kzalloc(sizeof(*d),
+-			    in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
++		BUG_ON(in_interrupt());
++		d = kzalloc(sizeof(*d), GFP_KERNEL);
+ 		if (!d) {
+ 			printk(KERN_ERR
+ 			       &quot;can: allocation of receive list failed\n&quot;);
+@@ -982,20 +982,20 @@
+  * af_can module init/exit functions
+  */
+ 
+-static struct packet_type can_packet = {
++static struct packet_type can_packet __read_mostly = {
+ 	.type = __constant_htons(ETH_P_CAN),
+ 	.dev  = NULL,
+ 	.func = can_rcv,
+ };
+ 
+-static struct net_proto_family can_family_ops = {
++static struct net_proto_family can_family_ops __read_mostly = {
+ 	.family = PF_CAN,
+ 	.create = can_create,
+ 	.owner  = THIS_MODULE,
+ };
+ 
+ /* notifier block for netdevice event */
+-static struct notifier_block can_netdev_notifier = {
++static struct notifier_block can_netdev_notifier __read_mostly = {
+ 	.notifier_call = can_notifier,
+ };
+ 
+@@ -1029,7 +1029,7 @@
+ 		stattimer.function = can_stat_update;
+ 		stattimer.data = 0;
+ 		/* update every second */
+-		stattimer.expires = jiffies + HZ;
++		stattimer.expires = round_jiffies(jiffies + HZ);
+ 		/* start statistics timer */
+ 		add_timer(&amp;stattimer);
+ 	} else
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-09-19 10:52:18 UTC (rev 472)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-09-19 12:08:38 UTC (rev 473)
+@@ -189,9 +189,9 @@
+  * @tv: pointer to timeval
+  *
+  * Description:
+- * In opposite to timeval_to_jiffies() provided in include/linux/jiffies.h this
+- * function is intentionally more relaxed on precise timer ticks to get exact
+- * one jiffy for requested 1000us on a 1000HZ machine.
++ * Unlike timeval_to_jiffies() provided in include/linux/jiffies.h, this
++ * function is intentionally more relaxed on precise timer ticks to get
++ * exact one jiffy for requested 1000us on a 1000HZ machine.
+  * This code is to be removed when upgrading to kernel hrtimer.
+  *
+  * Return:
+@@ -424,7 +424,14 @@
+ #endif
+ 	}
+ 
+-	/* restore originator for recvfrom() */
++	/*
++	 *  Put the datagram to the queue so that bcm_recvmsg() can
++	 *  get it from there.  We need to pass the interface index to
++	 *  bcm_recvmsg().  We pass a whole struct sockaddr_can in skb-&gt;cb
++	 *  containing the interface index.
++	 */
++
++	BUILD_BUG_ON(sizeof(skb-&gt;cb) &lt; sizeof(struct sockaddr_can));
+ 	addr = (struct sockaddr_can *)skb-&gt;cb;
+ 	memset(addr, 0, sizeof(*addr));
+ 	addr-&gt;can_family  = AF_CAN;
+@@ -1797,7 +1804,7 @@
+ 	return mask;
+ }
+ 
+-static struct proto_ops bcm_ops = {
++static struct proto_ops bcm_ops __read_mostly = {
+ 	.family        = PF_CAN,
+ 	.release       = bcm_release,
+ 	.bind          = sock_no_bind,
+@@ -1818,14 +1825,14 @@
+ };
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-static struct proto bcm_proto = {
++static struct proto bcm_proto __read_mostly = {
+ 	.name       = &quot;CAN_BCM&quot;,
+ 	.owner      = THIS_MODULE,
+ 	.obj_size   = sizeof(struct bcm_sock),
+ 	.init       = bcm_init,
+ };
+ 
+-static struct can_proto bcm_can_proto = {
++static struct can_proto bcm_can_proto __read_mostly = {
+ 	.type       = SOCK_DGRAM,
+ 	.protocol   = CAN_BCM,
+ 	.capability = BCM_CAP,
+@@ -1833,7 +1840,7 @@
+ 	.prot       = &amp;bcm_proto,
+ };
+ #else
+-static struct can_proto bcm_can_proto = {
++static struct can_proto bcm_can_proto __read_mostly = {
+ 	.type       = SOCK_DGRAM,
+ 	.protocol   = CAN_BCM,
+ 	.capability = BCM_CAP,
+@@ -1846,9 +1853,15 @@
+ 
+ static int __init bcm_module_init(void)
+ {
++	int err;
++
+ 	printk(banner);
+ 
+-	can_proto_register(&amp;bcm_can_proto);
++	err = can_proto_register(&amp;bcm_can_proto);
++	if (err &lt; 0) {
++		printk(&quot;can: registration of bcm protocol failed\n&quot;);
++		return err;
++	}
+ 
+ 	/* create /proc/net/can-bcm directory */
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+@@ -1865,8 +1878,11 @@
+ 
+ static void __exit bcm_module_exit(void)
+ {
+-	can_proto_unregister(&amp;bcm_can_proto);
++	int err;
+ 
++	err = can_proto_unregister(&amp;bcm_can_proto);
++	WARN_ON(err &lt; 0);
++
+ 	if (proc_dir)
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+ 		proc_net_remove(&amp;init_net, &quot;can-&quot;IDENT);
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-09-19 10:52:18 UTC (rev 472)
++++ trunk/kernel/2.6/net/can/proc.c	2007-09-19 12:08:38 UTC (rev 473)
+@@ -118,7 +118,7 @@
+ 	if (oldjif == newjif)
+ 		return 0;
+ 
+-	/* see can_rcv() - this should NEVER happen! */
++	/* see can_stat_update() - this should NEVER happen! */
+ 	if (count &gt; (ULONG_MAX / HZ)) {
+ 		printk(KERN_ERR &quot;can: calc_rate: count exceeded! %ld\n&quot;,
+ 		       count);
+@@ -186,7 +186,7 @@
+ 	stats.matches_delta   = 0;
+ 
+ 	/* restart timer (one second) */
+-	stattimer.expires = jiffies + HZ;
++	stattimer.expires = round_jiffies(jiffies + HZ);
+ 	add_timer(&amp;stattimer);
+ }
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-09-19 10:52:18 UTC (rev 472)
++++ trunk/kernel/2.6/net/can/raw.c	2007-09-19 12:08:38 UTC (rev 473)
+@@ -141,6 +141,14 @@
+ 		}
+ 	}
+ 
++	/*
++	 *  Put the datagram to the queue so that raw_recvmsg() can
++	 *  get it from there.  We need to pass the interface index to
++	 *  raw_recvmsg().  We pass a whole struct sockaddr_can in skb-&gt;cb
++	 *  containing the interface index.
++	 */
++
++	BUILD_BUG_ON(sizeof(skb-&gt;cb) &lt; sizeof(struct sockaddr_can));
+ 	addr = (struct sockaddr_can *)skb-&gt;cb;
+ 	memset(addr, 0, sizeof(*addr));
+ 	addr-&gt;can_family  = AF_CAN;
+@@ -762,7 +770,7 @@
+ 	return size;
+ }
+ 
+-static struct proto_ops raw_ops = {
++static struct proto_ops raw_ops __read_mostly = {
+ 	.family        = PF_CAN,
+ 	.release       = raw_release,
+ 	.bind          = raw_bind,
+@@ -783,14 +791,14 @@
+ };
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-static struct proto raw_proto = {
++static struct proto raw_proto __read_mostly = {
+ 	.name       = &quot;CAN_RAW&quot;,
+ 	.owner      = THIS_MODULE,
+ 	.obj_size   = sizeof(struct raw_sock),
+ 	.init       = raw_init,
+ };
+ 
+-static struct can_proto raw_can_proto = {
++static struct can_proto raw_can_proto __read_mostly = {
+ 	.type       = SOCK_RAW,
+ 	.protocol   = CAN_RAW,
+ 	.capability = RAW_CAP,
+@@ -798,7 +806,7 @@
+ 	.prot       = &amp;raw_proto,
+ };
+ #else
+-static struct can_proto raw_can_proto = {
++static struct can_proto raw_can_proto __read_mostly = {
+ 	.type       = SOCK_RAW,
+ 	.protocol   = CAN_RAW,
+ 	.capability = RAW_CAP,
+@@ -811,15 +819,23 @@
+ 
+ static __init int raw_module_init(void)
+ {
++	int err;
++
+ 	printk(banner);
+ 
+-	can_proto_register(&amp;raw_can_proto);
+-	return 0;
++	err = can_proto_register(&amp;raw_can_proto);
++	if (err &lt; 0)
++		printk(&quot;can: registration of raw protocol failed\n&quot;);
++
++	return err;
+ }
+ 
+ static __exit void raw_module_exit(void)
+ {
+-	can_proto_unregister(&amp;raw_can_proto);
++	int err;
++
++	err = can_proto_unregister(&amp;raw_can_proto);
++	WARN_ON(err &lt; 0);
+ }
+ 
+ module_init(raw_module_init);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000454.html">r472 - in trunk/kernel/2.6: Documentation/networking include/linux	net/can
+</A></li>
+	<LI>Next message: <A HREF="000456.html">r474 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#455">[ date ]</a>
+              <a href="thread.html#455">[ thread ]</a>
+              <a href="subject.html#455">[ subject ]</a>
+              <a href="author.html#455">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

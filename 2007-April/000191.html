@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r206 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r206%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20.%20sja1000&In-Reply-To=%3C200704131227.l3DCRqTr000567%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000190.html">
+   <LINK REL="Next"  HREF="000192.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r206 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r206%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20.%20sja1000&In-Reply-To=%3C200704131227.l3DCRqTr000567%40sheep.berlios.de%3E"
+       TITLE="r206 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 13 14:27:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000190.html">r205 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+        <LI>Next message: <A HREF="000192.html">r208 - trunk/kernel/2.6/drivers/net/can/i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#191">[ date ]</a>
+              <a href="thread.html#191">[ thread ]</a>
+              <a href="subject.html#191">[ subject ]</a>
+              <a href="author.html#191">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-13 14:27:51 +0200 (Fri, 13 Apr 2007)
+New Revision: 206
+
+Modified:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+Log:
+Added parameter descriptions to SJA1000 driver.
+Added Makefile changes from trunk.
+
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile	2007-04-12 06:51:21 UTC (rev 205)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile	2007-04-13 12:27:51 UTC (rev 206)
+@@ -5,16 +5,22 @@
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
++ifdef $(CONFIG_CAN_SLCAN)
++SLCAN_MOD = slcan
++else
++SLCAN_MOD =
++endif
++
+ KERNELDIR = /usr/src/linux
+ PWD       = $(shell pwd)
+ 
+-all: vcan sja1000 i82527 mscan
++all: vcan $(SLCAN_MOD) sja1000 i82527 mscan
+ 
+ vcan:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_VCAN=m modules
+ 
+ slcan:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_SLCAN=m modules
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_SLCAN=$(CONFIG_CAN_SLCAN) modules
+ 
+ sja1000:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_SJA1000=m modules
+@@ -27,6 +33,7 @@
+ 
+ clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
++	rm -f Module.symvers
+ 
+ .PHONY: clean all vcan slcan sja1000 i82527 mscan
+ 
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-04-12 06:51:21 UTC (rev 205)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-04-13 12:27:51 UTC (rev 206)
+@@ -165,7 +165,16 @@
+ module_param(debug, int, 0);
+ module_param(restart_ms, int, 0);
+ 
++MODULE_PARM_DESC(base, &quot;CAN controller base address&quot;);
++MODULE_PARM_DESC(irq, &quot;CAN controller interrupt&quot;);
++MODULE_PARM_DESC(speed, &quot;CAN bus bitrate&quot;);
++MODULE_PARM_DESC(btr, &quot;Bit Timing Register value 0x&lt;btr0&gt;&lt;btr1&gt;, e.g. 0x4014&quot;);
++MODULE_PARM_DESC(rx_probe, &quot;switch to trx mode after correct msg receiption. (default off)&quot;);
+ 
++MODULE_PARM_DESC(clk, &quot;CAN controller chip clock (default: 16MHz)&quot;);
++MODULE_PARM_DESC(debug, &quot;set debug mask (default: 0)&quot;);
++MODULE_PARM_DESC(restart_ms, &quot;restart chip on heavy bus errors / bus off after x ms (default 100ms)&quot;);
++
+ /* function declarations */
+ 
+ static void can_restart_dev(unsigned long data);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000190.html">r205 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+	<LI>Next message: <A HREF="000192.html">r208 - trunk/kernel/2.6/drivers/net/can/i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#191">[ date ]</a>
+              <a href="thread.html#191">[ thread ]</a>
+              <a href="subject.html#191">[ subject ]</a>
+              <a href="author.html#191">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

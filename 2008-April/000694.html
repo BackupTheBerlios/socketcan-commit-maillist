@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r712 - branches/cannetdriver26/Documentation/networking	trunk/kernel/2.6/Documentation/networking
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r712%20-%20branches/cannetdriver26/Documentation/networking%0A%09trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200804120701.m3C71dHA010932%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000693.html">
+   <LINK REL="Next"  HREF="000695.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r712 - branches/cannetdriver26/Documentation/networking	trunk/kernel/2.6/Documentation/networking</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r712%20-%20branches/cannetdriver26/Documentation/networking%0A%09trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200804120701.m3C71dHA010932%40sheep.berlios.de%3E"
+       TITLE="r712 - branches/cannetdriver26/Documentation/networking	trunk/kernel/2.6/Documentation/networking">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 12 09:01:39 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000693.html">r711 - branches/ha/hrtimer/test
+</A></li>
+        <LI>Next message: <A HREF="000695.html">r713 - branches/ha/hrtimer/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#694">[ date ]</a>
+              <a href="thread.html#694">[ thread ]</a>
+              <a href="subject.html#694">[ subject ]</a>
+              <a href="author.html#694">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-04-12 09:01:36 +0200 (Sat, 12 Apr 2008)
+New Revision: 712
+
+Modified:
+   branches/cannetdriver26/Documentation/networking/can.txt
+   trunk/kernel/2.6/Documentation/networking/can.txt
+Log:
+The struct sockaddr_can has been simplified in the code review process. 
+This patch updates this simplification also in the associated 
+documentation in can.txt
+
+
+Modified: branches/cannetdriver26/Documentation/networking/can.txt
+===================================================================
+--- branches/cannetdriver26/Documentation/networking/can.txt	2008-04-11 10:48:12 UTC (rev 711)
++++ branches/cannetdriver26/Documentation/networking/can.txt	2008-04-12 07:01:36 UTC (rev 712)
+@@ -281,10 +281,10 @@
+             sa_family_t can_family;
+             int         can_ifindex;
+             union {
+-                    struct { canid_t rx_id, tx_id; } tp16;
+-                    struct { canid_t rx_id, tx_id; } tp20;
+-                    struct { canid_t rx_id, tx_id; } mcnet;
+-                    struct { canid_t rx_id, tx_id; } isotp;
++                    /* transport protocol class address info (e.g. ISOTP) */
++                    struct { canid_t rx_id, tx_id; } tp;
++
++                    /* reserved for future CAN protocols address information */
+             } can_addr;
+     };
+ 
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2008-04-11 10:48:12 UTC (rev 711)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2008-04-12 07:01:36 UTC (rev 712)
+@@ -281,10 +281,10 @@
+             sa_family_t can_family;
+             int         can_ifindex;
+             union {
+-                    struct { canid_t rx_id, tx_id; } tp16;
+-                    struct { canid_t rx_id, tx_id; } tp20;
+-                    struct { canid_t rx_id, tx_id; } mcnet;
+-                    struct { canid_t rx_id, tx_id; } isotp;
++                    /* transport protocol class address info (e.g. ISOTP) */
++                    struct { canid_t rx_id, tx_id; } tp;
++
++                    /* reserved for future CAN protocols address information */
+             } can_addr;
+     };
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000693.html">r711 - branches/ha/hrtimer/test
+</A></li>
+	<LI>Next message: <A HREF="000695.html">r713 - branches/ha/hrtimer/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#694">[ date ]</a>
+              <a href="thread.html#694">[ thread ]</a>
+              <a href="subject.html#694">[ subject ]</a>
+              <a href="author.html#694">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

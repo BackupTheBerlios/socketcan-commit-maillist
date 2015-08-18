@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1202 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1202%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101115150836.D3D7D481185%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000833.html">
+   <LINK REL="Next"  HREF="000835.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1202 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1202%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101115150836.D3D7D481185%40sheep.berlios.de%3E"
+       TITLE="r1202 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 15 16:08:36 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000833.html">r1201 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000835.html">r1203 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#834">[ date ]</a>
+              <a href="thread.html#834">[ thread ]</a>
+              <a href="subject.html#834">[ subject ]</a>
+              <a href="author.html#834">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-15 16:08:36 +0100 (Mon, 15 Nov 2010)
+New Revision: 1202
+
+Modified:
+   trunk/kernel/2.6/net/can/isotp.c
+Log:
+isotp: the timestamp for rx stmin enforcement was reset in the function that
+receives the flow control. Of course it has to be in the funtion that sends
+the FC to the sender of the data. :-(
+This patch fixes the rx/tx issue.
+
+
+Modified: trunk/kernel/2.6/net/can/isotp.c
+===================================================================
+--- trunk/kernel/2.6/net/can/isotp.c	2010-11-14 08:55:06 UTC (rev 1201)
++++ trunk/kernel/2.6/net/can/isotp.c	2010-11-15 15:08:36 UTC (rev 1202)
+@@ -132,7 +132,7 @@
+ 	canid_t txid;
+ 	canid_t rxid;
+ 	ktime_t tx_gap;
+-	ktime_t last_cf_tstamp;
++	ktime_t lastrxcf_tstamp;
+ 	struct hrtimer rxtimer, txtimer;
+ 	struct tasklet_struct txtsklet;
+ 	struct can_isotp_options opt;
+@@ -214,6 +214,9 @@
+ 	/* reset blocksize counter */
+ 	so-&gt;rx.bs = 0;
+ 
++	/* reset last CF frame rx timestamp for rx stmin enforcement */
++	so-&gt;lastrxcf_tstamp = ktime_set(0,0);
++
+ 	/* start rx timeout watchdog */
+ 	hrtimer_start(&amp;so-&gt;rxtimer, ktime_set(1,0), HRTIMER_MODE_REL);
+ 	return 0;
+@@ -279,9 +282,6 @@
+ 		    ((so-&gt;txfc.stmin &lt; 0xF1) || (so-&gt;txfc.stmin &gt; 0xF9)))
+ 			so-&gt;txfc.stmin = 0x7F;
+ 
+-		/* reset CF frame rx timestamp for rx stmin enforcement */
+-		so-&gt;last_cf_tstamp = ktime_set(0,0);
+-
+ 		so-&gt;tx_gap = ktime_set(0,0);
+ 		/* add transmission time for CAN frame N_As */
+ 		so-&gt;tx_gap = ktime_add_ns(so-&gt;tx_gap, so-&gt;opt.frame_txtime);
+@@ -409,11 +409,11 @@
+ 	/* drop if timestamp gap is less than force_rx_stmin nano secs */
+ 	if (so-&gt;opt.flags &amp; CAN_ISOTP_FORCE_RXSTMIN) {
+ 
+-		if (ktime_to_ns(ktime_sub(skb-&gt;tstamp, so-&gt;last_cf_tstamp)) &lt;
++		if (ktime_to_ns(ktime_sub(skb-&gt;tstamp, so-&gt;lastrxcf_tstamp)) &lt;
+ 		    so-&gt;force_rx_stmin)
+ 			return 0;
+ 
+-		so-&gt;last_cf_tstamp = skb-&gt;tstamp; 
++		so-&gt;lastrxcf_tstamp = skb-&gt;tstamp; 
+ 	}
+ 
+ 	hrtimer_cancel(&amp;so-&gt;rxtimer);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000833.html">r1201 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000835.html">r1203 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#834">[ date ]</a>
+              <a href="thread.html#834">[ thread ]</a>
+              <a href="subject.html#834">[ subject ]</a>
+              <a href="author.html#834">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

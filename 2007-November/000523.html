@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r541 - trunk/test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r541%20-%20trunk/test&In-Reply-To=%3C200711071331.lA7DVKd2024409%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000522.html">
+   <LINK REL="Next"  HREF="000524.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r541 - trunk/test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r541%20-%20trunk/test&In-Reply-To=%3C200711071331.lA7DVKd2024409%40sheep.berlios.de%3E"
+       TITLE="r541 - trunk/test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov  7 14:31:20 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000522.html">r540 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000524.html">r542 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#523">[ date ]</a>
+              <a href="thread.html#523">[ thread ]</a>
+              <a href="subject.html#523">[ subject ]</a>
+              <a href="author.html#523">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-07 14:31:19 +0100 (Wed, 07 Nov 2007)
+New Revision: 541
+
+Modified:
+   trunk/test/Makefile
+Log:
+Added install target.
+
+
+Modified: trunk/test/Makefile
+===================================================================
+--- trunk/test/Makefile	2007-11-05 12:58:26 UTC (rev 540)
++++ trunk/test/Makefile	2007-11-07 13:31:19 UTC (rev 541)
+@@ -63,6 +63,9 @@
+ 
+ all: $(PROGRAMS)
+ 
++install:
++	cp -f $(PROGRAMS) /usr/local/bin
++
+ clean:
+ 	rm -f $(PROGRAMS)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000522.html">r540 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000524.html">r542 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#523">[ date ]</a>
+              <a href="thread.html#523">[ thread ]</a>
+              <a href="subject.html#523">[ subject ]</a>
+              <a href="author.html#523">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1197 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1197%20-%20trunk/can-utils&In-Reply-To=%3C20100925102437.E81B0480FCF%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000828.html">
+   <LINK REL="Next"  HREF="000830.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1197 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1197%20-%20trunk/can-utils&In-Reply-To=%3C20100925102437.E81B0480FCF%40sheep.berlios.de%3E"
+       TITLE="r1197 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep 25 12:24:37 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000828.html">r1196 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000830.html">r1198 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#829">[ date ]</a>
+              <a href="thread.html#829">[ thread ]</a>
+              <a href="subject.html#829">[ subject ]</a>
+              <a href="author.html#829">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-09-25 12:24:37 +0200 (Sat, 25 Sep 2010)
+New Revision: 1197
+
+Modified:
+   trunk/can-utils/candump.c
+   trunk/can-utils/cangw.c
+Log:
+Fix datatype issue in sscanf() on 64bit systems.
+
+On 64bit systems a 'long' is a 64bit value but the target values of scanf()
+are always 32bit in the affected code - which means just an 'unsigned int'.
+Unsigned int is fine on 32 and 64 bit systems.
+
+Thanks to Andre Naujoks for reporting this issue.
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2010-09-24 18:23:42 UTC (rev 1196)
++++ trunk/can-utils/candump.c	2010-09-25 10:24:37 UTC (rev 1197)
+@@ -443,23 +443,18 @@
+ 				ptr = nptr+1; /* hop behind the ',' */
+ 				nptr = strchr(ptr, ','); /* update exit condition */
+ 
+-				if (sscanf(ptr, &quot;%lx:%lx&quot;,
+-					   (long unsigned int *)
++				if (sscanf(ptr, &quot;%x:%x&quot;,
+ 					   &amp;rfilter[numfilter].can_id, 
+-					   (long unsigned int *)
+ 					   &amp;rfilter[numfilter].can_mask) == 2) {
+  					rfilter[numfilter].can_mask &amp;= ~CAN_ERR_FLAG;
+ 					numfilter++;
+-				} else if (sscanf(ptr, &quot;%lx~%lx&quot;,
+-						  (long unsigned int *)
++				} else if (sscanf(ptr, &quot;%x~%x&quot;,
+ 						  &amp;rfilter[numfilter].can_id, 
+-						  (long unsigned int *)
+ 						  &amp;rfilter[numfilter].can_mask) == 2) {
+  					rfilter[numfilter].can_id |= CAN_INV_FILTER;
+  					rfilter[numfilter].can_mask &amp;= ~CAN_ERR_FLAG;
+ 					numfilter++;
+-				} else if (sscanf(ptr, &quot;#%lx&quot;,
+-						  (long unsigned int *)&amp;err_mask) != 1) { 
++				} else if (sscanf(ptr, &quot;#%x&quot;, &amp;err_mask) != 1) { 
+ 					fprintf(stderr, &quot;Error in filter option parsing: '%s'\n&quot;, ptr);
+ 					return 1;
+ 				}
+
+Modified: trunk/can-utils/cangw.c
+===================================================================
+--- trunk/can-utils/cangw.c	2010-09-24 18:23:42 UTC (rev 1196)
++++ trunk/can-utils/cangw.c	2010-09-25 10:24:37 UTC (rev 1197)
+@@ -328,8 +328,7 @@
+ 		ptr++;
+ 	}
+ 
+-	if (sscanf(++ptr, &quot;%lx.%hhx.%16s&quot;,
+-		   (long unsigned int *)&amp;modmsg-&gt;cf.can_id,
++	if (sscanf(++ptr, &quot;%x.%hhx.%16s&quot;, &amp;modmsg-&gt;cf.can_id,
+ 		   (unsigned char *)&amp;modmsg-&gt;cf.can_dlc, hexdata) != 3)
+ 		return 5;
+ 
+@@ -593,13 +592,11 @@
+ 			break;
+ 
+ 		case 'f':
+-			if (sscanf(optarg, &quot;%lx:%lx&quot;,
+-				   (long unsigned int *)&amp;filter.can_id, 
+-				   (long unsigned int *)&amp;filter.can_mask) == 2) {
++			if (sscanf(optarg, &quot;%x:%x&quot;, &amp;filter.can_id,
++				   &amp;filter.can_mask) == 2) {
+ 				have_filter = 1;
+-			} else if (sscanf(optarg, &quot;%lx~%lx&quot;,
+-					  (long unsigned int *)&amp;filter.can_id, 
+-					  (long unsigned int *)&amp;filter.can_mask) == 2) {
++			} else if (sscanf(optarg, &quot;%x~%x&quot;, &amp;filter.can_id,
++					  &amp;filter.can_mask) == 2) {
+ 				filter.can_id |= CAN_INV_FILTER;
+ 				have_filter = 1;
+ 			} else {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000828.html">r1196 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000830.html">r1198 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#829">[ date ]</a>
+              <a href="thread.html#829">[ thread ]</a>
+              <a href="subject.html#829">[ subject ]</a>
+              <a href="author.html#829">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

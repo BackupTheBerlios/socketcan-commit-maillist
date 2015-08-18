@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r673 - branches/cannetdriver26/drivers/net/can/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r673%20-%20branches/cannetdriver26/drivers/net/can/mscan&In-Reply-To=%3C200802011002.m11A2x0n016723%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000656.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r673 - branches/cannetdriver26/drivers/net/can/mscan</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r673%20-%20branches/cannetdriver26/drivers/net/can/mscan&In-Reply-To=%3C200802011002.m11A2x0n016723%40sheep.berlios.de%3E"
+       TITLE="r673 - branches/cannetdriver26/drivers/net/can/mscan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Fri Feb  1 11:02:59 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000656.html">r674 - in branches/cannetdriver26: drivers/net/can/sja1000	include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#655">[ date ]</a>
+              <a href="thread.html#655">[ thread ]</a>
+              <a href="subject.html#655">[ subject ]</a>
+              <a href="author.html#655">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-02-01 11:02:53 +0100 (Fri, 01 Feb 2008)
+New Revision: 673
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+Log:
+Fix bug in mscan_open (netif_start_queue got lost)
+
+Modified: branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-31 19:48:55 UTC (rev 672)
++++ branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-02-01 10:02:53 UTC (rev 673)
+@@ -622,7 +622,7 @@
+ 	ret = request_irq(dev-&gt;irq, mscan_isr, IRQF_SHARED, dev-&gt;name, dev);
+ #endif
+ 
+-	if (ret  &lt; 0) {
++	if (ret &lt; 0) {
+ #if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
+ 		napi_disable(&amp;priv-&gt;napi);
+ #endif
+@@ -634,7 +634,12 @@
+ 	priv-&gt;open_time = jiffies;
+ 
+ 	out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_LISTEN);
+-	return mscan_start(dev);
++
++	if ((ret = mscan_start(dev)))
++		return ret;
++	netif_start_queue(dev);
++
++	return 0;
+ }
+ 
+ static int mscan_close(struct net_device *dev)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000656.html">r674 - in branches/cannetdriver26: drivers/net/can/sja1000	include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#655">[ date ]</a>
+              <a href="thread.html#655">[ thread ]</a>
+              <a href="subject.html#655">[ subject ]</a>
+              <a href="author.html#655">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

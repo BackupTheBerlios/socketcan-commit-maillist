@@ -1,0 +1,1677 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r487 - trunk/patch-series/net-2.6.24
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r487%20-%20trunk/patch-series/net-2.6.24&In-Reply-To=%3C200709201935.l8KJZiix004775%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000468.html">
+   <LINK REL="Next"  HREF="000470.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r487 - trunk/patch-series/net-2.6.24</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r487%20-%20trunk/patch-series/net-2.6.24&In-Reply-To=%3C200709201935.l8KJZiix004775%40sheep.berlios.de%3E"
+       TITLE="r487 - trunk/patch-series/net-2.6.24">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep 20 21:35:44 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000468.html">r486 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+        <LI>Next message: <A HREF="000470.html">r488 - in trunk: can-utils test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#469">[ date ]</a>
+              <a href="thread.html#469">[ thread ]</a>
+              <a href="subject.html#469">[ subject ]</a>
+              <a href="author.html#469">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-09-20 21:35:39 +0200 (Thu, 20 Sep 2007)
+New Revision: 487
+
+Modified:
+   trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff
+   trunk/patch-series/net-2.6.24/02-can-core.diff
+   trunk/patch-series/net-2.6.24/03-can-raw-proto.diff
+   trunk/patch-series/net-2.6.24/04-can-bcm-proto.diff
+   trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff
+   trunk/patch-series/net-2.6.24/06-can-maintainers.diff
+   trunk/patch-series/net-2.6.24/07-can-doc.diff
+   trunk/patch-series/net-2.6.24/intro
+Log:
+Update patch-series for net-2.6.24 to revision 484
+
+
+Modified: trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff	2007-09-20 19:35:39 UTC (rev 487)
+@@ -18,8 +18,8 @@
+ 
+ Index: net-2.6.24/include/linux/if_arp.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/if_arp.h	2007-09-17 10:26:58.000000000 +0200
+-+++ net-2.6.24/include/linux/if_arp.h	2007-09-17 10:27:06.000000000 +0200
++--- net-2.6.24.orig/include/linux/if_arp.h	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/include/linux/if_arp.h	2007-09-20 18:48:57.000000000 +0200
+ @@ -52,6 +52,7 @@
+  #define ARPHRD_ROSE	270
+  #define ARPHRD_X25	271		/* CCITT X.25			*/
+@@ -30,8 +30,8 @@
+  #define ARPHRD_HDLC	ARPHRD_CISCO
+ Index: net-2.6.24/include/linux/if_ether.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/if_ether.h	2007-09-17 10:26:58.000000000 +0200
+-+++ net-2.6.24/include/linux/if_ether.h	2007-09-17 10:27:06.000000000 +0200
++--- net-2.6.24.orig/include/linux/if_ether.h	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/include/linux/if_ether.h	2007-09-20 18:48:57.000000000 +0200
+ @@ -90,6 +90,7 @@
+  #define ETH_P_WAN_PPP   0x0007          /* Dummy type for WAN PPP frames*/
+  #define ETH_P_PPP_MP    0x0008          /* Dummy type for PPP MP frames */
+@@ -42,8 +42,8 @@
+  #define ETH_P_MOBITEX	0x0015		/* Mobitex (<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kaz at cafe.net</A>)	*/
+ Index: net-2.6.24/include/linux/socket.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/socket.h	2007-09-17 10:26:58.000000000 +0200
+-+++ net-2.6.24/include/linux/socket.h	2007-09-17 10:27:06.000000000 +0200
++--- net-2.6.24.orig/include/linux/socket.h	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/include/linux/socket.h	2007-09-20 18:48:57.000000000 +0200
+ @@ -185,6 +185,7 @@
+  #define AF_PPPOX	24	/* PPPoX sockets		*/
+  #define AF_WANPIPE	25	/* Wanpipe API Sockets */
+@@ -62,8 +62,8 @@
+  #define PF_IUCV		AF_IUCV
+ Index: net-2.6.24/include/linux/tty.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/tty.h	2007-09-17 10:26:58.000000000 +0200
+-+++ net-2.6.24/include/linux/tty.h	2007-09-17 10:27:06.000000000 +0200
++--- net-2.6.24.orig/include/linux/tty.h	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/include/linux/tty.h	2007-09-20 18:48:57.000000000 +0200
+ @@ -24,7 +24,7 @@
+  #define NR_PTYS	CONFIG_LEGACY_PTY_COUNT   /* Number of legacy ptys */
+  #define NR_UNIX98_PTY_DEFAULT	4096      /* Default maximum for Unix98 ptys */
+@@ -83,8 +83,8 @@
+   * This character is the same as _POSIX_VDISABLE: it cannot be used as
+ Index: net-2.6.24/net/core/sock.c
+ ===================================================================
+---- net-2.6.24.orig/net/core/sock.c	2007-09-17 10:26:58.000000000 +0200
+-+++ net-2.6.24/net/core/sock.c	2007-09-17 10:27:06.000000000 +0200
++--- net-2.6.24.orig/net/core/sock.c	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/net/core/sock.c	2007-09-20 18:48:57.000000000 +0200
+ @@ -154,7 +154,7 @@
+    &quot;sk_lock-AF_ASH&quot;   , &quot;sk_lock-AF_ECONET&quot;   , &quot;sk_lock-AF_ATMSVC&quot;   ,
+    &quot;sk_lock-21&quot;       , &quot;sk_lock-AF_SNA&quot;      , &quot;sk_lock-AF_IRDA&quot;     ,
+
+Modified: trunk/patch-series/net-2.6.24/02-can-core.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/02-can-core.diff	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/02-can-core.diff	2007-09-20 19:35:39 UTC (rev 487)
+@@ -9,27 +9,27 @@
+ Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+- include/linux/can.h       |  113 +++++
++ include/linux/can.h       |  111 +++++
+  include/linux/can/core.h  |   78 +++
+  include/linux/can/error.h |   93 ++++
+  net/Kconfig               |    1 
+  net/Makefile              |    1 
+  net/can/Kconfig           |   25 +
+  net/can/Makefile          |    6 
+- net/can/af_can.c          | 1002 ++++++++++++++++++++++++++++++++++++++++++++++
++ net/can/af_can.c          | 1013 ++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/af_can.h          |  121 +++++
+  net/can/proc.c            |  531 ++++++++++++++++++++++++
+- 10 files changed, 1971 insertions(+)
++ 10 files changed, 1980 insertions(+)
+ 
+ Index: net-2.6.24/include/linux/can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can.h	2007-09-17 10:27:09.000000000 +0200
+-@@ -0,0 +1,113 @@
+++++ net-2.6.24/include/linux/can.h	2007-09-20 18:48:58.000000000 +0200
++@@ -0,0 +1,111 @@
+ +/*
+ + * linux/can.h
+ + *
+-+ * Definitions for CAN networklayer (socket addr / CAN frame / CAN filter)
+++ * Definitions for CAN network layer (socket addr / CAN frame / CAN filter)
+ + *
+ + * Authors: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+ + *          Urs Thuermann   &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+@@ -95,8 +95,7 @@
+ +#define CAN_TP20	4 /* VAG Transport Protocol v2.0 */
+ +#define CAN_MCNET	5 /* Bosch MCNet */
+ +#define CAN_ISOTP	6 /* ISO 15765-2 Transport Protocol */
+-+#define CAN_BAP		7 /* VAG Bedien- und Anzeigeprotokoll */
+-+#define CAN_NPROTO	8
+++#define CAN_NPROTO	7
+ +
+ +#define SOL_CAN_BASE 100
+ +
+@@ -114,7 +113,6 @@
+ +		struct { canid_t rx_id, tx_id; } tp20;
+ +		struct { canid_t rx_id, tx_id; } mcnet;
+ +		struct { canid_t rx_id, tx_id; } isotp;
+-+		struct { int     lcu,   type;  } bap;
+ +	} can_addr;
+ +};
+ +
+@@ -142,7 +140,7 @@
+ Index: net-2.6.24/include/linux/can/core.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can/core.h	2007-09-17 11:08:39.000000000 +0200
+++++ net-2.6.24/include/linux/can/core.h	2007-09-20 18:48:58.000000000 +0200
+ @@ -0,0 +1,78 @@
+ +/*
+ + * linux/can/core.h
+@@ -165,7 +163,7 @@
+ +#include &lt;linux/skbuff.h&gt;
+ +#include &lt;linux/netdevice.h&gt;
+ +
+-+#define CAN_VERSION &quot;20070916&quot;
+++#define CAN_VERSION &quot;20070920&quot;
+ +
+ +/* increment this number each time you change some user-space interface */
+ +#define CAN_ABI_VERSION &quot;8&quot;
+@@ -192,18 +190,18 @@
+ +
+ +/* function prototypes for the CAN networklayer core (af_can.c) */
+ +
+-+extern int can_proto_register(struct can_proto *cp);
+-+extern int can_proto_unregister(struct can_proto *cp);
+++extern int  can_proto_register(struct can_proto *cp);
+++extern void can_proto_unregister(struct can_proto *cp);
+ +
+-+extern int can_rx_register(struct net_device *dev, canid_t can_id,
+-+			   canid_t mask,
+-+			   void (*func)(struct sk_buff *, void *),
+-+			   void *data, char *ident);
+++extern int  can_rx_register(struct net_device *dev, canid_t can_id,
+++			    canid_t mask,
+++			    void (*func)(struct sk_buff *, void *),
+++			    void *data, char *ident);
+ +
+-+extern int can_rx_unregister(struct net_device *dev, canid_t can_id,
+-+			     canid_t mask,
+-+			     void (*func)(struct sk_buff *, void *),
+-+			     void *data);
+++extern void can_rx_unregister(struct net_device *dev, canid_t can_id,
+++			      canid_t mask,
+++			      void (*func)(struct sk_buff *, void *),
+++			      void *data);
+ +
+ +extern int can_send(struct sk_buff *skb, int loop);
+ +
+@@ -224,8 +222,8 @@
+ +#endif /* CAN_CORE_H */
+ Index: net-2.6.24/net/Kconfig
+ ===================================================================
+---- net-2.6.24.orig/net/Kconfig	2007-09-17 10:26:58.000000000 +0200
+-+++ net-2.6.24/net/Kconfig	2007-09-17 10:27:09.000000000 +0200
++--- net-2.6.24.orig/net/Kconfig	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/net/Kconfig	2007-09-20 18:48:58.000000000 +0200
+ @@ -210,6 +210,7 @@
+  endmenu
+  
+@@ -236,8 +234,8 @@
+  source &quot;net/rxrpc/Kconfig&quot;
+ Index: net-2.6.24/net/Makefile
+ ===================================================================
+---- net-2.6.24.orig/net/Makefile	2007-09-17 10:26:58.000000000 +0200
+-+++ net-2.6.24/net/Makefile	2007-09-17 10:27:09.000000000 +0200
++--- net-2.6.24.orig/net/Makefile	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/net/Makefile	2007-09-20 18:48:58.000000000 +0200
+ @@ -34,6 +34,7 @@
+  obj-$(CONFIG_NETROM)		+= netrom/
+  obj-$(CONFIG_ROSE)		+= rose/
+@@ -249,7 +247,7 @@
+ Index: net-2.6.24/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/Kconfig	2007-09-17 10:30:35.000000000 +0200
+++++ net-2.6.24/net/can/Kconfig	2007-09-20 18:48:58.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +#
+ +# Controller Area Network (CAN) network layer core configuration
+@@ -279,7 +277,7 @@
+ Index: net-2.6.24/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/Makefile	2007-09-17 10:30:35.000000000 +0200
+++++ net-2.6.24/net/can/Makefile	2007-09-20 18:48:58.000000000 +0200
+ @@ -0,0 +1,6 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network core.
+@@ -290,8 +288,8 @@
+ Index: net-2.6.24/net/can/af_can.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/af_can.c	2007-09-17 11:06:52.000000000 +0200
+-@@ -0,0 +1,1002 @@
+++++ net-2.6.24/net/can/af_can.c	2007-09-20 18:48:58.000000000 +0200
++@@ -0,0 +1,1013 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+ + *            (used by different CAN protocol modules)
+@@ -369,12 +367,12 @@
+ +
+ +MODULE_ALIAS_NETPROTO(PF_CAN);
+ +
+-+int stats_timer = 1; /* default: on */
+++static int stats_timer __read_mostly = 1;
+ +module_param(stats_timer, int, S_IRUGO);
+ +MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+-+static int debug;
+++static int debug __read_mostly;
+ +module_param(debug, int, S_IRUGO);
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+@@ -386,7 +384,8 @@
+ +static struct kmem_cache *rcv_cache __read_mostly;
+ +
+ +/* table of registered CAN protocols */
+-+static struct can_proto *proto_tab[CAN_NPROTO];
+++static struct can_proto *proto_tab[CAN_NPROTO] __read_mostly;
+++static DEFINE_SPINLOCK(proto_tab_lock);
+ +
+ +struct timer_list stattimer; /* timer for statistics update */
+ +struct s_stats  stats;       /* packet statistics */
+@@ -433,6 +432,9 @@
+ +	if (protocol &lt; 0 || protocol &gt;= CAN_NPROTO)
+ +		return -EINVAL;
+ +
+++	if (net != &amp;init_net)
+++		return -EAFNOSUPPORT;
+++
+ +	DBG(&quot;looking up proto %d in proto_tab[]\n&quot;, protocol);
+ +
+ +	/* try to load protocol module, when CONFIG_KMOD is defined */
+@@ -445,30 +447,41 @@
+ +		 * return the error code immediately.  Below we will
+ +		 * return -EPROTONOSUPPORT
+ +		 */
+-+		if (ret == -ENOSYS)
+-+			printk(KERN_INFO &quot;can: request_module(%s) not&quot;
+-+			       &quot; implemented.\n&quot;, module_name);
+-+		else if (ret)
+-+			printk(KERN_ERR &quot;can: request_module(%s) failed\n&quot;,
+-+			       module_name);
+++		if (ret == -ENOSYS) {
+++			if (printk_ratelimit())
+++				printk(KERN_INFO &quot;can: request_module(%s)&quot;
+++				        &quot; not implemented.\n&quot;, module_name);
+++		} else if (ret) {
+++			if (printk_ratelimit())
+++				printk(KERN_ERR &quot;can: request_module(%s)&quot;
+++				       &quot; failed.\n&quot;, module_name);
+++		}
+ +	}
+ +
+-+	/* check for success and correct type */
+++	spin_lock(&amp;proto_tab_lock);
+ +	cp = proto_tab[protocol];
+-+	if (!cp || cp-&gt;type != sock-&gt;type)
+-+		return -EPROTONOSUPPORT;
+++	if (cp &amp;&amp; !try_module_get(cp-&gt;prot-&gt;owner))
+++		cp = NULL;
+++	spin_unlock(&amp;proto_tab_lock);
+ +
+-+	if (net != &amp;init_net)
+-+		return -EAFNOSUPPORT;
+++	/* check for success and correct type */
+++	if (!cp || cp-&gt;type != sock-&gt;type) {
+++		ret = -EPROTONOSUPPORT;
+++		goto errout;
+++	}
+ +
+-+	if (cp-&gt;capability &gt;= 0 &amp;&amp; !capable(cp-&gt;capability))
+-+		return -EPERM;
+++	if (cp-&gt;capability &gt;= 0 &amp;&amp; !capable(cp-&gt;capability)) {
+++		ret = -EPERM;
+++		goto errout;
+++	}
+ +
+ +	sock-&gt;ops = cp-&gt;ops;
+ +
+ +	sk = sk_alloc(net, PF_CAN, GFP_KERNEL, cp-&gt;prot, 1);
+-+	if (!sk)
+-+		return -ENOMEM;
+++	if (!sk) {
+++		ret = -ENOMEM;
+++		goto errout;
+++	}
+ +
+ +	sock_init_data(sock, sk);
+ +	sk-&gt;sk_destruct = can_sock_destruct;
+@@ -484,6 +497,8 @@
+ +		sock_put(sk);
+ +	}
+ +
+++ errout:
+++	module_put(cp-&gt;prot-&gt;owner);
+ +	return ret;
+ +}
+ +
+@@ -501,6 +516,7 @@
+ + *  -ENETDOWN when the selected interface is down
+ + *  -ENOBUFS on full driver queue (see net_xmit_errno())
+ + *  -ENOMEM when local loopback failed at calling skb_clone()
+++ *  -EPERM when trying to send on a non-CAN interface
+ + */
+ +int can_send(struct sk_buff *skb, int loop)
+ +{
+@@ -590,7 +606,7 @@
+ +	 * cursor variable n to decide if a match was found.
+ +	 */
+ +
+-+	hlist_for_each_entry(d, n, &amp;rx_dev_list, list) {
+++	hlist_for_each_entry_rcu(d, n, &amp;rx_dev_list, list) {
+ +		if (d-&gt;dev == dev)
+ +			break;
+ +	}
+@@ -683,7 +699,7 @@
+ +	if (!r)
+ +		return -ENOMEM;
+ +
+-+	spin_lock_bh(&amp;rcv_lists_lock);
+++	spin_lock(&amp;rcv_lists_lock);
+ +
+ +	d = find_dev_rcv_lists(dev);
+ +	if (d) {
+@@ -709,7 +725,7 @@
+ +		ret = -ENODEV;
+ +	}
+ +
+-+	spin_unlock_bh(&amp;rcv_lists_lock);
+++	spin_unlock(&amp;rcv_lists_lock);
+ +
+ +	return ret;
+ +}
+@@ -747,31 +763,25 @@
+ + *
+ + * Description:
+ + *  Removes subscription entry depending on given (subscription) values.
+-+ *
+-+ * Return:
+-+ *  0 on success
+-+ *  -EINVAL on missing subscription entry
+-+ *  -ENODEV unknown device
+ + */
+-+int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-+		      void (*func)(struct sk_buff *, void *), void *data)
+++void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+++		       void (*func)(struct sk_buff *, void *), void *data)
+ +{
+ +	struct receiver *r = NULL;
+ +	struct hlist_head *rl;
+ +	struct hlist_node *next;
+ +	struct dev_rcv_lists *d;
+-+	int ret = 0;
+ +
+ +	DBG(&quot;dev %p (%s), id %03X, mask %03X, callback %p, data %p\n&quot;,
+ +	    dev, DNAME(dev), can_id, mask, func, data);
+ +
+-+	spin_lock_bh(&amp;rcv_lists_lock);
+++	spin_lock(&amp;rcv_lists_lock);
+ +
+ +	d = find_dev_rcv_lists(dev);
+ +	if (!d) {
+-+		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
+-+		    DNAME(dev), can_id, mask);
+-+		ret = -ENODEV;
+++		printk(KERN_ERR &quot;BUG: receive list not found for &quot;
+++		       &quot;dev %s, id %03X, mask %03X\n&quot;,
+++		       DNAME(dev), can_id, mask);
+ +		goto out;
+ +	}
+ +
+@@ -783,7 +793,7 @@
+ +	 * been registered before.
+ +	 */
+ +
+-+	hlist_for_each_entry(r, next, rl, list) {
+++	hlist_for_each_entry_rcu(r, next, rl, list) {
+ +		if (r-&gt;can_id == can_id &amp;&amp; r-&gt;mask == mask
+ +		    &amp;&amp; r-&gt;func == func &amp;&amp; r-&gt;data == data)
+ +			break;
+@@ -796,9 +806,9 @@
+ +	 */
+ +
+ +	if (!next) {
+-+		DBG(&quot;receive list entry not found for &quot;
+-+		    &quot;dev %s, id %03X, mask %03X\n&quot;, DNAME(dev), can_id, mask);
+-+		ret = -EINVAL;
+++		printk(KERN_ERR &quot;BUG: receive list entry not found for &quot;
+++		       &quot;dev %s, id %03X, mask %03X\n&quot;,
+++		       DNAME(dev), can_id, mask);
+ +		r = NULL;
+ +		d = NULL;
+ +		goto out;
+@@ -819,7 +829,7 @@
+ +		d = NULL;
+ +
+ + out:
+-+	spin_unlock_bh(&amp;rcv_lists_lock);
+++	spin_unlock(&amp;rcv_lists_lock);
+ +
+ +	/* schedule the receiver item for deletion */
+ +	if (r)
+@@ -828,8 +838,6 @@
+ +	/* schedule the device structure for deletion */
+ +	if (d)
+ +		call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
+-+
+-+	return ret;
+ +}
+ +EXPORT_SYMBOL(can_rx_unregister);
+ +
+@@ -983,15 +991,18 @@
+ +		       proto);
+ +		return -EINVAL;
+ +	}
+++
+++	spin_lock(&amp;proto_tab_lock);
+ +	if (proto_tab[proto]) {
+ +		printk(KERN_ERR &quot;can: protocol %d already registered\n&quot;,
+ +		       proto);
+-+		return -EBUSY;
+++		err = -EBUSY;
+++		goto errout;
+ +	}
+ +
+ +	err = proto_register(cp-&gt;prot, 0);
+ +	if (err &lt; 0)
+-+		return err;
+++		goto errout;
+ +
+ +	proto_tab[proto] = cp;
+ +
+@@ -999,6 +1010,9 @@
+ +	if (!cp-&gt;ops-&gt;ioctl)
+ +		cp-&gt;ops-&gt;ioctl = can_ioctl;
+ +
+++ errout:
+++	spin_unlock(&amp;proto_tab_lock);
+++
+ +	return err;
+ +}
+ +EXPORT_SYMBOL(can_proto_register);
+@@ -1006,23 +1020,19 @@
+ +/**
+ + * can_proto_unregister - unregister CAN transport protocol
+ + * @cp: pointer to CAN protocol structure
+-+ *
+-+ * Return:
+-+ *  0 on success
+-+ *  -ESRCH protocol number was not registered
+ + */
+-+int can_proto_unregister(struct can_proto *cp)
+++void can_proto_unregister(struct can_proto *cp)
+ +{
+ +	int proto = cp-&gt;protocol;
+ +
+++	spin_lock(&amp;proto_tab_lock);
+ +	if (!proto_tab[proto]) {
+-+		printk(KERN_ERR &quot;can: protocol %d is not registered\n&quot;, proto);
+-+		return -ESRCH;
+++		printk(KERN_ERR &quot;BUG: can: protocol %d is not registered\n&quot;,
+++		       proto);
+ +	}
+ +	proto_unregister(cp-&gt;prot);
+ +	proto_tab[proto] = NULL;
+-+
+-+	return 0;
+++	spin_unlock(&amp;proto_tab_lock);
+ +}
+ +EXPORT_SYMBOL(can_proto_unregister);
+ +
+@@ -1059,8 +1069,7 @@
+ +
+ +		DBG(&quot;creating new dev_rcv_lists for %s\n&quot;, dev-&gt;name);
+ +
+-+		d = kzalloc(sizeof(*d),
+-+			    in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+++		d = kzalloc(sizeof(*d), GFP_KERNEL);
+ +		if (!d) {
+ +			printk(KERN_ERR
+ +			       &quot;can: allocation of receive list failed\n&quot;);
+@@ -1068,14 +1077,14 @@
+ +		}
+ +		d-&gt;dev = dev;
+ +
+-+		spin_lock_bh(&amp;rcv_lists_lock);
+++		spin_lock(&amp;rcv_lists_lock);
+ +		hlist_add_head_rcu(&amp;d-&gt;list, &amp;rx_dev_list);
+-+		spin_unlock_bh(&amp;rcv_lists_lock);
+++		spin_unlock(&amp;rcv_lists_lock);
+ +
+ +		break;
+ +
+ +	case NETDEV_UNREGISTER:
+-+		spin_lock_bh(&amp;rcv_lists_lock);
+++		spin_lock(&amp;rcv_lists_lock);
+ +
+ +		d = find_dev_rcv_lists(dev);
+ +		if (d) {
+@@ -1091,7 +1100,7 @@
+ +			printk(KERN_ERR &quot;can: notifier: receive list not &quot;
+ +			       &quot;found for dev %s\n&quot;, dev-&gt;name);
+ +
+-+		spin_unlock_bh(&amp;rcv_lists_lock);
+++		spin_unlock(&amp;rcv_lists_lock);
+ +
+ +		if (d)
+ +			call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
+@@ -1205,20 +1214,20 @@
+ + * af_can module init/exit functions
+ + */
+ +
+-+static struct packet_type can_packet = {
+++static struct packet_type can_packet __read_mostly = {
+ +	.type = __constant_htons(ETH_P_CAN),
+ +	.dev  = NULL,
+ +	.func = can_rcv,
+ +};
+ +
+-+static struct net_proto_family can_family_ops = {
+++static struct net_proto_family can_family_ops __read_mostly = {
+ +	.family = PF_CAN,
+ +	.create = can_create,
+ +	.owner  = THIS_MODULE,
+ +};
+ +
+ +/* notifier block for netdevice event */
+-+static struct notifier_block can_netdev_notifier = {
+++static struct notifier_block can_netdev_notifier __read_mostly = {
+ +	.notifier_call = can_notifier,
+ +};
+ +
+@@ -1237,9 +1246,9 @@
+ +	 * embedded hlist heads, the dev pointer, and the entries counter.
+ +	 */
+ +
+-+	spin_lock_bh(&amp;rcv_lists_lock);
+++	spin_lock(&amp;rcv_lists_lock);
+ +	hlist_add_head_rcu(&amp;rx_alldev_list.list, &amp;rx_dev_list);
+-+	spin_unlock_bh(&amp;rcv_lists_lock);
+++	spin_unlock(&amp;rcv_lists_lock);
+ +
+ +	if (stats_timer) {
+ +		/* the statistics are updated every second (timer triggered) */
+@@ -1247,7 +1256,7 @@
+ +		stattimer.function = can_stat_update;
+ +		stattimer.data = 0;
+ +		/* update every second */
+-+		stattimer.expires = jiffies + HZ;
+++		stattimer.expires = round_jiffies(jiffies + HZ);
+ +		/* start statistics timer */
+ +		add_timer(&amp;stattimer);
+ +	} else
+@@ -1281,13 +1290,13 @@
+ +	sock_unregister(PF_CAN);
+ +
+ +	/* remove rx_dev_list */
+-+	spin_lock_bh(&amp;rcv_lists_lock);
+++	spin_lock(&amp;rcv_lists_lock);
+ +	hlist_del(&amp;rx_alldev_list.list);
+ +	hlist_for_each_entry_safe(d, n, next, &amp;rx_dev_list, list) {
+ +		hlist_del(&amp;d-&gt;list);
+ +		kfree(d);
+ +	}
+-+	spin_unlock_bh(&amp;rcv_lists_lock);
+++	spin_unlock(&amp;rcv_lists_lock);
+ +
+ +	kmem_cache_destroy(rcv_cache);
+ +}
+@@ -1297,7 +1306,7 @@
+ Index: net-2.6.24/net/can/af_can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/af_can.h	2007-09-17 10:27:09.000000000 +0200
+++++ net-2.6.24/net/can/af_can.h	2007-09-20 18:48:58.000000000 +0200
+ @@ -0,0 +1,121 @@
+ +/*
+ + * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+@@ -1423,7 +1432,7 @@
+ Index: net-2.6.24/net/can/proc.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/proc.c	2007-09-17 11:07:19.000000000 +0200
+++++ net-2.6.24/net/can/proc.c	2007-09-20 18:48:58.000000000 +0200
+ @@ -0,0 +1,531 @@
+ +/*
+ + * proc.c - procfs support for Protocol family CAN core module
+@@ -1542,7 +1551,7 @@
+ +	if (oldjif == newjif)
+ +		return 0;
+ +
+-+	/* see can_rcv() - this should NEVER happen! */
+++	/* see can_stat_update() - this should NEVER happen! */
+ +	if (count &gt; (ULONG_MAX / HZ)) {
+ +		printk(KERN_ERR &quot;can: calc_rate: count exceeded! %ld\n&quot;,
+ +		       count);
+@@ -1610,7 +1619,7 @@
+ +	stats.matches_delta   = 0;
+ +
+ +	/* restart timer (one second) */
+-+	stattimer.expires = jiffies + HZ;
+++	stattimer.expires = round_jiffies(jiffies + HZ);
+ +	add_timer(&amp;stattimer);
+ +}
+ +
+@@ -1959,7 +1968,7 @@
+ Index: net-2.6.24/include/linux/can/error.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can/error.h	2007-09-17 10:27:09.000000000 +0200
+++++ net-2.6.24/include/linux/can/error.h	2007-09-20 18:48:58.000000000 +0200
+ @@ -0,0 +1,93 @@
+ +/*
+ + * linux/can/error.h
+
+Modified: trunk/patch-series/net-2.6.24/03-can-raw-proto.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/03-can-raw-proto.diff	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/03-can-raw-proto.diff	2007-09-20 19:35:39 UTC (rev 487)
+@@ -10,13 +10,13 @@
+  include/linux/can/raw.h |   31 +
+  net/can/Kconfig         |   26 +
+  net/can/Makefile        |    3 
+- net/can/raw.c           |  767 ++++++++++++++++++++++++++++++++++++++++++++++++
+- 4 files changed, 827 insertions(+)
++ net/can/raw.c           |  828 ++++++++++++++++++++++++++++++++++++++++++++++++
++ 4 files changed, 888 insertions(+)
+ 
+ Index: net-2.6.24/include/linux/can/raw.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can/raw.h	2007-09-17 11:10:10.000000000 +0200
+++++ net-2.6.24/include/linux/can/raw.h	2007-09-20 18:48:59.000000000 +0200
+ @@ -0,0 +1,31 @@
+ +/*
+ + * linux/can/raw.h
+@@ -51,8 +51,8 @@
+ +#endif
+ Index: net-2.6.24/net/can/Kconfig
+ ===================================================================
+---- net-2.6.24.orig/net/can/Kconfig	2007-09-17 10:30:35.000000000 +0200
+-+++ net-2.6.24/net/can/Kconfig	2007-09-17 11:10:10.000000000 +0200
++--- net-2.6.24.orig/net/can/Kconfig	2007-09-20 18:48:58.000000000 +0200
+++++ net-2.6.24/net/can/Kconfig	2007-09-20 18:48:59.000000000 +0200
+ @@ -16,6 +16,32 @@
+  	  If you want CAN support, you should say Y here and also to the
+  	  specific driver for your controller(s) below.
+@@ -88,8 +88,8 @@
+  	depends on CAN
+ Index: net-2.6.24/net/can/Makefile
+ ===================================================================
+---- net-2.6.24.orig/net/can/Makefile	2007-09-17 10:30:35.000000000 +0200
+-+++ net-2.6.24/net/can/Makefile	2007-09-17 11:10:10.000000000 +0200
++--- net-2.6.24.orig/net/can/Makefile	2007-09-20 18:48:58.000000000 +0200
+++++ net-2.6.24/net/can/Makefile	2007-09-20 18:48:59.000000000 +0200
+ @@ -4,3 +4,6 @@
+  
+  obj-$(CONFIG_CAN)	+= can.o
+@@ -100,8 +100,8 @@
+ Index: net-2.6.24/net/can/raw.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/raw.c	2007-09-17 11:11:10.000000000 +0200
+-@@ -0,0 +1,767 @@
+++++ net-2.6.24/net/can/raw.c	2007-09-20 18:48:59.000000000 +0200
++@@ -0,0 +1,828 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+ + *
+@@ -231,6 +231,14 @@
+ +		}
+ +	}
+ +
+++	/*
+++	 *  Put the datagram to the queue so that raw_recvmsg() can
+++	 *  get it from there.  We need to pass the interface index to
+++	 *  raw_recvmsg().  We pass a whole struct sockaddr_can in skb-&gt;cb
+++	 *  containing the interface index.
+++	 */
+++
+++	BUILD_BUG_ON(sizeof(skb-&gt;cb) &lt; sizeof(struct sockaddr_can));
+ +	addr = (struct sockaddr_can *)skb-&gt;cb;
+ +	memset(addr, 0, sizeof(*addr));
+ +	addr-&gt;can_family  = AF_CAN;
+@@ -244,38 +252,54 @@
+ +	}
+ +}
+ +
+-+static void raw_enable_filters(struct net_device *dev, struct sock *sk)
+++static int raw_enable_filters(struct net_device *dev, struct sock *sk,
+++			      struct can_filter *filter,
+++			      int count)
+ +{
+-+	struct raw_sock *ro = raw_sk(sk);
+-+	struct can_filter *filter = ro-&gt;filter;
+++	int err = 0;
+ +	int i;
+ +
+-+	for (i = 0; i &lt; ro-&gt;count; i++) {
+++	for (i = 0; i &lt; count; i++) {
+ +		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+ +		    filter[i].can_id, filter[i].can_mask,
+ +		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+ +
+-+		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
+-+				raw_rcv, sk, IDENT);
+++		err = can_rx_register(dev, filter[i].can_id,
+++				      filter[i].can_mask,
+++				      raw_rcv, sk, IDENT);
+++
+++		if (err) {
+++			/* clean up successfully registered filters */
+++			while (--i &gt;= 0)
+++				can_rx_unregister(dev, filter[i].can_id,
+++						  filter[i].can_mask,
+++						  raw_rcv, sk);
+++			break;
+++		}
+ +	}
+++
+++	return err;
+ +}
+ +
+-+static void raw_enable_errfilter(struct net_device *dev, struct sock *sk)
+++static int raw_enable_errfilter(struct net_device *dev, struct sock *sk,
+++				can_err_mask_t err_mask)
+ +{
+-+	struct raw_sock *ro = raw_sk(sk);
+++	int err = 0;
+ +
+-+	if (ro-&gt;err_mask)
+-+		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-+				raw_rcv, sk, IDENT);
+++	if (err_mask)
+++		err = can_rx_register(dev, 0, err_mask | CAN_ERR_FLAG,
+++				      raw_rcv, sk, IDENT);
+++
+++	return err;
+ +}
+ +
+-+static void raw_disable_filters(struct net_device *dev, struct sock *sk)
+++static void raw_disable_filters(struct net_device *dev, struct sock *sk,
+++			      struct can_filter *filter,
+++			      int count)
+ +{
+-+	struct raw_sock *ro = raw_sk(sk);
+-+	struct can_filter *filter = ro-&gt;filter;
+ +	int i;
+ +
+-+	for (i = 0; i &lt; ro-&gt;count; i++) {
+++	for (i = 0; i &lt; count; i++) {
+ +		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+ +		    filter[i].can_id, filter[i].can_mask,
+ +		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+@@ -285,15 +309,40 @@
+ +	}
+ +}
+ +
+-+static void raw_disable_errfilter(struct net_device *dev, struct sock *sk)
+++static inline void raw_disable_errfilter(struct net_device *dev,
+++					 struct sock *sk,
+++					 can_err_mask_t err_mask)
+++
+ +{
+++	if (err_mask)
+++		can_rx_unregister(dev, 0, err_mask | CAN_ERR_FLAG,
+++				  raw_rcv, sk);
+++}
+++
+++static inline void raw_disable_allfilters(struct net_device *dev,
+++					  struct sock *sk)
+++{
+ +	struct raw_sock *ro = raw_sk(sk);
+ +
+-+	if (ro-&gt;err_mask)
+-+		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-+				  raw_rcv, sk);
+++	raw_disable_filters(dev, sk, ro-&gt;filter, ro-&gt;count);
+++	raw_disable_errfilter(dev, sk, ro-&gt;err_mask);
+ +}
+ +
+++static int raw_enable_allfilters(struct net_device *dev, struct sock *sk)
+++{
+++	struct raw_sock *ro = raw_sk(sk);
+++	int err;
+++
+++	err = raw_enable_filters(dev, sk, ro-&gt;filter, ro-&gt;count);
+++	if (!err) {
+++		err = raw_enable_errfilter(dev, sk, ro-&gt;err_mask);
+++		if (err)
+++			raw_disable_filters(dev, sk, ro-&gt;filter, ro-&gt;count);
+++	}
+++
+++	return err;
+++}
+++
+ +static int raw_notifier(struct notifier_block *nb,
+ +			unsigned long msg, void *data)
+ +{
+@@ -318,10 +367,8 @@
+ +	case NETDEV_UNREGISTER:
+ +		lock_sock(sk);
+ +		/* remove current filters &amp; unregister */
+-+		if (ro-&gt;bound) {
+-+			raw_disable_filters(dev, sk);
+-+			raw_disable_errfilter(dev, sk);
+-+		}
+++		if (ro-&gt;bound)
+++			raw_disable_allfilters(dev, sk);
+ +
+ +		if (ro-&gt;count &gt; 1)
+ +			kfree(ro-&gt;filter);
+@@ -390,14 +437,11 @@
+ +
+ +			dev = dev_get_by_index(&amp;init_net, ro-&gt;ifindex);
+ +			if (dev) {
+-+				raw_disable_filters(dev, sk);
+-+				raw_disable_errfilter(dev, sk);
+++				raw_disable_allfilters(dev, sk);
+ +				dev_put(dev);
+ +			}
+-+		} else {
+-+			raw_disable_filters(NULL, sk);
+-+			raw_disable_errfilter(NULL, sk);
+-+		}
+++		} else
+++			raw_disable_allfilters(NULL, sk);
+ +	}
+ +
+ +	if (ro-&gt;count &gt; 1)
+@@ -418,6 +462,7 @@
+ +	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ +	struct sock *sk = sock-&gt;sk;
+ +	struct raw_sock *ro = raw_sk(sk);
+++	int ifindex;
+ +	int err = 0;
+ +	int notify_enetdown = 0;
+ +
+@@ -428,27 +473,9 @@
+ +
+ +	lock_sock(sk);
+ +
+-+	if (ro-&gt;bound) {
+-+		/* unregister current filters for this device */
+-+		if (ro-&gt;ifindex) {
+-+			struct net_device *dev;
+++	if (ro-&gt;bound &amp;&amp; addr-&gt;can_ifindex == ro-&gt;ifindex)
+++		goto out;
+ +
+-+			dev = dev_get_by_index(&amp;init_net, ro-&gt;ifindex);
+-+			if (dev) {
+-+				raw_disable_filters(dev, sk);
+-+				raw_disable_errfilter(dev, sk);
+-+				dev_put(dev);
+-+			}
+-+			ro-&gt;ifindex = 0;
+-+
+-+		} else {
+-+			raw_disable_filters(NULL, sk);
+-+			raw_disable_errfilter(NULL, sk);
+-+		}
+-+
+-+		ro-&gt;bound = 0;
+-+	}
+-+
+ +	if (addr-&gt;can_ifindex) {
+ +		struct net_device *dev;
+ +
+@@ -467,23 +494,37 @@
+ +		if (!(dev-&gt;flags &amp; IFF_UP))
+ +			notify_enetdown = 1;
+ +
+-+		ro-&gt;ifindex = dev-&gt;ifindex;
+++		ifindex = dev-&gt;ifindex;
+ +
+ +		/* filters set by default/setsockopt */
+-+		raw_enable_filters(dev, sk);
+-+		raw_enable_errfilter(dev, sk);
+++		err = raw_enable_allfilters(dev, sk);
+ +		dev_put(dev);
+ +
+ +	} else {
+-+		ro-&gt;ifindex = 0;
+++		ifindex = 0;
+ +
+ +		/* filters set by default/setsockopt */
+-+		raw_enable_filters(NULL, sk);
+-+		raw_enable_errfilter(NULL, sk);
+++		err = raw_enable_allfilters(NULL, sk);
+ +	}
+ +
+-+	ro-&gt;bound = 1;
+++	if (!err) {
+++		if (ro-&gt;bound) {
+++			/* unregister old filters */
+++			if (ro-&gt;ifindex) {
+++				struct net_device *dev;
+ +
+++				dev = dev_get_by_index(&amp;init_net, ro-&gt;ifindex);
+++				if (dev) {
+++					raw_disable_allfilters(dev, sk);
+++					dev_put(dev);
+++				}
+++			} else
+++				raw_disable_allfilters(NULL, sk);
+++		}
+++		ro-&gt;ifindex = ifindex;
+++		ro-&gt;bound = 1;
+++	}
+++
+ + out:
+ +	release_sock(sk);
+ +
+@@ -535,7 +576,7 @@
+ +	struct net_device *dev = NULL;
+ +	can_err_mask_t err_mask = 0;
+ +	int count = 0;
+-+	int err;
+++	int err = 0;
+ +
+ +	if (level != SOL_CAN_RAW)
+ +		return -EINVAL;
+@@ -572,25 +613,38 @@
+ +		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+ +			dev = dev_get_by_index(&amp;init_net, ro-&gt;ifindex);
+ +
+-+		/* remove current filters &amp; unregister */
+-+		if (ro-&gt;bound)
+-+			raw_disable_filters(dev, sk);
+++		if (ro-&gt;bound) {
+++			/* (try to) register the new filters */
+++			if (count == 1)
+++				err = raw_enable_filters(dev, sk, &amp;sfilter, 1);
+++			else
+++				err = raw_enable_filters(dev, sk, filter,
+++							 count);
+++			if (err) {
+++				if (count &gt; 1)
+++					kfree(filter);
+ +
+++				goto out_fil;
+++			}
+++
+++			/* remove old filter registrations */
+++			raw_disable_filters(dev, sk, ro-&gt;filter, ro-&gt;count);
+++		}
+++
+++		/* remove old filter space */
+ +		if (ro-&gt;count &gt; 1)
+ +			kfree(ro-&gt;filter);
+ +
+++		/* link new filters to the socket */
+ +		if (count == 1) {
+ +			/* copy filter data for single filter */
+ +			ro-&gt;dfilter = sfilter;
+ +			filter = &amp;ro-&gt;dfilter;
+ +		}
+-+
+-+		/* add new filters &amp; register */
+ +		ro-&gt;filter = filter;
+ +		ro-&gt;count  = count;
+-+		if (ro-&gt;bound)
+-+			raw_enable_filters(dev, sk);
+ +
+++ out_fil:
+ +		if (dev)
+ +			dev_put(dev);
+ +
+@@ -614,15 +668,21 @@
+ +			dev = dev_get_by_index(&amp;init_net, ro-&gt;ifindex);
+ +
+ +		/* remove current error mask */
+-+		if (ro-&gt;bound)
+-+			raw_disable_errfilter(dev, sk);
+++		if (ro-&gt;bound) {
+++			/* (try to) register the new err_mask */
+++			err = raw_enable_errfilter(dev, sk, err_mask);
+ +
+++			if (err)
+++				goto out_err;
+++
+++			/* remove old err_mask registration */
+++			raw_disable_errfilter(dev, sk, ro-&gt;err_mask);
+++		}
+++
+++		/* link new err_mask to the socket */
+ +		ro-&gt;err_mask = err_mask;
+ +
+-+		/* add new error mask */
+-+		if (ro-&gt;bound)
+-+			raw_enable_errfilter(dev, sk);
+-+
+++ out_err:
+ +		if (dev)
+ +			dev_put(dev);
+ +
+@@ -635,8 +695,6 @@
+ +			return -EINVAL;
+ +
+ +		err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen);
+-+		if (err)
+-+			return err;
+ +
+ +		break;
+ +
+@@ -645,15 +703,13 @@
+ +			return -EINVAL;
+ +
+ +		err = copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen);
+-+		if (err)
+-+			return err;
+ +
+ +		break;
+ +
+ +	default:
+ +		return -ENOPROTOOPT;
+ +	}
+-+	return 0;
+++	return err;
+ +}
+ +
+ +static int raw_getsockopt(struct socket *sock, int level, int optname,
+@@ -819,7 +875,7 @@
+ +	return size;
+ +}
+ +
+-+static struct proto_ops raw_ops = {
+++static struct proto_ops raw_ops __read_mostly = {
+ +	.family        = PF_CAN,
+ +	.release       = raw_release,
+ +	.bind          = raw_bind,
+@@ -839,14 +895,14 @@
+ +	.sendpage      = sock_no_sendpage,
+ +};
+ +
+-+static struct proto raw_proto = {
+++static struct proto raw_proto __read_mostly = {
+ +	.name       = &quot;CAN_RAW&quot;,
+ +	.owner      = THIS_MODULE,
+ +	.obj_size   = sizeof(struct raw_sock),
+ +	.init       = raw_init,
+ +};
+ +
+-+static struct can_proto raw_can_proto = {
+++static struct can_proto raw_can_proto __read_mostly = {
+ +	.type       = SOCK_RAW,
+ +	.protocol   = CAN_RAW,
+ +	.capability = RAW_CAP,
+@@ -856,10 +912,15 @@
+ +
+ +static __init int raw_module_init(void)
+ +{
+++	int err;
+++
+ +	printk(banner);
+ +
+-+	can_proto_register(&amp;raw_can_proto);
+-+	return 0;
+++	err = can_proto_register(&amp;raw_can_proto);
+++	if (err &lt; 0)
+++		printk(KERN_ERR &quot;can: registration of raw protocol failed\n&quot;);
+++
+++	return err;
+ +}
+ +
+ +static __exit void raw_module_exit(void)
+
+Modified: trunk/patch-series/net-2.6.24/04-can-bcm-proto.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/04-can-bcm-proto.diff	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/04-can-bcm-proto.diff	2007-09-20 19:35:39 UTC (rev 487)
+@@ -10,13 +10,13 @@
+  include/linux/can/bcm.h |   65 +
+  net/can/Kconfig         |   28 
+  net/can/Makefile        |    3 
+- net/can/bcm.c           | 1762 ++++++++++++++++++++++++++++++++++++++++++++++++
+- 4 files changed, 1858 insertions(+)
++ net/can/bcm.c           | 1784 ++++++++++++++++++++++++++++++++++++++++++++++++
++ 4 files changed, 1880 insertions(+)
+ 
+ Index: net-2.6.24/include/linux/can/bcm.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can/bcm.h	2007-09-17 11:12:30.000000000 +0200
+++++ net-2.6.24/include/linux/can/bcm.h	2007-09-20 18:48:59.000000000 +0200
+ @@ -0,0 +1,65 @@
+ +/*
+ + * linux/can/bcm.h
+@@ -85,8 +85,8 @@
+ +#endif /* CAN_BCM_H */
+ Index: net-2.6.24/net/can/Kconfig
+ ===================================================================
+---- net-2.6.24.orig/net/can/Kconfig	2007-09-17 11:10:10.000000000 +0200
+-+++ net-2.6.24/net/can/Kconfig	2007-09-17 11:12:30.000000000 +0200
++--- net-2.6.24.orig/net/can/Kconfig	2007-09-20 18:48:59.000000000 +0200
+++++ net-2.6.24/net/can/Kconfig	2007-09-20 18:48:59.000000000 +0200
+ @@ -42,6 +42,34 @@
+  	  Say Y here if you want non-root users to be able to access CAN_RAW
+  	  sockets.
+@@ -124,8 +124,8 @@
+  	depends on CAN
+ Index: net-2.6.24/net/can/Makefile
+ ===================================================================
+---- net-2.6.24.orig/net/can/Makefile	2007-09-17 11:10:10.000000000 +0200
+-+++ net-2.6.24/net/can/Makefile	2007-09-17 11:12:30.000000000 +0200
++--- net-2.6.24.orig/net/can/Makefile	2007-09-20 18:48:59.000000000 +0200
+++++ net-2.6.24/net/can/Makefile	2007-09-20 18:48:59.000000000 +0200
+ @@ -7,3 +7,6 @@
+  
+  obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+@@ -136,8 +136,8 @@
+ Index: net-2.6.24/net/can/bcm.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/bcm.c	2007-09-17 11:12:32.000000000 +0200
+-@@ -0,0 +1,1762 @@
+++++ net-2.6.24/net/can/bcm.c	2007-09-20 18:48:59.000000000 +0200
++@@ -0,0 +1,1784 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+ + *
+@@ -285,9 +285,9 @@
+ + * @tv: pointer to timeval
+ + *
+ + * Description:
+-+ * In opposite to timeval_to_jiffies() provided in include/linux/jiffies.h this
+-+ * function is intentionally more relaxed on precise timer ticks to get exact
+-+ * one jiffy for requested 1000us on a 1000HZ machine.
+++ * Unlike timeval_to_jiffies() provided in include/linux/jiffies.h, this
+++ * function is intentionally more relaxed on precise timer ticks to get
+++ * exact one jiffy for requested 1000us on a 1000HZ machine.
+ + * This code is to be removed when upgrading to kernel hrtimer.
+ + *
+ + * Return:
+@@ -504,7 +504,14 @@
+ +		skb-&gt;tstamp = op-&gt;rx_stamp;
+ +	}
+ +
+-+	/* restore originator for recvfrom() */
+++	/*
+++	 *  Put the datagram to the queue so that bcm_recvmsg() can
+++	 *  get it from there.  We need to pass the interface index to
+++	 *  bcm_recvmsg().  We pass a whole struct sockaddr_can in skb-&gt;cb
+++	 *  containing the interface index.
+++	 */
+++
+++	BUILD_BUG_ON(sizeof(skb-&gt;cb) &lt; sizeof(struct sockaddr_can));
+ +	addr = (struct sockaddr_can *)skb-&gt;cb;
+ +	memset(addr, 0, sizeof(*addr));
+ +	addr-&gt;can_family  = AF_CAN;
+@@ -1211,7 +1218,7 @@
+ +	struct bcm_sock *bo = bcm_sk(sk);
+ +	struct bcm_op *op;
+ +	int do_rx_register;
+-+	int err;
+++	int err = 0;
+ +
+ +	if ((msg_head-&gt;flags &amp; RX_FILTER_ID) || (!(msg_head-&gt;nframes))) {
+ +		/* be robust against wrong usage ... */
+@@ -1333,7 +1340,7 @@
+ +		/* mark disabled timer */
+ +		op-&gt;thrtimer.expires = 0;
+ +
+-+		/* add this bcm_op to the list of the tx_ops */
+++		/* add this bcm_op to the list of the rx_ops */
+ +		list_add(&amp;op-&gt;list, &amp;bo-&gt;rx_ops);
+ +
+ +		/* call can_rx_register() */
+@@ -1417,16 +1424,25 @@
+ +
+ +			dev = dev_get_by_index(&amp;init_net, ifindex);
+ +			if (dev) {
+-+				can_rx_register(dev, op-&gt;can_id,
+-+						REGMASK(op-&gt;can_id),
+-+						bcm_rx_handler, op, IDENT);
+++				err = can_rx_register(dev, op-&gt;can_id,
+++						      REGMASK(op-&gt;can_id),
+++						      bcm_rx_handler, op,
+++						      IDENT);
+++
+ +				op-&gt;rx_reg_dev = dev;
+ +				dev_put(dev);
+ +			}
+ +
+ +		} else
+-+			can_rx_register(NULL, op-&gt;can_id, REGMASK(op-&gt;can_id),
+-+					bcm_rx_handler, op, IDENT);
+++			err = can_rx_register(NULL, op-&gt;can_id,
+++					      REGMASK(op-&gt;can_id),
+++					      bcm_rx_handler, op, IDENT);
+++		if (err) {
+++			/* this bcm rx op is broken -&gt; remove it */
+++			list_del(&amp;op-&gt;list);
+++			bcm_remove_op(op);
+++			return err;
+++		}
+ +	}
+ +
+ +	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+@@ -1840,7 +1856,7 @@
+ +	return mask;
+ +}
+ +
+-+static struct proto_ops bcm_ops = {
+++static struct proto_ops bcm_ops __read_mostly = {
+ +	.family        = PF_CAN,
+ +	.release       = bcm_release,
+ +	.bind          = sock_no_bind,
+@@ -1860,14 +1876,14 @@
+ +	.sendpage      = sock_no_sendpage,
+ +};
+ +
+-+static struct proto bcm_proto = {
+++static struct proto bcm_proto __read_mostly = {
+ +	.name       = &quot;CAN_BCM&quot;,
+ +	.owner      = THIS_MODULE,
+ +	.obj_size   = sizeof(struct bcm_sock),
+ +	.init       = bcm_init,
+ +};
+ +
+-+static struct can_proto bcm_can_proto = {
+++static struct can_proto bcm_can_proto __read_mostly = {
+ +	.type       = SOCK_DGRAM,
+ +	.protocol   = CAN_BCM,
+ +	.capability = BCM_CAP,
+@@ -1877,9 +1893,15 @@
+ +
+ +static int __init bcm_module_init(void)
+ +{
+++	int err;
+++
+ +	printk(banner);
+ +
+-+	can_proto_register(&amp;bcm_can_proto);
+++	err = can_proto_register(&amp;bcm_can_proto);
+++	if (err &lt; 0) {
+++		printk(KERN_ERR &quot;can: registration of bcm protocol failed\n&quot;);
+++		return err;
+++	}
+ +
+ +	/* create /proc/net/can-bcm directory */
+ +	proc_dir = proc_mkdir(&quot;can-&quot;IDENT, init_net.proc_net);
+
+Modified: trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff	2007-09-20 19:35:39 UTC (rev 487)
+@@ -10,16 +10,16 @@
+ 
+ ---
+  drivers/net/Makefile     |    1 
+- drivers/net/can/Kconfig  |   25 ++++
+- drivers/net/can/Makefile |    5 
+- drivers/net/can/vcan.c   |  260 +++++++++++++++++++++++++++++++++++++++++++++++
++ drivers/net/can/Kconfig  |   25 +++++
++ drivers/net/can/Makefile |    5 +
++ drivers/net/can/vcan.c   |  208 +++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/Kconfig          |    3 
+- 5 files changed, 294 insertions(+)
++ 5 files changed, 242 insertions(+)
+ 
+ Index: net-2.6.24/drivers/net/Makefile
+ ===================================================================
+---- net-2.6.24.orig/drivers/net/Makefile	2007-09-17 10:30:35.000000000 +0200
+-+++ net-2.6.24/drivers/net/Makefile	2007-09-17 11:13:45.000000000 +0200
++--- net-2.6.24.orig/drivers/net/Makefile	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/drivers/net/Makefile	2007-09-20 18:49:00.000000000 +0200
+ @@ -10,6 +10,7 @@
+  obj-$(CONFIG_CHELSIO_T1) += chelsio/
+  obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+@@ -31,7 +31,7 @@
+ Index: net-2.6.24/drivers/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/drivers/net/can/Kconfig	2007-09-17 11:13:45.000000000 +0200
+++++ net-2.6.24/drivers/net/can/Kconfig	2007-09-20 18:49:00.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +menu &quot;CAN Device Drivers&quot;
+ +	depends on CAN
+@@ -61,7 +61,7 @@
+ Index: net-2.6.24/drivers/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/drivers/net/can/Makefile	2007-09-17 11:13:45.000000000 +0200
+++++ net-2.6.24/drivers/net/can/Makefile	2007-09-20 18:49:00.000000000 +0200
+ @@ -0,0 +1,5 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network drivers.
+@@ -71,8 +71,8 @@
+ Index: net-2.6.24/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/drivers/net/can/vcan.c	2007-09-17 11:17:45.000000000 +0200
+-@@ -0,0 +1,260 @@
+++++ net-2.6.24/drivers/net/can/vcan.c	2007-09-20 18:49:00.000000000 +0200
++@@ -0,0 +1,208 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+ + *
+@@ -157,11 +157,6 @@
+ +module_param(loopback, int, S_IRUGO);
+ +MODULE_PARM_DESC(loopback, &quot;Loop back frames (for testing). Default: 0 (Off)&quot;);
+ +
+-+struct vcan_priv {
+-+	struct net_device *dev;
+-+	struct list_head list;
+-+};
+-+static LIST_HEAD(vcan_devs);
+ +
+ +static int vcan_open(struct net_device *dev)
+ +{
+@@ -229,19 +224,10 @@
+ +	if (loop) {
+ +		struct sock *srcsk = skb-&gt;sk;
+ +
+-+		if (atomic_read(&amp;skb-&gt;users) != 1) {
+-+			struct sk_buff *old_skb = skb;
+++		skb = skb_share_check(skb, GFP_ATOMIC);
+++		if (!skb)
+++			return 0;
+ +
+-+			skb = skb_clone(old_skb, GFP_ATOMIC);
+-+			DBG(KERN_INFO &quot;%s: %s: freeing old skbuff %p, &quot;
+-+			    &quot;using new skbuff %p\n&quot;,
+-+			    dev-&gt;name, __FUNCTION__, old_skb, skb);
+-+			kfree_skb(old_skb);
+-+			if (!skb)
+-+				return 0;
+-+		} else
+-+			skb_orphan(skb);
+-+
+ +		/* receive with packet counting */
+ +		skb-&gt;sk = srcsk;
+ +		vcan_rx(skb, dev);
+@@ -271,72 +257,34 @@
+ +	dev-&gt;stop              = vcan_stop;
+ +	dev-&gt;hard_start_xmit   = vcan_tx;
+ +	dev-&gt;destructor        = free_netdev;
+-+
+ +}
+ +
+-+static int vcan_newlink(struct net_device *dev,
+-+			struct nlattr *tb[], struct nlattr *data[])
+-+{
+-+	struct vcan_priv *priv = netdev_priv(dev);
+-+	int err;
+-+
+-+	err = register_netdevice(dev);
+-+	if (err &lt; 0)
+-+		return err;
+-+
+-+	priv-&gt;dev = dev;
+-+	list_add_tail(&amp;priv-&gt;list, &amp;vcan_devs);
+-+	return 0;
+-+}
+-+
+-+static void vcan_dellink(struct net_device *dev)
+-+{
+-+	struct vcan_priv *priv = netdev_priv(dev);
+-+
+-+	list_del(&amp;priv-&gt;list);
+-+	unregister_netdevice(dev);
+-+}
+-+
+ +static struct rtnl_link_ops vcan_link_ops __read_mostly = {
+ +       .kind           = &quot;vcan&quot;,
+-+       .priv_size      = sizeof(struct vcan_priv),
+ +       .setup          = vcan_setup,
+-+       .newlink        = vcan_newlink,
+-+       .dellink        = vcan_dellink,
+ +};
+ +
+ +static __init int vcan_init_module(void)
+ +{
+-+	int err;
+-+
+ +	printk(banner);
+ +
+ +	if (loopback)
+ +		printk(KERN_INFO &quot;vcan: enabled loopback on driver level.\n&quot;);
+ +
+-+	rtnl_lock();
+-+	err = __rtnl_link_register(&amp;vcan_link_ops);
+-+	rtnl_unlock();
+-+	return err;
+++	return rtnl_link_register(&amp;vcan_link_ops);
+ +}
+ +
+ +static __exit void vcan_cleanup_module(void)
+ +{
+-+	struct vcan_priv *priv, *n;
+-+
+-+	rtnl_lock();
+-+	list_for_each_entry_safe(priv, n, &amp;vcan_devs, list)
+-+		vcan_dellink(priv-&gt;dev);
+-+	__rtnl_link_unregister(&amp;vcan_link_ops);
+-+	rtnl_unlock();
+++	rtnl_link_unregister(&amp;vcan_link_ops);
+ +}
+ +
+ +module_init(vcan_init_module);
+ +module_exit(vcan_cleanup_module);
+ Index: net-2.6.24/net/can/Kconfig
+ ===================================================================
+---- net-2.6.24.orig/net/can/Kconfig	2007-09-17 11:12:30.000000000 +0200
+-+++ net-2.6.24/net/can/Kconfig	2007-09-17 11:13:45.000000000 +0200
++--- net-2.6.24.orig/net/can/Kconfig	2007-09-20 18:48:59.000000000 +0200
+++++ net-2.6.24/net/can/Kconfig	2007-09-20 18:49:00.000000000 +0200
+ @@ -77,3 +77,6 @@
+  	  Say Y here if you want the CAN core to produce a bunch of debug
+  	  messages to the system log.  Select this if you are having a
+
+Modified: trunk/patch-series/net-2.6.24/06-can-maintainers.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/06-can-maintainers.diff	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/06-can-maintainers.diff	2007-09-20 19:35:39 UTC (rev 487)
+@@ -13,8 +13,8 @@
+ 
+ Index: net-2.6.24/CREDITS
+ ===================================================================
+---- net-2.6.24.orig/CREDITS	2007-09-17 10:26:57.000000000 +0200
+-+++ net-2.6.24/CREDITS	2007-09-17 10:27:21.000000000 +0200
++--- net-2.6.24.orig/CREDITS	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/CREDITS	2007-09-20 18:49:00.000000000 +0200
+ @@ -1331,6 +1331,14 @@
+  S: 5623 HZ Eindhoven
+  S: The Netherlands
+@@ -47,8 +47,8 @@
+  W: <A HREF="http://www.esi.us.es/~jon">http://www.esi.us.es/~jon</A>
+ Index: net-2.6.24/MAINTAINERS
+ ===================================================================
+---- net-2.6.24.orig/MAINTAINERS	2007-09-17 10:26:57.000000000 +0200
+-+++ net-2.6.24/MAINTAINERS	2007-09-17 10:27:21.000000000 +0200
++--- net-2.6.24.orig/MAINTAINERS	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/MAINTAINERS	2007-09-20 18:49:00.000000000 +0200
+ @@ -975,6 +975,15 @@
+  L:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">video4linux-list at redhat.com</A>
+  S:	Maintained
+
+Modified: trunk/patch-series/net-2.6.24/07-can-doc.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/07-can-doc.diff	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/07-can-doc.diff	2007-09-20 19:35:39 UTC (rev 487)
+@@ -14,7 +14,7 @@
+ Index: net-2.6.24/Documentation/networking/can.txt
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/Documentation/networking/can.txt	2007-09-17 21:57:29.000000000 +0200
+++++ net-2.6.24/Documentation/networking/can.txt	2007-09-20 18:49:01.000000000 +0200
+ @@ -0,0 +1,635 @@
+ +============================================================================
+ +
+@@ -115,7 +115,7 @@
+ +CAN-IDs, frames, etc.
+ +
+ +Similar functionality visible from user-space could be provided by a
+-+character decive, too, but this would lead to a technically inelegant
+++character device, too, but this would lead to a technically inelegant
+ +solution for a couple of reasons:
+ +
+ +* Intricate usage.  Instead of passing a protocol argument to
+@@ -129,7 +129,7 @@
+ +* Abstraction.  In most existing character-device implementations, the
+ +  hardware-specific device driver for a CAN controller directly
+ +  provides the character device for the application to work with.
+-+  This is at least very unusual in Unix systems, for both char and
+++  This is at least very unusual in Unix systems for both, char and
+ +  block devices.  For example you don't have a character device for a
+ +  certain UART of a serial interface, a certain sound chip in your
+ +  computer, a SCSI or IDE controller providing access to your hard
+@@ -141,7 +141,7 @@
+ +  and IDE subsystems for the devices mentioned above.
+ +
+ +  The easiest way to implement a CAN device driver is as a character
+-+  without such a (complete) abstraction layer, as is done by most
+++  device without such a (complete) abstraction layer, as is done by most
+ +  existing drivers.  The right way, however, would be to add such a
+ +  layer with all the functionality like registering for certain CAN
+ +  IDs, supporting several open file descriptors and (de)multiplexing
+@@ -159,7 +159,7 @@
+ +
+ +  As described in chapter 2 it is the main goal of Socket CAN to
+ +  provide a socket interface to user space applications which builds
+-+  upon the Linux networklayer. In contrast to the commonly known
+++  upon the Linux network layer. In contrast to the commonly known
+ +  TCP/IP and ethernet networking, the CAN bus is a broadcast-only(!)
+ +  medium that has no MAC-layer addressing like ethernet. The CAN-identifier
+ +  (can_id) is used for arbitration on the CAN-bus. Therefore the CAN-IDs
+@@ -204,7 +204,7 @@
+ +  The Linux network devices (by default) just can handle the
+ +  transmission and reception of media dependent frames. Due to the
+ +  arbritration on the CAN bus the transmission of a low prio CAN-ID
+-+  may be delayed by the recepition of a high prio CAN frame. To
+++  may be delayed by the reception of a high prio CAN frame. To
+ +  reflect the correct* traffic on the node the loopback of the sent
+ +  data has to be performed right after a successful transmission. If
+ +  the CAN network interface is not capable of performing the loopback for
+@@ -291,7 +291,7 @@
+ +  default. A read(2) system call on a CAN_RAW socket transfers a
+ +  struct can_frame to the user space.
+ +
+-+  The sockaddr_can structure has an interface index analogue to the
+++  The sockaddr_can structure has an interface index like the
+ +  PF_PACKET socket, that also binds to a specific interface:
+ +
+ +    struct sockaddr_can {
+@@ -653,8 +653,8 @@
+ +  Michael Schulze (driver layer loopback requirement, RT CAN drivers review)
+ Index: net-2.6.24/Documentation/networking/00-INDEX
+ ===================================================================
+---- net-2.6.24.orig/Documentation/networking/00-INDEX	2007-09-17 10:30:35.000000000 +0200
+-+++ net-2.6.24/Documentation/networking/00-INDEX	2007-09-17 11:21:01.000000000 +0200
++--- net-2.6.24.orig/Documentation/networking/00-INDEX	2007-09-20 18:48:21.000000000 +0200
+++++ net-2.6.24/Documentation/networking/00-INDEX	2007-09-20 18:49:01.000000000 +0200
+ @@ -26,6 +26,8 @@
+  	- info on the driver for Baycom style amateur radio modems
+  bridge.txt
+
+Modified: trunk/patch-series/net-2.6.24/intro
+===================================================================
+--- trunk/patch-series/net-2.6.24/intro	2007-09-20 19:16:27 UTC (rev 486)
++++ trunk/patch-series/net-2.6.24/intro	2007-09-20 19:35:39 UTC (rev 487)
+@@ -1,15 +1,30 @@
+ SUBJECT
+-CAN: Add new PF_CAN protocol family, try #6
++CAN: Add new PF_CAN protocol family, try #7
+ ESUBJECT
+ 
+-Hello Dave,
++Hello Dave, hello Patrick,
+ 
+-this is the patch series that adds the PF_CAN
++this is the seventh post of the patch series that adds the PF_CAN
+ protocol family for the Controller Area Network.
+ 
+ Since our last post we have changed the following:
+ 
+-* Typos in documentation as pointd out by Randy Dunlap.
++* Changes suggested by Patrick:
++  - protect proto_tab[] by a lock.
++  - add _rcu to some hlist traversals.
++  - use printk_ratelimit() for module autoload failures.
++  - make can_proto_unregister() and can_rx_unregister() return void.
++  - use return value of can_proto_register() and can_rx_register()
++    (this also removed a flaw in behavior of raw_bind() and raw_setsockopt()
++     in case of failure to can_rx_register() their filters).
++  - call kzalloc() with GFP_KERNEL in case NETDEV_REGISTER.
++  - use round_jiffies() to calculate expiration times.
++  - make some variables static and/or __read_mostly.
++  - in can_create() check for net namespace before auto loading modules.
++  - add build time check for struct sizes.
++  - use skb_share_chack() in vcan.
++  - fixed some comments.
++* Typos in documentation as pointed out by Randy Dunlap and Bill Fink.
+ 
+ The changes in try #6 were:
+ 
+@@ -71,18 +86,17 @@
+ 
+ 
+ This patch series applies against net-2.6.24 and is derived from Subversion
+-revision r469 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++revision r484 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+ It can be found in the directory
+ <A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
+ 
+-This patch doesn't touch anything in the kernel except for the allocation
+-of a couple of numbers for protocol, arp hw type, and a line discipline.
+-
+-Please review this patch series for integration into your tree.
+-
+ Thanks very much for your work!
+ 
+ Best regards,
+ 
+ Urs Thuermann
+ Oliver Hartkopp
++
++
++P.S. Greetings from some BSD and Linux users here at the LUG meeting in
++     Braunschweig :-)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000468.html">r486 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+	<LI>Next message: <A HREF="000470.html">r488 - in trunk: can-utils test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#469">[ date ]</a>
+              <a href="thread.html#469">[ thread ]</a>
+              <a href="subject.html#469">[ subject ]</a>
+              <a href="author.html#469">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

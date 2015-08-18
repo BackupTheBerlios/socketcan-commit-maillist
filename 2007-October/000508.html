@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r526 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r526%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200710171815.l9HIFVWf031047%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000507.html">
+   <LINK REL="Next"  HREF="000509.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r526 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r526%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200710171815.l9HIFVWf031047%40sheep.berlios.de%3E"
+       TITLE="r526 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Oct 17 20:15:31 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000507.html">r525 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000509.html">r527 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#508">[ date ]</a>
+              <a href="thread.html#508">[ thread ]</a>
+              <a href="subject.html#508">[ subject ]</a>
+              <a href="author.html#508">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-10-17 20:15:29 +0200 (Wed, 17 Oct 2007)
+New Revision: 526
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Fixed possible NULL dereferencing in the failure of module load.
+Thanks to Andre Naujoks for reporting this bug.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-10-13 06:45:08 UTC (rev 525)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-10-17 18:15:29 UTC (rev 526)
+@@ -213,8 +213,10 @@
+ #endif
+ 	spin_unlock(&amp;proto_tab_lock);
+ 
+-	/* check for success and correct type */
+-	if (!cp || cp-&gt;type != sock-&gt;type) {
++	if (!cp)
++		return -EPROTONOSUPPORT;
++
++	if (cp-&gt;type != sock-&gt;type) {
+ 		ret = -EPROTONOSUPPORT;
+ 		goto errout;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000507.html">r525 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000509.html">r527 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#508">[ date ]</a>
+              <a href="thread.html#508">[ thread ]</a>
+              <a href="subject.html#508">[ subject ]</a>
+              <a href="author.html#508">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

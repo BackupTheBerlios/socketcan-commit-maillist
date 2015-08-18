@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r537 - in trunk/kernel/2.6/drivers/net/can: i82527 sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r537%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20i82527%20sja1000&In-Reply-To=%3C200711032107.lA3L7R8M009234%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000520.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r537 - in trunk/kernel/2.6/drivers/net/can: i82527 sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r537%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20i82527%20sja1000&In-Reply-To=%3C200711032107.lA3L7R8M009234%40sheep.berlios.de%3E"
+       TITLE="r537 - in trunk/kernel/2.6/drivers/net/can: i82527 sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov  3 22:07:27 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000520.html">r538 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#519">[ date ]</a>
+              <a href="thread.html#519">[ thread ]</a>
+              <a href="subject.html#519">[ subject ]</a>
+              <a href="author.html#519">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-03 22:07:25 +0100 (Sat, 03 Nov 2007)
+New Revision: 537
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/i82527/proc.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/proc.c
+Log:
+Added include of linux/version.h .
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/proc.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/proc.c	2007-10-28 21:38:32 UTC (rev 536)
++++ trunk/kernel/2.6/drivers/net/can/i82527/proc.c	2007-11-03 21:07:25 UTC (rev 537)
+@@ -42,7 +42,7 @@
+  */
+ 
+ #include &lt;linux/module.h&gt;
+-
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/slab.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/proc.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/proc.c	2007-10-28 21:38:32 UTC (rev 536)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/proc.c	2007-11-03 21:07:25 UTC (rev 537)
+@@ -42,7 +42,7 @@
+  */
+ 
+ #include &lt;linux/module.h&gt;
+-
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/slab.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000520.html">r538 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#519">[ date ]</a>
+              <a href="thread.html#519">[ thread ]</a>
+              <a href="subject.html#519">[ subject ]</a>
+              <a href="author.html#519">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

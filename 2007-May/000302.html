@@ -1,0 +1,667 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r318 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r318%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20hal%20i82527%20sja1000&In-Reply-To=%3C200705231356.l4NDuMoa006831%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000301.html">
+   <LINK REL="Next"  HREF="000303.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r318 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r318%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20hal%20i82527%20sja1000&In-Reply-To=%3C200705231356.l4NDuMoa006831%40sheep.berlios.de%3E"
+       TITLE="r318 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May 23 15:56:22 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000301.html">r317 - trunk/kernel/2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000303.html">r319 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#302">[ date ]</a>
+              <a href="thread.html#302">[ thread ]</a>
+              <a href="subject.html#302">[ subject ]</a>
+              <a href="author.html#302">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-23 15:56:13 +0200 (Wed, 23 May 2007)
+New Revision: 318
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/hal/esdio.c
+   trunk/kernel/2.6/drivers/net/can/hal/gw2.c
+   trunk/kernel/2.6/drivers/net/can/hal/hal.h
+   trunk/kernel/2.6/drivers/net/can/hal/io.c
+   trunk/kernel/2.6/drivers/net/can/hal/iomem.c
+   trunk/kernel/2.6/drivers/net/can/hal/iomux.c
+   trunk/kernel/2.6/drivers/net/can/hal/pc7io.c
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+Log:
+Reordered __init and __exit functions to the end of the driver code.
+Added the possibility to make the pointer to the irq_handler available 
+in the hal e.g. for creating a hal that uses the parport subsystem.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/esdio.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/esdio.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/hal/esdio.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -53,7 +53,7 @@
+ int esd_cs_offset = 0;	//default for the sja1000 chip
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
++int hal_init(void *irq_handler) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/gw2.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/gw2.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/hal/gw2.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -54,7 +54,7 @@
+ #define ADDR_GAP 1
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
++int hal_init(void *irq_handler) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/hal.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/hal.h	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/hal/hal.h	2007-05-23 13:56:13 UTC (rev 318)
+@@ -56,7 +56,7 @@
+ /* general function prototypes for CAN HAL */
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void);
++int hal_init(void *irq_handler);
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void);
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/io.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/io.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/hal/io.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
++int hal_init(void *irq_handler) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/iomem.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/iomem.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/hal/iomem.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
++int hal_init(void *irq_handler) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/iomux.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/iomux.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/hal/iomux.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
++int hal_init(void *irq_handler) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/pc7io.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
++int hal_init(void *irq_handler) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -161,145 +161,7 @@
+ static struct net_device* can_create_netdev(int dev_num, int hw_regs);
+ static int  can_set_drv_name(void);
+ int set_reset_mode(struct net_device *dev);
+-static int i82527_probe_chip(unsigned long base);
+ 
+-static __exit void i82527_exit_module(void)
+-{
+-	int i, ret;
+-
+-	for (i = 0; i &lt; MAXDEV; i++) {
+-		if (can_dev[i] != NULL) {
+-			struct can_priv *priv = netdev_priv(can_dev[i]);
+-			unregister_netdev(can_dev[i]);
+-			del_timer(&amp;priv-&gt;timer);
+-			hw_detach(i);
+-			hal_release_region(i, I82527_IO_SIZE);
+-			free_netdev(can_dev[i]);
+-		}
+-	}
+-	can_proc_remove(drv_name);
+-
+-	if ((ret = hal_exit()))
+-		printk(KERN_INFO &quot;%s: hal_exit error %d.\n&quot;, drv_name, ret);
+-}
+-
+-static __init int i82527_init_module(void)
+-{
+-	int i, ret;
+-	struct net_device *dev;
+-
+-	if ((sizeof(canmessage_t) != 15) || (sizeof(canregs_t) != 256)) {
+-		printk(KERN_WARNING &quot;%s sizes: canmessage_t %d canregs_t %d\n&quot;,
+-		       CHIP_NAME, sizeof(canmessage_t), sizeof(canregs_t));
+-		return -EBUSY;
+-	}
+-
+-	if ((ret = hal_init()))
+-		return ret;
+-
+-	if ((ret = can_set_drv_name()))
+-		return ret;
+-
+-	if (clk &lt; 1000 ) /* MHz command line value */
+-		clk *= 1000000;
+-
+-	if (clk &lt; 1000000 ) /* kHz command line value */
+-		clk *= 1000;
+-
+-	printk(KERN_INFO &quot;%s driver v%s (%s)\n&quot;,
+-	       drv_name, drv_version, drv_reldate);
+-	printk(KERN_INFO &quot;%s - options [clk %d.%06d MHz] [restart_ms %dms]&quot;
+-	       &quot; [debug %d]\n&quot;,
+-	       drv_name, clk/1000000, clk%1000000, restart_ms, debug);
+-
+-	if (!base[0]) {
+-		printk(KERN_INFO &quot;%s: loading defaults.\n&quot;, drv_name);
+-		hal_use_defaults();
+-	}
+-		
+-	/* to ensure the proper access to the i82527 registers */
+-	/* the timing dependend settings have to be done first */
+-	if (clk &gt; 10000000)
+-		dsc = iCPU_DSC; /* devide system clock =&gt; MCLK is 8MHz save */
+-	else if (clk &gt; 8000000) /* 8MHz &lt; clk &lt;= 10MHz */
+-		dmc = iCPU_DMC; /* devide memory clock */
+-
+-	/* devide memory clock even if it's not needed (regarding the spec) */
+-	if (force_dmc)
+-		dmc = iCPU_DMC;
+-
+-	for (i = 0; base[i]; i++) {
+-		int clkout;
+-		u8 clockdiv;
+-
+-		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%lX ...\n&quot;,
+-		       drv_name, CHIP_NAME, base[i]);
+-
+-		if (!hal_request_region(i, I82527_IO_SIZE, drv_name)) {
+-			printk(KERN_ERR &quot;%s: memory already in use\n&quot;,
+-			       drv_name);
+-			i82527_exit_module();
+-			return -EBUSY;
+-		}
+-
+-		hw_attach(i);
+-		hw_reset_dev(i);
+-
+-		// Enable configuration, put chip in bus-off, disable ints
+-		CANout(rbase[i], controlReg, iCTL_CCE | iCTL_INI);
+-
+-		// Configure cpu interface / CLKOUT disable
+-		CANout(rbase[i], cpuInterfaceReg,(dsc | dmc));
+-
+-		if (!i82527_probe_chip(rbase[i])) {
+-			printk(KERN_ERR &quot;%s: probably missing controller&quot;
+-			       &quot; hardware\n&quot;, drv_name);
+-			hw_detach(i);
+-			hal_release_region(i, I82527_IO_SIZE);
+-			i82527_exit_module();
+-			return -ENODEV;
+-		}
+-
+-		/* CLKOUT devider and slew rate calculation */
+-		if ((cdv[i] &lt; 0) || (cdv[i] &gt; 14)) {
+-			printk(KERN_WARNING &quot;%s: adjusted cdv[%d]=%d to 0.\n&quot;,
+-			       drv_name, i, cdv[i]);
+-			cdv[i] = 0;
+-		}
+-
+-		clkout = clk / (cdv[i] + 1); /* CLKOUT frequency */
+-		clockdiv = (u8)cdv[i]; /* devider value (see i82527 spec) */
+-
+-		if (clkout &lt;= 16000000) {
+-			clockdiv |= iCLK_SL1;
+-			if (clkout &lt;= 8000000)
+-				clockdiv |= iCLK_SL0;
+-		} else if (clkout &lt;= 24000000)
+-				clockdiv |= iCLK_SL0;
+-
+-		// Set CLKOUT devider and slew rates
+-		CANout(rbase[i], clkOutReg, clockdiv);
+-
+-		// Configure cpu interface / CLKOUT enable
+-		CANout(rbase[i], cpuInterfaceReg,(dsc | dmc | iCPU_CEN));
+-
+-		CANout(rbase[i], busConfigReg, bcr[i]);
+-
+-		dev = can_create_netdev(i, I82527_IO_SIZE);
+-
+-		if (dev != NULL) {
+-			can_dev[i] = dev;
+-			set_reset_mode(dev);
+-			can_proc_create(drv_name);
+-		} else {
+-			can_dev[i] = NULL;
+-			hw_detach(i);
+-			hal_release_region(i, I82527_IO_SIZE);
+-		}
+-	}
+-	return 0;
+-}
+-
+ static int i82527_probe_chip(unsigned long base)
+ {
+ 	// Check if hardware reset is still inactive OR
+@@ -1281,6 +1143,143 @@
+ 	return 0;
+ }
+ 
++static __exit void i82527_exit_module(void)
++{
++	int i, ret;
++
++	for (i = 0; i &lt; MAXDEV; i++) {
++		if (can_dev[i] != NULL) {
++			struct can_priv *priv = netdev_priv(can_dev[i]);
++			unregister_netdev(can_dev[i]);
++			del_timer(&amp;priv-&gt;timer);
++			hw_detach(i);
++			hal_release_region(i, I82527_IO_SIZE);
++			free_netdev(can_dev[i]);
++		}
++	}
++	can_proc_remove(drv_name);
++
++	if ((ret = hal_exit()))
++		printk(KERN_INFO &quot;%s: hal_exit error %d.\n&quot;, drv_name, ret);
++}
++
++static __init int i82527_init_module(void)
++{
++	int i, ret;
++	struct net_device *dev;
++
++	if ((sizeof(canmessage_t) != 15) || (sizeof(canregs_t) != 256)) {
++		printk(KERN_WARNING &quot;%s sizes: canmessage_t %d canregs_t %d\n&quot;,
++		       CHIP_NAME, sizeof(canmessage_t), sizeof(canregs_t));
++		return -EBUSY;
++	}
++
++	if ((ret = hal_init(can_interrupt)))
++		return ret;
++
++	if ((ret = can_set_drv_name()))
++		return ret;
++
++	if (clk &lt; 1000 ) /* MHz command line value */
++		clk *= 1000000;
++
++	if (clk &lt; 1000000 ) /* kHz command line value */
++		clk *= 1000;
++
++	printk(KERN_INFO &quot;%s driver v%s (%s)\n&quot;,
++	       drv_name, drv_version, drv_reldate);
++	printk(KERN_INFO &quot;%s - options [clk %d.%06d MHz] [restart_ms %dms]&quot;
++	       &quot; [debug %d]\n&quot;,
++	       drv_name, clk/1000000, clk%1000000, restart_ms, debug);
++
++	if (!base[0]) {
++		printk(KERN_INFO &quot;%s: loading defaults.\n&quot;, drv_name);
++		hal_use_defaults();
++	}
++		
++	/* to ensure the proper access to the i82527 registers */
++	/* the timing dependend settings have to be done first */
++	if (clk &gt; 10000000)
++		dsc = iCPU_DSC; /* devide system clock =&gt; MCLK is 8MHz save */
++	else if (clk &gt; 8000000) /* 8MHz &lt; clk &lt;= 10MHz */
++		dmc = iCPU_DMC; /* devide memory clock */
++
++	/* devide memory clock even if it's not needed (regarding the spec) */
++	if (force_dmc)
++		dmc = iCPU_DMC;
++
++	for (i = 0; base[i]; i++) {
++		int clkout;
++		u8 clockdiv;
++
++		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%lX ...\n&quot;,
++		       drv_name, CHIP_NAME, base[i]);
++
++		if (!hal_request_region(i, I82527_IO_SIZE, drv_name)) {
++			printk(KERN_ERR &quot;%s: memory already in use\n&quot;,
++			       drv_name);
++			i82527_exit_module();
++			return -EBUSY;
++		}
++
++		hw_attach(i);
++		hw_reset_dev(i);
++
++		// Enable configuration, put chip in bus-off, disable ints
++		CANout(rbase[i], controlReg, iCTL_CCE | iCTL_INI);
++
++		// Configure cpu interface / CLKOUT disable
++		CANout(rbase[i], cpuInterfaceReg,(dsc | dmc));
++
++		if (!i82527_probe_chip(rbase[i])) {
++			printk(KERN_ERR &quot;%s: probably missing controller&quot;
++			       &quot; hardware\n&quot;, drv_name);
++			hw_detach(i);
++			hal_release_region(i, I82527_IO_SIZE);
++			i82527_exit_module();
++			return -ENODEV;
++		}
++
++		/* CLKOUT devider and slew rate calculation */
++		if ((cdv[i] &lt; 0) || (cdv[i] &gt; 14)) {
++			printk(KERN_WARNING &quot;%s: adjusted cdv[%d]=%d to 0.\n&quot;,
++			       drv_name, i, cdv[i]);
++			cdv[i] = 0;
++		}
++
++		clkout = clk / (cdv[i] + 1); /* CLKOUT frequency */
++		clockdiv = (u8)cdv[i]; /* devider value (see i82527 spec) */
++
++		if (clkout &lt;= 16000000) {
++			clockdiv |= iCLK_SL1;
++			if (clkout &lt;= 8000000)
++				clockdiv |= iCLK_SL0;
++		} else if (clkout &lt;= 24000000)
++				clockdiv |= iCLK_SL0;
++
++		// Set CLKOUT devider and slew rates
++		CANout(rbase[i], clkOutReg, clockdiv);
++
++		// Configure cpu interface / CLKOUT enable
++		CANout(rbase[i], cpuInterfaceReg,(dsc | dmc | iCPU_CEN));
++
++		CANout(rbase[i], busConfigReg, bcr[i]);
++
++		dev = can_create_netdev(i, I82527_IO_SIZE);
++
++		if (dev != NULL) {
++			can_dev[i] = dev;
++			set_reset_mode(dev);
++			can_proc_create(drv_name);
++		} else {
++			can_dev[i] = NULL;
++			hw_detach(i);
++			hal_release_region(i, I82527_IO_SIZE);
++		}
++	}
++	return 0;
++}
++
+ module_init(i82527_init_module);
+ module_exit(i82527_exit_module);
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-23 09:38:53 UTC (rev 317)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-23 13:56:13 UTC (rev 318)
+@@ -198,94 +198,7 @@
+ static struct net_device* can_create_netdev(int dev_num, int hw_regs);
+ static int  can_set_drv_name(void);
+ int set_reset_mode(struct net_device *dev);
+-static int sja1000_probe_chip(unsigned long base);
+ 
+-static __exit void sja1000_exit_module(void)
+-{
+-	int i, ret;
+-
+-	for (i = 0; i &lt; MAXDEV; i++) {
+-		if (can_dev[i] != NULL) {
+-			struct can_priv *priv = netdev_priv(can_dev[i]);
+-			unregister_netdev(can_dev[i]);
+-			del_timer(&amp;priv-&gt;timer);
+-			hw_detach(i);
+-			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
+-			free_netdev(can_dev[i]);
+-		}
+-	}
+-	can_proc_remove(drv_name);
+-
+-	if ((ret = hal_exit()))
+-		printk(KERN_INFO &quot;%s: hal_exit error %d.\n&quot;, drv_name, ret);
+-}
+-
+-static __init int sja1000_init_module(void)
+-{
+-	int i, ret;
+-	struct net_device *dev;
+-
+-	if ((ret = hal_init()))
+-		return ret;
+-
+-	if ((ret = can_set_drv_name()))
+-		return ret;
+-
+-	if (clk &lt; 1000 ) /* MHz command line value */
+-		clk *= 1000000;
+-
+-	if (clk &lt; 1000000 ) /* kHz command line value */
+-		clk *= 1000;
+-
+-	printk(KERN_INFO &quot;%s driver v%s (%s)\n&quot;,
+-	       drv_name, drv_version, drv_reldate);
+-	printk(KERN_INFO &quot;%s - options [clk %d.%06d MHz] [restart_ms %dms]&quot;
+-	       &quot; [debug %d]\n&quot;,
+-	       drv_name, clk/1000000, clk%1000000, restart_ms, debug);
+-
+-	if (!base[0]) {
+-		printk(KERN_INFO &quot;%s: loading defaults.\n&quot;, drv_name);
+-		hal_use_defaults();
+-	}
+-		
+-	for (i = 0; base[i]; i++) {
+-		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%lX ...\n&quot;,
+-		       drv_name, CHIP_NAME, base[i]);
+-
+-		if (!hal_request_region(i, SJA1000_IO_SIZE_BASIC, drv_name)) {
+-			printk(KERN_ERR &quot;%s: memory already in use\n&quot;,
+-			       drv_name);
+-			sja1000_exit_module();
+-			return -EBUSY;
+-		}
+-
+-		hw_attach(i);
+-		hw_reset_dev(i);
+-
+-		if (!sja1000_probe_chip(base[i])) {
+-			printk(KERN_ERR &quot;%s: probably missing controller&quot;
+-			       &quot; hardware\n&quot;, drv_name);
+-			hw_detach(i);
+-			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
+-			sja1000_exit_module();
+-			return -ENODEV;
+-		}
+-
+-		dev = can_create_netdev(i, SJA1000_IO_SIZE_BASIC);
+-
+-		if (dev != NULL) {
+-			can_dev[i] = dev;
+-			set_reset_mode(dev);
+-			can_proc_create(drv_name);
+-		} else {
+-			can_dev[i] = NULL;
+-			hw_detach(i);
+-			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
+-		}
+-	}
+-	return 0;
+-}
+-
+ static int sja1000_probe_chip(unsigned long base)
+ {
+ 	if (base &amp;&amp; (hw_readreg(base, 0) == 0xFF)) {
+@@ -1177,6 +1090,92 @@
+ 	return 0;
+ }
+ 
++static __exit void sja1000_exit_module(void)
++{
++	int i, ret;
++
++	for (i = 0; i &lt; MAXDEV; i++) {
++		if (can_dev[i] != NULL) {
++			struct can_priv *priv = netdev_priv(can_dev[i]);
++			unregister_netdev(can_dev[i]);
++			del_timer(&amp;priv-&gt;timer);
++			hw_detach(i);
++			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
++			free_netdev(can_dev[i]);
++		}
++	}
++	can_proc_remove(drv_name);
++
++	if ((ret = hal_exit()))
++		printk(KERN_INFO &quot;%s: hal_exit error %d.\n&quot;, drv_name, ret);
++}
++
++static __init int sja1000_init_module(void)
++{
++	int i, ret;
++	struct net_device *dev;
++
++	if ((ret = hal_init(can_interrupt)))
++		return ret;
++
++	if ((ret = can_set_drv_name()))
++		return ret;
++
++	if (clk &lt; 1000 ) /* MHz command line value */
++		clk *= 1000000;
++
++	if (clk &lt; 1000000 ) /* kHz command line value */
++		clk *= 1000;
++
++	printk(KERN_INFO &quot;%s driver v%s (%s)\n&quot;,
++	       drv_name, drv_version, drv_reldate);
++	printk(KERN_INFO &quot;%s - options [clk %d.%06d MHz] [restart_ms %dms]&quot;
++	       &quot; [debug %d]\n&quot;,
++	       drv_name, clk/1000000, clk%1000000, restart_ms, debug);
++
++	if (!base[0]) {
++		printk(KERN_INFO &quot;%s: loading defaults.\n&quot;, drv_name);
++		hal_use_defaults();
++	}
++		
++	for (i = 0; base[i]; i++) {
++		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%lX ...\n&quot;,
++		       drv_name, CHIP_NAME, base[i]);
++
++		if (!hal_request_region(i, SJA1000_IO_SIZE_BASIC, drv_name)) {
++			printk(KERN_ERR &quot;%s: memory already in use\n&quot;,
++			       drv_name);
++			sja1000_exit_module();
++			return -EBUSY;
++		}
++
++		hw_attach(i);
++		hw_reset_dev(i);
++
++		if (!sja1000_probe_chip(base[i])) {
++			printk(KERN_ERR &quot;%s: probably missing controller&quot;
++			       &quot; hardware\n&quot;, drv_name);
++			hw_detach(i);
++			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
++			sja1000_exit_module();
++			return -ENODEV;
++		}
++
++		dev = can_create_netdev(i, SJA1000_IO_SIZE_BASIC);
++
++		if (dev != NULL) {
++			can_dev[i] = dev;
++			set_reset_mode(dev);
++			can_proc_create(drv_name);
++		} else {
++			can_dev[i] = NULL;
++			hw_detach(i);
++			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
++		}
++	}
++	return 0;
++}
++
+ module_init(sja1000_init_module);
+ module_exit(sja1000_exit_module);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000301.html">r317 - trunk/kernel/2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000303.html">r319 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#302">[ date ]</a>
+              <a href="thread.html#302">[ thread ]</a>
+              <a href="subject.html#302">[ subject ]</a>
+              <a href="author.html#302">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

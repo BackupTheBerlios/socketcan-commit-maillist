@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r33 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r33%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200606151418.k5FEIAxS020651%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000009.html">
+   <LINK REL="Next"  HREF="000011.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r33 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>avolkov at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r33%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200606151418.k5FEIAxS020651%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r33 - trunk/kernel/2.6/drivers/net/can">avolkov at berlios.de
+       </A><BR>
+    <I>Thu Jun 15 16:18:10 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000009.html">[Socketcan-commit] r32 - in trunk/kernel/2.6/drivers/net/can: . mscan
+</A></li>
+        <LI>Next message: <A HREF="000011.html">[Socketcan-commit] r34 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: avolkov
+Date: 2006-06-15 16:18:09 +0200 (Thu, 15 Jun 2006)
+New Revision: 33
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/can_device.c
+   trunk/kernel/2.6/drivers/net/can/can_device.h
+Log:
+Little cleanup. Added missing ioctls
+
+Modified: trunk/kernel/2.6/drivers/net/can/can_device.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/can_device.c	2006-06-15 13:12:14 UTC (rev 32)
++++ trunk/kernel/2.6/drivers/net/can/can_device.c	2006-06-15 14:18:09 UTC (rev 33)
+@@ -62,8 +62,8 @@
+ 	u32 brp_min, brp_max, brp_expected;
+ 	u64 tmp;
+ 
+-	/* baudrate range [1Kbaud,1Mbaud] */
+-	if (baudrate &lt; 1000 || baudrate &gt; 1000000UL)
++	/* baudrate range [1baud,1Mbaud] */
++	if (baudrate == 0 || baudrate &gt; 1000000UL)
+ 		return -EINVAL;
+ 
+ 	tmp = (u64)can-&gt;can_sys_clock*1000;
+@@ -144,20 +144,37 @@
+ 
+ static struct net_device_stats *can_get_stats(struct net_device *dev)
+ {
+-	return &amp;ND2CAN(dev)-&gt;stats;
++	return &amp;ND2CAN(dev)-&gt;net_stats;
+ }
+ 
+ static int can_ioctl(struct net_device *ndev, struct ifreq *ifr, int cmd)
+ {
+ 	struct can_device *can = ND2CAN(ndev);
+ 	struct can_bittime	*bt = (struct can_bittime *)&amp;ifr-&gt;ifr_ifru;
+-	union can_settings	*settings = (union can_settings *)&amp;ifr-&gt;ifr_ifru;
+ 	int ret = -EOPNOTSUPP;
+ 	ulong *baudrate = (ulong *)&amp;ifr-&gt;ifr_ifru;
+ 
+ 	dev_dbg(ND2D(ndev), &quot;(%s) 0x%08x %p\n&quot;, __FUNCTION__, cmd, &amp;ifr-&gt;ifr_ifru);
+ 
+ 	switch (cmd) {
++	case SIOCSCANBAUDRATE:
++	   if (can-&gt;do_set_bit_time) {
++			struct can_bittime bit_time;
++			ret = can_calc_bit_time(can, *baudrate, &amp;bit_time.std);
++			if (ret != 0)
++				break;
++			bit_time.type = CAN_BITTIME_STD;
++			ret = can-&gt;do_set_bit_time(can, &amp;bit_time);
++			if ( !ret ) {
++				can-&gt;baudrate = *baudrate;
++				can-&gt;bit_time = bit_time;
++			}
++		}
++		break;
++	case SIOCGCANBAUDRATE:
++	    *baudrate = can-&gt;baudrate;
++		ret = 0;
++		break;
+ 	case SIOCSCANCUSTOMBITTIME:
+ 		if (can-&gt;do_set_bit_time) {
+ 			ret = can-&gt;do_set_bit_time(can, bt);
+@@ -174,33 +191,46 @@
+ 		break;
+ 	case SIOCGCANCUSTOMBITTIME:
+ 		*bt = can-&gt;bit_time;
++		ret = 0;
+ 		break;
+-	case SIOCSCANBAUDRATE:
+-	   if (can-&gt;do_set_bit_time) {
+-			struct can_bittime bit_time;
+-			ret = can_calc_bit_time(can, *baudrate, &amp;bit_time.std);
+-			if (ret != 0)
+-				break;
+-			bit_time.type = CAN_BITTIME_STD;
+-			ret = can-&gt;do_set_bit_time(can, &amp;bit_time);
+-			if ( !ret ) {
+-				can-&gt;baudrate = *baudrate;
+-				can-&gt;bit_time = bit_time;
++	case SIOCSCANMODE:
++		if (can-&gt;do_set_mode) {
++			can_mode_t mode = *((can_mode_t *)(&amp;ifr-&gt;ifr_ifru));
++			if ( mode == CAN_MODE_START &amp;&amp;
++				can-&gt;baudrate == CAN_BAUD_UNCONFIGURED) {
++				dev_info(ND2D(ndev), &quot;Impossible to start on UNKNOWN speed\n&quot;);
++				ret = EINVAL;
+ 			}
++			else
++				return can-&gt;do_set_mode(can, mode);
+ 		}
+ 		break;
+-	case SIOCGCANBAUDRATE:
+-	    *baudrate = can-&gt;baudrate;
++	case SIOCGCANMODE:
++	   	*((can_mode_t *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;mode;
+ 		ret = 0;
+ 		break;
+-	case SIOCSCANMODE:
+-		if(can-&gt;do_set_mode)
+-			return can-&gt;do_set_mode(can, settings-&gt;mode);
++	case SIOCSCANCTRLMODE:
++		if (can-&gt;do_set_ctrlmode) {
++			can_ctrlmode_t ctrlmode = *((can_ctrlmode_t *)(&amp;ifr-&gt;ifr_ifru));
++			return can-&gt;do_set_ctrlmode(can, ctrlmode);
++		}
+ 		break;
++	case SIOCGCANCTRLMODE:
++	   	*((can_ctrlmode_t *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;ctrlmode;
++		ret = 0;
++		break;
++	case SIOCSCANFILTER:
++		break;
++	case SIOCGCANFILTER:
++		break;
+ 	case SIOCGCANSTATE:
+ 		if(can-&gt;do_get_state)
+-			return can-&gt;do_get_state(can, &amp;settings-&gt;state);
++			return can-&gt;do_get_state(can, (can_state_t *)(&amp;ifr-&gt;ifr_ifru));
+ 		break;
++	case SIOCGCANSTATS:
++		*((struct can_device_stats *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;can_stats;
++		ret = 0;
++		break;
+ 	}
+ 
+   return ret;
+@@ -245,6 +275,7 @@
+   					  &quot;can%d&quot;, can_setup);
+   if(!ndev)
+ 		return NULL;
++
+   can = netdev_priv(ndev);
+ 
+   can-&gt;net_dev = ndev;
+@@ -254,7 +285,6 @@
+   can-&gt;baudrate = CAN_BAUD_UNCONFIGURED;
+   can-&gt;max_brp = DEFAULT_MAX_BRP;
+   can-&gt;max_sjw = DEFAULT_MAX_SJW;
+-  can-&gt;baudrate = CAN_BAUD_UNCONFIGURED;
+   spin_lock_init(&amp;can-&gt;irq_lock);
+ 
+   return can;
+
+Modified: trunk/kernel/2.6/drivers/net/can/can_device.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/can_device.h	2006-06-15 13:12:14 UTC (rev 32)
++++ trunk/kernel/2.6/drivers/net/can/can_device.h	2006-06-15 14:18:09 UTC (rev 33)
+@@ -35,9 +35,11 @@
+ #include &lt;linux/can/can_ioctl.h&gt;
+ 
+ struct can_device {
+-	struct net_device_stats stats;
++	struct net_device_stats net_stats;
+ 	struct net_device 		*net_dev;
+ 
++	struct can_device_stats can_stats;
++
+ 	/* can-bus oscillator frequency, in Hz,
+ 	   BE CAREFUL! SOME CONTROLLERS (LIKE SJA1000)
+ 	   FOOLISH ABOUT THIS FRQ (for sja1000 as ex. this
+@@ -55,13 +57,19 @@
+ 	struct can_bittime	bit_time;
+ 
+ 	spinlock_t irq_lock;
++	/* Please hold this lock when touching net_stats/can_stats*/
++	spinlock_t stats_lock;
+ 
+ 	can_state_t state;
+ 	can_mode_t  mode;
++	can_ctrlmode_t ctrlmode;
+ 
+ 	int	(*do_set_bit_time)(struct can_device *dev, struct can_bittime *br);
+-	int (*do_get_state)(struct can_device *dev,	enum CAN_STATE *state);
+-	int (*do_set_mode)(struct can_device *dev, enum CAN_MODE mode);
++	int (*do_get_state)(struct can_device *dev,	can_state_t *state);
++	int (*do_set_mode)(struct can_device *dev, can_mode_t mode);
++	int	(*do_set_ctrlmode)(struct can_device *dev, can_ctrlmode_t ctrlmode);
++	int (*do_get_ctrlmode)(struct can_device *dev, can_ctrlmode_t *ctrlmode);
++
+ 	void *priv;
+ };
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000009.html">[Socketcan-commit] r32 - in trunk/kernel/2.6/drivers/net/can: . mscan
+</A></li>
+	<LI>Next message: <A HREF="000011.html">[Socketcan-commit] r34 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

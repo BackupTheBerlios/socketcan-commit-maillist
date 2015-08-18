@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r322 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r322%20-%20trunk/can-utils&In-Reply-To=%3C200705300720.l4U7KJMv027623%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000305.html">
+   <LINK REL="Next"  HREF="000307.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r322 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r322%20-%20trunk/can-utils&In-Reply-To=%3C200705300720.l4U7KJMv027623%40sheep.berlios.de%3E"
+       TITLE="r322 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May 30 09:20:19 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000305.html">r321 - in trunk/kernel/2.6/drivers/net/can: hal sja1000
+</A></li>
+        <LI>Next message: <A HREF="000307.html">r324 - trunk/kernel/2.6
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#306">[ date ]</a>
+              <a href="thread.html#306">[ thread ]</a>
+              <a href="subject.html#306">[ subject ]</a>
+              <a href="author.html#306">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-30 09:20:18 +0200 (Wed, 30 May 2007)
+New Revision: 322
+
+Modified:
+   trunk/can-utils/candump.c
+Log:
+Added new commandline option '-B' which acts like the bridging option '-b' but
+disables the local loopback functionality (for ECU analysis and MITM-attacks :)
+Fixed missing fflush().
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2007-05-24 15:44:37 UTC (rev 321)
++++ trunk/can-utils/candump.c	2007-05-30 07:20:18 UTC (rev 322)
+@@ -107,6 +107,7 @@
+     fprintf(stderr, &quot;         -a          (enable additional ASCII output)\n&quot;);
+     fprintf(stderr, &quot;         -s &lt;level&gt;  (silent mode - 1: animation 2: nothing)\n&quot;);
+     fprintf(stderr, &quot;         -b &lt;can&gt;    (bridge mode - send received frames to &lt;can&gt;)\n&quot;);
++    fprintf(stderr, &quot;         -B &lt;can&gt;    (bridge mode - like '-b' with disabled loopback)\n&quot;);
+     fprintf(stderr, &quot;         -l          (log CAN-frames into file)\n&quot;);
+     fprintf(stderr, &quot;         -L          (use log file format on stdout)\n&quot;);
+     fprintf(stderr, &quot;\n&quot;);
+@@ -192,7 +193,7 @@
+     last_tv.tv_sec  = 0;
+     last_tv.tv_usec = 0;
+ 
+-    while ((opt = getopt(argc, argv, &quot;m:v:i:e:t:cas:b:lL&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;m:v:i:e:t:cas:b:B:lL&quot;)) != -1) {
+ 	switch (opt) {
+ 	case 'm':
+ 	    i = sscanf(optarg, &quot;%x,%x,%x,%x,%x,%x&quot;,
+@@ -249,6 +250,7 @@
+ 	    break;
+ 
+ 	case 'b':
++	case 'B':
+ 	    if (strlen(optarg) &gt;= IFNAMSIZ) {
+ 		printf(&quot;Name of CAN device '%s' is too long!\n\n&quot;, optarg);
+ 		return 1;
+@@ -269,6 +271,12 @@
+ 		    return 1;
+ 		}
+ 
++		if (opt == 'B') {
++		    int loopback = 0;
++
++		    setsockopt(bridge, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &amp;loopback, sizeof(loopback));
++		}
++
+ 		if (bind(bridge, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+ 		    perror(&quot;bridge bind&quot;);
+ 		    return 1;
+@@ -463,7 +471,7 @@
+ 		    printf(&quot;(%ld.%06ld) &quot;, tv.tv_sec, tv.tv_usec);
+ 		    printf(&quot;%*s &quot;, max_devname_len, devname[idx]);
+ 		    fprint_canframe(stdout, &amp;frame, &quot;\n&quot;, 0);
+-		    continue; /* no other output to stdout */
++		    goto out_fflush; /* no other output to stdout */
+ 		}
+ 
+ 		if (silent){
+@@ -471,7 +479,7 @@
+ 			printf(&quot;%c\b&quot;, anichar[silentani%=MAXANI]);
+ 			silentani++;
+ 		    }
+-		    continue; /* no other output to stdout */
++		    goto out_fflush; /* no other output to stdout */
+ 		}
+ 		      
+ 		printf(&quot; %s&quot;, (color&gt;2)?col_on[idx]:&quot;&quot;);
+@@ -526,6 +534,8 @@
+ 		printf(&quot;%s&quot;, (color&gt;1)?col_off:&quot;&quot;);
+ 		printf(&quot;\n&quot;);
+ 	    }
++
++out_fflush:
+ 	    fflush(stdout);
+ 	}
+     }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000305.html">r321 - in trunk/kernel/2.6/drivers/net/can: hal sja1000
+</A></li>
+	<LI>Next message: <A HREF="000307.html">r324 - trunk/kernel/2.6
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#306">[ date ]</a>
+              <a href="thread.html#306">[ thread ]</a>
+              <a href="subject.html#306">[ subject ]</a>
+              <a href="author.html#306">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

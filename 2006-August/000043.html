@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r64 - branches/ut/hlist/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r64%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C200608301246.k7UCkITZ018803%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000042.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r64 - branches/ut/hlist/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r64%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C200608301246.k7UCkITZ018803%40sheep.berlios.de%3E"
+       TITLE="r64 - branches/ut/hlist/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Aug 30 14:46:18 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000042.html">r63 - in branches/ut/hlist: can-utils doc kernel/2.4/can	kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can test
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#43">[ date ]</a>
+              <a href="thread.html#43">[ thread ]</a>
+              <a href="subject.html#43">[ subject ]</a>
+              <a href="author.html#43">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-08-30 14:46:15 +0200 (Wed, 30 Aug 2006)
+New Revision: 64
+
+Modified:
+   branches/ut/hlist/kernel/2.6/net/can/bcm.c
+Log:
+fix a memory leak in bcm introduced when converting to hlists.
+
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/bcm.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/bcm.c	2006-08-30 10:08:14 UTC (rev 63)
++++ branches/ut/hlist/kernel/2.6/net/can/bcm.c	2006-08-30 12:46:15 UTC (rev 64)
+@@ -1346,9 +1346,9 @@
+ 
+ static void bcm_delete_rx_op(struct list_head *ops, canid_t can_id)
+ {
+-	struct bcm_op *p;
++	struct bcm_op *p, *n;
+ 
+-	list_for_each_entry(p, ops, list) {
++	list_for_each_entry_safe(p, n, ops, list) {
+ 		if (p-&gt;can_id == can_id) {
+ 			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, p, p-&gt;can_id);
+ 
+@@ -1361,6 +1361,7 @@
+ 			} else
+ 				DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, p-&gt;sk);
+ 
++			list_del(&amp;p-&gt;list);
+ 			bcm_remove_op(p);
+ 			return;
+ 		}
+@@ -1369,12 +1370,13 @@
+ 
+ static void bcm_delete_tx_op(struct list_head *ops, canid_t can_id)
+ {
+-	struct bcm_op *p;
++	struct bcm_op *p, *n;
+ 
+-	list_for_each_entry(p, ops, list) {
++	list_for_each_entry_safe(p, n, ops, list) {
+ 		if (p-&gt;can_id == can_id) {
+ 			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
+ 			    p, p-&gt;can_id);
++			list_del(&amp;p-&gt;list);
+ 			bcm_remove_op(p);
+ 			return;
+ 		}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000042.html">r63 - in branches/ut/hlist: can-utils doc kernel/2.4/can	kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can test
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#43">[ date ]</a>
+              <a href="thread.html#43">[ thread ]</a>
+              <a href="subject.html#43">[ subject ]</a>
+              <a href="author.html#43">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

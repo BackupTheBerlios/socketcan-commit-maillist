@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r645 - in branches/cannetdriver26: drivers/net/can/ccan	include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r645%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/ccan%0A%09include/linux/can%20net/can&In-Reply-To=%3C200801091125.m09BPiSA015491%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000626.html">
+   <LINK REL="Next"  HREF="000628.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r645 - in branches/cannetdriver26: drivers/net/can/ccan	include/linux/can net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r645%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/ccan%0A%09include/linux/can%20net/can&In-Reply-To=%3C200801091125.m09BPiSA015491%40sheep.berlios.de%3E"
+       TITLE="r645 - in branches/cannetdriver26: drivers/net/can/ccan	include/linux/can net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:25:44 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000626.html">r644 - branches/cannetdriver26/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000628.html">r646 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#627">[ date ]</a>
+              <a href="thread.html#627">[ thread ]</a>
+              <a href="subject.html#627">[ subject ]</a>
+              <a href="author.html#627">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:25:41 +0100 (Wed, 09 Jan 2008)
+New Revision: 645
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/ccan/ccan.c
+   branches/cannetdriver26/include/linux/can/dev.h
+   branches/cannetdriver26/include/linux/can/ioctl.h
+   branches/cannetdriver26/net/can/dev.c
+Log:
+Rename baudrate to bitrate
+
+Modified: branches/cannetdriver26/drivers/net/can/ccan/ccan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/ccan/ccan.c	2008-01-09 11:25:03 UTC (rev 644)
++++ branches/cannetdriver26/drivers/net/can/ccan/ccan.c	2008-01-09 11:25:41 UTC (rev 645)
+@@ -478,7 +478,7 @@
+ 	
+ 	/* set bit timing */
+ 	bit_time.type = CAN_BITTIME_STD;
+-	ret = can_calc_bit_time(&amp;priv-&gt;can, priv-&gt;can.baudrate, &amp;bit_time.std);
++	ret = can_calc_bit_time(&amp;priv-&gt;can, priv-&gt;can.bitrate, &amp;bit_time.std);
+ 	if (ret == 0)
+ 		ret = ccan_set_bit_time(dev, &amp;bit_time);
+ 	if (ret)
+@@ -519,7 +519,7 @@
+ 	dev-&gt;hard_start_xmit = ccan_hard_start_xmit;
+ 	dev-&gt;tx_timeout = ccan_tx_timeout;
+ 
+-	priv-&gt;can.baudrate = 500000;
++	priv-&gt;can.bitrate = 500000;
+ 
+ 	priv-&gt;can.do_set_bit_time = ccan_set_bit_time;
+ 	priv-&gt;can.do_get_state = ccan_get_state;
+
+Modified: branches/cannetdriver26/include/linux/can/dev.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:25:03 UTC (rev 644)
++++ branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:25:41 UTC (rev 645)
+@@ -40,7 +40,7 @@
+ 	 */
+ 	u8 max_sjw;
+ 
+-	u32 baudrate;		/* in bauds */
++	u32 bitrate;
+ 	struct can_bittime bit_time;
+ 
+ 	spinlock_t irq_lock;
+@@ -68,7 +68,7 @@
+ struct net_device *alloc_candev(int sizeof_priv);
+ void free_candev(struct net_device *dev);
+ 
+-int can_calc_bit_time(struct can_priv *can, u32 baudrate,
++int can_calc_bit_time(struct can_priv *can, u32 bitrate,
+ 		      struct can_bittime_std *bit_time);
+ 
+ #endif /* CAN_DEVICE_H */
+
+Modified: branches/cannetdriver26/include/linux/can/ioctl.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/ioctl.h	2008-01-09 11:25:03 UTC (rev 644)
++++ branches/cannetdriver26/include/linux/can/ioctl.h	2008-01-09 11:25:41 UTC (rev 645)
+@@ -16,10 +16,11 @@
+ #include &lt;linux/sockios.h&gt;
+ 
+ /*
+- * CAN baudrate
++ * CAN bitrate
+  */
+-#define CAN_BAUDRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
+-#define CAN_BAUDRATE_UNKNOWN		0
++#define CAN_BITRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
++#define CAN_BITRATE_UNKNOWN		0
++#define CAN_BITRATE_DEFAULT		500000
+ 
+ /*
+  * CAN custom bit time
+
+Modified: branches/cannetdriver26/net/can/dev.c
+===================================================================
+--- branches/cannetdriver26/net/can/dev.c	2008-01-09 11:25:03 UTC (rev 644)
++++ branches/cannetdriver26/net/can/dev.c	2008-01-09 11:25:41 UTC (rev 645)
+@@ -31,8 +31,8 @@
+ 
+ /*
+  * Abstract:
+- *   Baud rate calculated with next formula:
+- *   baud = frq/(brp*(1 + prop_seg+ phase_seg1 + phase_seg2))
++ *   Bit rate calculated with next formula:
++ *   bitrate = frq/(brp*(1 + prop_seg+ phase_seg1 + phase_seg2))
+  *
+  *   This calc function based on work of Florian Hartwich and Armin Bassemi
+  *   &quot;The Configuration of the CAN Bit Timing&quot;
+@@ -57,7 +57,7 @@
+ #define MAX_PHASE_SEG1	8U
+ #define MAX_PHASE_SEG2	8U
+ 
+-int can_calc_bit_time(struct can_priv *can, u32 baudrate,
++int can_calc_bit_time(struct can_priv *can, u32 bitrate,
+ 		      struct can_bittime_std *bit_time)
+ {
+ 	int best_error = -1;	/* Ariphmetic error */
+@@ -68,12 +68,12 @@
+ 	u32 brp_min, brp_max, brp_expected;
+ 	u64 tmp;
+ 
+-	/* baudrate range [1baud,1Mbaud] */
+-	if (baudrate == 0 || baudrate &gt; 1000000UL)
++	/* bitrate range [1baud,1MiB/s] */
++	if (bitrate == 0 || bitrate &gt; 1000000UL)
+ 		return -EINVAL;
+ 
+ 	tmp = (u64) can-&gt;can_sys_clock * 1000;
+-	do_div(tmp, baudrate);
++	do_div(tmp, bitrate);
+ 	brp_expected = (u32) tmp;
+ 
+ 	brp_min = brp_expected / (1000 * MAX_BIT_TIME);
+@@ -197,7 +197,7 @@
+ 
+ 	priv = netdev_priv(dev);
+ 
+-	priv-&gt;baudrate = CAN_BAUDRATE_UNCONFIGURED;
++	priv-&gt;bitrate = CAN_BITRATE_UNCONFIGURED;
+ 	priv-&gt;max_brp = DEFAULT_MAX_BRP;
+ 	priv-&gt;max_sjw = DEFAULT_MAX_SJW;
+ 	spin_lock_init(&amp;priv-&gt;irq_lock);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000626.html">r644 - branches/cannetdriver26/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000628.html">r646 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#627">[ date ]</a>
+              <a href="thread.html#627">[ thread ]</a>
+              <a href="subject.html#627">[ subject ]</a>
+              <a href="author.html#627">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

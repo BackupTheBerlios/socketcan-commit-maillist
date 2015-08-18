@@ -1,0 +1,1603 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1165 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1165%20-%20in%20trunk%3A%20can-utils%20kernel/2.6/include/socketcan/can%0A%09kernel/2.6/net/can&In-Reply-To=%3C201004101638.o3AGcp7m017034%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000798.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1165 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1165%20-%20in%20trunk%3A%20can-utils%20kernel/2.6/include/socketcan/can%0A%09kernel/2.6/net/can&In-Reply-To=%3C201004101638.o3AGcp7m017034%40sheep.berlios.de%3E"
+       TITLE="r1165 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 10 18:38:51 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000798.html">r1166 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#797">[ date ]</a>
+              <a href="thread.html#797">[ thread ]</a>
+              <a href="subject.html#797">[ subject ]</a>
+              <a href="author.html#797">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-04-10 18:38:48 +0200 (Sat, 10 Apr 2010)
+New Revision: 1165
+
+Modified:
+   trunk/can-utils/cangw.c
+   trunk/kernel/2.6/include/socketcan/can/gw.h
+   trunk/kernel/2.6/net/can/gw.c
+Log:
+Complete rework of CAN netlink gateway.
+
+Major changes:
+
+- rework internal structures to prepare routings and modifications of CAN traffic also to non-CAN interfaces
+- fix reading of netlink messages in cangw.c (added RTCAN_RTA / RTCAN_PAYLOAD macros)
+- rework reading of gw-job lists in cgw_dump_jobs()
+- rename of functions and API definitions to have a common namespace cgw_
+- added infrastructure to perform crc8 and xor checksums in CAN frame data[]
+
+TODO:
+
+- add and test functionality for crc8 and xor checksums in CAN frame data[]
+- add help text for crc8 and xor checksums in CAN frame data[]
+
+
+Modified: trunk/can-utils/cangw.c
+===================================================================
+--- trunk/can-utils/cangw.c	2010-03-25 19:32:43 UTC (rev 1164)
++++ trunk/can-utils/cangw.c	2010-04-10 16:38:48 UTC (rev 1165)
+@@ -72,6 +72,9 @@
+ } __attribute__((packed));
+ 
+ 
++#define RTCAN_RTA(r)  ((struct rtattr*)(((char*)(r)) + NLMSG_ALIGN(sizeof(struct rtcanmsg))))
++#define RTCAN_PAYLOAD(n) NLMSG_PAYLOAD(n,sizeof(struct rtcanmsg))
++
+ /* some netlink helpers stolen from iproute2 package */
+ #define NLMSG_TAIL(nmsg) \
+         ((struct rtattr *)(((void *) (nmsg)) + NLMSG_ALIGN((nmsg)-&gt;nlmsg_len)))
+@@ -128,7 +131,27 @@
+ 	printf(&quot; &quot;);
+ }
+ 
++void print_cs_xor(struct cgw_csum_xor *cs_xor)
++{
++	printf(&quot;-x %d:%d:%d:%02X &quot;,
++	       cs_xor-&gt;from_idx, cs_xor-&gt;to_idx,
++	       cs_xor-&gt;result_idx, cs_xor-&gt;prefix_value);
++}
+ 
++void print_cs_crc8(struct cgw_csum_crc8 *cs_crc8)
++{
++	int i;
++
++	printf(&quot;-c %d:%d:%d:&quot;,
++	       cs_crc8-&gt;from_idx, cs_crc8-&gt;to_idx,
++	       cs_crc8-&gt;result_idx);
++
++	for (i = 0; i &lt; 256; i++)
++		printf(&quot;%02X&quot;, cs_crc8-&gt;crctab[i]);
++
++	printf(&quot; &quot;);
++}
++
+ void print_usage(char *prg)
+ {
+ 	fprintf(stderr, &quot;\nUsage: %s [options]\n\n&quot;, prg);
+@@ -160,11 +183,20 @@
+ 	fprintf(stderr, &quot;\n&quot;);
+ }
+ 
++int b64hex(char *asc, unsigned char *bin, int len)
++{
++	int i;
++
++	for (i = 0; i &lt; len; i++) {
++		if (!sscanf(asc+(i*2), &quot;%2hhx&quot;, bin+i))
++			return 1;	
++	}
++	return 0;
++}
++
+ int parse_mod(char *optarg, struct modattr *modmsg)
+ {
+ 	char *ptr, *nptr;
+-	int i;
+-
+ 	char hexdata[17] = {0};
+ 
+ 	ptr = optarg;
+@@ -223,14 +255,172 @@
+ 	if (strlen(hexdata) != 16)
+ 		return 6;
+ 
+-	for (i = 0; i &lt; 8; i++) {
+-		if (!sscanf(&amp;hexdata[i*2], &quot;%2hhx&quot;, &amp;modmsg-&gt;cf.data[i]))
+-			return 7;	
+-	}
++	if (b64hex(hexdata, &amp;modmsg-&gt;cf.data[0], 8))
++		return 7;
+ 
+ 	return 0; /* ok */
+ }
+ 
++int parse_rtlist(char *prgname, unsigned char *rxbuf, int len)
++{
++	char ifname[IF_NAMESIZE]; /* internface name for if_indextoname() */
++	struct rtcanmsg *rtc;
++	struct rtattr *rta;
++	struct nlmsghdr *nlh;
++	unsigned int src_ifindex = 0;
++	unsigned int dst_ifindex = 0;
++	__u32 handled, dropped;
++	int rtlen;
++
++
++	nlh = (struct nlmsghdr *)rxbuf;
++
++	while (1) {
++		if (!NLMSG_OK(nlh, len))
++			return 0;
++
++		if (nlh-&gt;nlmsg_type == NLMSG_ERROR) {
++			printf(&quot;NLMSG_ERROR\n&quot;);
++			return 1;
++		}
++
++		if (nlh-&gt;nlmsg_type == NLMSG_DONE) {
++			//printf(&quot;NLMSG_DONE\n&quot;);
++			return 1;
++		}
++
++		rtc = (struct rtcanmsg *)NLMSG_DATA(nlh);
++		if (rtc-&gt;can_family != AF_CAN) {
++			printf(&quot;received msg from unknown family %d\n&quot;, rtc-&gt;can_family);
++			return -EINVAL;
++		}
++
++		if (rtc-&gt;gwtype != CGW_TYPE_CAN_CAN) {
++			printf(&quot;received msg with unknown gwtype %d\n&quot;, rtc-&gt;gwtype);
++			return -EINVAL;
++		}
++
++		/*
++		 * print list in a representation that
++		 * can be used directly for start scripts.
++		 *
++		 * To order the mandatory and optional parameters in the
++		 * output string, the NLMSG is parsed twice.
++		 */
++
++		handled = 0;
++		dropped = 0;
++		src_ifindex = 0;
++		dst_ifindex = 0;
++
++		printf(&quot;%s -A &quot;, basename(prgname));
++
++		/* first parse for mandatory options */
++		rta = (struct rtattr *) RTCAN_RTA(rtc);
++		rtlen = RTCAN_PAYLOAD(nlh);
++		for(;RTA_OK(rta, rtlen);rta=RTA_NEXT(rta,rtlen))
++		{
++			//printf(&quot;(A-%d)&quot;, rta-&gt;rta_type);
++			switch(rta-&gt;rta_type) {
++
++			case CGW_FILTER:
++			case CGW_MOD_AND:
++			case CGW_MOD_OR:
++			case CGW_MOD_XOR:
++			case CGW_MOD_SET:
++			case CGW_CS_XOR:
++			case CGW_CS_CRC8:
++				break;
++
++			case CGW_SRC_IF:
++				src_ifindex = *(__u32 *)RTA_DATA(rta);
++				break;
++
++			case CGW_DST_IF:
++				dst_ifindex = *(__u32 *)RTA_DATA(rta);
++				break;
++
++			case CGW_HANDLED:
++				handled = *(__u32 *)RTA_DATA(rta);
++				break;
++
++			case CGW_DROPPED:
++				dropped = *(__u32 *)RTA_DATA(rta);
++				break;
++
++			default:
++				printf(&quot;Unknown attribute %d!&quot;, rta-&gt;rta_type);
++				return -EINVAL;
++				break;
++			}
++		}
++
++
++		printf(&quot;-s %s &quot;, if_indextoname(src_ifindex, ifname));
++		printf(&quot;-d %s &quot;, if_indextoname(dst_ifindex, ifname));
++
++		if (rtc-&gt;flags &amp; CGW_FLAGS_CAN_ECHO)
++			printf(&quot;-e &quot;);
++
++		if (rtc-&gt;flags &amp; CGW_FLAGS_CAN_SRC_TSTAMP)
++			printf(&quot;-t &quot;);
++
++		/* second parse for mod attributes */
++		rta = (struct rtattr *) RTCAN_RTA(rtc);
++		rtlen = RTCAN_PAYLOAD(nlh);
++		for(;RTA_OK(rta, rtlen);rta=RTA_NEXT(rta,rtlen))
++		{
++			//printf(&quot;(B-%d)&quot;, rta-&gt;rta_type);
++			switch(rta-&gt;rta_type) {
++
++			case CGW_FILTER:
++				printfilter(RTA_DATA(rta));
++				break;
++
++			case CGW_MOD_AND:
++				printmod(&quot;AND&quot;, RTA_DATA(rta));
++				break;
++
++			case CGW_MOD_OR:
++				printmod(&quot;OR&quot;, RTA_DATA(rta));
++				break;
++
++			case CGW_MOD_XOR:
++				printmod(&quot;XOR&quot;, RTA_DATA(rta));
++				break;
++
++			case CGW_MOD_SET:
++				printmod(&quot;SET&quot;, RTA_DATA(rta));
++				break;
++
++			case CGW_CS_XOR:
++				print_cs_xor((struct cgw_csum_xor *)RTA_DATA(rta));
++				break;
++
++			case CGW_CS_CRC8:
++				print_cs_crc8((struct cgw_csum_crc8 *)RTA_DATA(rta));
++				break;
++
++			case CGW_SRC_IF:
++			case CGW_DST_IF:
++			case CGW_HANDLED:
++			case CGW_DROPPED:
++				break;
++
++			default:
++				printf(&quot;Unknown attribute %d!&quot;, rta-&gt;rta_type);
++				return -EINVAL;
++				break;
++			}
++		}
++
++		printf(&quot;# %d handled %d dropped\n&quot;, handled, dropped); /* end of entry */
++
++		/* jump to next NLMSG in the given buffer */
++		nlh = NLMSG_NEXT(nlh, len);
++	}
++}
++
+ int main(int argc, char **argv)
+ {
+ 	int s;
+@@ -241,34 +431,38 @@
+ 
+ 	int cmd = UNSPEC;
+ 	int have_filter = 0;
++	int have_cs_xor = 0;
++	int have_cs_crc8 = 0;
+ 
+ 	struct {
+ 		struct nlmsghdr nh;
+ 		struct rtcanmsg rtcan;
+-		char buf[200];
++		char buf[600];
+ 
+ 	} req;
+ 
+-	char rxbuf[8192]; /* netlink receive buffer */
+-	char ifname[IF_NAMESIZE]; /* internface name for if_indextoname() */
++	unsigned char rxbuf[8192]; /* netlink receive buffer */
+ 	struct nlmsghdr *nlh;
+ 	struct nlmsgerr *rte;
+-	struct rtcanmsg *rtc;
+-	struct rtattr *rta;
+-	__u32 handled, dropped;
+-	int rtlen;
++	unsigned int src_ifindex = 0;
++	unsigned int dst_ifindex = 0;
++	__u16 flags = 0;
+ 	int len;
+ 
+ 	struct can_filter filter;
+ 	struct sockaddr_nl nladdr;
+ 
++	struct cgw_csum_xor cs_xor;
++	struct cgw_csum_crc8 cs_crc8;
++	char crc8tab[513] = {0};
++
+ 	struct modattr modmsg[CGW_MOD_FUNCS];
+ 	int modidx = 0;
+ 	int i;
+ 
+ 	memset(&amp;req, 0, sizeof(req));
+ 
+-	while ((opt = getopt(argc, argv, &quot;ADFLs:d:tef:m:?&quot;)) != -1) {
++	while ((opt = getopt(argc, argv, &quot;ADFLs:d:tef:c:x:m:?&quot;)) != -1) {
+ 		switch (opt) {
+ 
+ 		case 'A':
+@@ -292,19 +486,19 @@
+ 			break;
+ 
+ 		case 's':
+-			req.rtcan.src_ifindex = if_nametoindex(optarg);
++			src_ifindex = if_nametoindex(optarg);
+ 			break;
+ 
+ 		case 'd':
+-			req.rtcan.dst_ifindex = if_nametoindex(optarg);
++			dst_ifindex = if_nametoindex(optarg);
+ 			break;
+ 
+ 		case 't':
+-			req.rtcan.can_txflags |= CAN_GW_TXFLAGS_SRC_TSTAMP;
++			flags |= CGW_FLAGS_CAN_SRC_TSTAMP;
+ 			break;
+ 
+ 		case 'e':
+-			req.rtcan.can_txflags |= CAN_GW_TXFLAGS_ECHO;
++			flags |= CGW_FLAGS_CAN_ECHO;
+ 			break;
+ 
+ 		case 'f':
+@@ -318,6 +512,30 @@
+ 			}
+ 			break;
+ 
++		case 'x':
++			if (sscanf(optarg, &quot;%hhd:%hhd:%hhd:%hhx&quot;,
++				   &amp;cs_xor.from_idx, &amp;cs_xor.to_idx,
++				   &amp;cs_xor.result_idx, &amp;cs_xor.prefix_value) == 4) {
++				have_cs_xor = 1;
++			} else {
++				printf(&quot;Bad XOR checksum definition '%s'.\n&quot;, optarg);
++				exit(1);
++			}
++			break;
++
++		case 'c':
++			if ((sscanf(optarg, &quot;%hhd:%hhd:%hhd:%512s&quot;,
++				    &amp;cs_crc8.from_idx, &amp;cs_crc8.to_idx,
++				    &amp;cs_crc8.result_idx, crc8tab) == 4) &amp;&amp;
++			    (strlen(crc8tab) == 512) &amp;&amp;
++			    (b64hex(crc8tab, (unsigned char *)&amp;cs_crc8.crctab, 256) == 0)) {
++				have_cs_crc8 = 1;
++			} else {
++				printf(&quot;Bad CRC8 checksum definition '%s'.\n&quot;, optarg);
++				exit(1);
++			}
++			break;
++
+ 		case 'm':
+ 			/* may be triggered by each of the CGW_MOD_FUNCS functions */
+ 			if ((modidx &lt; CGW_MOD_FUNCS) &amp;&amp; (err = parse_mod(optarg, &amp;modmsg[modidx++]))) {
+@@ -345,7 +563,7 @@
+ 	}
+ 
+ 	if ((cmd == ADD || cmd == DEL) &amp;&amp;
+-	    ((!req.rtcan.src_ifindex) || (!req.rtcan.dst_ifindex))) {
++	    ((!src_ifindex) || (!dst_ifindex))) {
+ 		print_usage(basename(argv[0]));
+ 		exit(1);
+ 	}
+@@ -368,8 +586,8 @@
+ 		req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+ 		req.nh.nlmsg_type  = RTM_DELROUTE;
+ 		/* if_index set to 0 =&gt; remove all entries */
+-		req.rtcan.src_ifindex  = 0;
+-		req.rtcan.dst_ifindex  = 0;
++		src_ifindex  = 0;
++		dst_ifindex  = 0;
+ 		break;
+ 
+ 	case LIST:
+@@ -387,12 +605,23 @@
+ 	req.nh.nlmsg_seq   = 0;
+ 
+ 	req.rtcan.can_family  = AF_CAN;
++	req.rtcan.gwtype = CGW_TYPE_CAN_CAN;
++	req.rtcan.flags = flags;
+ 
++	addattr_l(&amp;req.nh, sizeof(req), CGW_SRC_IF, &amp;src_ifindex, sizeof(src_ifindex));
++	addattr_l(&amp;req.nh, sizeof(req), CGW_DST_IF, &amp;dst_ifindex, sizeof(dst_ifindex));
++
+ 	/* add new attributes here */
+ 
+ 	if (have_filter)
+ 		addattr_l(&amp;req.nh, sizeof(req), CGW_FILTER, &amp;filter, sizeof(filter));
+ 
++	if (have_cs_xor)
++		addattr_l(&amp;req.nh, sizeof(req), CGW_CS_XOR, &amp;cs_xor, sizeof(cs_xor));
++
++	if (have_cs_crc8)
++		addattr_l(&amp;req.nh, sizeof(req), CGW_CS_CRC8, &amp;cs_crc8, sizeof(cs_crc8));
++
+ 	/*
+ 	 * a better example code
+ 	 * modmsg.modtype = CGW_MOD_ID;
+@@ -451,78 +680,17 @@
+ 				perror(&quot;netlink recv&quot;);
+ 				return len;
+ 			}
+-			nlh = (struct nlmsghdr *)rxbuf;
+-			if (nlh-&gt;nlmsg_type == NLMSG_DONE) 
+-				break;
++#if 0
++			printf(&quot;received msg len %d\n&quot;, len);
+ 
+-			rtc = (struct rtcanmsg *)NLMSG_DATA(nlh);
+-			if (rtc-&gt;can_family != AF_CAN) {
+-				printf(&quot;received msg from unknown family %d\n&quot;, rtc-&gt;can_family);
+-				return -EINVAL;
+-			}
++			for (i = 0; i &lt; len; i++)
++				printf(&quot;%02X &quot;, rxbuf[i]);
+ 
+-			/*
+-			 * print list in a representation that
+-			 * can be used directly for start scripts
+-			 */
+-
+-			printf(&quot;%s -A &quot;, basename(argv[0]));
+-			printf(&quot;-s %s &quot;, if_indextoname(rtc-&gt;src_ifindex, ifname));
+-			printf(&quot;-d %s &quot;, if_indextoname(rtc-&gt;dst_ifindex, ifname));
+-
+-			if (rtc-&gt;can_txflags &amp; CAN_GW_TXFLAGS_ECHO)
+-				printf(&quot;-e &quot;);
+-
+-			if (rtc-&gt;can_txflags &amp; CAN_GW_TXFLAGS_SRC_TSTAMP)
+-				printf(&quot;-t &quot;);
+-
+-			/* check for attributes */
+-
+-			handled = 0;
+-			dropped = 0;
+-
+-			rta = (struct rtattr *) RTM_RTA(rtc);
+-			rtlen = RTM_PAYLOAD(nlh);
+-			for(;RTA_OK(rta, rtlen);rta=RTA_NEXT(rta,rtlen))
+-			{
+-				switch(rta-&gt;rta_type) {
+-
+-				case CGW_FILTER:
+-					printfilter(RTA_DATA(rta));
+-					break;
+-
+-				case CGW_MOD_AND:
+-					printmod(&quot;AND&quot;, RTA_DATA(rta));
+-					break;
+-
+-				case CGW_MOD_OR:
+-					printmod(&quot;OR&quot;, RTA_DATA(rta));
+-					break;
+-
+-				case CGW_MOD_XOR:
+-					printmod(&quot;XOR&quot;, RTA_DATA(rta));
+-					break;
+-
+-				case CGW_MOD_SET:
+-					printmod(&quot;SET&quot;, RTA_DATA(rta));
+-					break;
+-
+-				case CGW_HANDLED:
+-					handled = *(__u32 *)RTA_DATA(rta);
+-					break;
+-
+-				case CGW_DROPPED:
+-					dropped = *(__u32 *)RTA_DATA(rta);
+-					break;
+-
+-				default:
+-					printf(&quot;Unknown attribute %d!&quot;, rta-&gt;rta_type);
+-					return -EINVAL;
+-					break;
+-				}
+-			}
+-
+-			printf(&quot;# %d handled %d dropped\n&quot;, handled, dropped); /* end of entry */
++			printf(&quot;\n&quot;);
++#endif
++			/* leave on errors or NLMSG_DONE */
++			if (parse_rtlist(argv[0], rxbuf, len))
++				break;
+ 		}
+ 	}
+ 
+
+Modified: trunk/kernel/2.6/include/socketcan/can/gw.h
+===================================================================
+--- trunk/kernel/2.6/include/socketcan/can/gw.h	2010-03-25 19:32:43 UTC (rev 1164)
++++ trunk/kernel/2.6/include/socketcan/can/gw.h	2010-04-10 16:38:48 UTC (rev 1165)
+@@ -20,30 +20,41 @@
+ 
+ struct rtcanmsg {
+ 	__u8  can_family;
+-	__u8  can_txflags;
+-	__u16 pad;
+-	__u32 src_ifindex;
+-	__u32 dst_ifindex;
++	__u8  gwtype;
++	__u16 flags;
+ };
+ 
+-#define CAN_GW_TXFLAGS_ECHO 0x01
+-#define CAN_GW_TXFLAGS_SRC_TSTAMP 0x02
++/* CAN gateway types */
++enum {
++	CGW_TYPE_UNSPEC,
++	CGW_TYPE_CAN_CAN,	/* CAN-&gt;CAN routing */
++	__CGW_TYPE_MAX
++};
+ 
++#define CGW_TYPE_MAX (__CGW_TYPE_MAX - 1)
++
+ /* CAN rtnetlink attribute definitions */
+ enum {
+ 	CGW_UNSPEC,
+-	CGW_FILTER,	/* specify struct can_filter on source CAN device */
+ 	CGW_MOD_AND,	/* CAN frame modification binary AND */
+ 	CGW_MOD_OR,	/* CAN frame modification binary OR */
+ 	CGW_MOD_XOR,	/* CAN frame modification binary XOR */
+ 	CGW_MOD_SET,	/* CAN frame modification set alternate values */
++	CGW_CS_XOR,	/* set data[] XOR checksum into data[index] */
++	CGW_CS_CRC8,	/* set data[] CRC8 checksum into data[index] */
+ 	CGW_HANDLED,	/* number of handled CAN frames */
+ 	CGW_DROPPED,	/* number of dropped CAN frames */
++	CGW_SRC_IF,	/* ifindex of source network interface */
++	CGW_DST_IF,	/* ifindex of destination network interface */
++	CGW_FILTER,	/* specify struct can_filter on source CAN device */
+ 	__CGW_MAX
+ };
+ 
+ #define CGW_MAX (__CGW_MAX - 1)
+ 
++#define CGW_FLAGS_CAN_ECHO 0x01
++#define CGW_FLAGS_CAN_SRC_TSTAMP 0x02
++
+ #define CGW_MOD_FUNCS 4 /* AND OR XOR SET */
+ 
+ /* CAN frame elements that are affected by curr. 3 CAN frame modifications */
+@@ -55,11 +66,38 @@
+ 
+ #define MAX_MODFUNCTIONS (CGW_MOD_FUNCS * CGW_FRAME_MODS)
+ 
+-#define CGW_MODATTR_LEN (sizeof(struct can_frame) + 1)
++struct cgw_frame_mod {
++	struct can_frame cf;
++	__u8 modtype;
++} __attribute__((packed));
+ 
++#define CGW_MODATTR_LEN sizeof(struct cgw_frame_mod)
++
++struct cgw_csum_xor {
++	__s8 from_idx;
++	__s8 to_idx;
++	__s8 result_idx;
++	__u8 prefix_value;
++} __attribute__ ((packed));
++
++struct cgw_csum_crc8 {
++	__s8 from_idx;
++	__s8 to_idx;
++	__s8 result_idx;
++	__u8 crctab[256];
++} __attribute__ ((packed));
++
++/* length of checksum operation parameters. idx = index in CAN frame data[] */
++#define CGW_CS_XOR_LEN  sizeof(struct cgw_csum_xor)
++#define CGW_CS_CRC8_LEN  sizeof(struct cgw_csum_crc8)
++
+ /*
+  * CAN rtnetlink attribute contents in detail
+  *
++ * CGW_XXX_IF (length 4 bytes):
++ * Sets an interface index for source/destination network interfaces.
++ * For the CAN-&gt;CAN gwtype the indices of _two_ CAN interfaces are mandatory.
++ *
+  * CGW_FILTER (length 8 bytes):
+  * Sets a CAN receive filter for the gateway job specified by the
+  * struct can_filter described in include/linux/can.h
+@@ -71,6 +109,14 @@
+  * &lt;struct can_frame&gt; data used as operator
+  * &lt;u8&gt; affected CAN frame elements
+  *
++ * CGW_CS_XOR (length 4 bytes):
++ * Set a simple XOR checksum starting with the initial prefix-value into
++ * data[result-idx] using data[start-idx] .. data[end-idx]
++ *
++ * CGW_CS_CRC8 (length 259 bytes):
++ * Set a CRC8 value into data[result-idx] using a given 256 byte CRC8 table and
++ * a defined input data[start-idx] .. data[end-idx]
++ *
+  * Remark: The attribute data is a linear buffer. Beware of sending structs!
+  */
+ 
+
+Modified: trunk/kernel/2.6/net/can/gw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/gw.c	2010-03-25 19:32:43 UTC (rev 1164)
++++ trunk/kernel/2.6/net/can/gw.c	2010-04-10 16:38:48 UTC (rev 1165)
+@@ -62,30 +62,26 @@
+ #include &lt;socketcan/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define CAN_GW_VERSION &quot;20100222&quot;
++#define CAN_GW_VERSION &quot;20100410&quot;
+ static __initdata const char banner[] =
+ 	KERN_INFO &quot;can: netlink gateway (rev &quot; CAN_GW_VERSION &quot;)\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;PF_CAN netlink gateway&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
++MODULE_ALIAS(&quot;can-gw&quot;);
+ 
+-HLIST_HEAD(can_gw_list);
+-static DEFINE_SPINLOCK(can_gw_list_lock);
++HLIST_HEAD(cgw_list);
++static DEFINE_SPINLOCK(cgw_list_lock);
+ static struct notifier_block notifier;
+ 
+-static struct kmem_cache *gw_cache __read_mostly;
++static struct kmem_cache *cgw_cache __read_mostly;
+ 
+-#define GW_SK_MAGIC ((void *)(&amp;notifier))
++#define CGW_SK_MAGIC ((void *)(&amp;notifier))
++#define CGW_CS_DISABLED 42
+ 
+-/*
+- * So far we just support CAN -&gt; CAN routing and frame modifications.
+- *
+- * The internal can_can_gw structure contains optional attributes for
+- * a CAN -&gt; CAN gateway job.
+- */
+-struct can_can_gw {
+-	struct can_filter filter;
++/* structure that contains the (on-the-fly) CAN frame modifications */
++struct cf_mod {
+ 	struct {
+ 		struct can_frame and;
+ 		struct can_frame or;
+@@ -99,32 +95,55 @@
+ 		u8 set;
+ 	} modtype;
+ 	void (*modfunc[MAX_MODFUNCTIONS])(struct can_frame *cf,
+-					  struct can_can_gw *mod);
++					  struct cf_mod *mod);
++
++	/* CAN frame checksum calculation after CAN frame modifications */
++	struct {
++		struct cgw_csum_xor xor;
++		struct cgw_csum_crc8 crc8;
++	} csum;
+ };
+ 
++
++/*
++ * So far we just support CAN -&gt; CAN routing and frame modifications.
++ *
++ * The internal can_can_gw structure contains data and attributes for
++ * a CAN -&gt; CAN gateway job.
++ */
++struct can_can_gw {
++	struct can_filter filter;
++	int src_idx;
++	int dst_idx;
++};
++
+ /* list entry for CAN gateways jobs */
+-struct gw_job {
++struct cgw_job {
+ 	struct hlist_node list;
+ 	struct rcu_head rcu;
+-	struct net_device *src_dev;
+-	struct net_device *dst_dev;
+-	u32 flags;
+ 	u32 handled_frames;
+ 	u32 dropped_frames;
++	struct cf_mod mod;
+ 	union {
++		/* CAN frame data source */
++		struct net_device *dev;
++	} src;
++	union {
++		/* CAN frame data destination */
++		struct net_device *dev;
++	} dst;
++	union {
+ 		struct can_can_gw ccgw;
+ 		/* tbc */
+ 	};
++	u8 gwtype;
++	u16 flags;
+ };
+ 
+-/* content of u32 gw_job.flags */
+-#define CAN_TX_ECHO 0x00000001
+-#define CAN_TX_SRC_TSTAMP 0x00000002
++/* modification functions that are invoked in the hot path in can_can_gw_rcv */
+ 
+-/* modification functions that are invoked in the hot path in gw_rcv */
+-
+ #define MODFUNC(func, op) static void func (struct can_frame *cf, \
+-					    struct can_can_gw *mod) { op ; }
++					    struct cf_mod *mod) { op ; }
+ 
+ MODFUNC(mod_and_id, cf-&gt;can_id &amp;= mod-&gt;modframe.and.can_id)
+ MODFUNC(mod_and_dlc, cf-&gt;can_dlc &amp;= mod-&gt;modframe.and.can_dlc)
+@@ -144,7 +163,7 @@
+ 	/*
+ 	 * Copy the struct members separately to ensure that no uninitialized
+ 	 * data are copied in the 3 bytes hole of the struct. This is needed
+-	 * to make easy compares of the data in the struct can_can_gw.
++	 * to make easy compares of the data in the struct cf_mod.
+ 	 */
+ 
+ 	dst-&gt;can_id = src-&gt;can_id;
+@@ -152,19 +171,48 @@
+ 	*(u64 *)dst-&gt;data = *(u64 *)src-&gt;data;
+ }
+ 
++static int cgw_chk_csum_parms(s8 fr, s8 to, s8 re)
++{
++	/* 
++	 * absolute dlc values 0 .. 7 =&gt; 0 .. 7, e.g. data [0]
++	 * relative to received dlc -1 .. -8 :
++	 * e.g. for received dlc = 8 
++	 * -1 =&gt; index = 7 (data[7])
++	 * -3 =&gt; index = 5 (data[5])
++	 * -8 =&gt; index = 0 (data[0])
++	 */
++
++	if (fr &gt; -9 &amp;&amp; fr &lt; 8 &amp;&amp;
++	    to &gt; -9 &amp;&amp; to &lt; 8 &amp;&amp;
++	    re &gt; -9 &amp;&amp; re &lt; 8)
++		return 0;
++	else
++		return -EINVAL;
++} 
++
++static void cgw_csum_do_xor(struct can_frame *cf, struct cgw_csum_xor *xor)
++{
++	/* TODO: perform checksum update */
++}
++
++static void cgw_csum_do_crc8(struct can_frame *cf, struct cgw_csum_crc8 *crc8)
++{
++	/* TODO: perform checksum update */
++}
++
+ /* the receive &amp; process &amp; send function */
+-static void gw_rcv(struct sk_buff *skb, void *data)
++static void can_can_gw_rcv(struct sk_buff *skb, void *data)
+ {
+-	struct gw_job *gwj = (struct gw_job *)data;
++	struct cgw_job *gwj = (struct cgw_job *)data;
+ 	struct can_frame *cf;
+ 	struct sk_buff *nskb;
+ 	int modidx = 0;
+ 
+ 	/* do not handle already routed frames */
+-	if (skb-&gt;sk == GW_SK_MAGIC)
++	if (skb-&gt;sk == CGW_SK_MAGIC)
+ 		return;
+ 
+-	if (!(gwj-&gt;dst_dev-&gt;flags &amp; IFF_UP)) {
++	if (!(gwj-&gt;dst.dev-&gt;flags &amp; IFF_UP)) {
+ 		gwj-&gt;dropped_frames++;
+ 		return;
+ 	}
+@@ -175,7 +223,7 @@
+ 	 * When there is at least one modification function activated,
+ 	 * we need to copy the skb as we want to modify skb-&gt;data.
+ 	 */
+-	if (gwj-&gt;ccgw.modfunc[0])
++	if (gwj-&gt;mod.modfunc[0])
+ 		nskb = skb_copy(skb, GFP_ATOMIC);
+ 	else
+ 		nskb = skb_clone(skb, GFP_ATOMIC);
+@@ -186,40 +234,50 @@
+ 	}
+ 
+ 	/* mark routed frames with a 'special' sk value */
+-	nskb-&gt;sk = GW_SK_MAGIC;
+-	nskb-&gt;dev = gwj-&gt;dst_dev;
++	nskb-&gt;sk = CGW_SK_MAGIC;
++	nskb-&gt;dev = gwj-&gt;dst.dev;
+ 
+ 	/* pointer to modifiable CAN frame */
+ 	cf = (struct can_frame *)nskb-&gt;data;
+ 
+ 	/* perform preprocessed modification functions if there are any */
+-	while (modidx &lt; MAX_MODFUNCTIONS &amp;&amp; gwj-&gt;ccgw.modfunc[modidx])
+-		(*gwj-&gt;ccgw.modfunc[modidx++])(cf, &amp;gwj-&gt;ccgw);
++	while (modidx &lt; MAX_MODFUNCTIONS &amp;&amp; gwj-&gt;mod.modfunc[modidx])
++		(*gwj-&gt;mod.modfunc[modidx++])(cf, &amp;gwj-&gt;mod);
+ 
++	/* check for checksum updates when the CAN frame has been modified */
++	if (modidx) {
++		if (gwj-&gt;mod.csum.xor.from_idx != CGW_CS_DISABLED)
++			cgw_csum_do_xor(cf, &amp;gwj-&gt;mod.csum.xor);
++
++		if (gwj-&gt;mod.csum.crc8.from_idx != CGW_CS_DISABLED)
++			cgw_csum_do_crc8(cf, &amp;gwj-&gt;mod.csum.crc8);
++	}
++
+ 	/* clear the skb timestamp if not configured the other way */
+-	if (!(gwj-&gt;flags &amp; CAN_TX_SRC_TSTAMP))
++	if (!(gwj-&gt;flags &amp; CGW_FLAGS_CAN_SRC_TSTAMP))
+ 		nskb-&gt;tstamp.tv64 = 0;
+ 
+ 	/* send to netdevice */
+-	if (can_send(nskb, gwj-&gt;flags &amp; CAN_TX_ECHO))
++	if (can_send(nskb, gwj-&gt;flags &amp; CGW_FLAGS_CAN_ECHO))
+ 		gwj-&gt;dropped_frames++;
+ 	else
+ 		gwj-&gt;handled_frames++;
+ }
+ 
+-static inline int can_gw_register_filter(struct gw_job *gwj)
++static inline int cgw_register_filter(struct cgw_job *gwj)
+ {
+-	return can_rx_register(gwj-&gt;src_dev, gwj-&gt;ccgw.filter.can_id,
+-			       gwj-&gt;ccgw.filter.can_mask, gw_rcv, gwj, &quot;gw&quot;);
++	return can_rx_register(gwj-&gt;src.dev, gwj-&gt;ccgw.filter.can_id,
++			       gwj-&gt;ccgw.filter.can_mask, can_can_gw_rcv,
++			       gwj, &quot;gw&quot;);
+ }
+ 
+-static inline void can_gw_unregister_filter(struct gw_job *gwj)
++static inline void cgw_unregister_filter(struct cgw_job *gwj)
+ {
+-	can_rx_unregister(gwj-&gt;src_dev, gwj-&gt;ccgw.filter.can_id,
+-			  gwj-&gt;ccgw.filter.can_mask, gw_rcv, gwj);
++	can_rx_unregister(gwj-&gt;src.dev, gwj-&gt;ccgw.filter.can_id,
++			  gwj-&gt;ccgw.filter.can_mask, can_can_gw_rcv, gwj);
+ }
+ 
+-static int gw_notifier(struct notifier_block *nb,
++static int cgw_notifier(struct notifier_block *nb,
+ 			unsigned long msg, void *data)
+ {
+ 	struct net_device *dev = (struct net_device *)data;
+@@ -236,33 +294,29 @@
+ 
+ 	if (msg == NETDEV_UNREGISTER) {
+ 
+-		struct gw_job *gwj = NULL;
++		struct cgw_job *gwj = NULL;
+ 		struct hlist_node *n, *nx;
+ 
+-		spin_lock(&amp;can_gw_list_lock);
++		spin_lock(&amp;cgw_list_lock);
+ 
+-		hlist_for_each_entry_safe(gwj, n, nx, &amp;can_gw_list, list) {
++		hlist_for_each_entry_safe(gwj, n, nx, &amp;cgw_list, list) {
+ 
+-			if (gwj-&gt;src_dev == dev || gwj-&gt;dst_dev == dev) { 
++			if (gwj-&gt;src.dev == dev || gwj-&gt;dst.dev == dev) { 
+ 				hlist_del(&amp;gwj-&gt;list);
+-				can_gw_unregister_filter(gwj);
++				cgw_unregister_filter(gwj);
+ 				kfree(gwj);
+ 			}
+ 		}
+ 
+-		spin_unlock(&amp;can_gw_list_lock);
++		spin_unlock(&amp;cgw_list_lock);
+ 	}
+ 
+ 	return NOTIFY_DONE;
+ }
+ 
+-static int gw_put_job(struct sk_buff *skb, struct gw_job *gwj)
++static int cgw_put_job(struct sk_buff *skb, struct cgw_job *gwj)
+ {
+-	struct {
+-		struct can_frame cf;
+-		u8 modtype;
+-	} __attribute__((packed)) mb;
+-
++	struct cgw_frame_mod mb;
+ 	struct rtcanmsg *rtcan;
+ 	struct nlmsghdr *nlh = nlmsg_put(skb, 0, 0, 0, sizeof(*rtcan), 0);
+ 	if (!nlh)
+@@ -270,17 +324,11 @@
+ 
+ 	rtcan = nlmsg_data(nlh);
+ 	rtcan-&gt;can_family = AF_CAN;
+-	rtcan-&gt;src_ifindex = gwj-&gt;src_dev-&gt;ifindex;
+-	rtcan-&gt;dst_ifindex = gwj-&gt;dst_dev-&gt;ifindex;
+-	rtcan-&gt;can_txflags = 0;
++	rtcan-&gt;gwtype = gwj-&gt;gwtype;
++	rtcan-&gt;flags = gwj-&gt;flags;
+ 
+-	if (gwj-&gt;flags &amp; CAN_TX_ECHO)
+-		rtcan-&gt;can_txflags |= CAN_GW_TXFLAGS_ECHO;
++	/* add statistics if available */
+ 
+-	if (gwj-&gt;flags &amp; CAN_TX_SRC_TSTAMP)
+-		rtcan-&gt;can_txflags |= CAN_GW_TXFLAGS_SRC_TSTAMP;
+-
+-	/* check non default settings of attributes */
+ 	if (gwj-&gt;handled_frames) {
+ 		if (nla_put_u32(skb, CGW_HANDLED, gwj-&gt;handled_frames) &lt; 0)
+ 			goto cancel;
+@@ -295,51 +343,84 @@
+ 			nlh-&gt;nlmsg_len += NLA_HDRLEN + NLA_ALIGN(sizeof(u32));
+ 	}
+ 
+-	if (gwj-&gt;ccgw.filter.can_id || gwj-&gt;ccgw.filter.can_mask) {
+-		if (nla_put(skb, CGW_FILTER, sizeof(struct can_filter),
+-			    &amp;gwj-&gt;ccgw.filter) &lt; 0)
+-			goto cancel;
+-		else
+-			nlh-&gt;nlmsg_len += NLA_HDRLEN +
+-				NLA_ALIGN(sizeof(struct can_filter));
+-	}
++	/* check non default settings of attributes */
+ 
+-	if (gwj-&gt;ccgw.modtype.and) {
+-		memcpy(&amp;mb.cf, &amp;gwj-&gt;ccgw.modframe.and, sizeof(mb.cf));
+-		mb.modtype = gwj-&gt;ccgw.modtype.and;
++	if (gwj-&gt;mod.modtype.and) {
++		memcpy(&amp;mb.cf, &amp;gwj-&gt;mod.modframe.and, sizeof(mb.cf));
++		mb.modtype = gwj-&gt;mod.modtype.and;
+ 		if (nla_put(skb, CGW_MOD_AND, sizeof(mb), &amp;mb) &lt; 0)
+ 			goto cancel;
+ 		else
+ 			nlh-&gt;nlmsg_len += NLA_HDRLEN + NLA_ALIGN(sizeof(mb));
+ 	}
+ 
+-	if (gwj-&gt;ccgw.modtype.or) {
+-		memcpy(&amp;mb.cf, &amp;gwj-&gt;ccgw.modframe.or, sizeof(mb.cf));
+-		mb.modtype = gwj-&gt;ccgw.modtype.or;
++	if (gwj-&gt;mod.modtype.or) {
++		memcpy(&amp;mb.cf, &amp;gwj-&gt;mod.modframe.or, sizeof(mb.cf));
++		mb.modtype = gwj-&gt;mod.modtype.or;
+ 		if (nla_put(skb, CGW_MOD_OR, sizeof(mb), &amp;mb) &lt; 0)
+ 			goto cancel;
+ 		else
+ 			nlh-&gt;nlmsg_len += NLA_HDRLEN + NLA_ALIGN(sizeof(mb));
+ 	}
+ 
+-	if (gwj-&gt;ccgw.modtype.xor) {
+-		memcpy(&amp;mb.cf, &amp;gwj-&gt;ccgw.modframe.xor, sizeof(mb.cf));
+-		mb.modtype = gwj-&gt;ccgw.modtype.xor;
++	if (gwj-&gt;mod.modtype.xor) {
++		memcpy(&amp;mb.cf, &amp;gwj-&gt;mod.modframe.xor, sizeof(mb.cf));
++		mb.modtype = gwj-&gt;mod.modtype.xor;
+ 		if (nla_put(skb, CGW_MOD_XOR, sizeof(mb), &amp;mb) &lt; 0)
+ 			goto cancel;
+ 		else
+ 			nlh-&gt;nlmsg_len += NLA_HDRLEN + NLA_ALIGN(sizeof(mb));
+ 	}
+ 
+-	if (gwj-&gt;ccgw.modtype.set) {
+-		memcpy(&amp;mb.cf, &amp;gwj-&gt;ccgw.modframe.set, sizeof(mb.cf));
+-		mb.modtype = gwj-&gt;ccgw.modtype.set;
++	if (gwj-&gt;mod.modtype.set) {
++		memcpy(&amp;mb.cf, &amp;gwj-&gt;mod.modframe.set, sizeof(mb.cf));
++		mb.modtype = gwj-&gt;mod.modtype.set;
+ 		if (nla_put(skb, CGW_MOD_SET, sizeof(mb), &amp;mb) &lt; 0)
+ 			goto cancel;
+ 		else
+ 			nlh-&gt;nlmsg_len += NLA_HDRLEN + NLA_ALIGN(sizeof(mb));
+ 	}
+ 
++	if (gwj-&gt;mod.csum.xor.from_idx != CGW_CS_DISABLED) {
++		if (nla_put(skb, CGW_CS_XOR, CGW_CS_XOR_LEN,
++			    &amp;gwj-&gt;mod.csum.xor) &lt; 0)
++			goto cancel;
++		else
++			nlh-&gt;nlmsg_len += NLA_HDRLEN + \
++				NLA_ALIGN(CGW_CS_XOR_LEN);
++	}
++
++	if (gwj-&gt;mod.csum.crc8.from_idx != CGW_CS_DISABLED) {
++		if (nla_put(skb, CGW_CS_CRC8, CGW_CS_CRC8_LEN,
++			    &amp;gwj-&gt;mod.csum.crc8) &lt; 0)
++			goto cancel;
++		else
++			nlh-&gt;nlmsg_len += NLA_HDRLEN + \
++				NLA_ALIGN(CGW_CS_CRC8_LEN);
++	}
++
++	if (gwj-&gt;gwtype == CGW_TYPE_CAN_CAN) {
++
++		if (gwj-&gt;ccgw.filter.can_id || gwj-&gt;ccgw.filter.can_mask) {
++			if (nla_put(skb, CGW_FILTER, sizeof(struct can_filter),
++				    &amp;gwj-&gt;ccgw.filter) &lt; 0)
++				goto cancel;
++			else
++				nlh-&gt;nlmsg_len += NLA_HDRLEN +
++					NLA_ALIGN(sizeof(struct can_filter));
++		}
++
++		if (nla_put_u32(skb, CGW_SRC_IF, gwj-&gt;ccgw.src_idx) &lt; 0)
++			goto cancel;
++		else
++			nlh-&gt;nlmsg_len += NLA_HDRLEN + NLA_ALIGN(sizeof(u32));
++
++		if (nla_put_u32(skb, CGW_DST_IF, gwj-&gt;ccgw.dst_idx) &lt; 0)
++			goto cancel;
++		else
++			nlh-&gt;nlmsg_len += NLA_HDRLEN + NLA_ALIGN(sizeof(u32));
++	}
++
+ 	return skb-&gt;len;
+ 
+ cancel:
+@@ -348,324 +429,371 @@
+ }
+ 
+ /* Dump information about all CAN gateway jobs, in response to RTM_GETROUTE */
+-static int gw_dump_jobs(struct sk_buff *skb, struct netlink_callback *cb)
++static int cgw_dump_jobs(struct sk_buff *skb, struct netlink_callback *cb)
+ {
+-	struct gw_job *gwj = NULL;
++	struct cgw_job *gwj = NULL;
+ 	struct hlist_node *n;
+ 	int idx = 0;
+-	int ret = 0;
++	int s_idx = cb-&gt;args[0];
+ 
+ 	rcu_read_lock();
+-	hlist_for_each_entry_rcu(gwj, n, &amp;can_gw_list, list) {
+-		if (idx &gt;= cb-&gt;args[0]) {
+-			ret = gw_put_job(skb, gwj);
+-			if (ret &gt; 0)
+-				cb-&gt;args[0]++;
++	hlist_for_each_entry_rcu(gwj, n, &amp;cgw_list, list) {
++		if (idx &lt; s_idx)
++			goto cont;
++
++		if (cgw_put_job(skb, gwj) &lt; 0)
+ 			break;
+-		}
++cont:
+ 		idx++;
+ 	}
+ 	rcu_read_unlock();
+ 
+-	return ret;
++	cb-&gt;args[0] = idx;
++
++	return skb-&gt;len;
+ }
+ 
+-/* check for attributes / filters for the CAN-&gt;CAN gateway */
+-static int can_can_parse_attr(struct nlmsghdr *nlh, struct can_can_gw *ccgw)
++/* check for common and gwtype specific attributes */
++static int cgw_parse_attr(struct nlmsghdr *nlh, struct cf_mod *mod, 
++			  u8 gwtype, void *gwtypeattr)
+ {
+ 	struct nlattr *tb[CGW_MAX+1];
++	struct cgw_frame_mod mb;
+ 	int modidx = 0;
+ 	int err = 0;
+ 
+-	struct {
+-		struct can_frame cf;
+-		u8 modtype;
+-	} __attribute__((packed)) mb;
++	/* initialize modification &amp; checksum data space */
++	memset(mod, 0, sizeof(*mod)); 
++	mod-&gt;csum.xor.from_idx = CGW_CS_DISABLED;
++	mod-&gt;csum.crc8.from_idx = CGW_CS_DISABLED;
+ 
+-	BUILD_BUG_ON(sizeof(mb) != CGW_MODATTR_LEN);
+-
+-	memset(ccgw, 0, sizeof(*ccgw)); 
+-
+ 	err = nlmsg_parse(nlh, sizeof(struct rtcanmsg), tb, CGW_MAX, NULL);
+ 	if (err &lt; 0)
+ 		return err;
+ 
+-	/* check for can_filter in attributes */
+-	if (tb[CGW_FILTER] &amp;&amp;
+-	    nla_len(tb[CGW_FILTER]) == sizeof(struct can_filter))
+-		nla_memcpy(&amp;ccgw-&gt;filter, tb[CGW_FILTER],
+-			   sizeof(struct can_filter));
++	/* check for AND/OR/XOR/SET modifications */
+ 
+-	/* check for AND/OR/XOR/SET modifications */
+ 	if (tb[CGW_MOD_AND] &amp;&amp;
+ 	    nla_len(tb[CGW_MOD_AND]) == CGW_MODATTR_LEN) {
+ 		nla_memcpy(&amp;mb, tb[CGW_MOD_AND], CGW_MODATTR_LEN);
+ 
+-		canframecpy(&amp;ccgw-&gt;modframe.and, &amp;mb.cf);
+-		ccgw-&gt;modtype.and = mb.modtype;
++		canframecpy(&amp;mod-&gt;modframe.and, &amp;mb.cf);
++		mod-&gt;modtype.and = mb.modtype;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_ID)
+-			ccgw-&gt;modfunc[modidx++] = mod_and_id;
++			mod-&gt;modfunc[modidx++] = mod_and_id;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DLC)
+-			ccgw-&gt;modfunc[modidx++] = mod_and_dlc;
++			mod-&gt;modfunc[modidx++] = mod_and_dlc;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DATA)
+-			ccgw-&gt;modfunc[modidx++] = mod_and_data;
++			mod-&gt;modfunc[modidx++] = mod_and_data;
+ 	}
+ 
+ 	if (tb[CGW_MOD_OR] &amp;&amp;
+ 	    nla_len(tb[CGW_MOD_OR]) == CGW_MODATTR_LEN) {
+ 		nla_memcpy(&amp;mb, tb[CGW_MOD_OR], CGW_MODATTR_LEN);
+ 
+-		canframecpy(&amp;ccgw-&gt;modframe.or, &amp;mb.cf);
+-		ccgw-&gt;modtype.or = mb.modtype;
++		canframecpy(&amp;mod-&gt;modframe.or, &amp;mb.cf);
++		mod-&gt;modtype.or = mb.modtype;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_ID)
+-			ccgw-&gt;modfunc[modidx++] = mod_or_id;
++			mod-&gt;modfunc[modidx++] = mod_or_id;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DLC)
+-			ccgw-&gt;modfunc[modidx++] = mod_or_dlc;
++			mod-&gt;modfunc[modidx++] = mod_or_dlc;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DATA)
+-			ccgw-&gt;modfunc[modidx++] = mod_or_data;
++			mod-&gt;modfunc[modidx++] = mod_or_data;
+ 	}
+ 
+ 	if (tb[CGW_MOD_XOR] &amp;&amp;
+ 	    nla_len(tb[CGW_MOD_XOR]) == CGW_MODATTR_LEN) {
+ 		nla_memcpy(&amp;mb, tb[CGW_MOD_XOR], CGW_MODATTR_LEN);
+ 
+-		canframecpy(&amp;ccgw-&gt;modframe.xor, &amp;mb.cf);
+-		ccgw-&gt;modtype.xor = mb.modtype;
++		canframecpy(&amp;mod-&gt;modframe.xor, &amp;mb.cf);
++		mod-&gt;modtype.xor = mb.modtype;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_ID)
+-			ccgw-&gt;modfunc[modidx++] = mod_xor_id;
++			mod-&gt;modfunc[modidx++] = mod_xor_id;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DLC)
+-			ccgw-&gt;modfunc[modidx++] = mod_xor_dlc;
++			mod-&gt;modfunc[modidx++] = mod_xor_dlc;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DATA)
+-			ccgw-&gt;modfunc[modidx++] = mod_xor_data;
++			mod-&gt;modfunc[modidx++] = mod_xor_data;
+ 	}
+ 
+ 	if (tb[CGW_MOD_SET] &amp;&amp;
+ 	    nla_len(tb[CGW_MOD_SET]) == CGW_MODATTR_LEN) {
+ 		nla_memcpy(&amp;mb, tb[CGW_MOD_SET], CGW_MODATTR_LEN);
+ 
+-		canframecpy(&amp;ccgw-&gt;modframe.set, &amp;mb.cf);
+-		ccgw-&gt;modtype.set = mb.modtype;
++		canframecpy(&amp;mod-&gt;modframe.set, &amp;mb.cf);
++		mod-&gt;modtype.set = mb.modtype;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_ID)
+-			ccgw-&gt;modfunc[modidx++] = mod_set_id;
++			mod-&gt;modfunc[modidx++] = mod_set_id;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DLC)
+-			ccgw-&gt;modfunc[modidx++] = mod_set_dlc;
++			mod-&gt;modfunc[modidx++] = mod_set_dlc;
+ 
+ 		if (mb.modtype &amp; CGW_MOD_DATA)
+-			ccgw-&gt;modfunc[modidx++] = mod_set_data;
++			mod-&gt;modfunc[modidx++] = mod_set_data;
+ 	}
+ 
++	/* check for checksum operations after CAN frame modifications */
++	if (modidx) {
++
++		if (tb[CGW_CS_XOR] &amp;&amp;
++		    nla_len(tb[CGW_CS_XOR]) == CGW_CS_XOR_LEN) {
++			nla_memcpy(&amp;mod-&gt;csum.xor, tb[CGW_CS_XOR],
++				   CGW_CS_XOR_LEN);
++			err = cgw_chk_csum_parms(mod-&gt;csum.xor.from_idx,
++						 mod-&gt;csum.xor.to_idx,
++						 mod-&gt;csum.xor.result_idx);
++			if (err)
++				return err;
++		}
++
++		if (tb[CGW_CS_CRC8] &amp;&amp;
++		    nla_len(tb[CGW_CS_CRC8]) == CGW_CS_CRC8_LEN) {
++			nla_memcpy(&amp;mod-&gt;csum.crc8, tb[CGW_CS_CRC8],
++				   CGW_CS_CRC8_LEN);
++			err = cgw_chk_csum_parms(mod-&gt;csum.crc8.from_idx,
++						 mod-&gt;csum.crc8.to_idx,
++						 mod-&gt;csum.crc8.result_idx);
++			if (err)
++				return err;
++		}
++	}
++
++	if (gwtype == CGW_TYPE_CAN_CAN) {
++
++		/* check CGW_TYPE_CAN_CAN specific attributes */
++
++		struct can_can_gw *ccgw = (struct can_can_gw *)gwtypeattr;
++		memset(ccgw, 0, sizeof(*ccgw)); 
++
++		/* check for can_filter in attributes */
++		if (tb[CGW_FILTER] &amp;&amp;
++		    nla_len(tb[CGW_FILTER]) == sizeof(struct can_filter))
++			nla_memcpy(&amp;ccgw-&gt;filter, tb[CGW_FILTER],
++				   sizeof(struct can_filter));
++
++		err = -ENODEV;
++
++		/* specifying two interfaces is mandatory */
++		if (!tb[CGW_SRC_IF] || !tb[CGW_DST_IF])
++			return err;
++
++		if (nla_len(tb[CGW_SRC_IF]) == sizeof(u32))
++			nla_memcpy(&amp;ccgw-&gt;src_idx, tb[CGW_SRC_IF],
++				   sizeof(u32));
++
++		if (nla_len(tb[CGW_DST_IF]) == sizeof(u32))
++			nla_memcpy(&amp;ccgw-&gt;dst_idx, tb[CGW_DST_IF],
++				   sizeof(u32));
++
++		/* both indices set to 0 for flushing all routing entries */
++		if (!ccgw-&gt;src_idx &amp;&amp; !ccgw-&gt;dst_idx)
++			return 0;
++
++		/* only one index set to 0 is an error */
++		if (!ccgw-&gt;src_idx || !ccgw-&gt;dst_idx)
++			return err;
++	}
++
++	/* add the checks for other gwtypes here */
++
+ 	return 0;
+ }
+ 
+-static int gw_create_job(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
++static int cgw_create_job(struct sk_buff *skb,  struct nlmsghdr *nlh,
++			  void *arg)
+ {
+ 	struct rtcanmsg *r;
+-	struct gw_job *gwj;
++	struct cgw_job *gwj;
+ 	int err = 0;
+ 
+ 	if (nlmsg_len(nlh) &lt; sizeof(*r))
+-                return -EINVAL;
++		return -EINVAL;
+ 
+-        r = nlmsg_data(nlh);
+-        if (r-&gt;can_family != AF_CAN)
+-                return -EPFNOSUPPORT;
++	r = nlmsg_data(nlh);
++	if (r-&gt;can_family != AF_CAN)
++		return -EPFNOSUPPORT;
+ 
+-	gwj = kmem_cache_alloc(gw_cache, GFP_KERNEL);
++	/* so far we only support CAN -&gt; CAN routings */
++	if (r-&gt;gwtype != CGW_TYPE_CAN_CAN)
++		return -EINVAL;
++
++	gwj = kmem_cache_alloc(cgw_cache, GFP_KERNEL);
+ 	if (!gwj)
+ 		return -ENOMEM;
+ 
+-	gwj-&gt;src_dev = dev_get_by_index(&amp;init_net, r-&gt;src_ifindex);
+-	if (!gwj-&gt;src_dev) {
+-		err = -ENODEV;
+-		goto fail;
+-	}
++	gwj-&gt;handled_frames = 0;
++	gwj-&gt;dropped_frames = 0;
++	gwj-&gt;flags = r-&gt;flags;
++	gwj-&gt;gwtype = r-&gt;gwtype;
+ 
+-	/* for now the source device needs to be a CAN device */
+-	if (gwj-&gt;src_dev-&gt;type != ARPHRD_CAN) {
+-		err = -ENODEV;
+-		goto put_src_fail;
+-	}
++	err = cgw_parse_attr(nlh, &amp;gwj-&gt;mod, CGW_TYPE_CAN_CAN, &amp;gwj-&gt;ccgw);
++	if (err &lt; 0)
++		goto out;
+ 
+-	gwj-&gt;dst_dev = dev_get_by_index(&amp;init_net, r-&gt;dst_ifindex);
+-	if (!gwj-&gt;dst_dev) {
+-		err = -ENODEV;
+-		goto put_src_fail;
+-	}
++	err = -ENODEV;
+ 
+-	/* for now the destination device needs to be a CAN device */
+-	if (gwj-&gt;dst_dev-&gt;type != ARPHRD_CAN) {
+-		err = -ENODEV;
+-		goto put_src_dst_fail;
+-	}
++	/* ifindex == 0 is not allowed for job creation */
++	if (!gwj-&gt;ccgw.src_idx || !gwj-&gt;ccgw.dst_idx)
++		goto out;
+ 
+-	gwj-&gt;handled_frames = 0;
+-	gwj-&gt;dropped_frames = 0;
+-	gwj-&gt;flags = 0;
++	gwj-&gt;src.dev = dev_get_by_index(&amp;init_net, gwj-&gt;ccgw.src_idx);
+ 
+-	if (r-&gt;can_txflags &amp; CAN_GW_TXFLAGS_ECHO)
+-		gwj-&gt;flags |= CAN_TX_ECHO;
++	if (!gwj-&gt;src.dev)
++		goto out;
+ 
+-	if (r-&gt;can_txflags &amp; CAN_GW_TXFLAGS_SRC_TSTAMP)
+-		gwj-&gt;flags |= CAN_TX_SRC_TSTAMP;
++	if (gwj-&gt;src.dev-&gt;type != ARPHRD_CAN)
++		goto put_src_out;
+ 
+-	err = can_can_parse_attr(nlh, &amp;gwj-&gt;ccgw);
+-	if (err &lt; 0)
+-		goto put_src_dst_fail;
++	gwj-&gt;dst.dev = dev_get_by_index(&amp;init_net, gwj-&gt;ccgw.dst_idx);
+ 
+-	spin_lock(&amp;can_gw_list_lock);
++	if (!gwj-&gt;dst.dev)
++		goto put_src_out;
+ 
+-	err = can_gw_register_filter(gwj);
++	if (gwj-&gt;dst.dev-&gt;type != ARPHRD_CAN)
++		goto put_src_dst_out;
++		
++	spin_lock(&amp;cgw_list_lock);
++
++	err = cgw_register_filter(gwj);
+ 	if (!err)
+-		hlist_add_head_rcu(&amp;gwj-&gt;list, &amp;can_gw_list);
++		hlist_add_head_rcu(&amp;gwj-&gt;list, &amp;cgw_list);
+ 
+-	spin_unlock(&amp;can_gw_list_lock);
++	spin_unlock(&amp;cgw_list_lock);
+ 	
+-	dev_put(gwj-&gt;src_dev);
+-	dev_put(gwj-&gt;dst_dev);
+-
++put_src_dst_out:
++	dev_put(gwj-&gt;dst.dev);
++put_src_out:
++	dev_put(gwj-&gt;src.dev);
++out:
+ 	if (err)
+-		goto fail;
++		kmem_cache_free(cgw_cache, gwj);
+ 
+-	return 0;
+-
+-put_src_dst_fail:
+-	dev_put(gwj-&gt;dst_dev);
+-put_src_fail:
+-	dev_put(gwj-&gt;src_dev);
+-fail:
+-	kmem_cache_free(gw_cache, gwj);
+ 	return err;
+ }
+ 
+-static void gw_remove_all_jobs(void)
++static void cgw_remove_all_jobs(void)
+ {
+-	struct gw_job *gwj = NULL;
++	struct cgw_job *gwj = NULL;
+ 	struct hlist_node *n, *nx;
+ 
+-	spin_lock(&amp;can_gw_list_lock);
++	spin_lock(&amp;cgw_list_lock);
+ 
+-	hlist_for_each_entry_safe(gwj, n, nx, &amp;can_gw_list, list) {
++	hlist_for_each_entry_safe(gwj, n, nx, &amp;cgw_list, list) {
+ 		hlist_del(&amp;gwj-&gt;list);
+-		can_gw_unregister_filter(gwj);
++		cgw_unregister_filter(gwj);
+ 		kfree(gwj);
+ 	}
+ 
+-	spin_unlock(&amp;can_gw_list_lock);
++	spin_unlock(&amp;cgw_list_lock);
+ }
+ 
+-static int gw_remove_job(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
++static int cgw_remove_job(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
+ {
+-	struct gw_job *gwj = NULL;
++	struct cgw_job *gwj = NULL;
+ 	struct hlist_node *n, *nx;
+ 	struct rtcanmsg *r;
++	struct cf_mod mod;
+ 	struct can_can_gw ccgw;
+-	u32 flags = 0;
+ 	int err = 0;
+ 
+ 	if (nlmsg_len(nlh) &lt; sizeof(*r))
+-                return -EINVAL;
++		return -EINVAL;
+ 
+-        r = nlmsg_data(nlh);
+-        if (r-&gt;can_family != AF_CAN)
+-                return -EPFNOSUPPORT;
++	r = nlmsg_data(nlh);
++	if (r-&gt;can_family != AF_CAN)
++		return -EPFNOSUPPORT;
+ 
+-	/* if_index set to 0 =&gt; remove all entries */
+-	if (!r-&gt;src_ifindex &amp;&amp; !r-&gt;dst_ifindex) {
+-		gw_remove_all_jobs();
+-		return 0;
+-	}
++	/* so far we only support CAN -&gt; CAN routings */
++	if (r-&gt;gwtype != CGW_TYPE_CAN_CAN)
++		return -EINVAL;
+ 
+-	if (r-&gt;can_txflags &amp; CAN_GW_TXFLAGS_ECHO)
+-		flags |= CAN_TX_ECHO;
+-
+-	if (r-&gt;can_txflags &amp; CAN_GW_TXFLAGS_SRC_TSTAMP)
+-		flags |= CAN_TX_SRC_TSTAMP;
+-
+-	err = can_can_parse_attr(nlh, &amp;ccgw);
++	err = cgw_parse_attr(nlh, &amp;mod, CGW_TYPE_CAN_CAN, &amp;ccgw);
+ 	if (err &lt; 0)
+ 		return err;
+ 
++	/* two interface indices both set to 0 =&gt; remove all entries */
++	if (!ccgw.src_idx &amp;&amp; !ccgw.dst_idx) {
++		cgw_remove_all_jobs();
++		return 0;
++	}
++
+ 	err = -EINVAL;
+ 
+-	spin_lock(&amp;can_gw_list_lock);
++	spin_lock(&amp;cgw_list_lock);
+ 
+ 	/* remove only the first matching entry */
+-	hlist_for_each_entry_safe(gwj, n, nx, &amp;can_gw_list, list) {
++	hlist_for_each_entry_safe(gwj, n, nx, &amp;cgw_list, list) {
+ 
+-		if (gwj-&gt;dst_dev-&gt;ifindex != r-&gt;dst_ifindex)
++		if (gwj-&gt;flags != r-&gt;flags)
+ 			continue;
+ 
+-		if (gwj-&gt;src_dev-&gt;ifindex != r-&gt;src_ifindex)
++		if (memcmp(&amp;gwj-&gt;mod, &amp;mod, sizeof(mod)))
+ 			continue;
+ 
+-		if (gwj-&gt;flags != flags)
+-			continue;
+-
++		/* if (r-&gt;gwtype == CGW_TYPE_CAN_CAN) - is made sure here */
+ 		if (memcmp(&amp;gwj-&gt;ccgw, &amp;ccgw, sizeof(ccgw)))
+ 			continue;
+ 
+ 		hlist_del(&amp;gwj-&gt;list);
+-		can_gw_unregister_filter(gwj);
++		cgw_unregister_filter(gwj);
+ 		kfree(gwj);
+ 		err = 0;
+ 		break;
+ 	}
+ 
+-	spin_unlock(&amp;can_gw_list_lock);
++	spin_unlock(&amp;cgw_list_lock);
+ 	
+ 	return err;
+ }
+ 
+-static __init int gw_module_init(void)
++static __init int cgw_module_init(void)
+ {
+ 	printk(banner);
+ 
+-	gw_cache = kmem_cache_create(&quot;can_gw&quot;, sizeof(struct gw_job),
++	cgw_cache = kmem_cache_create(&quot;can_gw&quot;, sizeof(struct cgw_job),
+ 				      0, 0, NULL);
+ 
+-	if (!gw_cache)
++	if (!cgw_cache)
+ 		return -ENOMEM;
+ 
+ 	/* set notifier */
+-	notifier.notifier_call = gw_notifier;
++	notifier.notifier_call = cgw_notifier;
+ 	register_netdevice_notifier(&amp;notifier);
+ 
+-	if (__rtnl_register(PF_CAN, RTM_GETROUTE, NULL, gw_dump_jobs)) {
++	if (__rtnl_register(PF_CAN, RTM_GETROUTE, NULL, cgw_dump_jobs)) {
+ 		unregister_netdevice_notifier(&amp;notifier);
+-		kmem_cache_destroy(gw_cache);
++		kmem_cache_destroy(cgw_cache);
+ 		return -ENOBUFS;
+ 	}
+ 
+ 	/* Only the first call to __rtnl_register can fail */
+-	__rtnl_register(PF_CAN, RTM_NEWROUTE, gw_create_job, NULL);
+-	__rtnl_register(PF_CAN, RTM_DELROUTE, gw_remove_job, NULL);
++	__rtnl_register(PF_CAN, RTM_NEWROUTE, cgw_create_job, NULL);
++	__rtnl_register(PF_CAN, RTM_DELROUTE, cgw_remove_job, NULL);
+ 
+ 	return 0;
+ }
+ 
+-static __exit void gw_module_exit(void)
++static __exit void cgw_module_exit(void)
+ {
+ 	rtnl_unregister_all(PF_CAN);
+ 
+ 	unregister_netdevice_notifier(&amp;notifier);
+ 
+-	gw_remove_all_jobs();
++	cgw_remove_all_jobs();
+ 
+ 	rcu_barrier(); /* Wait for completion of call_rcu()'s */
+ 
+-	kmem_cache_destroy(gw_cache);
++	kmem_cache_destroy(cgw_cache);
+ }
+ 
+-module_init(gw_module_init);
+-module_exit(gw_module_exit);
++module_init(cgw_module_init);
++module_exit(cgw_module_exit);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000798.html">r1166 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#797">[ date ]</a>
+              <a href="thread.html#797">[ thread ]</a>
+              <a href="subject.html#797">[ subject ]</a>
+              <a href="author.html#797">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

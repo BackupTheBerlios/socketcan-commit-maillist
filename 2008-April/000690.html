@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r708 - branches/ha/hrtimer/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r708%20-%20branches/ha/hrtimer/can-utils&In-Reply-To=%3C200804092042.m39Kg5bS011920%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000689.html">
+   <LINK REL="Next"  HREF="000691.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r708 - branches/ha/hrtimer/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r708%20-%20branches/ha/hrtimer/can-utils&In-Reply-To=%3C200804092042.m39Kg5bS011920%40sheep.berlios.de%3E"
+       TITLE="r708 - branches/ha/hrtimer/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr  9 22:42:05 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000689.html">r707 - branches/ha/hrtimer/net/can
+</A></li>
+        <LI>Next message: <A HREF="000691.html">r709 - branches/ha/hrtimer/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#690">[ date ]</a>
+              <a href="thread.html#690">[ thread ]</a>
+              <a href="subject.html#690">[ subject ]</a>
+              <a href="author.html#690">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-04-09 22:42:04 +0200 (Wed, 09 Apr 2008)
+New Revision: 708
+
+Modified:
+   branches/ha/hrtimer/can-utils/cangen.c
+Log:
+Added option to increment values instead of random values.
+
+
+Modified: branches/ha/hrtimer/can-utils/cangen.c
+===================================================================
+--- branches/ha/hrtimer/can-utils/cangen.c	2008-04-09 19:44:04 UTC (rev 707)
++++ branches/ha/hrtimer/can-utils/cangen.c	2008-04-09 20:42:04 UTC (rev 708)
+@@ -88,6 +88,8 @@
+ 	    &quot;default: 8\n&quot;);
+     fprintf(stderr, &quot;         -f &lt;canframe&gt; (other fixed CAN frame) &quot;
+ 	    &quot;default: 123#0123456789ABCDEF\n&quot;);
++    fprintf(stderr, &quot;         -i            (increment values)      &quot;
++	    &quot;default: random values\n&quot;);
+     fprintf(stderr, &quot;         -x            (disable loopback)      &quot;
+ 	    &quot;default: standard loopback\n&quot;);
+     fprintf(stderr, &quot;         -v            (verbose)               &quot;
+@@ -108,7 +110,9 @@
+     unsigned char fix_dlc = 0;
+     unsigned char default_frame = 1;
+     unsigned char loopback_disable = 0;
++    unsigned char inc_values = 0;
+     unsigned char verbose = 0;
++    unsigned long long incdata = 0;
+ 
+     int opt;
+     int s; /* socket */
+@@ -116,6 +120,7 @@
+     struct sockaddr_can addr;
+     static struct can_frame frame;
+     int nbytes;
++    int i;
+     struct ifreq ifr;
+ 
+     struct timespec ts;
+@@ -124,7 +129,7 @@
+     signal(SIGHUP, sigterm);
+     signal(SIGINT, sigterm);
+ 
+-    while ((opt = getopt(argc, argv, &quot;g:eIDLf:xv&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;g:eIDLf:xiv&quot;)) != -1) {
+ 	switch (opt) {
+ 	case 'g':
+ 	    gap = strtoul(optarg, NULL, 10);
+@@ -162,6 +167,10 @@
+ 	    loopback_disable = 1;
+ 	    break;
+ 
++	case 'i':
++	    inc_values = 1;
++	    break;
++
+ 	default:
+ 	    print_usage(basename(argv[0]));
+ 	    exit(1);
+@@ -231,7 +240,11 @@
+     while (running) {
+ 
+ 	if (!fix_id) {
+-	    frame.can_id = random();
++	    if (inc_values)
++		frame.can_id++;
++	    else
++		frame.can_id = random();
++
+ 	    if (extended) {
+ 		frame.can_id &amp;= CAN_EFF_MASK;
+ 		frame.can_id |= CAN_EFF_FLAG;
+@@ -240,15 +253,28 @@
+ 	}
+ 
+ 	if (!fix_dlc) {
+-	    frame.can_dlc = random() &amp; 0xF;
+-	    if (frame.can_dlc &amp; 8)
+-		frame.can_dlc = 8; /* for about 50% of the frames */
++	    if (inc_values) {
++		frame.can_dlc++;
++		frame.can_dlc %= 9;
++	    } else {
++		frame.can_dlc = random() &amp; 0xF;
++		if (frame.can_dlc &amp; 8)
++		    frame.can_dlc = 8; /* for about 50% of the frames */
++	    }
+ 	}
+ 
+ 	if (!fix_data) {
+-	    /* that's what the 64 bit alignment of data[] is for ... :) */
+-	    *(unsigned long*)(&amp;frame.data[0]) = random();
+-	    *(unsigned long*)(&amp;frame.data[4]) = random();
++	    if (inc_values) {
++		incdata++;
++
++		for (i=0; i&lt;8 ;i++)
++		    frame.data[i] = (incdata &gt;&gt; (7-i)*8) &amp; 0xFFULL;
++
++	    } else {
++		/* that's what the 64 bit alignment of data[] is for ... :) */
++		*(unsigned long*)(&amp;frame.data[0]) = random();
++		*(unsigned long*)(&amp;frame.data[4]) = random();
++	    }
+ 	}
+ 
+ 	if ((nbytes = write(s, &amp;frame, sizeof(struct can_frame))) &lt; 0) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000689.html">r707 - branches/ha/hrtimer/net/can
+</A></li>
+	<LI>Next message: <A HREF="000691.html">r709 - branches/ha/hrtimer/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#690">[ date ]</a>
+              <a href="thread.html#690">[ thread ]</a>
+              <a href="subject.html#690">[ subject ]</a>
+              <a href="author.html#690">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

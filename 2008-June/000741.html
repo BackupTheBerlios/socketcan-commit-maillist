@@ -1,0 +1,347 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r761 - in trunk/kernel/2.6/drivers/net/can: . old/ccan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r761%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20.%20old/ccan&In-Reply-To=%3C200806111349.m5BDn8LB010103%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000740.html">
+   <LINK REL="Next"  HREF="000742.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r761 - in trunk/kernel/2.6/drivers/net/can: . old/ccan</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r761%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20.%20old/ccan&In-Reply-To=%3C200806111349.m5BDn8LB010103%40sheep.berlios.de%3E"
+       TITLE="r761 - in trunk/kernel/2.6/drivers/net/can: . old/ccan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 11 15:49:08 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000740.html">r760 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000742.html">r762 - in trunk/kernel/2.6: drivers/net/can include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#741">[ date ]</a>
+              <a href="thread.html#741">[ thread ]</a>
+              <a href="subject.html#741">[ subject ]</a>
+              <a href="author.html#741">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-06-11 15:49:06 +0200 (Wed, 11 Jun 2008)
+New Revision: 761
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c
+   trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+Remove trailing whitespace from ccan, h7202 and slcan driver
+
+Signed-off-by: Robert Schwebel &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">r.schwebel at pengutronix.de</A>&gt;
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c	2008-06-11 07:16:21 UTC (rev 760)
++++ trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c	2008-06-11 13:49:06 UTC (rev 761)
+@@ -47,7 +47,7 @@
+ static u32 ccan_read_reg32(struct net_device *dev, enum c_regs reg)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+-	
++
+ 	u32 val = priv-&gt;read_reg(dev, reg);
+ 	val |= ((u32) priv-&gt;read_reg(dev, reg + 2)) &lt;&lt; 16;
+ 
+@@ -89,7 +89,7 @@
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+ 	unsigned int val;
+-	
++
+ 	if (frame-&gt;can_id &amp; CAN_EFF_FLAG)
+ 		val = IF_ARB_MSGXTD | (frame-&gt;can_id &amp; CAN_EFF_MASK);
+ 	else
+@@ -140,7 +140,7 @@
+ 	frame-&gt;can_dlc = ctrl &amp; 0xf;
+ 
+ 	val = ccan_read_reg32(dev, CAN_IF_ARB(iface));
+-	
++
+ 	data = ccan_read_reg32(dev, CAN_IF_DATAA(iface));
+ 	memcpy(&amp;frame-&gt;data[0], &amp;data, 4);
+ 	data = ccan_read_reg32(dev, CAN_IF_DATAB(iface));
+@@ -181,9 +181,9 @@
+ 
+ 	ccan_object_put(dev, 0, objno, IF_COMM_ALL &amp; ~IF_COMM_TXRQST);
+ 
+-	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__, 
++	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__,
+ 		objno, ccan_read_reg32(dev, CAN_MSGVAL));
+-		
++
+ 	return 0;
+ }
+ 
+@@ -195,9 +195,9 @@
+ 	priv-&gt;write_reg(dev, CAN_IF_MCONT(iface), 0);
+ 	ccan_object_put(dev, 0, objno, IF_COMM_ARB | IF_COMM_CONTROL);
+ 
+-	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__, 
++	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__,
+ 		objno, ccan_read_reg32(dev, CAN_MSGVAL));
+-		
++
+ 	return 0;
+ }
+ 
+@@ -230,7 +230,7 @@
+ static void ccan_tx_timeout(struct net_device *dev)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+-	
++
+ 	priv-&gt;can.net_stats.tx_errors++;
+ }
+ 
+@@ -238,7 +238,7 @@
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+ 	unsigned int reg_timing, ctrl_save;
+-	u8 brp, sjw, tseg1, tseg2; 
++	u8 brp, sjw, tseg1, tseg2;
+ 
+ 	if (br-&gt;type != CAN_BITTIME_STD)
+ 		return -EINVAL;
+@@ -252,8 +252,8 @@
+ 		     ((sjw &lt;&lt; BTR_SJW_SHIFT) &amp; BTR_SJW_MASK) |
+ 		     ((tseg1 &lt;&lt; BTR_TSEG1_SHIFT) &amp; BTR_TSEG1_MASK) |
+ 		     ((tseg2 &lt;&lt; BTR_TSEG2_SHIFT) &amp; BTR_TSEG2_MASK);
+-		     
+-	DBG(&quot;%s: brp = %d sjw = %d seg1 = %d seg2 = %d\n&quot;, __FUNCTION__, 
++
++	DBG(&quot;%s: brp = %d sjw = %d seg1 = %d seg2 = %d\n&quot;, __FUNCTION__,
+ 		brp, sjw, tseg1, tseg2);
+ 	DBG(&quot;%s: setting BTR to %04x\n&quot;, __FUNCTION__, reg_timing);
+ 
+@@ -266,7 +266,7 @@
+ 	priv-&gt;write_reg(dev, CAN_CONTROL, ctrl_save);
+ 
+ 	spin_unlock_irq(&amp;priv-&gt;can.irq_lock);
+-	
++
+ 	return 0;
+ }
+ 
+@@ -356,7 +356,7 @@
+ 
+ 	priv-&gt;write_reg(dev, CAN_STATUS, 0);
+ 	priv-&gt;last_status = status;
+-	
++
+ 	return diff ? 1 : 0;
+ }
+ 
+@@ -386,7 +386,7 @@
+ 
+ static void do_statuspoll(struct work_struct *work)
+ {
+-	struct ccan_priv *priv = container_of(((struct delayed_work *) work), 
++	struct ccan_priv *priv = container_of(((struct delayed_work *) work),
+ 					      struct ccan_priv, work);
+ 
+ 	priv-&gt;write_reg(priv-&gt;dev, CAN_CONTROL,
+@@ -403,7 +403,7 @@
+ 	struct ccan_priv *priv = netdev_priv(dev);
+ 	u16 irqstatus;
+ 	unsigned long flags;
+-	
++
+ 	spin_lock_irqsave(&amp;priv-&gt;can.irq_lock, flags);
+ 
+ 	irqstatus = priv-&gt;read_reg(dev, CAN_IR);
+@@ -482,10 +482,10 @@
+ 	for(i = MAX_TRANSMIT_OBJECT + 1; i &lt; MAX_OBJECT; i++)
+ 		ccan_setup_receive_object(dev, 0, i, 0, 0,
+ 					  IF_MCONT_RXIE | IF_MCONT_UMASK);
+-					  
++
+ 	ccan_setup_receive_object(dev, 0, MAX_OBJECT, 0, 0, IF_MCONT_EOB |
+ 				  IF_MCONT_RXIE | IF_MCONT_UMASK);
+-				  
++
+ #ifdef CCAN_DEBUG
+ 	for(i = 0; i &lt;= MAX_OBJECT; i++)
+ 		priv-&gt;bufstat[i] = 0;
+@@ -502,7 +502,7 @@
+ 	dev = alloc_candev(sizeof_priv);
+ 	if(!dev)
+ 		return NULL;
+-		
++
+ 	priv = netdev_priv(dev);
+ 
+ 	dev-&gt;open = ccan_open;
+@@ -516,7 +516,7 @@
+ 	priv-&gt;can.do_get_state = ccan_get_state;
+ 	priv-&gt;can.do_set_mode = ccan_set_mode;
+ 
+-	priv-&gt;dev = dev;	
++	priv-&gt;dev = dev;
+ 	priv-&gt;tx_object = 0;
+ 
+ 	return dev;
+@@ -532,20 +532,20 @@
+ int register_ccandev(struct net_device *dev)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+-	
++
+ 	ccan_set_mode(dev, CAN_MODE_START);
+ 
+ 	ccan_chip_config(dev);
+ 	INIT_DELAYED_WORK(&amp;priv-&gt;work, do_statuspoll);
+-	
+-	return register_netdev(dev);	
++
++	return register_netdev(dev);
+ }
+ EXPORT_SYMBOL(register_ccandev);
+ 
+ void unregister_ccandev(struct net_device *dev)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+-	
++
+ 	ccan_set_mode(dev, CAN_MODE_START);
+ 
+ 	cancel_delayed_work(&amp;priv-&gt;work);
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c	2008-06-11 07:16:21 UTC (rev 760)
++++ trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c	2008-06-11 13:49:06 UTC (rev 761)
+@@ -44,14 +44,14 @@
+ 	/* The big kernel lock is used to prevent any other AMBA devices from
+ 	 * interfering with the current register read operation. The register
+ 	 * is read twice because of braindamaged hynix cpu.
+-	 */ 
++	 */
+ 	lock_kernel();
+ 	val = inw(dev-&gt;base_addr + (reg&lt;&lt;1));
+ 	for (i=0;i&lt;DELAY;i++);
+ 	val = inw(dev-&gt;base_addr + (reg&lt;&lt;1));
+ 	for (i=0;i&lt;DELAY;i++);
+ 	unlock_kernel();
+-	
++
+ 	return val;
+ }
+ 
+@@ -72,11 +72,11 @@
+ 	struct resource *mem;
+ 	u32 mem_size;
+ 	int ret = -ENODEV;
+-	
++
+ 	dev = alloc_ccandev(sizeof(struct ccan_priv));
+ 	if (!dev)
+ 		return -ENOMEM;
+-		
++
+ 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	dev-&gt;irq = platform_get_irq(pdev, 0);
+ 	if (!mem || !dev-&gt;irq)
+@@ -104,7 +104,7 @@
+ 	priv-&gt;write_reg = h7202can_write_reg;
+ 
+ 	platform_set_drvdata(pdev, dev);
+-	
++
+ 	/* configure ports */
+ 	switch (mem-&gt;start) {
+ 	case CAN0_PHYS:
+@@ -119,7 +119,7 @@
+ 		break;
+ 	}
+ 
+-	/* enable can */	
++	/* enable can */
+ 	h7202can_write_reg(dev, CAN_ENABLE, 1);
+ 
+ 	ret = register_ccandev(dev);
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2008-06-11 07:16:21 UTC (rev 760)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2008-06-11 13:49:06 UTC (rev 761)
+@@ -106,7 +106,7 @@
+  * you will have to modify two kernel includes &amp; recompile the kernel.
+  *
+  * Add this in include/asm/termios.h after the definition of N_HCI:
+- *        #define N_SLCAN         16 
++ *        #define N_SLCAN         16
+  *
+  * Increment NR_LDICS in include/linux/tty.h from 16 to 17
+  *
+@@ -182,7 +182,7 @@
+  * The &lt;id&gt; is 3 (standard) or 8 (extended) bytes in ASCII Hex (base64).
+  * The &lt;dlc&gt; is a one byte ASCII number ('0' - '8')
+  * The &lt;data&gt; section has at much ASCII Hex bytes as defined by the &lt;dlc&gt;
+- * 
++ *
+  * Examples:
+  *
+  * t1230 : can_id 0x123, can_dlc 0, no data
+@@ -234,7 +234,7 @@
+ 
+ 	sl-&gt;rbuff[dlc_pos] = 0; /* terminate can_id string */
+ 	cf.can_id = simple_strtoul(sl-&gt;rbuff+1, NULL, 16);
+-	
++
+ 	if (!(cmd &amp; 0x20)) /* NO tiny chars =&gt; extended frame format */
+ 		cf.can_id |= CAN_EFF_FLAG;
+ 
+@@ -244,7 +244,7 @@
+ 	*(u64 *) (&amp;cf.data) = 0; /* clear payload */
+ 
+ 	for (i = 0, dlc_pos++; i &lt; cf.can_dlc; i++){
+-		
++
+ 		if ((tmp = asc2nibble(sl-&gt;rbuff[dlc_pos++])) &gt; 0x0F)
+ 			return;
+ 		cf.data[i] = (tmp &lt;&lt; 4);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000740.html">r760 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000742.html">r762 - in trunk/kernel/2.6: drivers/net/can include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#741">[ date ]</a>
+              <a href="thread.html#741">[ thread ]</a>
+              <a href="subject.html#741">[ subject ]</a>
+              <a href="author.html#741">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

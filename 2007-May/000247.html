@@ -1,0 +1,203 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r263 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r263%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200705020948.l429mK2c010636%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000246.html">
+   <LINK REL="Next"  HREF="000248.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r263 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r263%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200705020948.l429mK2c010636%40sheep.berlios.de%3E"
+       TITLE="r263 - in trunk/kernel/2.6: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May  2 11:48:20 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000246.html">r262 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000248.html">r264 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#247">[ date ]</a>
+              <a href="thread.html#247">[ thread ]</a>
+              <a href="subject.html#247">[ subject ]</a>
+              <a href="author.html#247">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-02 11:48:11 +0200 (Wed, 02 May 2007)
+New Revision: 263
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Moved timeval2jiffies function from af_can.c to bcm.c and added a comment why
+using the kernel function timeval_to_jiffies() is problematic here.
+TODO: Check if this could be a hrtimer use-case here.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-05-02 08:48:33 UTC (rev 262)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-05-02 09:48:11 UTC (rev 263)
+@@ -79,8 +79,6 @@
+ 
+ extern int can_send(struct sk_buff *skb, int loop);
+ 
+-extern unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+-
+ #ifdef CONFIG_CAN_DEBUG_CORE
+ extern void can_debug_skb(struct sk_buff *skb);
+ extern void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-05-02 08:48:33 UTC (rev 262)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-05-02 09:48:11 UTC (rev 263)
+@@ -674,42 +674,6 @@
+ }
+ 
+ /*
+- * af_can utility stuff
+- */
+-
+-/**
+- * timeval2jiffies - calculate jiffies from timeval including optional round up
+- * @tv: pointer to timeval
+- * @round_up: return at least 1 jiffie
+- *
+- * Return:
+- *  calculated jiffies (max: ULONG_MAX)
+- */
+-unsigned long timeval2jiffies(struct timeval *tv, int round_up)
+-{
+-	unsigned long jif;
+-	unsigned long sec  = tv-&gt;tv_sec;
+-	unsigned long usec = tv-&gt;tv_usec;
+-
+-	/* check for overflow */
+-	if (sec &gt; ULONG_MAX / HZ)
+-		return ULONG_MAX;
+-
+-	/* any usec below one HZ? =&gt; pump it up */
+-	if (round_up)
+-		usec += 1000000 / HZ - 1;
+-
+-	jif = usec / (1000000 / HZ);
+-
+-	/* check for overflow */
+-	if (sec * HZ &gt; ULONG_MAX - jif)
+-		return ULONG_MAX;
+-	else
+-		return jif + sec * HZ;
+-}
+-EXPORT_SYMBOL(timeval2jiffies);
+-
+-/*
+  * af_can debugging stuff
+  */
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-05-02 08:48:33 UTC (rev 262)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-05-02 09:48:11 UTC (rev 263)
+@@ -175,6 +175,38 @@
+ #define MHSIZ sizeof(struct bcm_msg_head)
+ 
+ /*
++ * rounded_tv2jif - calculate jiffies from timeval including optional up
++ * @tv: pointer to timeval
++ *
++ * Description:
++ * In opposite to timeval_to_jiffies() provided in include/linux/jiffies.h this
++ * function is intentionally more relaxed on precise timer ticks to get exact
++ * one jiffy for requested 1000us on a 1000HZ machine.
++ *
++ * Return:
++ *  calculated jiffies (max: ULONG_MAX)
++ */
++static unsigned long rounded_tv2jif(const struct timeval *tv)
++{
++	unsigned long sec  = tv-&gt;tv_sec;
++	unsigned long usec = tv-&gt;tv_usec;
++	unsigned long jif;
++
++	if (sec &gt; ULONG_MAX / HZ)
++		return ULONG_MAX;
++
++	/* round up to get at least the requested time */
++	usec += 1000000 / HZ - 1;
++
++	jif  = usec / (1000000 / HZ);
++
++	if (sec * HZ &gt; ULONG_MAX - jif)
++		return ULONG_MAX;
++
++	return jif + sec * HZ;
++}
++
++/*
+  * procfs functions
+  */
+ static char *bcm_proc_getifname(int ifindex)
+@@ -996,8 +1028,8 @@
+ 		op-&gt;count = msg_head-&gt;count;
+ 		op-&gt;ival1 = msg_head-&gt;ival1;
+ 		op-&gt;ival2 = msg_head-&gt;ival2;
+-		op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head-&gt;ival1, 1);
+-		op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head-&gt;ival2, 1);
++		op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
++		op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ 
+ 		DBG(&quot;TX_SETUP: SETTIMER count=%d j_ival1=%ld j_ival2=%ld\n&quot;,
+ 		    op-&gt;count, op-&gt;j_ival1, op-&gt;j_ival2);
+@@ -1207,8 +1239,8 @@
+ 			/* set timer value */
+ 			op-&gt;ival1 = msg_head-&gt;ival1;
+ 			op-&gt;ival2 = msg_head-&gt;ival2;
+-			op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head-&gt;ival1, 1);
+-			op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head-&gt;ival2, 1);
++			op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
++			op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ 
+ 			DBG(&quot;RX_SETUP: SETTIMER j_ival1=%ld j_ival2=%ld\n&quot;,
+ 			    op-&gt;j_ival1, op-&gt;j_ival2);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000246.html">r262 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000248.html">r264 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#247">[ date ]</a>
+              <a href="thread.html#247">[ thread ]</a>
+              <a href="subject.html#247">[ subject ]</a>
+              <a href="author.html#247">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

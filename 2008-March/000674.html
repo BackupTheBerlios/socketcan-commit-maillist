@@ -1,0 +1,287 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r692 - in branches/cannetdriver26: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r692%20-%20in%20branches/cannetdriver26%3A%20include/linux/can%20net/can&In-Reply-To=%3C200803311944.m2VJiqfa001225%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000673.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r692 - in branches/cannetdriver26: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r692%20-%20in%20branches/cannetdriver26%3A%20include/linux/can%20net/can&In-Reply-To=%3C200803311944.m2VJiqfa001225%40sheep.berlios.de%3E"
+       TITLE="r692 - in branches/cannetdriver26: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar 31 21:44:52 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000673.html">r691 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#674">[ date ]</a>
+              <a href="thread.html#674">[ thread ]</a>
+              <a href="subject.html#674">[ subject ]</a>
+              <a href="author.html#674">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-03-31 21:44:50 +0200 (Mon, 31 Mar 2008)
+New Revision: 692
+
+Modified:
+   branches/cannetdriver26/include/linux/can/bcm.h
+   branches/cannetdriver26/net/can/af_can.c
+   branches/cannetdriver26/net/can/raw.c
+Log:
+Updated CAN core files in cannetdriver26 branch to current trunk.
+Namely added trunk changes from commits r637 r676 r677 r678 r679.
+
+
+Modified: branches/cannetdriver26/include/linux/can/bcm.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/bcm.h	2008-03-31 18:17:59 UTC (rev 691)
++++ branches/cannetdriver26/include/linux/can/bcm.h	2008-03-31 19:44:50 UTC (rev 692)
+@@ -28,12 +28,12 @@
+  * @frames:    array of CAN frames.
+  */
+ struct bcm_msg_head {
+-	int opcode;
+-	int flags;
+-	int count;
++	__u32 opcode;
++	__u32 flags;
++	__u32 count;
+ 	struct timeval ival1, ival2;
+ 	canid_t can_id;
+-	int nframes;
++	__u32 nframes;
+ 	struct can_frame frames[0];
+ };
+ 
+
+Modified: branches/cannetdriver26/net/can/af_can.c
+===================================================================
+--- branches/cannetdriver26/net/can/af_can.c	2008-03-31 18:17:59 UTC (rev 691)
++++ branches/cannetdriver26/net/can/af_can.c	2008-03-31 19:44:50 UTC (rev 692)
+@@ -147,7 +147,6 @@
+ {
+ 	struct sock *sk;
+ 	struct can_proto *cp;
+-	char module_name[sizeof(&quot;can-proto-000&quot;)];
+ 	int err = 0;
+ 
+ 	sock-&gt;state = SS_UNCONNECTED;
+@@ -160,26 +159,21 @@
+ 		return -EAFNOSUPPORT;
+ #endif
+ 
++#ifdef CONFIG_KMOD
+ 	/* try to load protocol module, when CONFIG_KMOD is defined */
+ 	if (!proto_tab[protocol]) {
+-		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+-		err = request_module(module_name);
++		err = request_module(&quot;can-proto-%d&quot;, protocol);
+ 
+ 		/*
+ 		 * In case of error we only print a message but don't
+ 		 * return the error code immediately.  Below we will
+ 		 * return -EPROTONOSUPPORT
+ 		 */
+-		if (err == -ENOSYS) {
+-			if (printk_ratelimit())
+-				printk(KERN_INFO &quot;can: request_module(%s)&quot;
+-				       &quot; not implemented.\n&quot;, module_name);
+-		} else if (err) {
+-			if (printk_ratelimit())
+-				printk(KERN_ERR &quot;can: request_module(%s)&quot;
+-				       &quot; failed.\n&quot;, module_name);
+-		}
++		if (err &amp;&amp; printk_ratelimit())
++			printk(KERN_ERR &quot;can: request_module &quot;
++			       &quot;(can-proto-%d) failed.\n&quot;, protocol);
+ 	}
++#endif
+ 
+ 	spin_lock(&amp;proto_tab_lock);
+ 	cp = proto_tab[protocol];
+@@ -742,29 +736,31 @@
+ 		return -EINVAL;
+ 	}
+ 
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	err = proto_register(cp-&gt;prot, 0);
++	if (err &lt; 0)
++		return err;
++#endif
++
+ 	spin_lock(&amp;proto_tab_lock);
+ 	if (proto_tab[proto]) {
+ 		printk(KERN_ERR &quot;can: protocol %d already registered\n&quot;,
+ 		       proto);
+ 		err = -EBUSY;
+-		goto errout;
++	} else {
++		proto_tab[proto] = cp;
++
++		/* use generic ioctl function if not defined by module */
++		if (!cp-&gt;ops-&gt;ioctl)
++			cp-&gt;ops-&gt;ioctl = can_ioctl;
+ 	}
++	spin_unlock(&amp;proto_tab_lock);
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	err = proto_register(cp-&gt;prot, 0);
+ 	if (err &lt; 0)
+-		goto errout;
++		proto_unregister(cp-&gt;prot);
+ #endif
+ 
+-	proto_tab[proto] = cp;
+-
+-	/* use generic ioctl function if the module doesn't bring its own */
+-	if (!cp-&gt;ops-&gt;ioctl)
+-		cp-&gt;ops-&gt;ioctl = can_ioctl;
+-
+- errout:
+-	spin_unlock(&amp;proto_tab_lock);
+-
+ 	return err;
+ }
+ EXPORT_SYMBOL(can_proto_register);
+@@ -782,11 +778,12 @@
+ 		printk(KERN_ERR &quot;BUG: can: protocol %d is not registered\n&quot;,
+ 		       proto);
+ 	}
++	proto_tab[proto] = NULL;
++	spin_unlock(&amp;proto_tab_lock);
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	proto_unregister(cp-&gt;prot);
+ #endif
+-	proto_tab[proto] = NULL;
+-	spin_unlock(&amp;proto_tab_lock);
+ }
+ EXPORT_SYMBOL(can_proto_unregister);
+ 
+
+Modified: branches/cannetdriver26/net/can/raw.c
+===================================================================
+--- branches/cannetdriver26/net/can/raw.c	2008-03-31 18:17:59 UTC (rev 691)
++++ branches/cannetdriver26/net/can/raw.c	2008-03-31 19:44:50 UTC (rev 692)
+@@ -115,7 +115,6 @@
+ 	struct sock *sk = (struct sock *)data;
+ 	struct raw_sock *ro = raw_sk(sk);
+ 	struct sockaddr_can *addr;
+-	int error;
+ 
+ 	if (!ro-&gt;recv_own_msgs) {
+ 		/* check the received tx sock reference */
+@@ -138,14 +137,12 @@
+ 	addr-&gt;can_family  = AF_CAN;
+ 	addr-&gt;can_ifindex = skb-&gt;dev-&gt;ifindex;
+ 
+-	error = sock_queue_rcv_skb(sk, skb);
+-	if (error &lt; 0)
++	if (sock_queue_rcv_skb(sk, skb) &lt; 0)
+ 		kfree_skb(skb);
+ }
+ 
+ static int raw_enable_filters(struct net_device *dev, struct sock *sk,
+-			      struct can_filter *filter,
+-			      int count)
++			      struct can_filter *filter, int count)
+ {
+ 	int err = 0;
+ 	int i;
+@@ -180,8 +177,7 @@
+ }
+ 
+ static void raw_disable_filters(struct net_device *dev, struct sock *sk,
+-			      struct can_filter *filter,
+-			      int count)
++			      struct can_filter *filter, int count)
+ {
+ 	int i;
+ 
+@@ -379,7 +375,6 @@
+ 		/* filters set by default/setsockopt */
+ 		err = raw_enable_allfilters(dev, sk);
+ 		dev_put(dev);
+-
+ 	} else {
+ 		ifindex = 0;
+ 
+@@ -492,7 +487,6 @@
+ 			if (err) {
+ 				if (count &gt; 1)
+ 					kfree(filter);
+-
+ 				goto out_fil;
+ 			}
+ 
+@@ -699,25 +693,25 @@
+ {
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct sk_buff *skb;
+-	int error = 0;
++	int err = 0;
+ 	int noblock;
+ 
+ 	noblock =  flags &amp; MSG_DONTWAIT;
+ 	flags   &amp;= ~MSG_DONTWAIT;
+ 
+-	skb = skb_recv_datagram(sk, flags, noblock, &amp;error);
++	skb = skb_recv_datagram(sk, flags, noblock, &amp;err);
+ 	if (!skb)
+-		return error;
++		return err;
+ 
+ 	if (size &lt; skb-&gt;len)
+ 		msg-&gt;msg_flags |= MSG_TRUNC;
+ 	else
+ 		size = skb-&gt;len;
+ 
+-	error = memcpy_toiovec(msg-&gt;msg_iov, skb-&gt;data, size);
+-	if (error &lt; 0) {
++	err = memcpy_toiovec(msg-&gt;msg_iov, skb-&gt;data, size);
++	if (err &lt; 0) {
+ 		skb_free_datagram(sk, skb);
+-		return error;
++		return err;
+ 	}
+ 
+ 	sock_recv_timestamp(msg, sk, skb);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000673.html">r691 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#674">[ date ]</a>
+              <a href="thread.html#674">[ thread ]</a>
+              <a href="subject.html#674">[ subject ]</a>
+              <a href="author.html#674">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

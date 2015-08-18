@@ -1,0 +1,268 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r121 - in trunk/kernel: 2.4/can 2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r121%20-%20in%20trunk/kernel%3A%202.4/can%202.6/net/can&In-Reply-To=%3C200612130747.kBD7la1o029697%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000104.html">
+   <LINK REL="Next"  HREF="000106.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r121 - in trunk/kernel: 2.4/can 2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r121%20-%20in%20trunk/kernel%3A%202.4/can%202.6/net/can&In-Reply-To=%3C200612130747.kBD7la1o029697%40sheep.berlios.de%3E"
+       TITLE="r121 - in trunk/kernel: 2.4/can 2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 13 08:47:36 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000104.html">r120 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000106.html">r122 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#105">[ date ]</a>
+              <a href="thread.html#105">[ thread ]</a>
+              <a href="subject.html#105">[ subject ]</a>
+              <a href="author.html#105">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-12-13 08:47:34 +0100 (Wed, 13 Dec 2006)
+New Revision: 121
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+Preventing procfs output to overflow PAGE_SIZE.
+Cosmetics in 2.4 af_can.c (looked broken &amp; is unusual in the Kernel even when
+it's ok for the compiler).
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2006-12-12 11:37:28 UTC (rev 120)
++++ trunk/kernel/2.4/can/af_can.c	2006-12-13 07:47:34 UTC (rev 121)
+@@ -114,8 +114,7 @@
+ static LIST_HEAD(notifier_list);
+ static rwlock_t notifier_lock = RW_LOCK_UNLOCKED;
+ 
+-static
+-struct dev_rcv_lists rx_alldev_list;
++static struct dev_rcv_lists rx_alldev_list;
+ struct dev_rcv_lists *rx_dev_list;
+ rwlock_t rcv_lists_lock = RW_LOCK_UNLOCKED;
+ 
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2006-12-12 11:37:28 UTC (rev 120)
++++ trunk/kernel/2.4/can/bcm.c	2006-12-13 07:47:34 UTC (rev 121)
+@@ -383,7 +383,7 @@
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;%s%ld%%\n&quot;,
+ 				(reduction == 100)?&quot;near &quot;:&quot;&quot;, reduction);
+ 
+-		if (len &gt;= PAGE_SIZE - 100) {
++		if (len &gt; PAGE_SIZE - 200) {
+ 			/* mark output cut off */
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
+ 			break;
+@@ -402,7 +402,7 @@
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
+ 
+-		if (len &gt;= PAGE_SIZE - 100) {
++		if (len &gt; PAGE_SIZE - 100) {
+ 			/* mark output cut off */
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
+ 			break;
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2006-12-12 11:37:28 UTC (rev 120)
++++ trunk/kernel/2.4/can/proc.c	2006-12-13 07:47:34 UTC (rev 121)
+@@ -367,6 +367,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -398,6 +401,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -429,6 +435,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -470,6 +479,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -501,6 +513,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -532,6 +547,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2006-12-12 11:37:28 UTC (rev 120)
++++ trunk/kernel/2.6/net/can/bcm.c	2006-12-13 07:47:34 UTC (rev 121)
+@@ -416,7 +416,7 @@
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;%s%ld%%\n&quot;,
+ 				(reduction == 100)?&quot;near &quot;:&quot;&quot;, reduction);
+ 
+-		if (len &gt;= PAGE_SIZE - 100) {
++		if (len &gt; PAGE_SIZE - 200) {
+ 			/* mark output cut off */
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
+ 			break;
+@@ -435,7 +435,7 @@
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
+ 
+-		if (len &gt;= PAGE_SIZE - 100) {
++		if (len &gt; PAGE_SIZE - 100) {
+ 			/* mark output cut off */
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
+ 			break;
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2006-12-12 11:37:28 UTC (rev 120)
++++ trunk/kernel/2.6/net/can/proc.c	2006-12-13 07:47:34 UTC (rev 121)
+@@ -362,6 +362,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 	rcu_read_unlock();
+ 
+@@ -392,6 +395,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 	rcu_read_unlock();
+ 
+@@ -422,6 +428,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 	rcu_read_unlock();
+ 
+@@ -462,6 +471,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 	rcu_read_unlock();
+ 
+@@ -492,6 +504,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 	rcu_read_unlock();
+ 
+@@ -522,6 +537,9 @@
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
++
++		if (len &gt; PAGE_SIZE - 100)
++			break; /* exit on end of buffer */
+ 	}
+ 	rcu_read_unlock();
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000104.html">r120 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000106.html">r122 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#105">[ date ]</a>
+              <a href="thread.html#105">[ thread ]</a>
+              <a href="subject.html#105">[ subject ]</a>
+              <a href="author.html#105">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r765 - trunk/kernel/2.6/drivers/net/can/old/ccan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r765%20-%20trunk/kernel/2.6/drivers/net/can/old/ccan&In-Reply-To=%3C200806111413.m5BEDbTH013040%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000744.html">
+   <LINK REL="Next"  HREF="000746.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r765 - trunk/kernel/2.6/drivers/net/can/old/ccan</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r765%20-%20trunk/kernel/2.6/drivers/net/can/old/ccan&In-Reply-To=%3C200806111413.m5BEDbTH013040%40sheep.berlios.de%3E"
+       TITLE="r765 - trunk/kernel/2.6/drivers/net/can/old/ccan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 11 16:13:37 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000744.html">r764 - trunk/kernel/2.6/drivers/net/can/old/ccan
+</A></li>
+        <LI>Next message: <A HREF="000746.html">r766 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#745">[ date ]</a>
+              <a href="thread.html#745">[ thread ]</a>
+              <a href="subject.html#745">[ subject ]</a>
+              <a href="author.html#745">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-06-11 16:13:35 +0200 (Wed, 11 Jun 2008)
+New Revision: 765
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c
+Log:
+h7202: coding style fixes and use linux/io.h
+
+According to the Linux coding style:
+- Fix whitespace around operators.
+
+Furthermore, use linux/io.h instead of asm/io.h for newer
+Linux 2.6 kernels.
+
+Signed-off-by: Robert Schwebel &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">r.schwebel at pengutronix.de</A>&gt;
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c	2008-06-11 14:09:06 UTC (rev 764)
++++ trunk/kernel/2.6/drivers/net/can/old/ccan/h7202_can.c	2008-06-11 14:13:35 UTC (rev 765)
+@@ -27,7 +27,11 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/can/dev.h&gt;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,16)
++#include &lt;linux/io.h&gt;
++#else
+ #include &lt;asm/io.h&gt;
++#endif
+ #include &lt;asm/hardware.h&gt;
+ 
+ #include &quot;ccan.h&quot;
+@@ -47,9 +51,9 @@
+ 	 */
+ 	lock_kernel();
+ 	val = inw(dev-&gt;base_addr + (reg&lt;&lt;1));
+-	for (i=0;i&lt;DELAY;i++);
++	for (i = 0; i &lt; DELAY; i++);
+ 	val = inw(dev-&gt;base_addr + (reg&lt;&lt;1));
+-	for (i=0;i&lt;DELAY;i++);
++	for (i = 0; i &lt; DELAY; i++);
+ 	unlock_kernel();
+ 
+ 	return val;
+@@ -61,7 +65,7 @@
+ 
+ 	lock_kernel();
+ 	outw(val, dev-&gt;base_addr + (reg&lt;&lt;1));
+-	for (i=0;i&lt;DELAY;i++);
++	for (i = 0; i &lt; DELAY; i++);
+ 	unlock_kernel();
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000744.html">r764 - trunk/kernel/2.6/drivers/net/can/old/ccan
+</A></li>
+	<LI>Next message: <A HREF="000746.html">r766 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#745">[ date ]</a>
+              <a href="thread.html#745">[ thread ]</a>
+              <a href="subject.html#745">[ subject ]</a>
+              <a href="author.html#745">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

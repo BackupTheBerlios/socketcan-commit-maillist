@@ -1,0 +1,294 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r52 - branches/ut/hlist/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r52%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C200607040951.k649pc8J005047%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000030.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r52 - branches/ut/hlist/kernel/2.6/net/can</H1>
+    <B>thuermann at berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r52%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C200607040951.k649pc8J005047%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r52 - branches/ut/hlist/kernel/2.6/net/can">thuermann at berlios.de
+       </A><BR>
+    <I>Tue Jul  4 11:51:38 CEST 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000030.html">[Socketcan-commit] r52 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#29">[ date ]</a>
+              <a href="thread.html#29">[ thread ]</a>
+              <a href="subject.html#29">[ subject ]</a>
+              <a href="author.html#29">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-07-04 11:51:36 +0200 (Tue, 04 Jul 2006)
+New Revision: 52
+
+Modified:
+   branches/ut/hlist/kernel/2.6/net/can/af_can.c
+   branches/ut/hlist/kernel/2.6/net/can/proc.c
+Log:
+use read locks when scanning receive lists for proc fs info.
+use separate locks for writing and reading of receive lists (should use _rcu
+variants of list operations).
+
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/af_can.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/af_can.c	2006-06-28 09:10:01 UTC (rev 51)
++++ branches/ut/hlist/kernel/2.6/net/can/af_can.c	2006-07-04 09:51:36 UTC (rev 52)
+@@ -116,7 +116,8 @@
+ 
+ HLIST_HEAD(rx_dev_list);
+ struct rcv_dev_list rx_alldev_list;
+-rwlock_t rcv_lists_lock = RW_LOCK_UNLOCKED;
++static rwlock_t rcv_lists_lock  = RW_LOCK_UNLOCKED;
++rwlock_t rcv_lock = RW_LOCK_UNLOCKED;
+ 
+ static struct packet_type can_packet = {
+ 	.type = __constant_htons(ETH_P_CAN),
+@@ -442,7 +443,7 @@
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
+ 	    dev, can_id, mask, func, data, ident);
+ 
+-	write_lock_bh(&amp;rcv_lists_lock);
++	write_lock(&amp;rcv_lists_lock);
+ 
+ 	q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+ 
+@@ -481,7 +482,7 @@
+ 		pstats.rcv_entries_max = pstats.rcv_entries;
+ 
+  out:
+-	write_unlock_bh(&amp;rcv_lists_lock);
++	write_unlock(&amp;rcv_lists_lock);
+ }
+ 
+ void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+@@ -495,7 +496,7 @@
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+ 	    dev, can_id, mask, func, data);
+ 
+-	write_lock_bh(&amp;rcv_lists_lock);
++	write_lock(&amp;rcv_lists_lock);
+ 
+ 	q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+ 
+@@ -518,8 +519,10 @@
+ 		goto out;
+ 	}
+ 
++	write_lock_bh(&amp;rcv_lock);
+ 	hlist_del(&amp;p-&gt;list);
+ 	kfree(p);
++	write_unlock_bh(&amp;rcv_lock);
+ 
+ 	if (pstats.rcv_entries &gt; 0)
+ 		pstats.rcv_entries--;
+@@ -538,7 +541,7 @@
+ 		d-&gt;dev = NULL; /* mark unused */
+ 
+  out:
+-	write_unlock_bh(&amp;rcv_lists_lock);
++	write_unlock(&amp;rcv_lists_lock);
+ }
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+@@ -563,7 +566,7 @@
+ 	stats.rx_frames++;
+ 	stats.rx_frames_delta++;
+ 
+-	read_lock(&amp;rcv_lists_lock);
++	read_lock(&amp;rcv_lock);
+ 
+ 	matches = can_rcv_filter(&amp;rx_alldev_list, skb);
+ 
+@@ -576,7 +579,7 @@
+ 	if (q)
+ 		matches += can_rcv_filter(q, skb);
+ 
+-	read_unlock(&amp;rcv_lists_lock);
++	read_unlock(&amp;rcv_lock);
+ 
+ 	DBG(&quot;freeing skbuff %p\n&quot;, skb);
+ 	kfree_skb(skb);
+@@ -864,3 +867,4 @@
+ EXPORT_SYMBOL(can_dev_unregister);
+ EXPORT_SYMBOL(can_send);
+ EXPORT_SYMBOL(timeval2jiffies);
++EXPORT_SYMBOL(rcv_lock);
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/proc.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/proc.c	2006-06-28 09:10:01 UTC (rev 51)
++++ branches/ut/hlist/kernel/2.6/net/can/proc.c	2006-07-04 09:51:36 UTC (rev 52)
+@@ -45,6 +45,7 @@
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/list.h&gt;
++#include &lt;linux/spinlock.h&gt;
+ 
+ #include &lt;linux/can/af_can.h&gt;
+ 
+@@ -110,6 +111,7 @@
+ 
+ extern struct hlist_head rx_dev_list;    /* rx dispatcher structures */
+ extern int stats_timer;                  /* module parameter. default: on */
++extern rwlock_t rcv_lock;
+ 
+ /**************************************************/
+ /* procfs init / remove                           */
+@@ -204,6 +206,7 @@
+ 	struct rcv_list *p;
+ 	struct hlist_node *n;
+ 
++	read_lock(&amp;rcv_lock);
+ 	hlist_for_each_entry(p, n, rx_list, list) {
+ 		char *fmt = p-&gt;can_id &amp; CAN_EFF_FLAG ? /* EFF &amp; CAN_ID_ALL */
+ 			&quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+@@ -220,9 +223,10 @@
+ 			/* mark output cut off */
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;   (..)\n&quot;);
+-			return len;
++			break;
+ 		}
+ 	}
++	read_unlock(&amp;rcv_lock);
+ 
+ 	return len;
+ }
+@@ -349,6 +353,7 @@
+ 			&quot;\nreceive list 'rx_all':\n&quot;);
+ 
+ 	/* find receive list for this device */
++	read_lock(&amp;rcv_lock);
+ 	hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+ 
+ 		if (!hlist_empty(&amp;p-&gt;rx_all)) {
+@@ -358,6 +363,7 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+ 	}
++	read_unlock(&amp;rcv_lock);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+@@ -377,6 +383,7 @@
+ 			&quot;\nreceive list 'rx_fil':\n&quot;);
+ 
+ 	/* find receive list for this device */
++	read_lock(&amp;rcv_lock);
+ 	hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+ 
+ 		if (!hlist_empty(&amp;p-&gt;rx_fil)) {
+@@ -386,6 +393,7 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+ 	}
++	read_unlock(&amp;rcv_lock);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+@@ -405,6 +413,7 @@
+ 			&quot;\nreceive list 'rx_inv':\n&quot;);
+ 
+ 	/* find receive list for this device */
++	read_lock(&amp;rcv_lock);
+ 	hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+ 
+ 		if (!hlist_empty(&amp;p-&gt;rx_inv)) {
+@@ -414,6 +423,7 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+ 	}
++	read_unlock(&amp;rcv_lock);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+@@ -433,6 +443,7 @@
+ 			&quot;\nreceive list 'rx_sff':\n&quot;);
+ 
+ 	/* find receive list for this device */
++	read_lock(&amp;rcv_lock);
+ 	hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+ 		int i, all_empty = 1;
+ 		/* check wether at least one list is non-empty */
+@@ -452,6 +463,7 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+ 	}
++	read_unlock(&amp;rcv_lock);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+@@ -471,6 +483,7 @@
+ 			&quot;\nreceive list 'rx_eff':\n&quot;);
+ 
+ 	/* find receive list for this device */
++	read_lock(&amp;rcv_lock);
+ 	hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+ 
+ 		if (!hlist_empty(&amp;p-&gt;rx_eff)) {
+@@ -480,6 +493,7 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+ 	}
++	read_unlock(&amp;rcv_lock);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+@@ -499,6 +513,7 @@
+ 			&quot;\nreceive list 'rx_err':\n&quot;);
+ 
+ 	/* find receive list for this device */
++	read_lock(&amp;rcv_lock);
+ 	hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+ 
+ 		if (!hlist_empty(&amp;p-&gt;rx_err)) {
+@@ -508,6 +523,7 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+ 	}
++	read_unlock(&amp;rcv_lock);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000030.html">[Socketcan-commit] r52 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#29">[ date ]</a>
+              <a href="thread.html#29">[ thread ]</a>
+              <a href="subject.html#29">[ subject ]</a>
+              <a href="author.html#29">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

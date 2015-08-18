@@ -1,0 +1,805 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r620 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r620%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712140951.lBE9p5Kg012292%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000601.html">
+   <LINK REL="Next"  HREF="000603.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r620 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r620%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712140951.lBE9p5Kg012292%40sheep.berlios.de%3E"
+       TITLE="r620 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 14 10:51:05 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000601.html">r619 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000603.html">r621 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#602">[ date ]</a>
+              <a href="thread.html#602">[ thread ]</a>
+              <a href="subject.html#602">[ subject ]</a>
+              <a href="author.html#602">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-14 10:50:57 +0100 (Fri, 14 Dec 2007)
+New Revision: 620
+
+Modified:
+   trunk/kernel/2.4/net/can/af_can.c
+   trunk/kernel/2.4/net/can/bcm.c
+   trunk/kernel/2.4/net/can/compat.h
+Log:
+Extended compat.h to archive minimum differences between bcm.c 2.4 and 2.6
+source code.
+Changes in bcm.c:
+- use of Kernel list implementation.
+- renamed private struct bcm_opt to bcm_sock.
+- adapted notifier handling.
+
+
+Modified: trunk/kernel/2.4/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/net/can/af_can.c	2007-12-13 14:17:19 UTC (rev 619)
++++ trunk/kernel/2.4/net/can/af_can.c	2007-12-14 09:50:57 UTC (rev 620)
+@@ -63,6 +63,7 @@
+ #include &lt;linux/can/core.h&gt;
+ #include &lt;linux/can/version.h&gt;
+ #include &quot;af_can.h&quot;
++#include &quot;compat.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+
+Modified: trunk/kernel/2.4/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/net/can/bcm.c	2007-12-13 14:17:19 UTC (rev 619)
++++ trunk/kernel/2.4/net/can/bcm.c	2007-12-14 09:50:57 UTC (rev 620)
+@@ -43,6 +43,7 @@
+ 
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/list.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+@@ -53,10 +54,9 @@
+ #include &lt;linux/can/core.h&gt;
+ #include &lt;linux/can/bcm.h&gt;
+ #include &lt;net/sock.h&gt;
+-
+ #include &quot;compat.h&quot;
+ 
+-#include &lt;linux/can/version.h&gt;
++#include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+ /* use of last_frames[index].can_dlc */
+@@ -83,7 +83,7 @@
+ }
+ 
+ struct bcm_op {
+-	struct bcm_op *next;
++	struct list_head list;
+ 	int ifindex;
+ 	canid_t can_id;
+ 	int flags;
+@@ -101,21 +101,27 @@
+ 	struct can_frame sframe;
+ 	struct can_frame last_sframe;
+ 	struct sock *sk;
++	struct net_device *rx_reg_dev;
+ };
+ 
+ static struct proc_dir_entry *proc_dir;
+ 
+-struct bcm_opt {
++struct bcm_sock {
++	struct sock *sk;
+ 	int bound;
+ 	int ifindex;
+-	struct bcm_op *rx_ops;
+-	struct bcm_op *tx_ops;
++	struct notifier_block notifier;
++	struct list_head rx_ops;
++	struct list_head tx_ops;
+ 	unsigned long dropped_usr_msgs;
+ 	struct proc_dir_entry *bcm_proc_read;
+ 	char procname [9]; /* pointer printed in ASCII with \0 */
+ };
+ 
+-#define bcm_sk(sk) ((struct bcm_opt *)&amp;(sk)-&gt;tp_pinfo)
++static inline struct bcm_sock *bcm_sk(const struct sock *sk)
++{
++	return (struct bcm_sock *)&amp;(sk)-&gt;tp_pinfo;
++}
+ 
+ #define CFSIZ sizeof(struct can_frame)
+ #define OPSIZ sizeof(struct bcm_op)
+@@ -165,7 +171,7 @@
+ 		return &quot;any&quot;;
+ 
+ 	/* no usage counting */
+-	dev = __dev_get_by_index(ifindex);
++	dev = __dev_get_by_index(&amp;init_net, ifindex);
+ 	if (dev)
+ 		return dev-&gt;name;
+ 
+@@ -177,13 +183,13 @@
+ {
+ 	int len = 0;
+ 	struct sock *sk = (struct sock *)data;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 
+ 	MOD_INC_USE_COUNT;
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;&gt;&gt;&gt; socket %p&quot;,
+-			sk-&gt;socket);
++			sk-&gt;sk_socket);
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; / sk %p&quot;, sk);
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; / bo %p&quot;, bo);
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; / dropped %lu&quot;,
+@@ -192,7 +198,7 @@
+ 			bcm_proc_getifname(bo-&gt;ifindex));
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; &lt;&lt;&lt;\n&quot;);
+ 
+-	for (op = bo-&gt;rx_ops; op; op = op-&gt;next) {
++	list_for_each_entry(op, &amp;bo-&gt;rx_ops, list) {
+ 
+ 		unsigned long reduction;
+ 
+@@ -230,7 +236,7 @@
+ 		}
+ 	}
+ 
+-	for (op = bo-&gt;tx_ops; op; op = op-&gt;next) {
++	list_for_each_entry(op, &amp;bo-&gt;tx_ops, list) {
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot;tx_op: %03X %s [%d] &quot;,
+@@ -276,7 +282,7 @@
+ 	if (!op-&gt;ifindex)
+ 		return;
+ 
+-	dev = dev_get_by_index(op-&gt;ifindex);
++	dev = dev_get_by_index(&amp;init_net, op-&gt;ifindex);
+ 	if (!dev) {
+ 		/* RFC: should this bcm_op remove itself here? */
+ 		return;
+@@ -323,6 +329,7 @@
+ 		return;
+ 
+ 	memcpy(skb_put(skb, sizeof(*head)), head, sizeof(*head));
++
+ 	if (head-&gt;nframes) {
+ 		/* can_frames starting here */
+ 		firstframe = (struct can_frame *) skb-&gt;tail;
+@@ -351,6 +358,7 @@
+ 	 *  containing the interface index.
+ 	 */
+ 
++	BUILD_BUG_ON(sizeof(skb-&gt;cb) &lt; sizeof(struct sockaddr_can));
+ 	addr = (struct sockaddr_can *)skb-&gt;cb;
+ 	memset(addr, 0, sizeof(*addr));
+ 	addr-&gt;can_family  = AF_CAN;
+@@ -358,7 +366,7 @@
+ 
+ 	err = sock_queue_rcv_skb(sk, skb);
+ 	if (err &lt; 0) {
+-		struct bcm_opt *bo = bcm_sk(sk);
++		struct bcm_sock *bo = bcm_sk(sk);
+ 
+ 		kfree_skb(skb);
+ 		/* don't care about overflows in this statistic */
+@@ -595,6 +603,7 @@
+ 		memcpy(&amp;rxframe, skb-&gt;data, sizeof(rxframe));
+ 		/* save rx timestamp */
+ 		op-&gt;rx_stamp = skb-&gt;stamp;
++
+ 		/* save originator for recvfrom() */
+ 		op-&gt;rx_ifindex = skb-&gt;dev-&gt;ifindex;
+ 		/* update statistics */
+@@ -652,12 +661,12 @@
+ /*
+  * helpers for bcm_op handling: find &amp; delete bcm [rx|tx] op elements
+  */
+-static struct bcm_op *bcm_find_op(struct bcm_op *ops, canid_t can_id,
++static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id,
+ 				  int ifindex)
+ {
+ 	struct bcm_op *op;
+ 
+-	for (op = ops; op; op = op-&gt;next) {
++	list_for_each_entry(op, ops, list) {
+ 		if ((op-&gt;can_id == can_id) &amp;&amp; (op-&gt;ifindex == ifindex))
+ 			return op;
+ 	}
+@@ -670,10 +679,10 @@
+ 	del_timer(&amp;op-&gt;timer);
+ 	del_timer(&amp;op-&gt;thrtimer);
+ 
+-	if (op-&gt;frames	&amp;&amp; (op-&gt;frames != &amp;op-&gt;sframe))
++	if ((op-&gt;frames) &amp;&amp; (op-&gt;frames != &amp;op-&gt;sframe))
+ 		kfree(op-&gt;frames);
+ 
+-	if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames != &amp;op-&gt;last_sframe))
++	if ((op-&gt;last_frames) &amp;&amp; (op-&gt;last_frames != &amp;op-&gt;last_sframe))
+ 		kfree(op-&gt;last_frames);
+ 
+ 	kfree(op);
+@@ -681,20 +690,27 @@
+ 	return;
+ }
+ 
+-static void bcm_insert_op(struct bcm_op **ops, struct bcm_op *op)
++static void bcm_rx_unreg(struct net_device *dev, struct bcm_op *op)
+ {
+-	op-&gt;next = *ops;
+-	*ops = op;
++	if (op-&gt;rx_reg_dev == dev) {
++		can_rx_unregister(dev, op-&gt;can_id, REGMASK(op-&gt;can_id),
++				  bcm_rx_handler, op);
++
++		/* mark as removed subscription */
++		op-&gt;rx_reg_dev = NULL;
++	} else
++		printk(KERN_ERR &quot;can-bcm: bcm_rx_unreg: registered device &quot;
++		       &quot;mismatch %p %p\n&quot;, op-&gt;rx_reg_dev, dev);
+ }
+ 
+ /*
+  * bcm_delete_rx_op - find and remove a rx op (returns number of removed ops)
+  */
+-static int bcm_delete_rx_op(struct bcm_op **ops, canid_t can_id, int ifindex)
++static int bcm_delete_rx_op(struct list_head *ops, canid_t can_id, int ifindex)
+ {
+-	struct bcm_op *op, **n;
++	struct bcm_op *op, *n;
+ 
+-	for (n = ops; op = *n; n = &amp;op-&gt;next) {
++	list_for_each_entry_safe(op, n, ops, list) {
+ 		if ((op-&gt;can_id == can_id) &amp;&amp; (op-&gt;ifindex == ifindex)) {
+ 
+ 			/*
+@@ -703,20 +719,27 @@
+ 			 * thing to do here.
+ 			 */
+ 			if (op-&gt;ifindex) {
+-				struct net_device *dev =
+-					dev_get_by_index(op-&gt;ifindex);
+-				if (dev) {
+-					can_rx_unregister(dev, op-&gt;can_id,
+-							  REGMASK(op-&gt;can_id),
+-							  bcm_rx_handler, op);
+-					dev_put(dev);
++				/*
++				 * Only remove subscriptions that had not
++				 * been removed due to NETDEV_UNREGISTER
++				 * in bcm_notifier()
++				 */
++				if (op-&gt;rx_reg_dev) {
++					struct net_device *dev;
++
++					dev = dev_get_by_index(&amp;init_net,
++							       op-&gt;ifindex);
++					if (dev) {
++						bcm_rx_unreg(dev, op);
++						dev_put(dev);
++					}
+ 				}
+ 			} else
+ 				can_rx_unregister(NULL, op-&gt;can_id,
+ 						  REGMASK(op-&gt;can_id),
+ 						  bcm_rx_handler, op);
+ 
+-			*n = op-&gt;next;
++			list_del(&amp;op-&gt;list);
+ 			bcm_remove_op(op);
+ 			return 1; /* done */
+ 		}
+@@ -728,13 +751,13 @@
+ /*
+  * bcm_delete_tx_op - find and remove a tx op (returns number of removed ops)
+  */
+-static int bcm_delete_tx_op(struct bcm_op **ops, canid_t can_id, int ifindex)
++static int bcm_delete_tx_op(struct list_head *ops, canid_t can_id, int ifindex)
+ {
+-	struct bcm_op *op, **n;
++	struct bcm_op *op, *n;
+ 
+-	for (n = ops; op = *n; n = &amp;op-&gt;next) {
++	list_for_each_entry_safe(op, n, ops, list) {
+ 		if ((op-&gt;can_id == can_id) &amp;&amp; (op-&gt;ifindex == ifindex)) {
+-			*n = op-&gt;next;
++			list_del(&amp;op-&gt;list);
+ 			bcm_remove_op(op);
+ 			return 1; /* done */
+ 		}
+@@ -746,7 +769,7 @@
+ /*
+  * bcm_read_op - read out a bcm_op and send it to the user (for bcm_sendmsg)
+  */
+-static int bcm_read_op(struct bcm_op *ops, struct bcm_msg_head *msg_head,
++static int bcm_read_op(struct list_head *ops, struct bcm_msg_head *msg_head,
+ 		       int ifindex)
+ {
+ 	struct bcm_op *op = bcm_find_op(ops, msg_head-&gt;can_id, ifindex);
+@@ -772,7 +795,7 @@
+ static int bcm_tx_setup(struct bcm_msg_head *msg_head, struct msghdr *msg,
+ 			int ifindex, struct sock *sk)
+ {
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 	int i, err;
+ 
+@@ -785,7 +808,7 @@
+ 		return -EINVAL;
+ 
+ 	/* check the given can_id */
+-	op = bcm_find_op(bo-&gt;tx_ops, msg_head-&gt;can_id, ifindex);
++	op = bcm_find_op(&amp;bo-&gt;tx_ops, msg_head-&gt;can_id, ifindex);
+ 
+ 	if (op) {
+ 		/* update existing BCM operation */
+@@ -862,7 +885,7 @@
+ 		init_timer(&amp;op-&gt;thrtimer);
+ 
+ 		/* add this bcm_op to the list of the tx_ops */
+-		bcm_insert_op(&amp;bo-&gt;tx_ops, op);
++		list_add(&amp;op-&gt;list, &amp;bo-&gt;tx_ops);
+ 
+ 	} /* if ((op = bcm_find_op(&amp;bo-&gt;tx_ops, msg_head-&gt;can_id, ifindex))) */
+ 
+@@ -919,10 +942,10 @@
+ static int bcm_rx_setup(struct bcm_msg_head *msg_head, struct msghdr *msg,
+ 			int ifindex, struct sock *sk)
+ {
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 	int do_rx_register;
+-	int err;
++	int err = 0;
+ 
+ 	if ((msg_head-&gt;flags &amp; RX_FILTER_ID) || (!(msg_head-&gt;nframes))) {
+ 		/* be robust against wrong usage ... */
+@@ -937,7 +960,7 @@
+ 		return -EINVAL;
+ 
+ 	/* check the given can_id */
+-	op = bcm_find_op(bo-&gt;rx_ops, msg_head-&gt;can_id, ifindex);
++	op = bcm_find_op(&amp;bo-&gt;rx_ops, msg_head-&gt;can_id, ifindex);
+ 	if (op) {
+ 		/* update existing BCM operation */
+ 
+@@ -1027,7 +1050,7 @@
+ 		op-&gt;thrtimer.expires = 0;
+ 
+ 		/* add this bcm_op to the list of the rx_ops */
+-		bcm_insert_op(&amp;bo-&gt;rx_ops, op);
++		list_add(&amp;op-&gt;list, &amp;bo-&gt;rx_ops);
+ 
+ 		/* call can_rx_register() */
+ 		do_rx_register = 1;
+@@ -1087,17 +1110,27 @@
+ 		if (ifindex) {
+ 			struct net_device *dev;
+ 
+-			dev = dev_get_by_index(ifindex);
++			dev = dev_get_by_index(&amp;init_net, ifindex);
+ 			if (dev) {
+-				can_rx_register(dev, op-&gt;can_id,
+-						REGMASK(op-&gt;can_id),
+-						bcm_rx_handler, op, &quot;bcm&quot;);
++				err = can_rx_register(dev, op-&gt;can_id,
++						      REGMASK(op-&gt;can_id),
++						      bcm_rx_handler, op,
++						      &quot;bcm&quot;);
++
++				op-&gt;rx_reg_dev = dev;
+ 				dev_put(dev);
+ 			}
+ 
+ 		} else
+-			can_rx_register(NULL, op-&gt;can_id, REGMASK(op-&gt;can_id),
+-					bcm_rx_handler, op, &quot;bcm&quot;);
++			err = can_rx_register(NULL, op-&gt;can_id,
++					      REGMASK(op-&gt;can_id),
++					      bcm_rx_handler, op, &quot;bcm&quot;);
++		if (err) {
++			/* this bcm rx op is broken -&gt; remove it */
++			list_del(&amp;op-&gt;list);
++			bcm_remove_op(op);
++			return err;
++		}
+ 	}
+ 
+ 	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+@@ -1127,8 +1160,7 @@
+ 		return err;
+ 	}
+ 
+-	dev = dev_get_by_index(ifindex);
+-
++	dev = dev_get_by_index(&amp;init_net, ifindex);
+ 	if (!dev) {
+ 		kfree_skb(skb);
+ 		return -ENODEV;
+@@ -1149,7 +1181,7 @@
+ 		       struct scm_cookie *scm)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	int ifindex = bo-&gt;ifindex; /* default ifindex for this bcm_op */
+ 	struct bcm_msg_head msg_head;
+ 	int ret; /* read bytes or error codes as return value */
+@@ -1173,7 +1205,7 @@
+ 		if (ifindex) {
+ 			struct net_device *dev;
+ 
+-			dev = dev_get_by_index(ifindex);
++			dev = dev_get_by_index(&amp;init_net, ifindex);
+ 			if (!dev)
+ 				return -ENODEV;
+ 
+@@ -1192,6 +1224,8 @@
+ 	if (ret &lt; 0)
+ 		return ret;
+ 
++	lock_sock(sk);
++
+ 	switch (msg_head.opcode) {
+ 
+ 	case TX_SETUP:
+@@ -1219,13 +1253,13 @@
+ 	case TX_READ:
+ 		/* reuse msg_head for the reply to TX_READ */
+ 		msg_head.opcode  = TX_STATUS;
+-		ret = bcm_read_op(bo-&gt;tx_ops, &amp;msg_head, ifindex);
++		ret = bcm_read_op(&amp;bo-&gt;tx_ops, &amp;msg_head, ifindex);
+ 		break;
+ 
+ 	case RX_READ:
+ 		/* reuse msg_head for the reply to RX_READ */
+ 		msg_head.opcode  = RX_STATUS;
+-		ret = bcm_read_op(bo-&gt;rx_ops, &amp;msg_head, ifindex);
++		ret = bcm_read_op(&amp;bo-&gt;rx_ops, &amp;msg_head, ifindex);
+ 		break;
+ 
+ 	case TX_SEND:
+@@ -1241,29 +1275,61 @@
+ 		break;
+ 	}
+ 
++	release_sock(sk);
++
+ 	return ret;
+ }
+ 
+ /*
+  * notification handler for netdevice status changes
+  */
+-static void bcm_notifier(unsigned long msg, void *data)
++static int bcm_notifier(struct notifier_block *nb, unsigned long msg,
++			void *data)
+ {
+-	struct sock *sk = (struct sock *)data;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct net_device *dev = (struct net_device *)data;
++	struct bcm_sock *bo = container_of(nb, struct bcm_sock, notifier);
++	struct sock *sk = bo-&gt;sk;
++	struct bcm_op *op;
++	int notify_enodev = 0;
+ 
++	if (dev-&gt;type != ARPHRD_CAN)
++		return NOTIFY_DONE;
++
+ 	switch (msg) {
+ 
+ 	case NETDEV_UNREGISTER:
+-		bo-&gt;bound   = 0;
+-		bo-&gt;ifindex = 0;
+-		/* fallthrough */
++		lock_sock(sk);
+ 
++		/* remove device specific receive entries */
++		list_for_each_entry(op, &amp;bo-&gt;rx_ops, list)
++			if (op-&gt;rx_reg_dev == dev)
++				bcm_rx_unreg(dev, op);
++
++		/* remove device reference, if this is our bound device */
++		if (bo-&gt;bound &amp;&amp; bo-&gt;ifindex == dev-&gt;ifindex) {
++			bo-&gt;bound   = 0;
++			bo-&gt;ifindex = 0;
++			notify_enodev = 1;
++		}
++
++		release_sock(sk);
++
++		if (notify_enodev) {
++			sk-&gt;sk_err = ENODEV;
++			if (!sk-&gt;dead)
++				sk-&gt;sk_error_report(sk);
++		}
++		break;
++
+ 	case NETDEV_DOWN:
+-		sk-&gt;err = ENETDOWN;
+-		if (!sk-&gt;dead)
+-			sk-&gt;error_report(sk);
++		if (bo-&gt;bound &amp;&amp; bo-&gt;ifindex == dev-&gt;ifindex) {
++			sk-&gt;sk_err = ENETDOWN;
++			if (!sk-&gt;dead)
++				sk-&gt;sk_error_report(sk);
++		}
+ 	}
++
++	return NOTIFY_DONE;
+ }
+ 
+ /*
+@@ -1271,16 +1337,22 @@
+  */
+ static int bcm_init(struct sock *sk)
+ {
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 
++	bo-&gt;sk               = sk;
+ 	bo-&gt;bound            = 0;
+ 	bo-&gt;ifindex          = 0;
+ 	bo-&gt;dropped_usr_msgs = 0;
+ 	bo-&gt;bcm_proc_read    = NULL;
+ 
+-	bo-&gt;tx_ops = NULL;
+-	bo-&gt;rx_ops = NULL;
++	INIT_LIST_HEAD(&amp;bo-&gt;tx_ops);
++	INIT_LIST_HEAD(&amp;bo-&gt;rx_ops);
+ 
++	/* set notifier */
++	bo-&gt;notifier.notifier_call = bcm_notifier;
++
++	register_netdevice_notifier(&amp;bo-&gt;notifier);
++
+ 	return 0;
+ }
+ 
+@@ -1290,30 +1362,37 @@
+ static int bcm_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op, *next;
+ 
+ 	/* remove bcm_ops, timer, rx_unregister(), etc. */
+ 
+-	for (op = bo-&gt;tx_ops; op ; op = next) {
+-		next = op-&gt;next;
++	unregister_netdevice_notifier(&amp;bo-&gt;notifier);
++
++	lock_sock(sk);
++
++	list_for_each_entry_safe(op, next, &amp;bo-&gt;tx_ops, list)
+ 		bcm_remove_op(op);
+-	}
+ 
+-	for (op = bo-&gt;rx_ops; op ; op = next) {
+-		next = op-&gt;next;
+-
++	list_for_each_entry_safe(op, next, &amp;bo-&gt;rx_ops, list) {
+ 		/*
+ 		 * Don't care if we're bound or not (due to netdev problems)
+-		 * can_rx_unregister() is always a save thing to do here
++		 * can_rx_unregister() is always a save thing to do here.
+ 		 */
+ 		if (op-&gt;ifindex) {
+-			struct net_device *dev = dev_get_by_index(op-&gt;ifindex);
+-			if (dev) {
+-				can_rx_unregister(dev, op-&gt;can_id,
+-						  REGMASK(op-&gt;can_id),
+-						  bcm_rx_handler, op);
+-				dev_put(dev);
++			/*
++			 * Only remove subscriptions that had not
++			 * been removed due to NETDEV_UNREGISTER
++			 * in bcm_notifier()
++			 */
++			if (op-&gt;rx_reg_dev) {
++				struct net_device *dev;
++
++				dev = dev_get_by_index(&amp;init_net, op-&gt;ifindex);
++				if (dev) {
++					bcm_rx_unreg(dev, op);
++					dev_put(dev);
++				}
+ 			}
+ 		} else
+ 			can_rx_unregister(NULL, op-&gt;can_id,
+@@ -1324,18 +1403,16 @@
+ 	}
+ 
+ 	/* remove procfs entry */
+-	if ((proc_dir) &amp;&amp; (bo-&gt;bcm_proc_read))
++	if (proc_dir &amp;&amp; bo-&gt;bcm_proc_read)
+ 		remove_proc_entry(bo-&gt;procname, proc_dir);
+ 
+-	/* remove device notifier */
+-	if (bo-&gt;ifindex) {
+-		struct net_device *dev = dev_get_by_index(bo-&gt;ifindex);
+-		if (dev) {
+-			can_dev_unregister(dev, bcm_notifier, sk);
+-			dev_put(dev);
+-		}
++	/* remove device reference */
++	if (bo-&gt;bound) {
++		bo-&gt;bound   = 0;
++		bo-&gt;ifindex = 0;
+ 	}
+ 
++	release_sock(sk);
+ 	sock_put(sk);
+ 
+ 	return 0;
+@@ -1346,7 +1423,7 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 
+ 	if (bo-&gt;bound)
+ 		return -EISCONN;
+@@ -1355,7 +1432,7 @@
+ 	if (addr-&gt;can_ifindex) {
+ 		struct net_device *dev;
+ 
+-		dev = dev_get_by_index(addr-&gt;can_ifindex);
++		dev = dev_get_by_index(&amp;init_net, addr-&gt;can_ifindex);
+ 		if (!dev)
+ 			return -ENODEV;
+ 
+@@ -1365,11 +1442,10 @@
+ 		}
+ 
+ 		bo-&gt;ifindex = dev-&gt;ifindex;
+-		can_dev_register(dev, bcm_notifier, sk); /* register notif. */
+ 		dev_put(dev);
+ 
+ 	} else {
+-		/* no notifier for ifindex = 0 ('any' CAN device) */
++		/* no interface reference for ifindex = 0 ('any' CAN device) */
+ 		bo-&gt;ifindex = 0;
+ 	}
+ 
+@@ -1447,7 +1523,7 @@
+ 	.protocol   = CAN_BCM,
+ 	.capability = -1,
+ 	.ops        = &amp;bcm_ops,
+-	.obj_size   = sizeof(struct bcm_opt),
++	.obj_size   = sizeof(struct bcm_sock),
+ 	.init       = bcm_init,
+ };
+ 
+@@ -1464,7 +1540,7 @@
+ 	}
+ 
+ 	/* create /proc/net/can-bcm directory */
+-	proc_dir = proc_mkdir(&quot;net/can-bcm&quot;, NULL);
++	proc_dir = proc_mkdir(&quot;can-bcm&quot;, proc_net);
+ 
+ 	if (proc_dir)
+ 		proc_dir-&gt;owner = THIS_MODULE;
+@@ -1477,7 +1553,7 @@
+ 	can_proto_unregister(&amp;bcm_can_proto);
+ 
+ 	if (proc_dir)
+-		remove_proc_entry(&quot;net/can-bcm&quot;, NULL);
++		proc_net_remove(&quot;can-bcm&quot;);
+ }
+ 
+ module_init(bcm_module_init);
+
+Modified: trunk/kernel/2.4/net/can/compat.h
+===================================================================
+--- trunk/kernel/2.4/net/can/compat.h	2007-12-13 14:17:19 UTC (rev 619)
++++ trunk/kernel/2.4/net/can/compat.h	2007-12-14 09:50:57 UTC (rev 620)
+@@ -24,4 +24,55 @@
+ 
+ #define round_jiffies(j) (j)
+ 
++#define   dev_get_by_index(ns, ifindex)   dev_get_by_index(ifindex)
++#define __dev_get_by_index(ns, ifindex) __dev_get_by_index(ifindex)
++
++#define sk_socket	socket
++#define sk_err		err
++#define sk_error_report	error_report
++
++/* Force a compilation error if condition is true */
++#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
++
++#undef container_of
++/*
++ * container_of - cast a member of a structure out to the containing structure
++ * @ptr: the pointer to the member.
++ * @type: the type of the container struct this is embedded in.
++ * @member: the name of the member within the struct.
++ */
++#define container_of(ptr, type, member) ({ \
++	const typeof( ((type *)0)-&gt;member ) *__mptr = (ptr); \
++	(type *)( (char *)__mptr - offsetof(type,member) );})
++
++/* ensure the needed list functions (introduced somewhere about 2.4.20) are available */
++
++#undef list_for_each_entry
++/**
++ * list_for_each_entry	-	iterate over list of given type
++ * @pos:	the type * to use as a loop counter.
++ * @head:	the head for your list.
++ * @member:	the name of the list_struct within the struct.
++ */
++#define list_for_each_entry(pos, head, member)				\
++	for (pos = list_entry((head)-&gt;next, typeof(*pos), member),	\
++		     prefetch(pos-&gt;member.next);			\
++	     &amp;pos-&gt;member != (head); 					\
++	     pos = list_entry(pos-&gt;member.next, typeof(*pos), member),	\
++		     prefetch(pos-&gt;member.next))
++
++#undef list_for_each_entry_safe
++/**
++ * list_for_each_entry_safe - iterate over list of given type safe against removal of list entry
++ * @pos:	the type * to use as a loop counter.
++ * @n:		another type * to use as temporary storage
++ * @head:	the head for your list.
++ * @member:	the name of the list_struct within the struct.
++ */
++#define list_for_each_entry_safe(pos, n, head, member)			\
++	for (pos = list_entry((head)-&gt;next, typeof(*pos), member),	\
++		n = list_entry(pos-&gt;member.next, typeof(*pos), member);	\
++	     &amp;pos-&gt;member != (head); 					\
++	     pos = n, n = list_entry(n-&gt;member.next, typeof(*n), member))
++
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000601.html">r619 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000603.html">r621 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#602">[ date ]</a>
+              <a href="thread.html#602">[ thread ]</a>
+              <a href="subject.html#602">[ subject ]</a>
+              <a href="author.html#602">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r406 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r406%20-%20trunk/can-utils&In-Reply-To=%3C200707061550.l66Fov9R028512%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000388.html">
+   <LINK REL="Next"  HREF="000390.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r406 - trunk/can-utils</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r406%20-%20trunk/can-utils&In-Reply-To=%3C200707061550.l66Fov9R028512%40sheep.berlios.de%3E"
+       TITLE="r406 - trunk/can-utils">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Jul  6 17:50:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000388.html">r405 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000390.html">r407 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#389">[ date ]</a>
+              <a href="thread.html#389">[ thread ]</a>
+              <a href="subject.html#389">[ subject ]</a>
+              <a href="author.html#389">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-06 17:50:55 +0200 (Fri, 06 Jul 2007)
+New Revision: 406
+
+Added:
+   trunk/can-utils/vcan.c
+Log:
+Add a tool &quot;vcan&quot; to add/remove vcan interfaces.
+
+
+Added: trunk/can-utils/vcan.c
+===================================================================
+--- trunk/can-utils/vcan.c	2007-07-06 05:14:15 UTC (rev 405)
++++ trunk/can-utils/vcan.c	2007-07-06 15:50:55 UTC (rev 406)
+@@ -0,0 +1,142 @@
++/*
++ * a real quick'n'dirty hack to add/remove vcan interfaces.
++ * (also to have something to test the new RTNL API in vcan.)
++ * this will be added to ip(8) of the iproute package, making
++ * this hack obsolete.
++ * 
++ * we don't check the return value of sendto() and don't wait for
++ * a reply using recvmsg().  We just hope everything works fine,
++ * otherwise use strace, or feel free to add the code before this
++ * whole thing is dumped to the bit bucket.
++ *
++ * urs
++ */
++
++
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;sys/socket.h&gt;
++#include &lt;net/if.h&gt;
++
++#include &lt;asm/types.h&gt;
++#include &lt;linux/netlink.h&gt;
++#include &lt;linux/rtnetlink.h&gt;
++
++//#include &lt;linux/if_link.h&gt;
++
++#define IFLA_LINKINFO 18
++
++enum
++{
++    IFLA_INFO_UNSPEC,
++    IFLA_INFO_NAME,
++    IFLA_INFO_DATA,
++    IFLA_INFO_XSTATS,
++    __IFLA_INFO_MAX,
++};
++
++#define NLMSG_TAIL(nmsg) \
++        ((struct rtattr *)(((void *) (nmsg)) + NLMSG_ALIGN((nmsg)-&gt;nlmsg_len)))
++
++int addattr_l(struct nlmsghdr *n, int maxlen, int type, const void *data,
++	      int alen);
++
++void usage()
++{
++    fprintf(stderr, &quot;Usage: vcan create\n&quot;
++		    &quot;       vcan delete iface\n&quot;);
++    exit(1);
++}
++
++int main(int argc, char **argv)
++{
++    int s;
++    char *cmd, *dev;
++    struct {
++	struct nlmsghdr  n;
++	struct ifinfomsg i;
++	char             buf[1024];
++    } req;
++    struct sockaddr_nl nladdr;
++    struct rtattr *linkinfo;
++    int i;
++
++#ifdef OBSOLETE
++    fprintf(stderr, &quot;This program is a temporary hack and is now obsolete.\n&quot;
++	    &quot;Please use ip(8) instead, i.e.\n&quot;
++	    &quot;    ip link add type vcan       or\n&quot;
++	    &quot;    ip link delete iface\n&quot;);
++    exit(1);
++#endif
++    if (argc &lt; 2)
++	usage();
++    cmd = argv[1];
++
++    s = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
++
++    memset(&amp;req, 0, sizeof(req));
++
++    if (strcmp(cmd, &quot;create&quot;) == 0) {
++	req.n.nlmsg_len   = NLMSG_LENGTH(sizeof(struct ifinfomsg));
++	req.n.nlmsg_flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL;
++	req.n.nlmsg_type  = RTM_NEWLINK;
++	req.n.nlmsg_seq   = 0;
++	req.i.ifi_family  = AF_UNSPEC;
++
++	linkinfo = NLMSG_TAIL(&amp;req.n);
++	addattr_l(&amp;req.n, sizeof(req), IFLA_LINKINFO, NULL, 0);
++	addattr_l(&amp;req.n, sizeof(req), IFLA_INFO_NAME, &quot;vcan&quot;, strlen(&quot;vcan&quot;));
++	linkinfo-&gt;rta_len = (void*)NLMSG_TAIL(&amp;req.n) - (void*)linkinfo;
++
++    } else if (strcmp(cmd, &quot;delete&quot;) == 0) {
++	if (argc &lt; 3)
++	    usage();
++	dev = argv[2];
++	req.n.nlmsg_len   = NLMSG_LENGTH(sizeof(struct ifinfomsg));
++	req.n.nlmsg_flags = NLM_F_REQUEST;
++	req.n.nlmsg_type  = RTM_DELLINK;
++	req.i.ifi_family  = AF_UNSPEC;
++	req.i.ifi_index   = if_nametoindex(dev);
++    } else
++	usage();
++
++    memset(&amp;nladdr, 0, sizeof(nladdr));
++    nladdr.nl_family = AF_NETLINK;
++    nladdr.nl_pid    = 0;
++    nladdr.nl_groups = 0;
++#if 1
++    sendto(s, &amp;req, req.n.nlmsg_len, 0,
++	   (struct sockaddr*)&amp;nladdr, sizeof(nladdr));
++#else
++    for (i = 0; i &lt; req.n.nlmsg_len; i++) {
++	printf(&quot; %02x&quot;, ((unsigned char*)&amp;req)[i]);
++	if (i % 16 == 15)
++	    putchar('\n');
++    }
++    putchar('\n');
++#endif
++    close(s);
++
++    return 0;
++}
++
++int addattr_l(struct nlmsghdr *n, int maxlen, int type, const void *data,
++	      int alen)
++{
++    int len = RTA_LENGTH(alen);
++    struct rtattr *rta;
++
++    if (NLMSG_ALIGN(n-&gt;nlmsg_len) + RTA_ALIGN(len) &gt; maxlen) {
++	fprintf(stderr, &quot;addattr_l ERROR: message exceeded bound of %d\n&quot;,
++		maxlen);
++	return -1;
++    }
++    rta = NLMSG_TAIL(n);
++    rta-&gt;rta_type = type;
++    rta-&gt;rta_len = len;
++    memcpy(RTA_DATA(rta), data, alen);
++    n-&gt;nlmsg_len = NLMSG_ALIGN(n-&gt;nlmsg_len) + RTA_ALIGN(len);
++    return 0;
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000388.html">r405 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000390.html">r407 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#389">[ date ]</a>
+              <a href="thread.html#389">[ thread ]</a>
+              <a href="subject.html#389">[ subject ]</a>
+              <a href="author.html#389">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

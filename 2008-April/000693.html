@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r711 - branches/ha/hrtimer/test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r711%20-%20branches/ha/hrtimer/test&In-Reply-To=%3C200804111048.m3BAmLUN007321%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000692.html">
+   <LINK REL="Next"  HREF="000694.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r711 - branches/ha/hrtimer/test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r711%20-%20branches/ha/hrtimer/test&In-Reply-To=%3C200804111048.m3BAmLUN007321%40sheep.berlios.de%3E"
+       TITLE="r711 - branches/ha/hrtimer/test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 11 12:48:21 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000692.html">r710 - branches/ha/hrtimer/test
+</A></li>
+        <LI>Next message: <A HREF="000694.html">r712 - branches/cannetdriver26/Documentation/networking	trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#693">[ date ]</a>
+              <a href="thread.html#693">[ thread ]</a>
+              <a href="subject.html#693">[ subject ]</a>
+              <a href="author.html#693">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-04-11 12:48:12 +0200 (Fri, 11 Apr 2008)
+New Revision: 711
+
+Modified:
+   branches/ha/hrtimer/test/tst-bcm-dump.c
+Log:
+Added commandline parameter to define the used CAN-ID.
+Added proper checks for the given CAN interface name.
+
+
+Modified: branches/ha/hrtimer/test/tst-bcm-dump.c
+===================================================================
+--- branches/ha/hrtimer/test/tst-bcm-dump.c	2008-04-11 08:09:49 UTC (rev 710)
++++ branches/ha/hrtimer/test/tst-bcm-dump.c	2008-04-11 10:48:12 UTC (rev 711)
+@@ -41,11 +41,13 @@
+ #include &lt;linux/can/bcm.h&gt;
+ 
+ #define DEFAULT_IFACE &quot;vcan0&quot;
++#define DEFAULT_CANID 0x42
+ 
+ void print_usage(char *prg)
+ {
+     fprintf(stderr, &quot;\nUsage: %s [options]\n&quot;, prg);
+     fprintf(stderr, &quot;Options: -i &lt;interface&gt; (CAN interface. Default: '%s')\n&quot;, DEFAULT_IFACE);
++    fprintf(stderr, &quot;         -c &lt;can_id&gt;    (used CAN ID. Default: 0x%03X)\n&quot;, DEFAULT_CANID);
+     fprintf(stderr, &quot;         -o &lt;timeout&gt;   (Timeout value in nsecs. Default: 0)\n&quot;);
+     fprintf(stderr, &quot;         -t &lt;throttle&gt;  (Throttle value in nsecs. Default: 0)\n&quot;);
+     fprintf(stderr, &quot;         -s             (set STARTTIMER flag. Default: off)\n&quot;);
+@@ -60,6 +62,7 @@
+     int i;
+     struct ifreq ifr;
+     char *ifname = DEFAULT_IFACE;
++    canid_t canid = DEFAULT_CANID;
+     int opt;
+     struct timeval tv;
+     unsigned long starttimer = 0;
+@@ -70,13 +73,17 @@
+       struct can_frame frame;
+     } msg;
+ 
+-    while ((opt = getopt(argc, argv, &quot;i:o:t:s&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;i:c:o:t:s&quot;)) != -1) {
+         switch (opt) {
+ 
+         case 'i':
+ 	    ifname = optarg;
+             break;
+ 
++        case 'c':
++	    canid = strtoul(optarg, (char **)NULL, 16);
++            break;
++
+         case 'o':
+ 	    timeout = atoll(optarg);
+             break;
+@@ -103,10 +110,18 @@
+ 	return 1;
+     }
+ 
++    if (strcmp(ifname, &quot;any&quot;) == 0)
++	addr.can_ifindex = 0;
++    else {
++	strcpy(ifr.ifr_name, ifname);
++	if (ioctl(s, SIOCGIFINDEX, &amp;ifr) &lt; 0) {
++	    perror(&quot;SIOCGIFINDEX&quot;);
++	    return 1;
++	}
++	addr.can_ifindex = ifr.ifr_ifindex;
++    }
++
+     addr.can_family = PF_CAN;
+-    strcpy(ifr.ifr_name, ifname);
+-    ioctl(s, SIOCGIFINDEX, &amp;ifr);
+-    addr.can_ifindex = ifr.ifr_ifindex;
+ 
+     if (connect(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+ 	perror(&quot;connect&quot;);
+@@ -114,7 +129,7 @@
+     }
+ 
+     msg.msg_head.opcode		= RX_SETUP;
+-    msg.msg_head.can_id		= 0x42;
++    msg.msg_head.can_id		= canid;
+     msg.msg_head.flags		= SETTIMER|RX_FILTER_ID|starttimer;
+     msg.msg_head.ival1.tv_sec	= timeout / 1000000;
+     msg.msg_head.ival1.tv_usec	= timeout % 1000000;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000692.html">r710 - branches/ha/hrtimer/test
+</A></li>
+	<LI>Next message: <A HREF="000694.html">r712 - branches/cannetdriver26/Documentation/networking	trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#693">[ date ]</a>
+              <a href="thread.html#693">[ thread ]</a>
+              <a href="subject.html#693">[ subject ]</a>
+              <a href="author.html#693">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

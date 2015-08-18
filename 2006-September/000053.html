@@ -1,0 +1,5435 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r73 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r73%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200609051324.k85DO8VU009610%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000052.html">
+   <LINK REL="Next"  HREF="000054.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r73 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r73%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200609051324.k85DO8VU009610%40sheep.berlios.de%3E"
+       TITLE="r73 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep  5 15:24:08 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000052.html">r72 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000054.html">r74 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-09-05 15:23:51 +0200 (Tue, 05 Sep 2006)
+New Revision: 73
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/bcm.h
+   trunk/kernel/2.4/can/can_ioctl.h
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.4/can/vcan.c
+Log:
+whitespace change: indentation and line breaks, moved some comments.
+remove false semicolons after function bodies.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/af_can.c	2006-09-05 13:23:51 UTC (rev 73)
+@@ -96,13 +96,14 @@
+ static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+ 		   struct packet_type *pt);
+ static int can_rcv_filter(struct rcv_dev_list *q, struct sk_buff *skb);
+-static struct rcv_list **find_rcv_list(canid_t *can_id, canid_t *mask, struct net_device *dev);
++static struct rcv_list **find_rcv_list(canid_t *can_id, canid_t *mask,
++				       struct net_device *dev);
+ 
+ struct notifier_list {
+-    struct notifier_list *next;
+-    struct net_device *dev;
+-    void (*func)(unsigned long msg, void *data);
+-    void *data;
++	struct notifier_list *next;
++	struct net_device *dev;
++	void (*func)(unsigned long msg, void *data);
++	void *data;
+ };
+ 
+ static struct notifier_list *nlist;
+@@ -112,18 +113,18 @@
+ rwlock_t rcv_lists_lock = RW_LOCK_UNLOCKED;
+ 
+ static struct packet_type can_packet = {
+-    .type = __constant_htons(ETH_P_CAN),
+-    .dev  = NULL,
+-    .func = can_rcv,
++	.type = __constant_htons(ETH_P_CAN),
++	.dev  = NULL,
++	.func = can_rcv,
+ };
+ 
+ static struct net_proto_family can_family_ops = {
+-    .family = PF_CAN,
+-    .create = can_create,
++	.family = PF_CAN,
++	.create = can_create,
+ };
+ 
+ static struct notifier_block can_netdev_notifier = {
+-    .notifier_call = can_notifier,
++	.notifier_call = can_notifier,
+ };
+ 
+ static struct proto_ops *proto_tab[CAN_MAX];
+@@ -141,38 +142,38 @@
+ 
+ static __init int can_init(void)
+ {
+-    printk(banner);
++	printk(banner);
+ 
+-    if (stats_timer) {
+-	/* statistics init */
+-	init_timer(&amp;stattimer);
+-    }
++	if (stats_timer) {
++		/* statistics init */
++		init_timer(&amp;stattimer);
++	}
+ 
+-    /* procfs init */
+-    can_init_proc();
++	/* procfs init */
++	can_init_proc();
+ 
+-    /* protocol register */
+-    sock_register(&amp;can_family_ops);
+-    register_netdevice_notifier(&amp;can_netdev_notifier);
+-    dev_add_pack(&amp;can_packet);
++	/* protocol register */
++	sock_register(&amp;can_family_ops);
++	register_netdevice_notifier(&amp;can_netdev_notifier);
++	dev_add_pack(&amp;can_packet);
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ static __exit void can_exit(void)
+ {
+-    if (stats_timer) {
+-	/* stop statistics timer */
+-	del_timer(&amp;stattimer);
+-    }
++	if (stats_timer) {
++		/* stop statistics timer */
++		del_timer(&amp;stattimer);
++	}
+ 
+-    /* procfs remove */
+-    can_remove_proc();
++	/* procfs remove */
++	can_remove_proc();
+ 
+-    /* protocol unregister */
+-    dev_remove_pack(&amp;can_packet);
+-    unregister_netdevice_notifier(&amp;can_netdev_notifier);
+-    sock_unregister(PF_CAN);
++	/* protocol unregister */
++	dev_remove_pack(&amp;can_packet);
++	unregister_netdevice_notifier(&amp;can_netdev_notifier);
++	sock_unregister(PF_CAN);
+ }
+ 
+ /**************************************************/
+@@ -181,60 +182,60 @@
+ 
+ void can_proto_register(int proto, struct proto_ops *ops)
+ {
+-    if (proto &lt; 0 || proto &gt;= CAN_MAX) {
+-	printk(KERN_ERR &quot;CAN: protocol number %d out of range\n&quot;, proto);
+-	return;
+-    }
+-    if (proto_tab[proto]) {
+-	printk(KERN_ERR &quot;CAN: protocol %d already registered\n&quot;, proto);
+-	return;
+-    }
+-    proto_tab[proto] = ops;
++	if (proto &lt; 0 || proto &gt;= CAN_MAX) {
++		printk(KERN_ERR &quot;CAN: protocol number %d out of range\n&quot;, proto);
++		return;
++	}
++	if (proto_tab[proto]) {
++		printk(KERN_ERR &quot;CAN: protocol %d already registered\n&quot;, proto);
++		return;
++	}
++	proto_tab[proto] = ops;
+ 
+-    /* use our generic ioctl function if the module doesn't bring its own */
+-    if (!ops-&gt;ioctl)
+-	ops-&gt;ioctl = can_ioctl;
++	/* use our generic ioctl function if the module doesn't bring its own */
++	if (!ops-&gt;ioctl)
++		ops-&gt;ioctl = can_ioctl;
+ }
+ 
+ void can_proto_unregister(int proto)
+ {
+-    if (!proto_tab[proto]) {
+-	printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
+-	return;
+-    }
+-    proto_tab[proto] = NULL;
++	if (!proto_tab[proto]) {
++		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
++		return;
++	}
++	proto_tab[proto] = NULL;
+ }
+ 
+ void can_dev_register(struct net_device *dev,
+ 		      void (*func)(unsigned long msg, void *), void *data)
+ {
+-    struct notifier_list *p = kmalloc(sizeof(*p), GFP_KERNEL);
++	struct notifier_list *p = kmalloc(sizeof(*p), GFP_KERNEL);
+ 
+-    DBG(&quot;called for %s\n&quot;, dev-&gt;name);
++	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+ 
+-    if (!p)
+-	return;
+-    p-&gt;next = nlist;
+-    p-&gt;dev  = dev;
+-    p-&gt;func = func;
+-    p-&gt;data = data;
+-    nlist = p;
++	if (!p)
++		return;
++	p-&gt;next = nlist;
++	p-&gt;dev  = dev;
++	p-&gt;func = func;
++	p-&gt;data = data;
++	nlist = p;
+ }
+ 
+ void can_dev_unregister(struct net_device *dev,
+ 			void (*func)(unsigned long msg, void *), void *data)
+ {
+-    struct notifier_list *p, **q;
++	struct notifier_list *p, **q;
+ 
+-    DBG(&quot;called for %s\n&quot;, dev-&gt;name);
++	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+ 
+-    for (q = &nlist; p = *q; q = &amp;p-&gt;next) {
+-	if (p-&gt;dev == dev &amp;&amp; p-&gt;func == func &amp;&amp; p-&gt;data == data) {
+-	    *q = p-&gt;next;
+-	    kfree(p);
+-	    return;
++	for (q = &nlist; p = *q; q = &amp;p-&gt;next) {
++		if (p-&gt;dev == dev &amp;&amp; p-&gt;func == func &amp;&amp; p-&gt;data == data) {
++			*q = p-&gt;next;
++			kfree(p);
++			return;
++		}
+ 	}
+-    }
+ }
+ 
+ /**************************************************/
+@@ -243,119 +244,119 @@
+ 
+ static void can_sock_destruct(struct sock *sk)
+ {
+-    skb_queue_purge(&amp;sk-&gt;receive_queue);
++	skb_queue_purge(&amp;sk-&gt;receive_queue);
+ }
+ 
+ static int can_create(struct socket *sock, int protocol)
+ {
+-    struct sock *sk;
++	struct sock *sk;
+ 
+-    DBG(&quot;socket %p, type %d, proto %d\n&quot;, sock, sock-&gt;type, protocol);
++	DBG(&quot;socket %p, type %d, proto %d\n&quot;, sock, sock-&gt;type, protocol);
+ 
+-    sock-&gt;state = SS_UNCONNECTED;
++	sock-&gt;state = SS_UNCONNECTED;
+ 
+-    switch (sock-&gt;type) {
+-    case SOCK_SEQPACKET:
+-	switch (protocol) {
+-	case CAN_TP16:
+-	    break;
+-	case CAN_TP20:
+-	    break;
+-	case CAN_MCNET:
+-	    break;
+-	case CAN_ISOTP:
+-	    break;
++	switch (sock-&gt;type) {
++	case SOCK_SEQPACKET:
++		switch (protocol) {
++		case CAN_TP16:
++			break;
++		case CAN_TP20:
++			break;
++		case CAN_MCNET:
++			break;
++		case CAN_ISOTP:
++			break;
++		default:
++			return -EPROTONOSUPPORT;
++		}
++		break;
++	case SOCK_DGRAM:
++		switch (protocol) {
++		case CAN_BCM:
++			break;
++		case CAN_BAP:
++			break;
++		default:
++			return -EPROTONOSUPPORT;
++		}
++		break;
++	case SOCK_RAW:
++		switch (protocol) {
++		case CAN_RAW:
++			if (!capable(CAP_NET_RAW))
++				return -EPERM;
++			break;
++		default:
++			return -EPROTONOSUPPORT;
++		}
++		break;
+ 	default:
+-	    return -EPROTONOSUPPORT;
++		return -ESOCKTNOSUPPORT;
++		break;
+ 	}
+-	break;
+-    case SOCK_DGRAM:
+-	switch (protocol) {
+-	case CAN_BCM:
+-	    break;
+-	case CAN_BAP:
+-	    break;
+-	default:
+-	    return -EPROTONOSUPPORT;
+-	}
+-	break;
+-    case SOCK_RAW:
+-	switch (protocol) {
+-	case CAN_RAW:
+-	    if (!capable(CAP_NET_RAW))
+-		return -EPERM;
+-	    break;
+-	default:
+-	    return -EPROTONOSUPPORT;
+-	}
+-	break;
+-    default:
+-	return -ESOCKTNOSUPPORT;
+-	break;
+-    }
+ 
+-    DBG(&quot;looking up proto %d in proto_tab[]\n&quot;, protocol);
++	DBG(&quot;looking up proto %d in proto_tab[]\n&quot;, protocol);
+ 
+-    /* try to load protocol module, when CONFIG_KMOD is defined */
+-    if (!proto_tab[protocol]) {
+-	char module_name[30];
+-	sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+-	if (request_module(module_name) == -ENOSYS)
+-	    printk(KERN_INFO &quot;af_can: request_module(%s) not implemented.\n&quot;,
+-		   module_name);
+-    }
++	/* try to load protocol module, when CONFIG_KMOD is defined */
++	if (!proto_tab[protocol]) {
++		char module_name[30];
++		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
++		if (request_module(module_name) == -ENOSYS)
++			printk(KERN_INFO &quot;af_can: request_module(%s) not implemented.\n&quot;,
++			       module_name);
++	}
+ 
+-    /* check for success */
+-    if (!proto_tab[protocol])
+-	return -EPROTONOSUPPORT;
++	/* check for success */
++	if (!proto_tab[protocol])
++		return -EPROTONOSUPPORT;
+ 
+-    sock-&gt;ops = proto_tab[protocol];
++	sock-&gt;ops = proto_tab[protocol];
+ 
+-    if (!(sk = sk_alloc(PF_CAN, GFP_KERNEL, 1)))
+-	goto oom;
++	if (!(sk = sk_alloc(PF_CAN, GFP_KERNEL, 1)))
++		goto oom;
+ 
+-    sock_init_data(sock, sk);
+-    sk-&gt;destruct = can_sock_destruct;
++	sock_init_data(sock, sk);
++	sk-&gt;destruct = can_sock_destruct;
+ 
+-    DBG(&quot;created sock: %p\n&quot;, sk);
++	DBG(&quot;created sock: %p\n&quot;, sk);
+ 
+-    return 0;
++	return 0;
+ 
+  oom:
+-    return -ENOMEM;
++	return -ENOMEM;
+ }
+ 
+ static int can_notifier(struct notifier_block *nb,
+ 			unsigned long msg, void *data)
+ {
+-    struct net_device *dev = (struct net_device *)data;
+-    struct notifier_list *p;
++	struct net_device *dev = (struct net_device *)data;
++	struct notifier_list *p;
+ 
+-    DBG(&quot;called for %s, msg = %lu\n&quot;, dev-&gt;name, msg);
++	DBG(&quot;called for %s, msg = %lu\n&quot;, dev-&gt;name, msg);
+ 
+-    for (p = nlist; p; p = p-&gt;next) {
+-	if (p-&gt;dev == dev)
+-	    p-&gt;func(msg, p-&gt;data);
+-    }
+-    return 0;
++	for (p = nlist; p; p = p-&gt;next) {
++		if (p-&gt;dev == dev)
++			p-&gt;func(msg, p-&gt;data);
++	}
++	return 0;
+ }
+ 
+ static int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ {
+-    int err;
+-    struct sock *sk = sock-&gt;sk;
++	int err;
++	struct sock *sk = sock-&gt;sk;
+ 
+-    switch (cmd) {
+-    case SIOCGSTAMP:
+-	if (sk-&gt;stamp.tv_sec == 0)
+-	    return -ENOENT;
+-	if (err = copy_to_user((void *)arg, &amp;sk-&gt;stamp, sizeof(sk-&gt;stamp)))
+-	    return err;
+-	break;
+-    default:
+-	return dev_ioctl(cmd, (void *)arg);
+-    }
+-    return 0;
++	switch (cmd) {
++	case SIOCGSTAMP:
++		if (sk-&gt;stamp.tv_sec == 0)
++			return -ENOENT;
++		if (err = copy_to_user((void *)arg, &amp;sk-&gt;stamp, sizeof(sk-&gt;stamp)))
++			return err;
++		break;
++	default:
++		return dev_ioctl(cmd, (void *)arg);
++	}
++	return 0;
+ }
+ 
+ /**************************************************/
+@@ -364,23 +365,23 @@
+ 
+ int can_send(struct sk_buff *skb)
+ {
+-    struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+-    int err;
++	struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
++	int err;
+ 
+-    if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
+-	err = -ENETDOWN;
+-    else if ((err = dev_queue_xmit(skb)) &gt; 0)  /* send to netdevice */
+-	err = net_xmit_errno(err);
++	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
++		err = -ENETDOWN;
++	else if ((err = dev_queue_xmit(skb)) &gt; 0)  /* send to netdevice */
++		err = net_xmit_errno(err);
+ 
+-    /* update statistics */
+-    stats.tx_frames++;
+-    stats.tx_frames_delta++;
++	/* update statistics */
++	stats.tx_frames++;
++	stats.tx_frames_delta++;
+ 
+-    newskb-&gt;protocol  = htons(ETH_P_CAN);
+-    newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+-    netif_rx(newskb);                          /* local loopback */
++	newskb-&gt;protocol  = htons(ETH_P_CAN);
++	newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++	netif_rx(newskb);                          /* local loopback */
+ 
+-    return err;
++	return err;
+ }
+ 
+ /**************************************************/
+@@ -388,298 +389,300 @@
+ /**************************************************/
+ 
+ void can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-	void (*func)(struct sk_buff *, void *), void *data, char *ident)
++		     void (*func)(struct sk_buff *, void *), void *data,
++		     char *ident)
+ {
+-    struct rcv_list *p, **q;
+-    struct rcv_dev_list *d;
++	struct rcv_list *p, **q;
++	struct rcv_dev_list *d;
+ 
+-    DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
+-	dev, can_id, mask, func, data, ident);
++	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
++	    dev, can_id, mask, func, data, ident);
+ 
+-    write_lock_bh(&amp;rcv_lists_lock);
++	write_lock_bh(&amp;rcv_lists_lock);
+ 
+-    q = find_rcv_list(&amp;can_id, &amp;mask, dev);
++	q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+ 
+-    if (!q) {
+-	printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-	       &quot;dev %s, id %03X, mask %03X, ident %s\n&quot;,
+-	       dev-&gt;name, can_id, mask, ident);
+-	goto out;
+-    }
++	if (!q) {
++		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
++		       &quot;dev %s, id %03X, mask %03X, ident %s\n&quot;,
++		       dev-&gt;name, can_id, mask, ident);
++		goto out;
++	}
+ 
+-    /* insert   (dev,canid,mask) -&gt; (func,data) */
+-    if (!(p = kmalloc(sizeof(struct rcv_list), GFP_KERNEL)))
+-	goto out;
++	/* insert   (dev,canid,mask) -&gt; (func,data) */
++	if (!(p = kmalloc(sizeof(struct rcv_list), GFP_KERNEL)))
++		goto out;
+ 
+-    p-&gt;can_id  = can_id;
+-    p-&gt;mask    = mask;
+-    p-&gt;matches = 0;
+-    p-&gt;func    = func;
+-    p-&gt;data    = data;
+-    p-&gt;ident   = ident;
+-    p-&gt;next = *q;
+-    *q = p;
++	p-&gt;can_id  = can_id;
++	p-&gt;mask    = mask;
++	p-&gt;matches = 0;
++	p-&gt;func    = func;
++	p-&gt;data    = data;
++	p-&gt;ident   = ident;
++	p-&gt;next = *q;
++	*q = p;
+ 
+-    if (!dev)
+-	d = &amp;rx_alldev_list;
+-    else
+-	for (d = rx_dev_list; d; d = d-&gt;next)
+-	    if (d-&gt;dev == dev)
+-		break;
+-    d-&gt;entries++;
++	if (!dev)
++		d = &amp;rx_alldev_list;
++	else
++		for (d = rx_dev_list; d; d = d-&gt;next)
++			if (d-&gt;dev == dev)
++				break;
++	d-&gt;entries++;
+ 
+-    pstats.rcv_entries++;
+-    if (pstats.rcv_entries_max &lt; pstats.rcv_entries)
+-	pstats.rcv_entries_max = pstats.rcv_entries;
++	pstats.rcv_entries++;
++	if (pstats.rcv_entries_max &lt; pstats.rcv_entries)
++		pstats.rcv_entries_max = pstats.rcv_entries;
+ 
+-out:
+-    write_unlock_bh(&amp;rcv_lists_lock);
++ out:
++	write_unlock_bh(&amp;rcv_lists_lock);
+ }
+ 
+ void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-	void (*func)(struct sk_buff *, void *), void *data)
++		       void (*func)(struct sk_buff *, void *), void *data)
+ {
+-    struct rcv_list *p, **q;
+-    struct rcv_dev_list *d;
++	struct rcv_list *p, **q;
++	struct rcv_dev_list *d;
+ 
+-    DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+-	dev, can_id, mask, func, data);
++	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
++	    dev, can_id, mask, func, data);
+ 
+-    write_lock_bh(&amp;rcv_lists_lock);
++	write_lock_bh(&amp;rcv_lists_lock);
+ 
+-    q = find_rcv_list(&amp;can_id, &amp;mask, dev);
++	q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+ 
+-    if (!q) {
+-	printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-	       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
+-	goto out;
+-    }
++	if (!q) {
++		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
++		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		goto out;
++	}
+ 
+-    for (; p = *q; q = &amp;p-&gt;next) {
+-	if (p-&gt;can_id == can_id &amp;&amp; p-&gt;mask == mask
+-	    &amp;&amp; p-&gt;func == func &amp;&amp; p-&gt;data == data)
+-	    break;
+-    }
++	for (; p = *q; q = &amp;p-&gt;next) {
++		if (p-&gt;can_id == can_id &amp;&amp; p-&gt;mask == mask
++		    &amp;&amp; p-&gt;func == func &amp;&amp; p-&gt;data == data)
++			break;
++	}
+ 
+-    if (!p) {
+-	printk(KERN_ERR &quot;CAN: receive list entry not found for &quot;
+-	       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
+-	goto out;
+-    }
++	if (!p) {
++		printk(KERN_ERR &quot;CAN: receive list entry not found for &quot;
++		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		goto out;
++	}
+ 
+-    *q = p-&gt;next;
+-    kfree(p);
++	*q = p-&gt;next;
++	kfree(p);
+ 
+-    if (pstats.rcv_entries &gt; 0)
+-	pstats.rcv_entries--;
++	if (pstats.rcv_entries &gt; 0)
++		pstats.rcv_entries--;
+ 
+-    if (!dev)
+-	d = &amp;rx_alldev_list;
+-    else
+-	for (d = rx_dev_list; d; d = d-&gt;next)
+-	    if (d-&gt;dev == dev)
+-		break;
+-    d-&gt;entries--;
++	if (!dev)
++		d = &amp;rx_alldev_list;
++	else
++		for (d = rx_dev_list; d; d = d-&gt;next)
++			if (d-&gt;dev == dev)
++				break;
++	d-&gt;entries--;
+ 
+-    if (!d-&gt;entries)
+-	d-&gt;dev = NULL; /* mark unused */
++	if (!d-&gt;entries)
++		d-&gt;dev = NULL; /* mark unused */
+ 
+-out:
+-    write_unlock_bh(&amp;rcv_lists_lock);
++ out:
++	write_unlock_bh(&amp;rcv_lists_lock);
+ }
+ 
+ static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+ 		   struct packet_type *pt)
+ {
+-    struct rcv_dev_list *q;
+-    int matches;
++	struct rcv_dev_list *q;
++	int matches;
+ 
+-    DBG(&quot;received skbuff on device %s, ptype %04x\n&quot;,
+-	dev-&gt;name, ntohs(pt-&gt;type));
+-    DBG_SKB(skb);
+-    DBG_FRAME(&quot;af_can: can_rcv: received CAN frame&quot;,
+-	      (struct can_frame *)skb-&gt;data);
++	DBG(&quot;received skbuff on device %s, ptype %04x\n&quot;,
++	    dev-&gt;name, ntohs(pt-&gt;type));
++	DBG_SKB(skb);
++	DBG_FRAME(&quot;af_can: can_rcv: received CAN frame&quot;,
++		  (struct can_frame *)skb-&gt;data);
+ 
+-    /* update statistics */
+-    stats.rx_frames++;
+-    stats.rx_frames_delta++;
++	/* update statistics */
++	stats.rx_frames++;
++	stats.rx_frames_delta++;
+ 
+-    read_lock(&amp;rcv_lists_lock);
++	read_lock(&amp;rcv_lists_lock);
+ 
+-    matches = can_rcv_filter(&amp;rx_alldev_list, skb);
++	matches = can_rcv_filter(&amp;rx_alldev_list, skb);
+ 
+-    /* find receive list for this device */
+-    for (q = rx_dev_list; q; q = q-&gt;next)
+-	if (q-&gt;dev == dev)
+-	    break;
++	/* find receive list for this device */
++	for (q = rx_dev_list; q; q = q-&gt;next)
++		if (q-&gt;dev == dev)
++			break;
+ 
+-    if (q)
+-	matches += can_rcv_filter(q, skb);
++	if (q)
++		matches += can_rcv_filter(q, skb);
+ 
+-    read_unlock(&amp;rcv_lists_lock);
++	read_unlock(&amp;rcv_lists_lock);
+ 
+-    DBG(&quot;freeing skbuff %p\n&quot;, skb);
+-    kfree_skb(skb);
++	DBG(&quot;freeing skbuff %p\n&quot;, skb);
++	kfree_skb(skb);
+ 
+-    if (matches &gt; 0) {
+-	stats.matches++;
+-	stats.matches_delta++;
+-    }
++	if (matches &gt; 0) {
++		stats.matches++;
++		stats.matches_delta++;
++	}
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ 
+ static inline void deliver(struct sk_buff *skb, struct rcv_list *p)
+ {
+-    struct sk_buff *clone = skb_clone(skb, GFP_ATOMIC);
+-    DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+-    if (clone) {
+-	p-&gt;func(clone, p-&gt;data);
+-	p-&gt;matches++;    /* update specific statistics */
+-    }
++	struct sk_buff *clone = skb_clone(skb, GFP_ATOMIC);
++	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
++	if (clone) {
++		p-&gt;func(clone, p-&gt;data);
++		p-&gt;matches++;    /* update specific statistics */
++	}
+ }
+ 
+ static int can_rcv_filter(struct rcv_dev_list *q, struct sk_buff *skb)
+ {
+-    struct rcv_list *p;
+-    int matches = 0;
+-    struct can_frame *cf = (struct can_frame*)skb-&gt;data;
+-    canid_t can_id = cf-&gt;can_id;
++	struct rcv_list *p;
++	int matches = 0;
++	struct can_frame *cf = (struct can_frame*)skb-&gt;data;
++	canid_t can_id = cf-&gt;can_id;
+ 
+-    if (q-&gt;entries == 0)
+-	return 0;
++	if (q-&gt;entries == 0)
++		return 0;
+ 
+-    if (can_id &amp; CAN_ERR_FLAG) {
+-	/* check for error frame entries only */
+-	for (p = q-&gt;rx_err; p; p = p-&gt;next) {
+-	    if (can_id &amp; p-&gt;mask) {
+-		DBG(&quot;match on rx_err skbuff %p\n&quot;, skb);
++	if (can_id &amp; CAN_ERR_FLAG) {
++		/* check for error frame entries only */
++		for (p = q-&gt;rx_err; p; p = p-&gt;next) {
++			if (can_id &amp; p-&gt;mask) {
++				DBG(&quot;match on rx_err skbuff %p\n&quot;, skb);
++				deliver(skb, p);
++				matches++;
++			}
++		}
++		goto out;
++	}
++
++	/* check for unfiltered entries */
++	for (p = q-&gt;rx_all; p; p = p-&gt;next) {
++		DBG(&quot;match on rx_all skbuff %p\n&quot;, skb);
+ 		deliver(skb, p);
+ 		matches++;
+-	    }
+ 	}
+-	goto out;
+-    }
+ 
+-    /* check for unfiltered entries */
+-    for (p = q-&gt;rx_all; p; p = p-&gt;next) {
+-	DBG(&quot;match on rx_all skbuff %p\n&quot;, skb);
+-	deliver(skb, p);
+-	matches++;
+-    }
+-
+-    /* check for can_id/mask entries */
+-    for (p = q-&gt;rx_fil; p; p = p-&gt;next) {
+-	if ((can_id &amp; p-&gt;mask) == p-&gt;can_id) {
+-	    DBG(&quot;match on rx_fil skbuff %p\n&quot;, skb);
+-	    deliver(skb, p);
+-	    matches++;
++	/* check for can_id/mask entries */
++	for (p = q-&gt;rx_fil; p; p = p-&gt;next) {
++		if ((can_id &amp; p-&gt;mask) == p-&gt;can_id) {
++			DBG(&quot;match on rx_fil skbuff %p\n&quot;, skb);
++			deliver(skb, p);
++			matches++;
++		}
+ 	}
+-    }
+ 
+-    /* check for inverted can_id/mask entries */
+-    for (p = q-&gt;rx_inv; p; p = p-&gt;next) {
+-	if ((can_id &amp; p-&gt;mask) != p-&gt;can_id) {
+-	    DBG(&quot;match on rx_inv skbuff %p\n&quot;, skb);
+-	    deliver(skb, p);
+-	    matches++;
++	/* check for inverted can_id/mask entries */
++	for (p = q-&gt;rx_inv; p; p = p-&gt;next) {
++		if ((can_id &amp; p-&gt;mask) != p-&gt;can_id) {
++			DBG(&quot;match on rx_inv skbuff %p\n&quot;, skb);
++			deliver(skb, p);
++			matches++;
++		}
+ 	}
+-    }
+ 
+-    /* check CAN_ID specific entries */
+-    if (can_id &amp; CAN_EFF_FLAG) {
+-	for (p = q-&gt;rx_eff; p; p = p-&gt;next) {
+-	    if (p-&gt;can_id == can_id) {
+-		DBG(&quot;match on rx_eff skbuff %p\n&quot;, skb);
+-		deliver(skb, p);
+-		matches++;
+-	    }
++	/* check CAN_ID specific entries */
++	if (can_id &amp; CAN_EFF_FLAG) {
++		for (p = q-&gt;rx_eff; p; p = p-&gt;next) {
++			if (p-&gt;can_id == can_id) {
++				DBG(&quot;match on rx_eff skbuff %p\n&quot;, skb);
++				deliver(skb, p);
++				matches++;
++			}
++		}
++	} else {
++		for (p = q-&gt;rx_sff[can_id &amp; CAN_SFF_MASK]; p; p = p-&gt;next) {
++			DBG(&quot;match on rx_sff skbuff %p\n&quot;, skb);
++			deliver(skb, p);
++			matches++;
++		}
+ 	}
+-    } else {
+-	for (p = q-&gt;rx_sff[can_id &amp; CAN_SFF_MASK]; p; p = p-&gt;next) {
+-	    DBG(&quot;match on rx_sff skbuff %p\n&quot;, skb);
+-	    deliver(skb, p);
+-	    matches++;
+-	}
+-    }
+ 
+-out:
+-    return matches;
++ out:
++	return matches;
+ }
+ 
+-static struct rcv_list **find_rcv_list(canid_t *can_id, canid_t *mask, struct net_device *dev)
++static struct rcv_list **find_rcv_list(canid_t *can_id, canid_t *mask,
++				       struct net_device *dev)
+ {
+-    canid_t inv = *can_id &amp; CAN_INV_FILTER; /* save flag before masking values */
+-    canid_t eff = *can_id &amp; *mask &amp; CAN_EFF_FLAG; /* correct EFF check? */
+-    canid_t rtr = *can_id &amp; *mask &amp; CAN_RTR_FLAG; /* correct RTR check? */
+-    canid_t err = *mask &amp; CAN_ERR_FLAG; /* mask for error frames only */
++	canid_t inv = *can_id &amp; CAN_INV_FILTER; /* save flag before masking values */
++	canid_t eff = *can_id &amp; *mask &amp; CAN_EFF_FLAG; /* correct EFF check? */
++	canid_t rtr = *can_id &amp; *mask &amp; CAN_RTR_FLAG; /* correct RTR check? */
++	canid_t err = *mask &amp; CAN_ERR_FLAG; /* mask for error frames only */
+ 
+-    struct rcv_dev_list *p;
++	struct rcv_dev_list *p;
+ 
+-    /* make some paranoic operations */
+-    if (*can_id &amp; CAN_EFF_FLAG)
+-	*mask &amp;= (CAN_EFF_MASK | eff | rtr);
+-    else
+-	*mask &amp;= (CAN_SFF_MASK | rtr);
++	/* make some paranoic operations */
++	if (*can_id &amp; CAN_EFF_FLAG)
++		*mask &amp;= (CAN_EFF_MASK | eff | rtr);
++	else
++		*mask &amp;= (CAN_SFF_MASK | rtr);
+ 
+-    *can_id &amp;= *mask;
++	*can_id &amp;= *mask;
+ 
+-    /* find receive list for this device */
+-    if (!dev)
+-	p = &amp;rx_alldev_list;
+-    else {
+-	/* find the list for dev or an unused list entry, otherwise */
+-	struct rcv_dev_list *q;
+-	p = NULL;
+-	for (q = rx_dev_list; q; q = q-&gt;next)
+-	    if (!q-&gt;dev)
+-		p = q;
+-	    else if (q-&gt;dev == dev) {
+-		p = q;
+-		break;
+-	    }
++	/* find receive list for this device */
++	if (!dev)
++		p = &amp;rx_alldev_list;
++	else {
++		/* find the list for dev or an unused list entry, otherwise */
++		struct rcv_dev_list *q;
++		p = NULL;
++		for (q = rx_dev_list; q; q = q-&gt;next)
++			if (!q-&gt;dev)
++				p = q;
++			else if (q-&gt;dev == dev) {
++				p = q;
++				break;
++			}
+ 
+-	if (p &amp;&amp; !p-&gt;dev) {
+-	    DBG(&quot;reactivating rcv_dev_list for %s\n&quot;, dev-&gt;name);
+-	    p-&gt;dev = dev;
++		if (p &amp;&amp; !p-&gt;dev) {
++			DBG(&quot;reactivating rcv_dev_list for %s\n&quot;, dev-&gt;name);
++			p-&gt;dev = dev;
++		}
+ 	}
+-    }
+ 
+-    if (!p) {
+-	/* create new rcv_dev_list for this device */
+-	DBG(&quot;creating new rcv_dev_list for %s\n&quot;, dev-&gt;name);
+-	if (!(p = kmalloc(sizeof(struct rcv_dev_list), GFP_KERNEL))) {
+-	    printk(KERN_ERR &quot;CAN: allocation of receive list failed\n&quot;);
+-	    return NULL;
++	if (!p) {
++		/* create new rcv_dev_list for this device */
++		DBG(&quot;creating new rcv_dev_list for %s\n&quot;, dev-&gt;name);
++		if (!(p = kmalloc(sizeof(struct rcv_dev_list), GFP_KERNEL))) {
++			printk(KERN_ERR &quot;CAN: allocation of receive list failed\n&quot;);
++			return NULL;
++		}
++		memset (p, 0, sizeof(struct rcv_dev_list));
++		p-&gt;dev      = dev;
++		p-&gt;next     = rx_dev_list;
++		rx_dev_list = p;
+ 	}
+-	memset (p, 0, sizeof(struct rcv_dev_list));
+-	p-&gt;dev      = dev;
+-	p-&gt;next     = rx_dev_list;
+-	rx_dev_list = p;
+-    }
+ 
+-    if (err) /* error frames */
+-	return &amp;p-&gt;rx_err;
++	if (err) /* error frames */
++		return &amp;p-&gt;rx_err;
+ 
+-    if (inv) /* inverse can_id/can_mask filter and RTR */
+-	return &amp;p-&gt;rx_inv;
++	if (inv) /* inverse can_id/can_mask filter and RTR */
++		return &amp;p-&gt;rx_inv;
+ 
+-    if (*can_id &amp; CAN_RTR_FLAG) /* positive filter RTR */
+-	return &amp;p-&gt;rx_fil;
++	if (*can_id &amp; CAN_RTR_FLAG) /* positive filter RTR */
++		return &amp;p-&gt;rx_fil;
+ 
+-    if (!(*mask)) /* mask == 0 =&gt; no filter */
+-	return &amp;p-&gt;rx_all;
++	if (!(*mask)) /* mask == 0 =&gt; no filter */
++		return &amp;p-&gt;rx_all;
+ 
+-    if (*can_id &amp; CAN_EFF_FLAG) {
+-	if (*mask == CAN_EFF_MASK) /* filter exact EFF can_id */
+-	    return &amp;p-&gt;rx_eff;
+-    } else {
+-	if (*mask == CAN_SFF_MASK) /* filter exact SFF can_id */
+-	    return &amp;p-&gt;rx_sff[*can_id];
+-    }
++	if (*can_id &amp; CAN_EFF_FLAG) {
++		if (*mask == CAN_EFF_MASK) /* filter exact EFF can_id */
++			return &amp;p-&gt;rx_eff;
++	} else {
++		if (*mask == CAN_SFF_MASK) /* filter exact SFF can_id */
++			return &amp;p-&gt;rx_sff[*can_id];
++	}
+ 
+-    return &amp;p-&gt;rx_fil;  /* filter via can_id/can_mask */
++	return &amp;p-&gt;rx_fil;  /* filter via can_id/can_mask */
+ }
+ 
+ /**************************************************/
+@@ -688,22 +691,22 @@
+ 
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up)
+ {
+-    unsigned long jif;
+-    unsigned long sec  = tv-&gt;tv_sec;
+-    unsigned long usec = tv-&gt;tv_usec;
++	unsigned long jif;
++	unsigned long sec  = tv-&gt;tv_sec;
++	unsigned long usec = tv-&gt;tv_usec;
+ 
+-    if (sec &gt; ULONG_MAX / HZ)          /* check for overflow */
+-	return ULONG_MAX;
++	if (sec &gt; ULONG_MAX / HZ)          /* check for overflow */
++		return ULONG_MAX;
+ 
+-    if (round_up)                      /* any usec below one HZ? */
+-	usec += 1000000 / HZ - 1;      /* pump it up */
++	if (round_up)                      /* any usec below one HZ? */
++		usec += 1000000 / HZ - 1;  /* pump it up */
+ 
+-    jif = usec / (1000000 / HZ);
++	jif = usec / (1000000 / HZ);
+ 
+-    if (sec * HZ &gt; ULONG_MAX - jif)    /* check for overflow */
+-	return ULONG_MAX;
+-    else
+-	return jif + sec * HZ;
++	if (sec * HZ &gt; ULONG_MAX - jif)    /* check for overflow */
++		return ULONG_MAX;
++	else
++		return jif + sec * HZ;
+ }
+ 
+ 
+@@ -715,68 +718,69 @@
+ 
+ void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+ {
+-    va_list ap;
+-    int len;
+-    int dlc, i;
+-    char buf[1024];
++	va_list ap;
++	int len;
++	int dlc, i;
++	char buf[1024];
+ 
+-    len = sprintf(buf, KERN_DEBUG);
+-    va_start(ap, cf);
+-    len += snprintf(buf + len, sizeof(buf) - 64, msg, ap);
+-    buf[len++] = ':';
+-    buf[len++] = ' ';
+-    va_end(ap);
++	len = sprintf(buf, KERN_DEBUG);
++	va_start(ap, cf);
++	len += snprintf(buf + len, sizeof(buf) - 64, msg, ap);
++	buf[len++] = ':';
++	buf[len++] = ' ';
++	va_end(ap);
+ 
+-    if ((dlc = cf-&gt;can_dlc) &gt; 8)
+-	dlc = 8;
++	if ((dlc = cf-&gt;can_dlc) &gt; 8)
++		dlc = 8;
+ 
+-    if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
+-	len += sprintf(buf + len, &quot;&lt;%08X&gt; [%X] &quot;,
+-		       cf-&gt;can_id &amp; CAN_EFF_MASK, dlc);
+-    else
+-	len += sprintf(buf + len, &quot;&lt;%03X&gt; [%X] &quot;,
+-		       cf-&gt;can_id &amp; CAN_SFF_MASK, dlc);
++	if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
++		len += sprintf(buf + len, &quot;&lt;%08X&gt; [%X] &quot;,
++			       cf-&gt;can_id &amp; CAN_EFF_MASK, dlc);
++	else
++		len += sprintf(buf + len, &quot;&lt;%03X&gt; [%X] &quot;,
++			       cf-&gt;can_id &amp; CAN_SFF_MASK, dlc);
+ 
+-    for (i = 0; i &lt; dlc; i++)
+-	len += sprintf(buf + len, &quot;%02X &quot;, cf-&gt;data[i]);
++	for (i = 0; i &lt; dlc; i++)
++		len += sprintf(buf + len, &quot;%02X &quot;, cf-&gt;data[i]);
+ 
+-    if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
+-	len += sprintf(buf + len, &quot;(RTR)&quot;);
++	if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
++		len += sprintf(buf + len, &quot;(RTR)&quot;);
+ 
+-    buf[len++] = '\n';
+-    buf[len]   = '\0';
+-    printk(buf);
++	buf[len++] = '\n';
++	buf[len]   = '\0';
++	printk(buf);
+ }
+ 
+ void can_debug_skb(struct sk_buff *skb)
+ {
+-    int len, nbytes, i;
+-    char buf[1024];
++	int len, nbytes, i;
++	char buf[1024];
+ 
+-    len = sprintf(buf,
+-		  KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
+-		  KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
+-		  &quot;h,d,t,e,l: %p %+d %+d %+d, %d&quot;,
+-		  skb, skb-&gt;dev ? skb-&gt;dev-&gt;ifindex : -1, ntohs(skb-&gt;protocol),
+-		  atomic_read(&amp;skb-&gt;users),
+-		  atomic_read(&amp;(skb_shinfo(skb)-&gt;dataref)),
+-		  skb_shinfo(skb)-&gt;nr_frags,
+-		  skb-&gt;head, skb-&gt;data - skb-&gt;head,
+-		  skb-&gt;tail - skb-&gt;head, skb-&gt;end - skb-&gt;head, skb-&gt;len);
+-    nbytes = skb-&gt;end - skb-&gt;head;
+-    for (i = 0; i &lt; nbytes; i++) {
+-	if (i % 16 == 0)
+-	    len += sprintf(buf + len, &quot;\n&quot; KERN_DEBUG &quot;  &quot;);
+-	if (len &lt; sizeof(buf) - 16) {
+-	    len += sprintf(buf + len, &quot; %02x&quot;, skb-&gt;head[i]);
+-	} else {
+-	    len += sprintf(buf + len, &quot;...&quot;);
+-	    break;
++	len = sprintf(buf,
++		      KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
++		      KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
++		      &quot;h,d,t,e,l: %p %+d %+d %+d, %d&quot;,
++		      skb, skb-&gt;dev ? skb-&gt;dev-&gt;ifindex : -1,
++		      ntohs(skb-&gt;protocol),
++		      atomic_read(&amp;skb-&gt;users),
++		      atomic_read(&amp;(skb_shinfo(skb)-&gt;dataref)),
++		      skb_shinfo(skb)-&gt;nr_frags,
++		      skb-&gt;head, skb-&gt;data - skb-&gt;head,
++		      skb-&gt;tail - skb-&gt;head, skb-&gt;end - skb-&gt;head, skb-&gt;len);
++	nbytes = skb-&gt;end - skb-&gt;head;
++	for (i = 0; i &lt; nbytes; i++) {
++		if (i % 16 == 0)
++			len += sprintf(buf + len, &quot;\n&quot; KERN_DEBUG &quot;  &quot;);
++		if (len &lt; sizeof(buf) - 16) {
++			len += sprintf(buf + len, &quot; %02x&quot;, skb-&gt;head[i]);
++		} else {
++			len += sprintf(buf + len, &quot;...&quot;);
++			break;
++		}
+ 	}
+-    }
+-    buf[len++] = '\n';
+-    buf[len]   = '\0';
+-    printk(buf);
++	buf[len++] = '\n';
++	buf[len]   = '\0';
++	printk(buf);
+ }
+ 
+ #ifdef EXPORT_SYMTAB
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/af_can.h	2006-09-05 13:23:51 UTC (rev 73)
+@@ -79,20 +79,20 @@
+ #define SOL_CAN_BASE 100
+ 
+ struct sockaddr_can {
+-    sa_family_t   can_family;
+-    int           can_ifindex;
+-    union {
+-	struct { canid_t rx_id, tx_id; } tp16;
+-	struct { canid_t rx_id, tx_id; } tp20;
+-	struct { canid_t rx_id, tx_id; } mcnet;
+-    } can_addr;
++	sa_family_t   can_family;
++	int           can_ifindex;
++	union {
++		struct { canid_t rx_id, tx_id; } tp16;
++		struct { canid_t rx_id, tx_id; } tp20;
++		struct { canid_t rx_id, tx_id; } mcnet;
++	} can_addr;
+ };
+ 
+ typedef canid_t can_err_mask_t;
+ 
+ struct can_filter {
+-    canid_t can_id;
+-    canid_t can_mask;
++	canid_t can_id;
++	canid_t can_mask;
+ };
+ 
+ #define CAN_INV_FILTER 0x20000000U /* to be set in can_filter.can_id */
+@@ -104,13 +104,14 @@
+ void can_proto_register(int proto, struct proto_ops *ops);
+ void can_proto_unregister(int proto);
+ void can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-	void (*func)(struct sk_buff *, void *), void *data, char *ident);
++		     void (*func)(struct sk_buff *, void *), void *data,
++		     char *ident);
+ void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-	void (*func)(struct sk_buff *, void *), void *data);
++		       void (*func)(struct sk_buff *, void *), void *data);
+ void can_dev_register(struct net_device *dev,
+-	void (*func)(unsigned long msg, void *), void *data);
++		      void (*func)(unsigned long msg, void *), void *data);
+ void can_dev_unregister(struct net_device *dev,
+-	void (*func)(unsigned long msg, void *), void *data);
++			void (*func)(unsigned long msg, void *), void *data);
+ int  can_send(struct sk_buff *skb);
+ 
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+@@ -121,57 +122,57 @@
+ /* af_can rx dispatcher structures */
+ 
+ struct rcv_list {
+-    struct rcv_list *next;
+-    canid_t can_id;
+-    canid_t mask;
+-    unsigned long matches;
+-    void (*func)(struct sk_buff *, void *);
+-    void *data;
+-    char *ident;
++	struct rcv_list *next;
++	canid_t can_id;
++	canid_t mask;
++	unsigned long matches;
++	void (*func)(struct sk_buff *, void *);
++	void *data;
++	char *ident;
+ };
+ 
+ struct rcv_dev_list {
+-    struct rcv_dev_list *next;
+-    struct net_device *dev;
+-    struct rcv_list *rx_err;
+-    struct rcv_list *rx_all;
+-    struct rcv_list *rx_fil;
+-    struct rcv_list *rx_inv;
+-    struct rcv_list *rx_sff[0x800];
+-    struct rcv_list *rx_eff;
+-    int entries;
++	struct rcv_dev_list *next;
++	struct net_device *dev;
++	struct rcv_list *rx_err;
++	struct rcv_list *rx_all;
++	struct rcv_list *rx_fil;
++	struct rcv_list *rx_inv;
++	struct rcv_list *rx_sff[0x800];
++	struct rcv_list *rx_eff;
++	int entries;
+ };
+ 
+ /* statistic structures */
+ 
+ struct s_stats {
+-    unsigned long jiffies_init;
++	unsigned long jiffies_init;
+ 
+-    unsigned long rx_frames;
+-    unsigned long tx_frames;
+-    unsigned long matches;
++	unsigned long rx_frames;
++	unsigned long tx_frames;
++	unsigned long matches;
+ 
+-    unsigned long total_rx_rate;
+-    unsigned long total_tx_rate;
+-    unsigned long total_rx_match_ratio;
++	unsigned long total_rx_rate;
++	unsigned long total_tx_rate;
++	unsigned long total_rx_match_ratio;
+ 
+-    unsigned long current_rx_rate;
+-    unsigned long current_tx_rate;
+-    unsigned long current_rx_match_ratio;
++	unsigned long current_rx_rate;
++	unsigned long current_tx_rate;
++	unsigned long current_rx_match_ratio;
+ 
+-    unsigned long max_rx_rate;
+-    unsigned long max_tx_rate;
+-    unsigned long max_rx_match_ratio;
++	unsigned long max_rx_rate;
++	unsigned long max_tx_rate;
++	unsigned long max_rx_match_ratio;
+ 
+-    unsigned long rx_frames_delta;
+-    unsigned long tx_frames_delta;
+-    unsigned long matches_delta;
++	unsigned long rx_frames_delta;
++	unsigned long tx_frames_delta;
++	unsigned long matches_delta;
+ }; /* can be reset e.g. by can_init_stats() */
+ 
+ struct s_pstats {
+-    unsigned long stats_reset;
+-    unsigned long rcv_entries;
+-    unsigned long rcv_entries_max;
++	unsigned long stats_reset;
++	unsigned long rcv_entries;
++	unsigned long rcv_entries_max;
+ }; /* persistent statistics */
+ 
+ void can_init_proc(void);
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/bcm.c	2006-09-05 13:23:51 UTC (rev 73)
+@@ -87,32 +87,33 @@
+ #define GET_U64(p) (*(unsigned long long*)(p)-&gt;data)
+ 
+ struct bcm_op {
+-    struct bcm_op *next;
+-    canid_t can_id;
+-    int flags;
+-    unsigned long j_ival1, j_ival2, j_lastmsg;
+-    unsigned long frames_abs, frames_filtered;
+-    struct timeval ival1, ival2, stamp;
+-    struct timer_list timer, thrtimer;
+-    int count;
+-    int nframes;
+-    int currframe;
+-    struct can_frame *frames;
+-    struct can_frame *last_frames;
+-    struct sock *sk;
++	struct bcm_op *next;
++	canid_t can_id;
++	int flags;
++	unsigned long j_ival1, j_ival2, j_lastmsg;
++	unsigned long frames_abs, frames_filtered;
++	struct timeval ival1, ival2, stamp;
++	struct timer_list timer, thrtimer;
++	int count;
++	int nframes;
++	int currframe;
++	struct can_frame *frames;
++	struct can_frame *last_frames;
++	struct sock *sk;
+ };
+ 
+ struct bcm_user_data {
+-    struct bcm_op *rx_ops;
+-    struct bcm_op *tx_ops;
+-    struct proc_dir_entry *bcm_proc_read;
+-    char procname [9];
++	struct bcm_op *rx_ops;
++	struct bcm_op *tx_ops;
++	struct proc_dir_entry *bcm_proc_read;
++	char procname [9];
+ };
+ 
+ #define bcm_sk(sk) ((struct bcm_user_data *)(sk)-&gt;user_data)
+ 
+ static struct proc_dir_entry *proc_dir = NULL;
+-int bcm_read_proc(char *page, char **start, off_t off, int count, int *eof, void *data);
++int bcm_read_proc(char *page, char **start, off_t off,
++		  int count, int *eof, void *data);
+ 
+ static void bcm_notifier(unsigned long msg, void *data);
+ static int bcm_release(struct socket *sock);
+@@ -146,1224 +147,1217 @@
+ 				struct can_frame *rxdata);
+ 
+ static struct proto_ops bcm_ops = {
+-    .family        = PF_CAN,
+-    .release       = bcm_release,
+-    .bind          = sock_no_bind,
+-    .connect       = bcm_connect,
+-    .socketpair    = sock_no_socketpair,
+-    .accept        = sock_no_accept,
+-    .getname       = sock_no_getname,
+-    .poll          = bcm_poll,
+-    .ioctl         = NULL,	/* use can_ioctl() from af_can.c */
+-    .listen        = sock_no_listen,
+-    .shutdown      = sock_no_shutdown,
+-    .setsockopt    = sock_no_setsockopt,
+-    .getsockopt    = sock_no_getsockopt,
+-    .sendmsg       = bcm_sendmsg,
+-    .recvmsg       = bcm_recvmsg,
+-    .mmap          = sock_no_mmap,
+-    .sendpage      = sock_no_sendpage,
++	.family        = PF_CAN,
++	.release       = bcm_release,
++	.bind          = sock_no_bind,
++	.connect       = bcm_connect,
++	.socketpair    = sock_no_socketpair,
++	.accept        = sock_no_accept,
++	.getname       = sock_no_getname,
++	.poll          = bcm_poll,
++	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
++	.listen        = sock_no_listen,
++	.shutdown      = sock_no_shutdown,
++	.setsockopt    = sock_no_setsockopt,
++	.getsockopt    = sock_no_getsockopt,
++	.sendmsg       = bcm_sendmsg,
++	.recvmsg       = bcm_recvmsg,
++	.mmap          = sock_no_mmap,
++	.sendpage      = sock_no_sendpage,
+ };
+ 
+ static int __init bcm_init(void)
+ {
+-    printk(banner);
++	printk(banner);
+ 
+-    can_proto_register(CAN_BCM, &amp;bcm_ops);
++	can_proto_register(CAN_BCM, &amp;bcm_ops);
+ 
+-    /* create /proc/can/bcm directory */
+-    proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
++	/* create /proc/can/bcm directory */
++	proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
+ 
+-    if (proc_dir)
+-	proc_dir-&gt;owner = THIS_MODULE;
++	if (proc_dir)
++		proc_dir-&gt;owner = THIS_MODULE;
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ static void __exit bcm_exit(void)
+ {
+-    can_proto_unregister(CAN_BCM);
++	can_proto_unregister(CAN_BCM);
+ 
+-    if (proc_dir)
+-	remove_proc_entry(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
++	if (proc_dir)
++		remove_proc_entry(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
+ 
+ }
+ 
+ static void bcm_notifier(unsigned long msg, void *data)
+ {
+-    struct sock *sk = (struct sock *)data;
++	struct sock *sk = (struct sock *)data;
+ 
+-    DBG(&quot;called for sock %p\n&quot;, sk);
++	DBG(&quot;called for sock %p\n&quot;, sk);
+ 
+-    switch (msg)
+-    {
+-    case NETDEV_UNREGISTER:
+-	sk-&gt;bound_dev_if = 0;
+-    case NETDEV_DOWN:
+-	sk-&gt;err = ENETDOWN;
+-	sk-&gt;error_report(sk);
+-    }
++	switch (msg) {
++	case NETDEV_UNREGISTER:
++		sk-&gt;bound_dev_if = 0;
++	case NETDEV_DOWN:
++		sk-&gt;err = ENETDOWN;
++		sk-&gt;error_report(sk);
++	}
+ }
+ 
+ static int bcm_release(struct socket *sock)
+ {
+-    struct sock *sk = sock-&gt;sk;
+-    struct bcm_user_data *ud = bcm_sk(sk);
+-    struct bcm_op *op,*next;
++	struct sock *sk = sock-&gt;sk;
++	struct bcm_user_data *ud = bcm_sk(sk);
++	struct bcm_op *op,*next;
+ 
+-    /* many things to do here:
+-       free all rx_ops and tx_ops, bcm_user_data structure,
+-       can_rx_unregister(dev, canid, raw_rcv) and can-data in ?x_ops */
++	/* many things to do here:
++	   free all rx_ops and tx_ops, bcm_user_data structure,
++	   can_rx_unregister(dev, canid, raw_rcv) and can-data in ?x_ops */
+ 
+-    DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
++	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ 
+-    /* remove userdata, bcm_ops, timer, etc. */
++	/* remove userdata, bcm_ops, timer, etc. */
+ 
+-    if (ud) {
+-	for (op = ud-&gt;tx_ops; op ; op = next) {
+-	    DBG(&quot;removing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
+-	    next = op-&gt;next;
+-	    bcm_remove_op(op);
+-	}
++	if (ud) {
++		for (op = ud-&gt;tx_ops; op ; op = next) {
++			DBG(&quot;removing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++			next = op-&gt;next;
++			bcm_remove_op(op);
++		}
+ 
+-	for (op = ud-&gt;rx_ops; op ; op = next) {
+-	    DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
+-	    next = op-&gt;next;
++		for (op = ud-&gt;rx_ops; op ; op = next) {
++			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++			next = op-&gt;next;
+ 
+-	    if (sk-&gt;bound_dev_if) {
+-		struct net_device *dev = dev_get_by_index(sk-&gt;bound_dev_if);
+-		if (dev) {
+-		    can_rx_unregister(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op);
+-		    dev_put(dev);
++			if (sk-&gt;bound_dev_if) {
++				struct net_device *dev = dev_get_by_index(sk-&gt;bound_dev_if);
++				if (dev) {
++					can_rx_unregister(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op);
++					dev_put(dev);
++				}
++			} else
++				DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, sk);
++
++			bcm_remove_op(op);
+ 		}
+-	    } else
+-		DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, sk);
+ 
+-	    bcm_remove_op(op);
+-	}
++		if ((proc_dir) &amp;&amp; (ud-&gt;bcm_proc_read)) {
++			remove_proc_entry(ud-&gt;procname, proc_dir);
++		}
+ 
+-	if ((proc_dir) &amp;&amp; (ud-&gt;bcm_proc_read)) {
+-	    remove_proc_entry(ud-&gt;procname, proc_dir);
++		kfree (ud);
+ 	}
+ 
+-	kfree (ud);
+-    }
++	if (sk-&gt;bound_dev_if) {
++		struct net_device *dev = dev_get_by_index(sk-&gt;bound_dev_if);
++		if (dev) {
++			can_dev_unregister(dev, bcm_notifier, sk);
++			dev_put(dev);
++		}
++	} else
++		DBG(&quot;sock %p not bound for can_dev_unregister()\n&quot;, sk);
+ 
+-    if (sk-&gt;bound_dev_if) {
+-	struct net_device *dev = dev_get_by_index(sk-&gt;bound_dev_if);
+-	if (dev) {
+-	    can_dev_unregister(dev, bcm_notifier, sk);
+-	    dev_put(dev);
+-	}
+-    } else
+-	DBG(&quot;sock %p not bound for can_dev_unregister()\n&quot;, sk);
++	sock_put(sk);
+ 
+-    sock_put(sk);
+-
+-    return 0;
++	return 0;
+ }
+ 
+ static int bcm_connect(struct socket *sock, struct sockaddr *uaddr, int len,
+ 		       int flags)
+ {
+-    struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+-    struct sock *sk = sock-&gt;sk;
+-    struct net_device *dev;
+-    struct bcm_user_data *ud;
++	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
++	struct sock *sk = sock-&gt;sk;
++	struct net_device *dev;
++	struct bcm_user_data *ud;
+ 
+-    /* bind a device to this socket */
++	/* bind a device to this socket */
+ 
+-    dev = dev_get_by_index(addr-&gt;can_ifindex);
+-    if (!dev) {
+-	DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
+-	return -ENODEV;
+-    }
+-    sk-&gt;bound_dev_if = dev-&gt;ifindex;
+-    can_dev_register(dev, bcm_notifier, sk);
+-    dev_put(dev);
++	dev = dev_get_by_index(addr-&gt;can_ifindex);
++	if (!dev) {
++		DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
++		return -ENODEV;
++	}
++	sk-&gt;bound_dev_if = dev-&gt;ifindex;
++	can_dev_register(dev, bcm_notifier, sk);
++	dev_put(dev);
+ 
+-    DBG(&quot;socket %p to device %s (idx %d)\n&quot;, sock, dev-&gt;name, dev-&gt;ifindex);
++	DBG(&quot;socket %p to device %s (idx %d)\n&quot;, sock, dev-&gt;name, dev-&gt;ifindex);
+ 
+-    /* create struct for BCM-specific data for this socket */
++	/* create struct for BCM-specific data for this socket */
+ 
+-    if (!(ud = kmalloc(sizeof(struct bcm_user_data), GFP_KERNEL)))
+-	return -ENOMEM;
++	if (!(ud = kmalloc(sizeof(struct bcm_user_data), GFP_KERNEL)))
++		return -ENOMEM;
+ 
+-    /* intitial BCM operations */
+-    ud-&gt;tx_ops = NULL;
+-    ud-&gt;rx_ops = NULL;
+-    ud-&gt;bcm_proc_read = NULL;
++	/* intitial BCM operations */
++	ud-&gt;tx_ops = NULL;
++	ud-&gt;rx_ops = NULL;
++	ud-&gt;bcm_proc_read = NULL;
+ 
+-    sk-&gt;user_data = ud;
++	sk-&gt;user_data = ud;
+ 
+-    if (proc_dir) {
+-	sprintf(ud-&gt;procname, &quot;%p&quot;, ud);
+-	ud-&gt;bcm_proc_read = create_proc_read_entry(ud-&gt;procname, 0644,
+-						   proc_dir, bcm_read_proc, ud);
+-    }
++	if (proc_dir) {
++		sprintf(ud-&gt;procname, &quot;%p&quot;, ud);
++		ud-&gt;bcm_proc_read = create_proc_read_entry(ud-&gt;procname, 0644,
++							   proc_dir, bcm_read_proc, ud);
++	}
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ int bcm_read_proc(char *page, char **start, off_t off, int count, int *eof, void *data)
+ {
+-    int len = 0;
+-    struct bcm_user_data *ud = (struct bcm_user_data *) data;
+-    struct bcm_op *op;
+-    struct net_device *dev = NULL;
++	int len = 0;
++	struct bcm_user_data *ud = (struct bcm_user_data *) data;
++	struct bcm_op *op;
++	struct net_device *dev = NULL;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len,&quot;&gt;&gt;&gt; ud %p&quot;, ud);
++	len += snprintf(page + len, PAGE_SIZE - len,&quot;&gt;&gt;&gt; ud %p&quot;, ud);
+ 
+-    if (ud-&gt;rx_ops) {
+-	if (ud-&gt;rx_ops-&gt;sk-&gt;bound_dev_if)
+-	    dev = dev_get_by_index(ud-&gt;rx_ops-&gt;sk-&gt;bound_dev_if);
+-	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot; / sk %p / socket %p&quot;, ud-&gt;rx_ops-&gt;sk, ud-&gt;rx_ops-&gt;sk-&gt;socket);
+-    }
+-    else
+-	if (ud-&gt;tx_ops) {
+-	    if (ud-&gt;tx_ops-&gt;sk-&gt;bound_dev_if)
+-		dev = dev_get_by_index(ud-&gt;tx_ops-&gt;sk-&gt;bound_dev_if);
+-	    len += snprintf(page + len, PAGE_SIZE - len,
+-			    &quot; / sk %p / socket %p&quot;, ud-&gt;tx_ops-&gt;sk, ud-&gt;tx_ops-&gt;sk-&gt;socket);
+-    }
++	if (ud-&gt;rx_ops) {
++		if (ud-&gt;rx_ops-&gt;sk-&gt;bound_dev_if)
++			dev = dev_get_by_index(ud-&gt;rx_ops-&gt;sk-&gt;bound_dev_if);
++		len += snprintf(page + len, PAGE_SIZE - len,
++				&quot; / sk %p / socket %p&quot;, ud-&gt;rx_ops-&gt;sk, ud-&gt;rx_ops-&gt;sk-&gt;socket);
++	}
++	else
++		if (ud-&gt;tx_ops) {
++			if (ud-&gt;tx_ops-&gt;sk-&gt;bound_dev_if)
++				dev = dev_get_by_index(ud-&gt;tx_ops-&gt;sk-&gt;bound_dev_if);
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot; / sk %p / socket %p&quot;, ud-&gt;tx_ops-&gt;sk, ud-&gt;tx_ops-&gt;sk-&gt;socket);
++		}
+ 
+-    if (dev) {
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot; / %s&quot;, dev-&gt;name);
+-	dev_put(dev);
+-    }
++	if (dev) {
++		len += snprintf(page + len, PAGE_SIZE - len, &quot; / %s&quot;, dev-&gt;name);
++		dev_put(dev);
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; &lt;&lt;&lt;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot; &lt;&lt;&lt;\n&quot;);
+ 
+-    for (op = ud-&gt;rx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
++	for (op = ud-&gt;rx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
+ 
+-	unsigned long reduction;
++		unsigned long reduction;
+ 
+-	/* print only active entries &amp; prevent division by zero */
+-	if (!op-&gt;frames_abs)
+-	    continue;
++		/* print only active entries &amp; prevent division by zero */
++		if (!op-&gt;frames_abs)
++			continue;
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;rx_op: %03X [%d]%c &quot;,
+-			op-&gt;can_id, op-&gt;nframes,(op-&gt;flags &amp; RX_CHECK_DLC)?'d':' ');
+-	if (op-&gt;j_ival1)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;timeo=%ld &quot;, op-&gt;j_ival1);
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;rx_op: %03X [%d]%c &quot;,
++				op-&gt;can_id, op-&gt;nframes,(op-&gt;flags &amp; RX_CHECK_DLC)?'d':' ');
++		if (op-&gt;j_ival1)
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;timeo=%ld &quot;, op-&gt;j_ival1);
+ 
+-	if (op-&gt;j_ival2)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;thr=%ld &quot;, op-&gt;j_ival2);
++		if (op-&gt;j_ival2)
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;thr=%ld &quot;, op-&gt;j_ival2);
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;# recv %ld (%ld) =&gt; reduction: &quot;,
+-			op-&gt;frames_filtered, op-&gt;frames_abs);
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;# recv %ld (%ld) =&gt; reduction: &quot;,
++				op-&gt;frames_filtered, op-&gt;frames_abs);
+ 
+-	reduction = 100 - (op-&gt;frames_filtered * 100) / op-&gt;frames_abs;
++		reduction = 100 - (op-&gt;frames_filtered * 100) / op-&gt;frames_abs;
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;%s%ld%%\n&quot;,
+-			(reduction == 100)?&quot;near &quot;:&quot;&quot;, reduction);
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;%s%ld%%\n&quot;,
++				(reduction == 100)?&quot;near &quot;:&quot;&quot;, reduction);
+ 
+-	if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
+-	  len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
+-    }
++		if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
++	}
+ 
+-    for (op = ud-&gt;tx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
++	for (op = ud-&gt;tx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;tx_op: %03X [%d] &quot;,
+-			op-&gt;can_id, op-&gt;nframes);
+-	if (op-&gt;j_ival1)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;t1=%ld &quot;, op-&gt;j_ival1);
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;tx_op: %03X [%d] &quot;,
++				op-&gt;can_id, op-&gt;nframes);
++		if (op-&gt;j_ival1)
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;t1=%ld &quot;, op-&gt;j_ival1);
+ 
+-	if (op-&gt;j_ival2)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;t2=%ld &quot;, op-&gt;j_ival2);
++		if (op-&gt;j_ival2)
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;t2=%ld &quot;, op-&gt;j_ival2);
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
+ 
+-	if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
+-	  len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
+-    }
++		if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+ static unsigned int bcm_poll(struct file *file, struct socket *sock,
+ 			     poll_table *wait)
+ {
+-    unsigned int mask = 0;
++	unsigned int mask = 0;
+ 
+-    DBG(&quot;socket %p\n&quot;, sock);
++	DBG(&quot;socket %p\n&quot;, sock);
+ 
+-    mask = datagram_poll(file, sock, wait);
+-    return mask;
++	mask = datagram_poll(file, sock, wait);
++	return mask;
+ }
+ 
+ static int bcm_sendmsg(struct socket *sock, struct msghdr *msg, int size,
+ 		       struct scm_cookie *scm)
+ {
+-    struct bcm_msg_head msg_head;
+-    int i;
+-    struct bcm_op *op;
+-    int err;
+-    struct sock *sk = sock-&gt;sk;
+-    struct bcm_user_data *ud = bcm_sk(sk);
+-    char c;
+-    int rbytes = 0; /* read bytes as return value */
++	struct bcm_msg_head msg_head;
++	int i;
++	struct bcm_op *op;
++	int err;
++	struct sock *sk = sock-&gt;sk;
++	struct bcm_user_data *ud = bcm_sk(sk);
++	char c;
++	int rbytes = 0; /* read bytes as return value */
+ 
+-    /* read message head information */
++	/* read message head information */
+ 
+-    if ((err = memcpy_fromiovec((unsigned char*)&amp;msg_head, msg-&gt;msg_iov,
+-				sizeof(msg_head))) &lt; 0)
+-	return err;
++	if ((err = memcpy_fromiovec((unsigned char*)&amp;msg_head, msg-&gt;msg_iov,
++				    sizeof(msg_head))) &lt; 0)
++		return err;
+ 
+-    DBG(&quot;opcode %d for can_id &lt;%03X&gt;\n&quot;, msg_head.opcode, msg_head.can_id);
++	DBG(&quot;opcode %d for can_id &lt;%03X&gt;\n&quot;, msg_head.opcode, msg_head.can_id);
+ 
+-    if (!sk-&gt;bound_dev_if) {
+-	DBG(&quot;sock %p not bound\n&quot;, sk); /* and therefore ud not initialized */
+-	return -ENOTCONN;
+-    }
++	if (!sk-&gt;bound_dev_if) {
++		DBG(&quot;sock %p not bound\n&quot;, sk); /* and therefore ud not initialized */
++		return -ENOTCONN;
++	}
+ 
+-    switch (msg_head.opcode) {
++	switch (msg_head.opcode) {
+ 
+-    case TX_SETUP:
++	case TX_SETUP:
+ 
+-	if (msg_head.nframes &lt; 1) /* we need at least one can_frame */
+-	    return -EINVAL;
++		if (msg_head.nframes &lt; 1) /* we need at least one can_frame */
++			return -EINVAL;
+ 
+-	/* check the given can_id */
++		/* check the given can_id */
+ 
+-	if (!(op = bcm_find_op(ud-&gt;tx_ops, msg_head.can_id))) {
++		if (!(op = bcm_find_op(ud-&gt;tx_ops, msg_head.can_id))) {
+ 
+-	    /* insert new BCM operation for the given can_id */
++			/* insert new BCM operation for the given can_id */
+ 
+-	    if (!(op = kmalloc(sizeof(struct bcm_op), GFP_KERNEL)))
+-		return -ENOMEM;
++			if (!(op = kmalloc(sizeof(struct bcm_op), GFP_KERNEL)))
++				return -ENOMEM;
+ 
+-	    memset(op, 0, sizeof(struct bcm_op)); /* init to zero, e.g. for timers */
++			memset(op, 0, sizeof(struct bcm_op)); /* init to zero, e.g. for timers */
+ 
+-	    DBG(&quot;TX_SETUP: creating new tx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
+-		op, msg_head.can_id);
++			DBG(&quot;TX_SETUP: creating new tx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++			    op, msg_head.can_id);
+ 
+-	    op-&gt;can_id    = msg_head.can_id;
++			op-&gt;can_id    = msg_head.can_id;
+ 
+-	    /* create array for can_frames and copy the data */
+-	    if (!(op-&gt;frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
+-		kfree(op);
+-		return -ENOMEM;
+-	    }
++			/* create array for can_frames and copy the data */
++			if (!(op-&gt;frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
++				kfree(op);
++				return -ENOMEM;
++			}
+ 
+-	    for (i = 0; i &lt; msg_head.nframes; i++) {
+-		memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
+-		if (msg_head.flags &amp; TX_CP_CAN_ID)
+-		    op-&gt;frames[i].can_id = msg_head.can_id; /* copy can_id into frame */
+-	    }
++			for (i = 0; i &lt; msg_head.nframes; i++) {
++				memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
++				if (msg_head.flags &amp; TX_CP_CAN_ID)
++					op-&gt;frames[i].can_id = msg_head.can_id; /* copy can_id into frame */
++			}
+ 
+-	    op-&gt;last_frames = NULL; /* tx_ops never compare with previous received messages */
++			op-&gt;last_frames = NULL; /* tx_ops never compare with previous received messages */
+ 
+-	    op-&gt;sk = sk; /* bcm_can_tx / bcm_tx_timeout_handler needs this */
++			op-&gt;sk = sk; /* bcm_can_tx / bcm_tx_timeout_handler needs this */
+ 
+-	    init_timer(&amp;op-&gt;timer); /* initialize uninitialized (kmalloc) structure */
+-	    init_timer(&amp;op-&gt;thrtimer); /* currently unused in tx_ops */
++			init_timer(&amp;op-&gt;timer); /* initialize uninitialized (kmalloc) structure */
++			init_timer(&amp;op-&gt;thrtimer); /* currently unused in tx_ops */
+ 
+-	    op-&gt;timer.function = bcm_tx_timeout_handler; /* handler for tx_ops */
+-	    op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
++			op-&gt;timer.function = bcm_tx_timeout_handler; /* handler for tx_ops */
++			op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
+ 
+-	    /* add this bcm_op to the list of the tx_ops */
+-	    bcm_insert_op(&amp;ud-&gt;tx_ops, op);
++			/* add this bcm_op to the list of the tx_ops */
++			bcm_insert_op(&amp;ud-&gt;tx_ops, op);
+ 
+-	}
+-	else {
+-	    /* update existing BCM operation */
++		} else {
++			/* update existing BCM operation */
+ 
+-	    DBG(&quot;TX_SETUP: modifying existing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
+-		op, msg_head.can_id);
++			DBG(&quot;TX_SETUP: modifying existing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++			    op, msg_head.can_id);
+ 
+-	    /* do we need more space for the can_frames? */
+-	    if (msg_head.nframes &gt; op-&gt;nframes) {
++			/* do we need more space for the can_frames? */
++			if (msg_head.nframes &gt; op-&gt;nframes) {
+ 
+-		/* yes =&gt; create new array */
++				/* yes =&gt; create new array */
+ 
+-		struct can_frame *p;
+-		if (!(p = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL)))
+-		    return -ENOMEM;
++				struct can_frame *p;
++				if (!(p = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL)))
++					return -ENOMEM;
+ 
+-		kfree (op-&gt;frames);
+-		op-&gt;frames = p;
+-	    }
++				kfree (op-&gt;frames);
++				op-&gt;frames = p;
++			}
+ 
+-	    /* update can_frames content */
+-	    for (i = 0; i &lt; msg_head.nframes; i++) {
+-		memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
+-		if (msg_head.flags &amp; TX_CP_CAN_ID)
+-		    op-&gt;frames[i].can_id = msg_head.can_id; /* copy can_id into frame */
+-	    }
++			/* update can_frames content */
++			for (i = 0; i &lt; msg_head.nframes; i++) {
++				memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
++				if (msg_head.flags &amp; TX_CP_CAN_ID)
++					op-&gt;frames[i].can_id = msg_head.can_id; /* copy can_id into frame */
++			}
+ 
+-	}
++		}
+ 
+-	if (op-&gt;nframes != msg_head.nframes) {
+-	    op-&gt;nframes   = msg_head.nframes;
+-	    op-&gt;currframe = 0; /* start multiple frame transmission with index 0 */
+-	}
++		if (op-&gt;nframes != msg_head.nframes) {
++			op-&gt;nframes   = msg_head.nframes;
++			op-&gt;currframe = 0; /* start multiple frame transmission with index 0 */
++		}
+ 
+-	/* check flags */
++		/* check flags */
+ 
+-	op-&gt;flags = msg_head.flags;
++		op-&gt;flags = msg_head.flags;
+ 
+-	if (op-&gt;flags &amp; TX_RESET_MULTI_IDX)
+-	    op-&gt;currframe = 0; /* start multiple frame transmission with index 0 */
++		if (op-&gt;flags &amp; TX_RESET_MULTI_IDX)
++			op-&gt;currframe = 0; /* start multiple frame transmission with index 0 */
+ 
+-	if (op-&gt;flags &amp; SETTIMER) {
++		if (op-&gt;flags &amp; SETTIMER) {
+ 
+-	    /* set timer values */
++			/* set timer values */
+ 
+-	    op-&gt;count   = msg_head.count;
+-	    op-&gt;ival1   = msg_head.ival1;
+-	    op-&gt;ival2   = msg_head.ival2;
+-	    op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head.ival1, 1);
+-	    op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head.ival2, 1);
++			op-&gt;count   = msg_head.count;
++			op-&gt;ival1   = msg_head.ival1;
++			op-&gt;ival2   = msg_head.ival2;
++			op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head.ival1, 1);
++			op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head.ival2, 1);
+ 
+-	    DBG(&quot;TX_SETUP: SETTIMER count=%d j_ival1=%ld j_ival2=%ld\n&quot;,
+-		op-&gt;count, op-&gt;j_ival1, op-&gt;j_ival2);
++			DBG(&quot;TX_SETUP: SETTIMER count=%d j_ival1=%ld j_ival2=%ld\n&quot;,
++			    op-&gt;count, op-&gt;j_ival1, op-&gt;j_ival2);
+ 
+-	    /* disable an active timer due to zero values? */
+-	    if (!op-&gt;j_ival1 &amp;&amp; !op-&gt;j_ival2) {
+-		del_timer(&amp;op-&gt;timer);
+-		DBG(&quot;TX_SETUP: SETTIMER disabled timer.\n&quot;);
+-	    }
++			/* disable an active timer due to zero values? */
++			if (!op-&gt;j_ival1 &amp;&amp; !op-&gt;j_ival2) {
++				del_timer(&amp;op-&gt;timer);
++				DBG(&quot;TX_SETUP: SETTIMER disabled timer.\n&quot;);
++			}
+ 
+-	}
++		}
+ 
+-	if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; ((op-&gt;j_ival1 &amp;&amp; op-&gt;count) || op-&gt;j_ival2)) {
++		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; ((op-&gt;j_ival1 &amp;&amp; op-&gt;count) || op-&gt;j_ival2)) {
+ 
+-	    del_timer(&amp;op-&gt;timer);
++			del_timer(&amp;op-&gt;timer);
+ 
+-	    op-&gt;flags |= TX_ANNOUNCE; /* spec: send can_frame when starting timer */
+-	    if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)){
+-		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-		/* op-&gt;count-- is done in bcm_tx_timeout_handler */
+-		DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
+-		    op-&gt;timer.function,
+-		    (char*) op-&gt;timer.data,
+-		    (unsigned int) op-&gt;timer.expires);
+-	    }
+-	    else{
+-		op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-		DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=(%p) exp=0x%08X\n&quot;,
+-		    op-&gt;timer.function,
+-		    (char*) op-&gt;timer.data,
+-		    (unsigned int) op-&gt;timer.expires);
+-	    }
++			op-&gt;flags |= TX_ANNOUNCE; /* spec: send can_frame when starting timer */
++			if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)){
++				op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
++				/* op-&gt;count-- is done in bcm_tx_timeout_handler */
++				DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++				    op-&gt;timer.function,
++				    (char*) op-&gt;timer.data,
++				    (unsigned int) op-&gt;timer.expires);
++			} else{
++				op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
++				DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=(%p) exp=0x%08X\n&quot;,
++				    op-&gt;timer.function,
++				    (char*) op-&gt;timer.data,
++				    (unsigned int) op-&gt;timer.expires);
++			}
+ 
+-	    add_timer(&amp;op-&gt;timer);
+-	}
++			add_timer(&amp;op-&gt;timer);
++		}
+ 
+-	if (op-&gt;flags &amp; TX_ANNOUNCE)
+-	    bcm_can_tx(op);
++		if (op-&gt;flags &amp; TX_ANNOUNCE)
++			bcm_can_tx(op);
+ 
+-	rbytes = msg_head.nframes * sizeof(struct can_frame) + sizeof(struct bcm_msg_head);
++		rbytes = msg_head.nframes * sizeof(struct can_frame) + sizeof(struct bcm_msg_head);
+ 
+-	break; /* TX_SETUP */
++		break; /* TX_SETUP */
+ 
+-    case TX_DELETE:
++	case TX_DELETE:
+ 
+-	bcm_delete_tx_op(&amp;ud-&gt;tx_ops, msg_head.can_id);
++		bcm_delete_tx_op(&amp;ud-&gt;tx_ops, msg_head.can_id);
+ 
+-	rbytes = sizeof(struct bcm_msg_head);
++		rbytes = sizeof(struct bcm_msg_head);
+ 
+-	break; /* TX_DELETE */
++		break; /* TX_DELETE */
+ 
+-    case TX_READ:
++	case TX_READ:
+ 
+-	/* reuse msg_head for the reply */
+-	msg_head.opcode  = TX_STATUS; /* reply to TX_READ */
+-	op = bcm_find_op(ud-&gt;tx_ops, msg_head.can_id);
+-	c  = 'T'; /* for nice debug output ... */
++		/* reuse msg_head for the reply */
++		msg_head.opcode  = TX_STATUS; /* reply to TX_READ */
++		op = bcm_find_op(ud-&gt;tx_ops, msg_head.can_id);
++		c  = 'T'; /* for nice debug output ... */
+ 
+-	goto TRX_READ;
++		goto TRX_READ;
+ 
+-    case RX_READ:
++	case RX_READ:
+ 
+-	/* reuse msg_head for the reply */
+-	msg_head.opcode  = RX_STATUS; /* reply to RX_READ */
+-	op = bcm_find_op(ud-&gt;rx_ops, msg_head.can_id);
+-	c  = 'R'; /* for nice debug output ... */
++		/* reuse msg_head for the reply */
++		msg_head.opcode  = RX_STATUS; /* reply to RX_READ */
++		op = bcm_find_op(ud-&gt;rx_ops, msg_head.can_id);
++		c  = 'R'; /* for nice debug output ... */
+ 
+-    TRX_READ:
++	TRX_READ:
+ 
+-	/* check the given can_id */
++		/* check the given can_id */
+ 
+-	if (!op) {
+-	    DBG(&quot;%cX_READ: did not find op for can_id &lt;%03X&gt;\n&quot;,
+-		c, msg_head.can_id);
++		if (!op) {
++			DBG(&quot;%cX_READ: did not find op for can_id &lt;%03X&gt;\n&quot;,
++			    c, msg_head.can_id);
+ 
+-	    msg_head.flags   |= CMD_ERROR;
+-	    msg_head.nframes  = 0;
+-	    bcm_send_to_user(sk, &amp;msg_head, NULL, NULL);
+-	}
+-	else {
+-	    DBG(&quot;%cX_READ: sending status for can_id &lt;%03X&gt;\n&quot;,
+-		c, msg_head.can_id);
++			msg_head.flags   |= CMD_ERROR;
++			msg_head.nframes  = 0;
++			bcm_send_to_user(sk, &amp;msg_head, NULL, NULL);
++		}
++		else {
++			DBG(&quot;%cX_READ: sending status for can_id &lt;%03X&gt;\n&quot;,
++			    c, msg_head.can_id);
+ 
+-	    /* put current values into msg_head */
+-	    msg_head.flags   = op-&gt;flags;
+-	    msg_head.count   = op-&gt;count;
+-	    msg_head.ival1   = op-&gt;ival1;
+-	    msg_head.ival2   = op-&gt;ival2;
+-	    msg_head.nframes = op-&gt;nframes;
++			/* put current values into msg_head */
++			msg_head.flags   = op-&gt;flags;
++			msg_head.count   = op-&gt;count;
++			msg_head.ival1   = op-&gt;ival1;
++			msg_head.ival2   = op-&gt;ival2;
++			msg_head.nframes = op-&gt;nframes;
+ 
+-	    bcm_send_to_user(sk, &amp;msg_head, op-&gt;frames, NULL);
+-	}
++			bcm_send_to_user(sk, &amp;msg_head, op-&gt;frames, NULL);
++		}
+ 
+-	rbytes = sizeof(struct bcm_msg_head);
++		rbytes = sizeof(struct bcm_msg_head);
+ 
+-	break; /* [T|R]X_READ */
++		break; /* [T|R]X_READ */
+ 
+-    case TX_SEND:
++	case TX_SEND:
+ 	{
+-	    struct sk_buff *skb;
+-	    struct net_device *dev;
++		struct sk_buff *skb;
++		struct net_device *dev;
+ 
+-	    /* just copy and send one can_frame */
++		/* just copy and send one can_frame */
+ 
+-	    if (msg_head.nframes &lt; 1) /* we need at least one can_frame */
+-		return -EINVAL;
++		if (msg_head.nframes &lt; 1) /* we need at least one can_frame */
++			return -EINVAL;
+ 
+-	    skb = alloc_skb(sizeof(struct can_frame), GFP_KERNEL);
++		skb = alloc_skb(sizeof(struct can_frame), GFP_KERNEL);
+ 
+-	    if (!skb)
+-		break;
++		if (!skb)
++			break;
+ 
+-	    memcpy_fromiovec(skb_put(skb, sizeof(struct can_frame)), msg-&gt;msg_iov, sizeof(struct can_frame));
++		memcpy_fromiovec(skb_put(skb, sizeof(struct can_frame)), msg-&gt;msg_iov, sizeof(struct can_frame));
+ 
+-	    DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;,
+-		      (struct can_frame *)skb-&gt;data);
+-	    dev = dev_get_by_index(sk-&gt;bound_dev_if);
++		DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;,
++			  (struct can_frame *)skb-&gt;data);
++		dev = dev_get_by_index(sk-&gt;bound_dev_if);
+ 
+-	    if (dev) {
+-		skb-&gt;dev = dev;
+-		can_send(skb);
+-		dev_put(dev);
+-	    }
++		if (dev) {
++			skb-&gt;dev = dev;
++			can_send(skb);
++			dev_put(dev);
++		}
+ 
+-	    rbytes = sizeof(struct can_frame) + sizeof(struct bcm_msg_head);
++		rbytes = sizeof(struct can_frame) + sizeof(struct bcm_msg_head);
+ 	}
+ 	break;
+ 
+-    case RX_SETUP:
++	case RX_SETUP:
+ 
+-	if ((msg_head.flags &amp; RX_FILTER_ID) || (!(msg_head.nframes))) {
+-	    /* be robust against wrong usage ... */
+-	    msg_head.flags |= RX_FILTER_ID;
+-	    msg_head.nframes = 0; /* ignore trailing garbage */
+-	}
++		if ((msg_head.flags &amp; RX_FILTER_ID) || (!(msg_head.nframes))) {
++			/* be robust against wrong usage ... */
++			msg_head.flags |= RX_FILTER_ID;
++			msg_head.nframes = 0; /* ignore trailing garbage */
++		}
+ 
+-	if ((msg_head.flags &amp; RX_RTR_FRAME) &amp;&amp;
+-	    ((msg_head.nframes != 1) || (!(msg_head.can_id &amp; CAN_RTR_FLAG)))) {
++		if ((msg_head.flags &amp; RX_RTR_FRAME) &amp;&amp;
++		    ((msg_head.nframes != 1) || (!(msg_head.can_id &amp; CAN_RTR_FLAG)))) {
+ 
+-	    DBG(&quot;RX_SETUP: bad RX_RTR_FRAME setup!\n&quot;);
++			DBG(&quot;RX_SETUP: bad RX_RTR_FRAME setup!\n&quot;);
+ 
+-	    msg_head.flags   |= CMD_ERROR; /* return msg_head back to sender */
+-	    msg_head.nframes  = 0;
+-	    bcm_send_to_user(sk, &amp;msg_head, NULL, NULL);
++			msg_head.flags   |= CMD_ERROR; /* return msg_head back to sender */
++			msg_head.nframes  = 0;
++			bcm_send_to_user(sk, &amp;msg_head, NULL, NULL);
+ 
+-	    rbytes = sizeof(struct bcm_msg_head);
++			rbytes = sizeof(struct bcm_msg_head);
+ 
+-	    break;
+-	}
++			break;
++		}
+ 
+-	/* check the given can_id */
++		/* check the given can_id */
+ 
+-	if (!(op = bcm_find_op(ud-&gt;rx_ops, msg_head.can_id))) {
++		if (!(op = bcm_find_op(ud-&gt;rx_ops, msg_head.can_id))) {
+ 
+-	    /* insert new BCM operation for the given can_id */
++			/* insert new BCM operation for the given can_id */
+ 
+-	    if (!(op = kmalloc(sizeof(struct bcm_op), GFP_KERNEL)))
+-		return -ENOMEM;
++			if (!(op = kmalloc(sizeof(struct bcm_op), GFP_KERNEL)))
++				return -ENOMEM;
+ 
+-	    memset(op, 0, sizeof(struct bcm_op)); /* init to zero, e.g. for timers */
++			memset(op, 0, sizeof(struct bcm_op)); /* init to zero, e.g. for timers */
+ 
+-	    DBG(&quot;RX_SETUP: creating new rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
+-		op, msg_head.can_id);
++			DBG(&quot;RX_SETUP: creating new rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++			    op, msg_head.can_id);
+ 
+-	    op-&gt;can_id    = msg_head.can_id;
+-	    op-&gt;nframes   = msg_head.nframes;
++			op-&gt;can_id    = msg_head.can_id;
++			op-&gt;nframes   = msg_head.nframes;
+ 
+-	    if (op-&gt;nframes) {
++			if (op-&gt;nframes) {
+ 
+-		/* create array for can_frames and copy the data */
+-		if (!(op-&gt;frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
+-		    kfree(op);
+-		    return -ENOMEM;
+-		}
++				/* create array for can_frames and copy the data */
++				if (!(op-&gt;frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
++					kfree(op);
++					return -ENOMEM;
++				}
+ 
+-		for (i = 0; i &lt; msg_head.nframes; i++)
+-		    memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
++				for (i = 0; i &lt; msg_head.nframes; i++)
++					memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
+ 
+-		/* create array for received can_frames */
+-		if (!(op-&gt;last_frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
+-		    kfree(op-&gt;frames);
+-		    kfree(op);
+-		    return -ENOMEM;
+-		}
++				/* create array for received can_frames */
++				if (!(op-&gt;last_frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
++					kfree(op-&gt;frames);
++					kfree(op);
++					return -ENOMEM;
++				}
+ 
+-		/* clear received can_frames to indicate 'nothing received' */
+-		memset(op-&gt;last_frames, 0, msg_head.nframes * sizeof(struct can_frame));
+-	    }
+-	    else {
+-		op-&gt;frames = NULL;
++				/* clear received can_frames to indicate 'nothing received' */
++				memset(op-&gt;last_frames, 0, msg_head.nframes * sizeof(struct can_frame));
++			} else {
++				op-&gt;frames = NULL;
+ 
+-		/* even when we have the RX_FILTER_ID case, we need to store the last frame */
+-		/* for the throttle functionality */
++				/* even when we have the RX_FILTER_ID case, we need to store the last frame */
++				/* for the throttle functionality */
+ 
+-		/* create array for received can_frames */
+-		if (!(op-&gt;last_frames = kmalloc(sizeof(struct can_frame), GFP_KERNEL))) {
+-		    kfree(op);
+-		    return -ENOMEM;
+-		}
++				/* create array for received can_frames */
++				if (!(op-&gt;last_frames = kmalloc(sizeof(struct can_frame), GFP_KERNEL))) {
++					kfree(op);
++					return -ENOMEM;
++				}
+ 
+-		/* clear received can_frames to indicate 'nothing received' */
+-		memset(op-&gt;last_frames, 0, sizeof(struct can_frame));
+-	    }
++				/* clear received can_frames to indicate 'nothing received' */
++				memset(op-&gt;last_frames, 0, sizeof(struct can_frame));
++			}
+ 
+-	    op-&gt;sk = sk; /* bcm_delete_rx_op() needs this */
++			op-&gt;sk = sk; /* bcm_delete_rx_op() needs this */
+ 
+-	    init_timer(&amp;op-&gt;timer); /* initialize uninitialized (kmalloc) structure */
+-	    init_timer(&amp;op-&gt;thrtimer); /* init throttle timer for RX_CHANGED */
++			init_timer(&amp;op-&gt;timer); /* initialize uninitialized (kmalloc) structure */
++			init_timer(&amp;op-&gt;thrtimer); /* init throttle timer for RX_CHANGED */
+ 
+-	    op-&gt;timer.function = bcm_rx_timeout_handler; /* handler for rx timeouts */
+-	    op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
++			op-&gt;timer.function = bcm_rx_timeout_handler; /* handler for rx timeouts */
++			op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
+ 
+-	    op-&gt;thrtimer.function = bcm_rx_thr_handler; /* handler for RX_CHANGED throttle timeouts */
+-	    op-&gt;thrtimer.data = (unsigned long)op; /* timer.data points to this op-structure */
+-	    op-&gt;thrtimer.expires = 0; /* mark disabled timer */
++			op-&gt;thrtimer.function = bcm_rx_thr_handler; /* handler for RX_CHANGED throttle timeouts */
++			op-&gt;thrtimer.data = (unsigned long)op; /* timer.data points to this op-structure */
++			op-&gt;thrtimer.expires = 0; /* mark disabled timer */
+ 
+-	    /* add this bcm_op to the list of the tx_ops */
+-	    bcm_insert_op(&amp;ud-&gt;rx_ops, op);
++			/* add this bcm_op to the list of the tx_ops */
++			bcm_insert_op(&amp;ud-&gt;rx_ops, op);
+ 
+-	    c=1; /* call can_rx_register() at end of RX_SETUP */
++			c=1; /* call can_rx_register() at end of RX_SETUP */
+ 
+-	}
+-	else {
+-	    /* update existing BCM operation */
++		} else {
++			/* update existing BCM operation */
+ 
+-	    DBG(&quot;RX_SETUP: modifying existing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
+-		op, msg_head.can_id);
++			DBG(&quot;RX_SETUP: modifying existing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++			    op, msg_head.can_id);
+ 
+-	    /* do we need more space for the can_frames? */
+-	    if (msg_head.nframes &gt; op-&gt;nframes) {
++			/* do we need more space for the can_frames? */
++			if (msg_head.nframes &gt; op-&gt;nframes) {
+ 
+-		/* yes =&gt; create new arrays */
++				/* yes =&gt; create new arrays */
+ 
+-		struct can_frame *p;
++				struct can_frame *p;
+ 
+-		if (!(p = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL)))
+-		    return -ENOMEM;
++				if (!(p = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL)))
++					return -ENOMEM;
+ 
+-		if (op-&gt;frames)
+-		    kfree (op-&gt;frames);
+-		op-&gt;frames = p;
++				if (op-&gt;frames)
++					kfree (op-&gt;frames);
++				op-&gt;frames = p;
+ 
+-		if (!(p = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL)))
+-		    return -ENOMEM;
+-		if (op-&gt;last_frames)
+-		    kfree (op-&gt;last_frames);
+-		op-&gt;last_frames = p;
+-	    }
++				if (!(p = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL)))
++					return -ENOMEM;
++				if (op-&gt;last_frames)
++					kfree (op-&gt;last_frames);
++				op-&gt;last_frames = p;
++			}
+ 
+-	    if (msg_head.nframes) {
+-		/* update can_frames content */
+-		for (i = 0; i &lt; msg_head.nframes; i++)
+-		    memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
++			if (msg_head.nframes) {
++				/* update can_frames content */
++				for (i = 0; i &lt; msg_head.nframes; i++)
++					memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
+ 
+-		/* clear received can_frames to indicate 'nothing received' */
+-		memset(op-&gt;last_frames, 0, msg_head.nframes * sizeof(struct can_frame));
+-	    }
++				/* clear received can_frames to indicate 'nothing received' */
++				memset(op-&gt;last_frames, 0, msg_head.nframes * sizeof(struct can_frame));
++			}
+ 
+-	    op-&gt;nframes = msg_head.nframes;
+-	    c=0; /* do not call can_rx_register() at end of RX_SETUP */
++			op-&gt;nframes = msg_head.nframes;
++			c=0; /* do not call can_rx_register() at end of RX_SETUP */
+ 
+-	} /* if (!bcm_find_op(ud-&gt;tx_ops, msg_head.can_id)) */
++		} /* if (!bcm_find_op(ud-&gt;tx_ops, msg_head.can_id)) */
+ 
+ 
+-	/* check flags */
++		/* check flags */
+ 
+-	op-&gt;flags = msg_head.flags;
++		op-&gt;flags = msg_head.flags;
+ 
+-	if (op-&gt;flags &amp; RX_RTR_FRAME) {
++		if (op-&gt;flags &amp; RX_RTR_FRAME) {
+ 
+-	    /* no timers in RTR-mode */
+-	    del_timer(&amp;op-&gt;thrtimer);
+-	    del_timer(&amp;op-&gt;timer);
++			/* no timers in RTR-mode */
++			del_timer(&amp;op-&gt;thrtimer);
++			del_timer(&amp;op-&gt;timer);
+ 
+-	    /* funny feature in RX(!)_SETUP only for RTR-mode: */
+-	    /* copy can_id into frame BUT without RTR-flag to  */
+-	    /* prevent a full-load-loopback-test ... ;-]       */
+-	    if ((op-&gt;flags &amp; TX_CP_CAN_ID) ||
+-		(op-&gt;frames[0].can_id == op-&gt;can_id))
+-		op-&gt;frames[0].can_id = op-&gt;can_id &amp; ~CAN_RTR_FLAG;
++			/* funny feature in RX(!)_SETUP only for RTR-mode: */
++			/* copy can_id into frame BUT without RTR-flag to  */
++			/* prevent a full-load-loopback-test ... ;-]       */
++			if ((op-&gt;flags &amp; TX_CP_CAN_ID) ||
++			    (op-&gt;frames[0].can_id == op-&gt;can_id))
++				op-&gt;frames[0].can_id = op-&gt;can_id &amp; ~CAN_RTR_FLAG;
+ 
+-	}
+-	else {
+-	    if (op-&gt;flags &amp; SETTIMER) {
++		} else {
++			if (op-&gt;flags &amp; SETTIMER) {
+ 
+-		/* set timer value */
++				/* set timer value */
+ 
+-		op-&gt;ival1   = msg_head.ival1;
+-		op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head.ival1, 1);
+-		op-&gt;ival2   = msg_head.ival2;
+-		op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head.ival2, 1);
++				op-&gt;ival1   = msg_head.ival1;
++				op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head.ival1, 1);
++				op-&gt;ival2   = msg_head.ival2;
++				op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head.ival2, 1);
+ 
+-		DBG(&quot;RX_SETUP: SETTIMER j_ival1=%ld j_ival2=%ld\n&quot;,
+-		    op-&gt;j_ival1, op-&gt;j_ival2);
++				DBG(&quot;RX_SETUP: SETTIMER j_ival1=%ld j_ival2=%ld\n&quot;,
++				    op-&gt;j_ival1, op-&gt;j_ival2);
+ 
+-		/* disable an active timer due to zero value? */
+-		if (!op-&gt;j_ival1) {
+-		    del_timer(&amp;op-&gt;timer);
+-		    DBG(&quot;RX_SETUP: disabled timer for rx timeouts.\n&quot;);
+-		}
++				/* disable an active timer due to zero value? */
++				if (!op-&gt;j_ival1) {
++					del_timer(&amp;op-&gt;timer);
++					DBG(&quot;RX_SETUP: disabled timer for rx timeouts.\n&quot;);
++				}
+ 
+-		/* free currently blocked msgs ? */
+-		if (op-&gt;thrtimer.expires) { /* running throttle timer? */
+-		    DBG(&quot;RX_SETUP: unblocking throttled msgs.\n&quot;);
+-		    del_timer(&amp;op-&gt;thrtimer);
+-		    op-&gt;thrtimer.expires = jiffies + 2; /* send blocked msgs hereafter */
+-		    add_timer(&amp;op-&gt;thrtimer);
+-		}
+-		/* if (op-&gt;j_ival2) is zero, no (new) throttling will happen */
+-		/* see bcm_rx_update_and_send() and bcm_rx_thr_handler()     */
+-	    }
++				/* free currently blocked msgs ? */
++				if (op-&gt;thrtimer.expires) { /* running throttle timer? */
++					DBG(&quot;RX_SETUP: unblocking throttled msgs.\n&quot;);
++					del_timer(&amp;op-&gt;thrtimer);
++					op-&gt;thrtimer.expires = jiffies + 2; /* send blocked msgs hereafter */
++					add_timer(&amp;op-&gt;thrtimer);
++				}
++				/* if (op-&gt;j_ival2) is zero, no (new) throttling will happen */
++				/* see bcm_rx_update_and_send() and bcm_rx_thr_handler()     */
++			}
+ 
+-	    if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1) {
++			if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1) {
+ 
+-		del_timer(&amp;op-&gt;timer);
++				del_timer(&amp;op-&gt;timer);
+ 
+-		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
++				op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 
+-		DBG(&quot;RX_SETUP: adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
+-		    (char *) op-&gt;timer.function,
+-		    (char *) op-&gt;timer.data,
+-		    (unsigned int) op-&gt;timer.expires);
++				DBG(&quot;RX_SETUP: adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++				    (char *) op-&gt;timer.function,
++				    (char *) op-&gt;timer.data,
++				    (unsigned int) op-&gt;timer.expires);
+ 
+-		add_timer(&amp;op-&gt;timer);
+-	    }
+-	}
++				add_timer(&amp;op-&gt;timer);
++			}
++		}
+ 
+-	/* now we can register for can_ids, if we added a new bcm_op */
+-	if (c) {
+-	    struct net_device *dev = dev_get_by_index(sk-&gt;bound_dev_if);
++		/* now we can register for can_ids, if we added a new bcm_op */
++		if (c) {
++			struct net_device *dev = dev_get_by_index(sk-&gt;bound_dev_if);
+ 
+-	    DBG(&quot;RX_SETUP: can_rx_register() for can_id &lt;%03X&gt;. rx_op is (%p)\n&quot;, op-&gt;can_id, op);
++			DBG(&quot;RX_SETUP: can_rx_register() for can_id &lt;%03X&gt;. rx_op is (%p)\n&quot;, op-&gt;can_id, op);
+ 
+-	    if (dev) {
+-		can_rx_register(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op, IDENT);
+-		dev_put(dev);
+-	    }
+-	}
++			if (dev) {
++				can_rx_register(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op, IDENT);
++				dev_put(dev);
++			}
++		}
+ 
+-	rbytes = msg_head.nframes * sizeof(struct can_frame) + sizeof(struct bcm_msg_head);
++		rbytes = msg_head.nframes * sizeof(struct can_frame) + sizeof(struct bcm_msg_head);
+ 
+-	break; /* RX_SETUP */
++		break; /* RX_SETUP */
+ 
+-    case RX_DELETE:
++	case RX_DELETE:
+ 
+-	bcm_delete_rx_op(&amp;ud-&gt;rx_ops, msg_head.can_id);
++		bcm_delete_rx_op(&amp;ud-&gt;rx_ops, msg_head.can_id);
+ 
+-	rbytes = sizeof(struct bcm_msg_head);
++		rbytes = sizeof(struct bcm_msg_head);
+ 
+-	break; /* RX_DELETE */
++		break; /* RX_DELETE */
+ 
+-    default:
++	default:
+ 
+-	DBG(&quot;Unknown opcode %d\n&quot;, msg_head.opcode);
++		DBG(&quot;Unknown opcode %d\n&quot;, msg_head.opcode);
+ 
+-	msg_head.flags   |= CMD_ERROR; /* return msg_head back to sender */
+-	msg_head.nframes  = 0;
+-	bcm_send_to_user(sk, &amp;msg_head, NULL, NULL);
++		msg_head.flags   |= CMD_ERROR; /* return msg_head back to sender */
++		msg_head.nframes  = 0;
++		bcm_send_to_user(sk, &amp;msg_head, NULL, NULL);
+ 
+-	rbytes = sizeof(struct bcm_msg_head);
++		rbytes = sizeof(struct bcm_msg_head);
+ 
+-	break;
+-    }
++		break;
++	}
+ 
+-    return rbytes;
++	return rbytes;
+ }
+ 
+ static int bcm_recvmsg(struct socket *sock, struct msghdr *msg, int size,
+ 		       int flags, struct scm_cookie *scm)
+ {
+-    struct sock *sk = sock-&gt;sk;
+-    struct sk_buff *skb;
+-    int error = 0;
+-    int noblock;
+-    int err;
++	struct sock *sk = sock-&gt;sk;
++	struct sk_buff *skb;
++	int error = 0;
++	int noblock;
++	int err;
+ 
+-    DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
++	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ 
+-    noblock =  flags &amp; MSG_DONTWAIT;
+-    flags   &amp;= ~MSG_DONTWAIT;
+-    if (!(skb = skb_recv_datagram(sk, flags, noblock, &amp;error))) {
+-	return error;
+-    }
++	noblock =  flags &amp; MSG_DONTWAIT;
++	flags   &amp;= ~MSG_DONTWAIT;
++	if (!(skb = skb_recv_datagram(sk, flags, noblock, &amp;error))) {
++		return error;
++	}
+ 
+-    DBG(&quot;delivering skbuff %p\n&quot;, skb);
+-    DBG_SKB(skb);
++	DBG(&quot;delivering skbuff %p\n&quot;, skb);
++	DBG_SKB(skb);
+ 
+-    if (skb-&gt;len &lt; size)
+-	size = skb-&gt;len;
+-    if ((err = memcpy_toiovec(msg-&gt;msg_iov, skb-&gt;data, size)) &lt; 0) {
+-	skb_free_datagram(sk, skb);
+-	return err;
+-    }
++	if (skb-&gt;len &lt; size)
++		size = skb-&gt;len;
++	if ((err = memcpy_toiovec(msg-&gt;msg_iov, skb-&gt;data, size)) &lt; 0) {
++		skb_free_datagram(sk, skb);
++		return err;
++	}
+ 
+-    sock_recv_timestamp(msg, sk, skb);
++	sock_recv_timestamp(msg, sk, skb);
+ 
+-    DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+-    skb_free_datagram(sk, skb);
++	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
++	skb_free_datagram(sk, skb);
+ 
+-    return size;
++	return size;
+ }
+ 
+ static void bcm_tx_timeout_handler(unsigned long data)
+ {
+-    struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op*)data;
+ 
+-    DBG(&quot;Called with bcm_op (%p)\n&quot;, op);
++	DBG(&quot;Called with bcm_op (%p)\n&quot;, op);
+ 
+-    if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
++	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 
+-	op-&gt;count--;
++		op-&gt;count--;
+ 
+-	if (!op-&gt;count &amp;&amp; (op-&gt;flags &amp; TX_COUNTEVT)) { /* create notification to user? */
++		if (!op-&gt;count &amp;&amp; (op-&gt;flags &amp; TX_COUNTEVT)) { /* create notification to user? */
+ 
+-	    struct bcm_msg_head msg_head;
++			struct bcm_msg_head msg_head;
+ 
+-	    DBG(&quot;sending TX_EXPIRED for can_id &lt;%03X&gt;\n&quot;, op-&gt;can_id);
++			DBG(&quot;sending TX_EXPIRED for can_id &lt;%03X&gt;\n&quot;, op-&gt;can_id);
+ 
+-	    msg_head.opcode  = TX_EXPIRED;
+-	    msg_head.flags   = op-&gt;flags;
+-	    msg_head.count   = op-&gt;count;
+-	    msg_head.ival1   = op-&gt;ival1;
+-	    msg_head.ival2   = op-&gt;ival2;
+-	    msg_head.can_id  = op-&gt;can_id;
+-	    msg_head.nframes = 0;
++			msg_head.opcode  = TX_EXPIRED;
++			msg_head.flags   = op-&gt;flags;
++			msg_head.count   = op-&gt;count;
++			msg_head.ival1   = op-&gt;ival1;
++			msg_head.ival2   = op-&gt;ival2;
++			msg_head.can_id  = op-&gt;can_id;
++			msg_head.nframes = 0;
+ 
+-	    bcm_send_to_user(op-&gt;sk, &amp;msg_head, NULL, NULL);
++			bcm_send_to_user(op-&gt;sk, &amp;msg_head, NULL, NULL);
++		}
+ 	}
+-    }
+ 
+-    DBG(&quot;count=%d j_ival1=%ld j_ival2=%ld\n&quot;,
+-	op-&gt;count, op-&gt;j_ival1, op-&gt;j_ival2);
++	DBG(&quot;count=%d j_ival1=%ld j_ival2=%ld\n&quot;,
++	    op-&gt;count, op-&gt;j_ival1, op-&gt;j_ival2);
+ 
+-    if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
++	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 
+-	op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-	add_timer(&amp;op-&gt;timer);
++		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
++		add_timer(&amp;op-&gt;timer);
+ 
+-	DBG(&quot;adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
+-	    op-&gt;timer.function,
+-	    (char*) op-&gt;timer.data,
+-	    (unsigned int) op-&gt;timer.expires);
++		DBG(&quot;adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++		    op-&gt;timer.function,
++		    (char*) op-&gt;timer.data,
++		    (unsigned int) op-&gt;timer.expires);
+ 
+-	bcm_can_tx(op); /* send (next) frame */
+-    }
+-    else {
+-	if (op-&gt;j_ival2) {
+-	    op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-	    add_timer(&amp;op-&gt;timer);
++		bcm_can_tx(op); /* send (next) frame */
++	} else {
++		if (op-&gt;j_ival2) {
++			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
++			add_timer(&amp;op-&gt;timer);
+ 
+-	DBG(&quot;adding timer ival2. func=%p data=(%p) exp=0x%08X\n&quot;,
+-	    op-&gt;timer.function,
+-	    (char*) op-&gt;timer.data,
+-	    (unsigned int) op-&gt;timer.expires);
++			DBG(&quot;adding timer ival2. func=%p data=(%p) exp=0x%08X\n&quot;,
++			    op-&gt;timer.function,
++			    (char*) op-&gt;timer.data,
++			    (unsigned int) op-&gt;timer.expires);
+ 
+-	    bcm_can_tx(op); /* send (next) frame */
++			bcm_can_tx(op); /* send (next) frame */
++		} else
++			DBG(&quot;no timer restart\n&quot;);
+ 	}
+-	else
+-	    DBG(&quot;no timer restart\n&quot;);
+-    }
+ 
+-    return;
++	return;
+ 
+ }
+ 
+ static void bcm_rx_handler(struct sk_buff *skb, void *data)
+ {
+-    struct bcm_op *op = (struct bcm_op*)data;
+-    struct can_frame rxframe;
+-    int i;
++	struct bcm_op *op = (struct bcm_op*)data;
++	struct can_frame rxframe;
++	int i;
+ 
+-    del_timer(&amp;op-&gt;timer); /* disable timeout */
++	del_timer(&amp;op-&gt;timer); /* disable timeout */
+ 
+-    DBG(&quot;Called with bcm_op (%p)\n&quot;, op);
++	DBG(&quot;Called with bcm_op (%p)\n&quot;, op);
+ 
+-    if (skb-&gt;len == sizeof(rxframe)) {
+-	memcpy(&amp;rxframe, skb-&gt;data, sizeof(rxframe));
+-	op-&gt;stamp = skb-&gt;stamp; /* save rx timestamp */
+-	op-&gt;frames_abs++; /* statistics */
+-	kfree_skb(skb);
+-	DBG(&quot;got can_frame with can_id &lt;%03X&gt;\n&quot;, rxframe.can_id);
+-    }
+-    else {
+-	DBG(&quot;Wrong skb-&gt;len = %d\n&quot;, skb-&gt;len);
+-	kfree_skb(skb);
+-	return;
+-    }
++	if (skb-&gt;len == sizeof(rxframe)) {
++		memcpy(&amp;rxframe, skb-&gt;data, sizeof(rxframe));
++		op-&gt;stamp = skb-&gt;stamp; /* save rx timestamp */
++		op-&gt;frames_abs++; /* statistics */
++		kfree_skb(skb);
++		DBG(&quot;got can_frame with can_id &lt;%03X&gt;\n&quot;, rxframe.can_id);
++	} else {
++		DBG(&quot;Wrong skb-&gt;len = %d\n&quot;, skb-&gt;len);
++		kfree_skb(skb);
++		return;
++	}
+ 
+-    DBG_FRAME(&quot;BCM: bcm_rx_handler: CAN frame&quot;, &amp;rxframe);
++	DBG_FRAME(&quot;BCM: bcm_rx_handler: CAN frame&quot;, &amp;rxframe);
+ 
+-    if (op-&gt;can_id != rxframe.can_id) {
+-	DBG(&quot;ERROR! Got wrong can_id &lt;%03X&gt;! Expected &lt;%03X&gt;.\n&quot;,
+-	    rxframe.can_id, op-&gt;can_id);
+-	return;
+-    }
++	if (op-&gt;can_id != rxframe.can_id) {
++		DBG(&quot;ERROR! Got wrong can_id &lt;%03X&gt;! Expected &lt;%03X&gt;.\n&quot;,
++		    rxframe.can_id, op-&gt;can_id);
++		return;
++	}
+ 
+-    if (op-&gt;flags &amp; RX_RTR_FRAME) { /* send reply for RTR-request */
+-	DBG(&quot;RTR-request\n&quot;);
+-	bcm_can_tx(op); /* send op-&gt;frames[0] to CAN device */
+-	return;
+-    }
++	if (op-&gt;flags &amp; RX_RTR_FRAME) { /* send reply for RTR-request */
++		DBG(&quot;RTR-request\n&quot;);
++		bcm_can_tx(op); /* send op-&gt;frames[0] to CAN device */
++		return;
++	}
+ 
+-    if (op-&gt;flags &amp; RX_FILTER_ID) { /* the easiest case */
+-	DBG(&quot;Easy does it with RX_FILTER_ID\n&quot;);
+-	bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[0], &amp;rxframe);
+-	bcm_rx_starttimer(op);
+-	return;
+-    }
++	if (op-&gt;flags &amp; RX_FILTER_ID) { /* the easiest case */
++		DBG(&quot;Easy does it with RX_FILTER_ID\n&quot;);
++		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[0], &amp;rxframe);
++		bcm_rx_starttimer(op);
++		return;
++	}
+ 
+-    if (op-&gt;nframes == 1) { /* simple compare with index 0 */
+-	DBG(&quot;Simple compare\n&quot;);
+-	bcm_rx_cmp_to_index(op, 0, &amp;rxframe);
+-	bcm_rx_starttimer(op);
+-	return;
+-    }
++	if (op-&gt;nframes == 1) { /* simple compare with index 0 */
++		DBG(&quot;Simple compare\n&quot;);
++		bcm_rx_cmp_to_index(op, 0, &amp;rxframe);
++		bcm_rx_starttimer(op);
++		return;
++	}
+ 
+-    if (op-&gt;nframes &gt; 1) { /* multiplex compare */
++	if (op-&gt;nframes &gt; 1) { /* multiplex compare */
+ 
+-	DBG(&quot;Multiplex compare\n&quot;);
+-	/* find the first multiplex mask that fits */
+-	/* MUX-mask is in index 0 */
++		DBG(&quot;Multiplex compare\n&quot;);
++		/* find the first multiplex mask that fits */
++		/* MUX-mask is in index 0 */
+ 
+-	for (i=1; i &lt; op-&gt;nframes; i++) {
++		for (i=1; i &lt; op-&gt;nframes; i++) {
+ 
+-	    if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
+-		(GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;op-&gt;frames[i]))) {
+-		DBG(&quot;found MUX index %d\n&quot;, i);
+-		bcm_rx_cmp_to_index(op, i, &amp;rxframe);
+-		break;
+-	    }
++			if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
++			    (GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;op-&gt;frames[i]))) {
++				DBG(&quot;found MUX index %d\n&quot;, i);
++				bcm_rx_cmp_to_index(op, i, &amp;rxframe);
++				break;
++			}
++		}
++		bcm_rx_starttimer(op);
+ 	}
+-	bcm_rx_starttimer(op);
+-    }
+ }
+ 
+ static void bcm_rx_cmp_to_index(struct bcm_op *op, int index,
+ 				struct can_frame *rxdata)
+ {
+-    /* no one uses the MSBs of can_dlc for comparation, */
+-    /* so we use it here to detect the first time of reception */
++	/* no one uses the MSBs of can_dlc for comparation, */
++	/* so we use it here to detect the first time of reception */
+ 
+-    if (!(op-&gt;last_frames[index].can_dlc &amp; RX_RECV)) { /* first time? */
+-	DBG(&quot;first time :)\n&quot;);
+-	bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
+-	return;
+-    }
++	if (!(op-&gt;last_frames[index].can_dlc &amp; RX_RECV)) { /* first time? */
++		DBG(&quot;first time :)\n&quot;);
++		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
++		return;
++	}
+ 
+-    /* do a real check in can_data */
++	/* do a real check in can_data */
+ 
+-    DBG(&quot;op-&gt;frames[index].data = 0x%016llx\n&quot;, GET_U64(&amp;op-&gt;frames[index]));
+-    DBG(&quot;op-&gt;last_frames[index].data = 0x%016llx\n&quot;,
+-	GET_U64(&amp;op-&gt;last_frames[index]));
+-    DBG(&quot;rxdata-&gt;data = 0x%016llx\n&quot;, GET_U64(rxdata));
++	DBG(&quot;op-&gt;frames[index].data = 0x%016llx\n&quot;, GET_U64(&amp;op-&gt;frames[index]));
++	DBG(&quot;op-&gt;last_frames[index].data = 0x%016llx\n&quot;,
++	    GET_U64(&amp;op-&gt;last_frames[index]));
++	DBG(&quot;rxdata-&gt;data = 0x%016llx\n&quot;, GET_U64(rxdata));
+ 
+-    if ((GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(rxdata)) !=
+-	(GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(&amp;op-&gt;last_frames[index]))) {
+-	DBG(&quot;relevant data change :)\n&quot;);
+-	bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
+-	return;
+-    }
++	if ((GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(rxdata)) !=
++	    (GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(&amp;op-&gt;last_frames[index]))) {
++		DBG(&quot;relevant data change :)\n&quot;);
++		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
++		return;
++	}
+ 
+ 
+-    if (op-&gt;flags &amp; RX_CHECK_DLC) {
++	if (op-&gt;flags &amp; RX_CHECK_DLC) {
+ 
+-	/* do a real check in dlc */
++		/* do a real check in dlc */
+ 
+-	if (rxdata-&gt;can_dlc != (op-&gt;last_frames[index].can_dlc &amp; BCM_CAN_DLC_MASK)) {
+-	    DBG(&quot;dlc change :)\n&quot;);
+-	    bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
+-	    return;
++		if (rxdata-&gt;can_dlc != (op-&gt;last_frames[index].can_dlc &amp; BCM_CAN_DLC_MASK)) {
++			DBG(&quot;dlc change :)\n&quot;);
++			bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
++			return;
++		}
+ 	}
+-    }
+-    DBG(&quot;no relevant change :(\n&quot;);
++	DBG(&quot;no relevant change :(\n&quot;);
+ }
+ 
+ static void bcm_rx_update_and_send(struct bcm_op *op,
+ 				   struct can_frame *lastdata,
+ 				   struct can_frame *rxdata)
+ {
+-    unsigned long nexttx = op-&gt;j_lastmsg + op-&gt;j_ival2;
++	unsigned long nexttx = op-&gt;j_lastmsg + op-&gt;j_ival2;
+ 
+-    memcpy(lastdata, rxdata, sizeof(struct can_frame));
+-    lastdata-&gt;can_dlc |= RX_RECV; /* mark as used */
++	memcpy(lastdata, rxdata, sizeof(struct can_frame));
++	lastdata-&gt;can_dlc |= RX_RECV; /* mark as used */
+ 
+-    /* throttle bcm_rx_changed ? */
+-    if ((op-&gt;thrtimer.expires) || /* somebody else is already waiting OR */
+-	((op-&gt;j_ival2) &amp;&amp; (nexttx &gt; jiffies))) {      /* we have to wait */
++	/* throttle bcm_rx_changed ? */
++	if ((op-&gt;thrtimer.expires) || /* somebody else is already waiting OR */
++	    ((op-&gt;j_ival2) &amp;&amp; (nexttx &gt; jiffies))) {      /* we have to wait */
+ 
+-	lastdata-&gt;can_dlc |= RX_THR; /* mark as 'throttled' */
++		lastdata-&gt;can_dlc |= RX_THR; /* mark as 'throttled' */
+ 
+-	if (!(op-&gt;thrtimer.expires)) { /* start only the first time */
+-	    op-&gt;thrtimer.expires = nexttx;
+-	    add_timer(&amp;op-&gt;thrtimer);
++		if (!(op-&gt;thrtimer.expires)) { /* start only the first time */
++			op-&gt;thrtimer.expires = nexttx;
++			add_timer(&amp;op-&gt;thrtimer);
+ 
+-	    DBG(&quot;adding thrtimer. func=%p data=(%p) exp=0x%08X\n&quot;,
+-		op-&gt;thrtimer.function,
+-		(char*) op-&gt;thrtimer.data,
+-		(unsigned int) op-&gt;thrtimer.expires);
+-	}
+-    }
+-    else
+-	bcm_rx_changed(op, rxdata); /* send RX_CHANGED to the user */
++			DBG(&quot;adding thrtimer. func=%p data=(%p) exp=0x%08X\n&quot;,
++			    op-&gt;thrtimer.function,
++			    (char*) op-&gt;thrtimer.data,
++			    (unsigned int) op-&gt;thrtimer.expires);
++		}
++	} else
++		bcm_rx_changed(op, rxdata); /* send RX_CHANGED to the user */
+ }
+ 
+ static void bcm_rx_starttimer(struct bcm_op *op)
+ {
+-    if (op-&gt;flags &amp; RX_NO_AUTOTIMER)
+-	return;
++	if (op-&gt;flags &amp; RX_NO_AUTOTIMER)
++		return;
+ 
+-    if (op-&gt;j_ival1) {
++	if (op-&gt;j_ival1) {
+ 
+-	op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
++		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 
+-	DBG(&quot;adding rx timeout timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
+-	    op-&gt;timer.function,
+-	    (char*) op-&gt;timer.data,
+-	    (unsigned int) op-&gt;timer.expires);
++		DBG(&quot;adding rx timeout timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++		    op-&gt;timer.function,
++		    (char*) op-&gt;timer.data,
++		    (unsigned int) op-&gt;timer.expires);
+ 
+-	add_timer(&amp;op-&gt;timer);
+-    }
++		add_timer(&amp;op-&gt;timer);
++	}
+ }
+ 
+ 
+ static void bcm_rx_changed(struct bcm_op *op, struct can_frame *data)
+ {
+-    struct bcm_msg_head head;
++	struct bcm_msg_head head;
+ 
+-    op-&gt;j_lastmsg = jiffies;
+-    op-&gt;frames_filtered++; /* statistics */
++	op-&gt;j_lastmsg = jiffies;
++	op-&gt;frames_filtered++; /* statistics */
+ 
+-    if (op-&gt;frames_filtered &gt; ULONG_MAX/100)
+-	op-&gt;frames_filtered = op-&gt;frames_abs = 0; /* restart - spinlock ? */
++	if (op-&gt;frames_filtered &gt; ULONG_MAX/100)
++		op-&gt;frames_filtered = op-&gt;frames_abs = 0; /* restart - spinlock ? */
+ 
+-    DBG(&quot;setting j_lastmsg to 0x%08X for rx_op(%p)\n&quot;,
+-	(unsigned int) op-&gt;j_lastmsg, op);
+-    DBG(&quot;sending notification\n&quot;);
++	DBG(&quot;setting j_lastmsg to 0x%08X for rx_op(%p)\n&quot;,
++	    (unsigned int) op-&gt;j_lastmsg, op);
++	DBG(&quot;sending notification\n&quot;);
+ 
+-    head.opcode  = RX_CHANGED;
+-    head.flags   = op-&gt;flags;
+-    head.count   = op-&gt;count;
+-    head.ival1   = op-&gt;ival1;
+-    head.ival2   = op-&gt;ival2;
+-    head.can_id  = op-&gt;can_id;
+-    head.nframes = 1;
++	head.opcode  = RX_CHANGED;
++	head.flags   = op-&gt;flags;
++	head.count   = op-&gt;count;
++	head.ival1   = op-&gt;ival1;
++	head.ival2   = op-&gt;ival2;
++	head.can_id  = op-&gt;can_id;
++	head.nframes = 1;
+ 
+-    bcm_send_to_user(op-&gt;sk, &amp;head, data, &amp;op-&gt;stamp);
++	bcm_send_to_user(op-&gt;sk, &amp;head, data, &amp;op-&gt;stamp);
+ }
+ 
+ 
+ static void bcm_rx_timeout_handler(unsigned long data)
+ {
+-    struct bcm_op *op = (struct bcm_op*)data;
+-    struct bcm_msg_head msg_head;
++	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_msg_head msg_head;
+ 
+-    DBG(&quot;sending RX_TIMEOUT for can_id &lt;%03X&gt;. op is (%p)\n&quot;, op-&gt;can_id, op);
++	DBG(&quot;sending RX_TIMEOUT for can_id &lt;%03X&gt;. op is (%p)\n&quot;, op-&gt;can_id, op);
+ 
+-    msg_head.opcode  = RX_TIMEOUT;
+-    msg_head.flags   = op-&gt;flags;
+-    msg_head.count   = op-&gt;count;
+-    msg_head.ival1   = op-&gt;ival1;
+-    msg_head.ival2   = op-&gt;ival2;
+-    msg_head.can_id  = op-&gt;can_id;
+-    msg_head.nframes = 0;
++	msg_head.opcode  = RX_TIMEOUT;
++	msg_head.flags   = op-&gt;flags;
++	msg_head.count   = op-&gt;count;
++	msg_head.ival1   = op-&gt;ival1;
++	msg_head.ival2   = op-&gt;ival2;
++	msg_head.can_id  = op-&gt;can_id;
++	msg_head.nframes = 0;
+ 
+-    bcm_send_to_user(op-&gt;sk, &amp;msg_head, NULL, NULL);
++	bcm_send_to_user(op-&gt;sk, &amp;msg_head, NULL, NULL);
+ 
+-    /* no restart of the timer is done here! */
++	/* no restart of the timer is done here! */
+ 
+-    /* if the user wants to be informed, when cyclic CAN-Messages come back ... */
+-    if ((op-&gt;flags &amp; RX_ANNOUNCE_RESUME) &amp;&amp; op-&gt;last_frames) {
+-	/* clear received can_frames to indicate 'nothing received' */
+-	memset(op-&gt;last_frames, 0, op-&gt;nframes * sizeof(struct can_frame));
+-	DBG(&quot;RX_ANNOUNCE_RESTART\n&quot;);
+-    }
++	/* if the user wants to be informed, when cyclic CAN-Messages come back ... */
++	if ((op-&gt;flags &amp; RX_ANNOUNCE_RESUME) &amp;&amp; op-&gt;last_frames) {
++		/* clear received can_frames to indicate 'nothing received' */
++		memset(op-&gt;last_frames, 0, op-&gt;nframes * sizeof(struct can_frame));
++		DBG(&quot;RX_ANNOUNCE_RESTART\n&quot;);
++	}
+ 
+ }
+ 
+ static void bcm_rx_thr_handler(unsigned long data)
+ {
+-    struct bcm_op *op = (struct bcm_op*)data;
+-    int i = 0;
++	struct bcm_op *op = (struct bcm_op*)data;
++	int i = 0;
+ 
+-    op-&gt;thrtimer.expires = 0; /* mark disabled / consumed timer */
++	op-&gt;thrtimer.expires = 0; /* mark disabled / consumed timer */
+ 
+-    if (op-&gt;nframes &gt; 1){
++	if (op-&gt;nframes &gt; 1){
+ 
+-	DBG(&quot;sending MUX RX_CHANGED for can_id &lt;%03X&gt;. op is (%p)\n&quot;,
+-	    op-&gt;can_id, op);
+-	/* for MUX filter we start at index 1 */
+-	for (i=1; i&lt;op-&gt;nframes; i++){
+-	    if ((op-&gt;last_frames) &amp;&amp; (op-&gt;last_frames[i].can_dlc &amp; RX_THR)){
+-		op-&gt;last_frames[i].can_dlc &amp;= ~RX_THR;
+-		bcm_rx_changed(op, &amp;op-&gt;last_frames[i]);
+-	    }
+-	}
+-    }
+-    else{
++		DBG(&quot;sending MUX RX_CHANGED for can_id &lt;%03X&gt;. op is (%p)\n&quot;,
++		    op-&gt;can_id, op);
++		/* for MUX filter we start at index 1 */
++		for (i=1; i&lt;op-&gt;nframes; i++){
++			if ((op-&gt;last_frames) &amp;&amp; (op-&gt;last_frames[i].can_dlc &amp; RX_THR)){
++				op-&gt;last_frames[i].can_dlc &amp;= ~RX_THR;
++				bcm_rx_changed(op, &amp;op-&gt;last_frames[i]);
++			}
++		}
++	} else {
+ 
+-	DBG(&quot;sending simple RX_CHANGED for can_id &lt;%03X&gt;. op is (%p)\n&quot;,
+-	    op-&gt;can_id, op);
+-	/* for RX_FILTER_ID and simple filter */
+-	if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames[0].can_dlc &amp; RX_THR)){
+-	    op-&gt;last_frames[0].can_dlc &amp;= ~RX_THR;
+-	    bcm_rx_changed(op, &amp;op-&gt;last_frames[0]);
++		DBG(&quot;sending simple RX_CHANGED for can_id &lt;%03X&gt;. op is (%p)\n&quot;,
++		    op-&gt;can_id, op);
++		/* for RX_FILTER_ID and simple filter */
++		if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames[0].can_dlc &amp; RX_THR)){
++			op-&gt;last_frames[0].can_dlc &amp;= ~RX_THR;
++			bcm_rx_changed(op, &amp;op-&gt;last_frames[0]);
++		}
+ 	}
+-    }
+ }
+ 
+ static void bcm_can_tx(struct bcm_op *op)
+ {
+-    struct sk_buff *skb;
+-    struct net_device *dev;
+-    struct can_frame *cf = &amp;op-&gt;frames[op-&gt;currframe];
++	struct sk_buff *skb;
++	struct net_device *dev;
++	struct can_frame *cf = &amp;op-&gt;frames[op-&gt;currframe];
+ 
+-    DBG_FRAME(&quot;BCM: bcm_can_tx: sending frame&quot;, cf);
++	DBG_FRAME(&quot;BCM: bcm_can_tx: sending frame&quot;, cf);
+ 
+-    skb = alloc_skb(sizeof(struct can_frame), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
++	skb = alloc_skb(sizeof(struct can_frame),
++			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+ 
+-    if (!skb)
+-	return;
++	if (!skb)
++		return;
+ 
+-    memcpy(skb_put(skb, sizeof(struct can_frame)), cf, sizeof(struct can_frame));
++	memcpy(skb_put(skb, sizeof(struct can_frame)), cf, sizeof(struct can_frame));
+ 
+-    if (op-&gt;sk-&gt;bound_dev_if) {
+-	dev = dev_get_by_index(op-&gt;sk-&gt;bound_dev_if);
++	if (op-&gt;sk-&gt;bound_dev_if) {
++		dev = dev_get_by_index(op-&gt;sk-&gt;bound_dev_if);
+ 
+-	if (dev) {
+-	    skb-&gt;dev = dev;
+-	    can_send(skb);
+-	    dev_put(dev);
++		if (dev) {
++			skb-&gt;dev = dev;
++			can_send(skb);
++			dev_put(dev);
++		}
+ 	}
+-    }
+ 
+-    op-&gt;currframe++;
+-    op-&gt;frames_abs++; /* statistics */
++	op-&gt;currframe++;
++	op-&gt;frames_abs++; /* statistics */
+ 
+-    /* reached last frame? */
+-    if (op-&gt;currframe &gt;= op-&gt;nframes)
+-	op-&gt;currframe = 0;
++	/* reached last frame? */
++	if (op-&gt;currframe &gt;= op-&gt;nframes)
++		op-&gt;currframe = 0;
+ 
+ }
+ 
+ static void bcm_send_to_user(struct sock *sk, struct bcm_msg_head *head,
+ 			     struct can_frame *frames, struct timeval *tv)
+ {
+-    struct sk_buff *skb;
+-    struct can_frame *firstframe;
+-    int datalen = head-&gt;nframes * sizeof(struct can_frame);
+-    int err;
++	struct sk_buff *skb;
++	struct can_frame *firstframe;
++	int datalen = head-&gt;nframes * sizeof(struct can_frame);
++	int err;
+ 
+-    if (!sk) {
+-	DBG(&quot;no sk available\n&quot;);
+-	return;
+-    }
++	if (!sk) {
++		DBG(&quot;no sk available\n&quot;);
++		return;
++	}
+ 
+-    skb = alloc_skb(sizeof(*head) + datalen, in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+-    memcpy(skb_put(skb, sizeof(*head)), head, sizeof(*head));
+-    firstframe = (struct can_frame *) skb-&gt;tail; /* can_frames starting here */
++	skb = alloc_skb(sizeof(*head) + datalen,
++			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
++	memcpy(skb_put(skb, sizeof(*head)), head, sizeof(*head));
++	firstframe = (struct can_frame *) skb-&gt;tail; /* can_frames starting here */
+ 
+-    if (tv)
+-	skb-&gt;stamp = *tv;
++	if (tv)
++		skb-&gt;stamp = *tv;
+ 
+-    if (head-&gt;nframes){
+-	memcpy(skb_put(skb, datalen), frames, datalen);
++	if (head-&gt;nframes){
++		memcpy(skb_put(skb, datalen), frames, datalen);
+ 
+-	/* the BCM uses the can_dlc-element of the can_frame structure */
+-	/* for internal purposes. This is only relevant for updates that */
+-	/* are generated by the BCM, where nframes is 1                  */
+-	if (head-&gt;nframes == 1)
+-	    firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
+-    }
+-    if ((err = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
+-	DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
+-	kfree_skb(skb);
+-    }
++		/* the BCM uses the can_dlc-element of the can_frame structure
++		   for internal purposes. This is only relevant for updates
++		   that are generated by the BCM, where nframes is 1
++		*/
++		if (head-&gt;nframes == 1)
++			firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
++	}
++	if ((err = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
++		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
++		kfree_skb(skb);
++	}
+ }
+ 
+ static struct bcm_op *bcm_find_op(struct bcm_op *ops, canid_t can_id)
+ {
+-    struct bcm_op *p;
++	struct bcm_op *p;
+ 
+-    for (p = ops; p; p = p-&gt;next)
+-	if (p-&gt;can_id == can_id)
+-	    return p;
++	for (p = ops; p; p = p-&gt;next)
++		if (p-&gt;can_id == can_id)
++			return p;
+ 
+-    return NULL;
++	return NULL;
+ }
+ 
+ static void bcm_delete_rx_op(struct bcm_op **ops, canid_t can_id)
+ {
+-    struct bcm_op *p, **q;
++	struct bcm_op *p, **q;
+ 
+-    for (q = ops; p = *q; q = &amp;p-&gt;next)
+-	if (p-&gt;can_id == can_id) {
+-	    *q = p-&gt;next;
+-	    DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, p, p-&gt;can_id);
++	for (q = ops; p = *q; q = &amp;p-&gt;next)
++		if (p-&gt;can_id == can_id) {
++			*q = p-&gt;next;
++			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, p, p-&gt;can_id);
+ 
+-	    if (p-&gt;sk-&gt;bound_dev_if) {
+-		struct net_device *dev = dev_get_by_index(p-&gt;sk-&gt;bound_dev_if);
+-		if (dev) {
+-		    can_rx_unregister(dev, p-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, p);
+-		    dev_put(dev);
+-		}
+-	    } else
+-		DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, p-&gt;sk);
++			if (p-&gt;sk-&gt;bound_dev_if) {
++				struct net_device *dev = dev_get_by_index(p-&gt;sk-&gt;bound_dev_if);
++				if (dev) {
++					can_rx_unregister(dev, p-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, p);
++					dev_put(dev);
++				}
++			} else
++				DBG(&quot;sock %p not bound for can_rx_unregister()\n&quot;, p-&gt;sk);
+ 
+-	    bcm_remove_op(p);
+-	    return;
+-	}
++			bcm_remove_op(p);
++			return;
++		}
+ }
+ 
+ static void bcm_delete_tx_op(struct bcm_op **ops, canid_t can_id)
+ {
+-    struct bcm_op *p, **q;
++	struct bcm_op *p, **q;
+ 
+-    for (q = ops; p = *q; q = &amp;p-&gt;next)
+-	if (p-&gt;can_id == can_id) {
+-	    *q = p-&gt;next;
+-	    DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, p, p-&gt;can_id);
+-	    bcm_remove_op(p);
+-	    return;
+-	}
++	for (q = ops; p = *q; q = &amp;p-&gt;next)
++		if (p-&gt;can_id == can_id) {
++			*q = p-&gt;next;
++			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++			    p, p-&gt;can_id);
++			bcm_remove_op(p);
++			return;
++		}
+ }
+ 
+ static void bcm_remove_op(struct bcm_op *op)
+ {
+-    del_timer(&amp;op-&gt;timer);
+-    del_timer(&amp;op-&gt;thrtimer);
+-    if (op-&gt;frames)
+-	kfree(op-&gt;frames);
+-    if (op-&gt;last_frames)
+-	kfree(op-&gt;last_frames);
+-    kfree(op);
++	del_timer(&amp;op-&gt;timer);
++	del_timer(&amp;op-&gt;thrtimer);
++	if (op-&gt;frames)
++		kfree(op-&gt;frames);
++	if (op-&gt;last_frames)
++		kfree(op-&gt;last_frames);
++	kfree(op);
+ 
+-    return;
++	return;
+ }
+ 
+ static void bcm_insert_op(struct bcm_op **ops, struct bcm_op *op)
+ {
+-    op-&gt;next = *ops;
+-    *ops = op;
++	op-&gt;next = *ops;
++	*ops = op;
+ }
+ 
+ module_init(bcm_init);
+
+Modified: trunk/kernel/2.4/can/bcm.h
+===================================================================
+--- trunk/kernel/2.4/can/bcm.h	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/bcm.h	2006-09-05 13:23:51 UTC (rev 73)
+@@ -51,18 +51,20 @@
+ #endif
+ 
+ struct bcm_msg_head {
+-    int opcode;                   /* command */
+-    int flags;                    /* special flags */
+-    int count;                    /* run 'count' times ival1 then ival2 */
+-    struct timeval ival1, ival2;  /* intervals */
+-    canid_t can_id;               /* 32 Bit SFF/EFF. MSB set at EFF */
+-    int nframes;                  /* number of following can_frame's */
+-    struct can_frame frames[0];
++	int opcode;                   /* command */
++	int flags;                    /* special flags */
++	int count;                    /* run 'count' times ival1 then ival2 */
++	struct timeval ival1, ival2;  /* intervals */
++	canid_t can_id;               /* 32 Bit SFF/EFF. MSB set at EFF */
++	int nframes;                  /* number of following can_frame's */
++	struct can_frame frames[0];
+ };
+ 
+-enum {NO_OP,
+-      TX_SETUP, TX_DELETE, TX_READ, TX_SEND, RX_SETUP, RX_DELETE, RX_READ,
+-      TX_STATUS, TX_EXPIRED, RX_STATUS, RX_TIMEOUT, RX_CHANGED};
++enum {
++	NO_OP,
++	TX_SETUP, TX_DELETE, TX_READ, TX_SEND, RX_SETUP, RX_DELETE, RX_READ,
++	TX_STATUS, TX_EXPIRED, RX_STATUS, RX_TIMEOUT, RX_CHANGED
++};
+ 
+ #define SETTIMER            0x0001
+ #define STARTTIMER          0x0002
+
+Modified: trunk/kernel/2.4/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.4/can/can_ioctl.h	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/can_ioctl.h	2006-09-05 13:23:51 UTC (rev 73)
+@@ -129,15 +129,14 @@
+ 
+ struct can_device_stats {
+ 
+-    int error_warning;
+-    int data_overrun;
+-    int wakeup;
+-    int bus_error;
+-    int error_passive;
+-    int arbitration_lost;
+-    int restarts;
+-    int bus_error_at_init;
+-
++	int error_warning;
++	int data_overrun;
++	int wakeup;
++	int bus_error;
++	int error_passive;
++	int arbitration_lost;
++	int restarts;
++	int bus_error_at_init;
+ };
+ 
+ #endif /* CAN_IOCTL_H */
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/proc.c	2006-09-05 13:23:51 UTC (rev 73)
+@@ -65,19 +65,30 @@
+ static void can_init_stats(int caller);
+ static void can_stat_update(unsigned long data);
+ 
+-static struct proc_dir_entry *can_create_proc_read_entry(const char *name, mode_t mode, read_proc_t* read_proc, void *data);
++static struct proc_dir_entry *can_create_proc_read_entry(const char *name,
++	mode_t mode, read_proc_t* read_proc, void *data);
+ static void can_remove_proc_entry(const char *name);
+-static unsigned long calc_rate(unsigned long oldjif, unsigned long newjif, unsigned long count);
++static unsigned long calc_rate(unsigned long oldjif, unsigned long newjif,
++			       unsigned long count);
+ 
+-static int can_proc_read_version(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_stats(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_reset_stats(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_rcvlist_all(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_rcvlist_fil(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_rcvlist_inv(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_rcvlist_sff(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_rcvlist_eff(char *page, char **start, off_t off, int count, int *eof, void *data);
+-static int can_proc_read_rcvlist_err(char *page, char **start, off_t off, int count, int *eof, void *data);
++static int can_proc_read_version(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_stats(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_reset_stats(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_rcvlist_all(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_rcvlist_fil(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_rcvlist_inv(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_rcvlist_sff(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_rcvlist_eff(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
++static int can_proc_read_rcvlist_err(char *page, char **start, off_t off,
++				     int count, int *eof, void *data);
+ 
+ static struct proc_dir_entry *can_dir         = NULL;
+ static struct proc_dir_entry *pde_version     = NULL;
+@@ -105,388 +116,430 @@
+ void can_init_proc(void)
+ {
+ 
+-    /* procfs init */
++	/* procfs init */
+ 
+-    /* create /proc/can directory */
+-    can_dir = proc_mkdir(CAN_PROC_DIR, NULL);
++	/* create /proc/can directory */
++	can_dir = proc_mkdir(CAN_PROC_DIR, NULL);
+ 
+-    if (!can_dir) {
+-	printk(KERN_INFO &quot;af_can: failed to create CAN_PROC_DIR. &quot;
+-	       &quot;CONFIG_PROC_FS missing?\n&quot;);
+-	return;
+-    }
++	if (!can_dir) {
++		printk(KERN_INFO &quot;af_can: failed to create CAN_PROC_DIR. &quot;
++		       &quot;CONFIG_PROC_FS missing?\n&quot;);
++		return;
++	}
+ 
+-    can_dir-&gt;owner = THIS_MODULE;
++	can_dir-&gt;owner = THIS_MODULE;
+ 
+-    /* own procfs entries from the AF_CAN core */
+-    pde_version     = can_create_proc_read_entry(
+-	CAN_PROC_VERSION, 0644, can_proc_read_version, NULL);
+-    pde_stats       = can_create_proc_read_entry(
+-	CAN_PROC_STATS, 0644, can_proc_read_stats, NULL);
+-    pde_reset_stats = can_create_proc_read_entry(
+-	CAN_PROC_RESET_STATS, 0644, can_proc_read_reset_stats, NULL);
+-    pde_rcvlist_all = can_create_proc_read_entry(
+-	CAN_PROC_RCVLIST_ALL, 0644, can_proc_read_rcvlist_all, NULL);
+-    pde_rcvlist_fil = can_create_proc_read_entry(
+-	CAN_PROC_RCVLIST_FIL, 0644, can_proc_read_rcvlist_fil, NULL);
+-    pde_rcvlist_inv = can_create_proc_read_entry(
+-	CAN_PROC_RCVLIST_INV, 0644, can_proc_read_rcvlist_inv, NULL);
+-    pde_rcvlist_sff = can_create_proc_read_entry(
+-	CAN_PROC_RCVLIST_SFF, 0644, can_proc_read_rcvlist_sff, NULL);
+-    pde_rcvlist_eff = can_create_proc_read_entry(
+-	CAN_PROC_RCVLIST_EFF, 0644, can_proc_read_rcvlist_eff, NULL);
+-    pde_rcvlist_err = can_create_proc_read_entry(
+-	CAN_PROC_RCVLIST_ERR, 0644, can_proc_read_rcvlist_err, NULL);
++	/* own procfs entries from the AF_CAN core */
++	pde_version     = can_create_proc_read_entry(
++		CAN_PROC_VERSION, 0644, can_proc_read_version, NULL);
++	pde_stats       = can_create_proc_read_entry(
++		CAN_PROC_STATS, 0644, can_proc_read_stats, NULL);
++	pde_reset_stats = can_create_proc_read_entry(
++		CAN_PROC_RESET_STATS, 0644, can_proc_read_reset_stats, NULL);
++	pde_rcvlist_all = can_create_proc_read_entry(
++		CAN_PROC_RCVLIST_ALL, 0644, can_proc_read_rcvlist_all, NULL);
++	pde_rcvlist_fil = can_create_proc_read_entry(
++		CAN_PROC_RCVLIST_FIL, 0644, can_proc_read_rcvlist_fil, NULL);
++	pde_rcvlist_inv = can_create_proc_read_entry(
++		CAN_PROC_RCVLIST_INV, 0644, can_proc_read_rcvlist_inv, NULL);
++	pde_rcvlist_sff = can_create_proc_read_entry(
++		CAN_PROC_RCVLIST_SFF, 0644, can_proc_read_rcvlist_sff, NULL);
++	pde_rcvlist_eff = can_create_proc_read_entry(
++		CAN_PROC_RCVLIST_EFF, 0644, can_proc_read_rcvlist_eff, NULL);
++	pde_rcvlist_err = can_create_proc_read_entry(
++		CAN_PROC_RCVLIST_ERR, 0644, can_proc_read_rcvlist_err, NULL);
+ 
+-    if (stats_timer) {
+-	/* the statistics are updated every second (timer triggered) */
+-	stattimer.function = can_stat_update;
+-	stattimer.data = 0;
+-	stattimer.expires = jiffies + HZ; /* every second */
+-	add_timer(&amp;stattimer); /* start statistics timer */
+-    }
++	if (stats_timer) {
++		/* the statistics are updated every second (timer triggered) */
++		stattimer.function = can_stat_update;
++		stattimer.data = 0;
++		stattimer.expires = jiffies + HZ; /* every second */
++		add_timer(&amp;stattimer); /* start statistics timer */
++	}
+ }
+ 
+ void can_remove_proc(void)
+ {
+-    /* procfs remove */
+-    if (pde_version)
+-	can_remove_proc_entry(CAN_PROC_VERSION);
++	/* procfs remove */
++	if (pde_version)
++		can_remove_proc_entry(CAN_PROC_VERSION);
+ 
+-    if (pde_stats)
+-	can_remove_proc_entry(CAN_PROC_STATS);
++	if (pde_stats)
++		can_remove_proc_entry(CAN_PROC_STATS);
+ 
+-    if (pde_reset_stats)
+-	can_remove_proc_entry(CAN_PROC_RESET_STATS);
++	if (pde_reset_stats)
++		can_remove_proc_entry(CAN_PROC_RESET_STATS);
+ 
+-    if (pde_rcvlist_all)
+-	can_remove_proc_entry(CAN_PROC_RCVLIST_ALL);
++	if (pde_rcvlist_all)
++		can_remove_proc_entry(CAN_PROC_RCVLIST_ALL);
+ 
+-    if (pde_rcvlist_fil)
+-	can_remove_proc_entry(CAN_PROC_RCVLIST_FIL);
++	if (pde_rcvlist_fil)
++		can_remove_proc_entry(CAN_PROC_RCVLIST_FIL);
+ 
+-    if (pde_rcvlist_inv)
+-	can_remove_proc_entry(CAN_PROC_RCVLIST_INV);
++	if (pde_rcvlist_inv)
++		can_remove_proc_entry(CAN_PROC_RCVLIST_INV);
+ 
+-    if (pde_rcvlist_sff)
+-	can_remove_proc_entry(CAN_PROC_RCVLIST_SFF);
++	if (pde_rcvlist_sff)
++		can_remove_proc_entry(CAN_PROC_RCVLIST_SFF);
+ 
+-    if (pde_rcvlist_eff)
+-	can_remove_proc_entry(CAN_PROC_RCVLIST_EFF);
++	if (pde_rcvlist_eff)
++		can_remove_proc_entry(CAN_PROC_RCVLIST_EFF);
+ 
+-    if (pde_rcvlist_err)
+-	can_remove_proc_entry(CAN_PROC_RCVLIST_ERR);
++	if (pde_rcvlist_err)
++		can_remove_proc_entry(CAN_PROC_RCVLIST_ERR);
+ 
+-    if (can_dir)
+-	remove_proc_entry(CAN_PROC_DIR, NULL);
++	if (can_dir)
++		remove_proc_entry(CAN_PROC_DIR, NULL);
+ }
+ 
+ /**************************************************/
+ /* proc read functions                            */
+ /**************************************************/
+ 
+-static int can_print_recv_list(char *page, int len, struct rcv_list *rx_list, struct net_device *dev)
++static int can_print_recv_list(char *page, int len, struct rcv_list *rx_list,
++			       struct net_device *dev)
+ {
+-    struct rcv_list *p;
++	struct rcv_list *p;
+ 
+-    for (p = rx_list; p; p = p-&gt;next) {
+-	char *fmt = p-&gt;can_id &amp; CAN_EFF_FLAG ? /* EFF &amp; CAN_ID_ALL */
+-	    &quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+-	    &quot;   %-5s     %03X    %08x  %08x  %08x  %8ld  %s\n&quot;;
++	for (p = rx_list; p; p = p-&gt;next) {
++		char *fmt = p-&gt;can_id &amp; CAN_EFF_FLAG ? /* EFF &amp; CAN_ID_ALL */
++			&quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
++			&quot;   %-5s     %03X    %08x  %08x  %08x  %8ld  %s\n&quot;;
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len, fmt,
+-			dev-&gt;name, p-&gt;can_id, p-&gt;mask, (unsigned int)p-&gt;func,
+-			(unsigned int)p-&gt;data, p-&gt;matches, p-&gt;ident);
++		len += snprintf(page + len, PAGE_SIZE - len, fmt,
++				dev-&gt;name, p-&gt;can_id, p-&gt;mask,
++				(unsigned int)p-&gt;func, (unsigned int)p-&gt;data,
++				p-&gt;matches, p-&gt;ident);
+ 
+-	/* does a typical line fit into the current buffer? */
+-	/* 100 Bytes before end of buffer */
+-	if (len &gt; PAGE_SIZE - 100) {
+-	    /* mark output cut off */
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;   (..)\n&quot;);
+-	    return len;
++		/* does a typical line fit into the current buffer? */
++		/* 100 Bytes before end of buffer */
++		if (len &gt; PAGE_SIZE - 100) {
++			/* mark output cut off */
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;   (..)\n&quot;);
++			return len;
++		}
+ 	}
+-    }
+ 
+-    return len;
++	return len;
+ }
+ 
+ static int can_print_recv_banner(char *page, int len)
+ {
+-    /*                  can1.  00000000  00000000  00000000  .......0  tp20 */
+-    len += snprintf(page + len, PAGE_SIZE - len,
+-		    &quot;  device   can_id   can_mask  function  userdata   matches  ident\n&quot;);
++	/*                  can1.  00000000  00000000  00000000
++			   .......          0  tp20 */
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;  device   can_id   can_mask  function&quot;
++			&quot;  userdata   matches  ident\n&quot;);
+ 
+-    return len;
++	return len;
+ }
+ 
+-static int can_proc_read_stats(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_stats(char *page, char **start, off_t off,
++			       int count, int *eof, void *data)
+ {
+-    int len = 0;
++	int len = 0;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld transmitted frames (TXF)\n&quot;,
+-		    stats.tx_frames);
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld received frames (RXF)\n&quot;,
+-		    stats.rx_frames);
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld matched frames (RXMF)\n&quot;,
+-		    stats.matches);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld transmitted frames (TXF)\n&quot;, stats.tx_frames);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld received frames (RXF)\n&quot;, stats.rx_frames);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld matched frames (RXMF)\n&quot;, stats.matches);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld %% total match ratio (RXMR)\n&quot;,
+-		    stats.total_rx_match_ratio);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld %% total match ratio (RXMR)\n&quot;,
++			stats.total_rx_match_ratio);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld frames/s total tx rate (TXR)\n&quot;,
+-		    stats.total_tx_rate);
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld frames/s total rx rate (RXR)\n&quot;,
+-		    stats.total_rx_rate);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld frames/s total tx rate (TXR)\n&quot;,
++			stats.total_tx_rate);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld frames/s total rx rate (RXR)\n&quot;,
++			stats.total_rx_rate);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld %% current match ratio (CRXMR)\n&quot;,
+-		    stats.current_rx_match_ratio);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld %% current match ratio (CRXMR)\n&quot;,
++			stats.current_rx_match_ratio);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld frames/s current tx rate (CTXR)\n&quot;,
+-		    stats.current_tx_rate);
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld frames/s current rx rate (CRXR)\n&quot;,
+-		    stats.current_rx_rate);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld frames/s current tx rate (CTXR)\n&quot;,
++			stats.current_tx_rate);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld frames/s current rx rate (CRXR)\n&quot;,
++			stats.current_rx_rate);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld %% max match ratio (MRXMR)\n&quot;,
+-		    stats.max_rx_match_ratio);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld %% max match ratio (MRXMR)\n&quot;,
++			stats.max_rx_match_ratio);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld frames/s max tx rate (MTXR)\n&quot;,
+-		    stats.max_tx_rate);
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld frames/s max rx rate (MRXR)\n&quot;,
+-		    stats.max_rx_rate);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld frames/s max tx rate (MTXR)\n&quot;,
++			stats.max_tx_rate);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld frames/s max rx rate (MRXR)\n&quot;,
++			stats.max_rx_rate);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld current receive list entries (CRCV)\n&quot;, pstats.rcv_entries);
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot; %8ld maximum receive list entries (MRCV)\n&quot;, pstats.rcv_entries_max);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld current receive list entries (CRCV)\n&quot;,
++			pstats.rcv_entries);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot; %8ld maximum receive list entries (MRCV)\n&quot;,
++			pstats.rcv_entries_max);
+ 
+-    if (pstats.stats_reset)
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n %8ld statistic resets (STR)\n&quot;, pstats.stats_reset);
++	if (pstats.stats_reset)
++		len += snprintf(page + len, PAGE_SIZE - len,
++				&quot;\n %8ld statistic resets (STR)\n&quot;,
++				pstats.stats_reset);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_reset_stats(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_reset_stats(char *page, char **start, off_t off,
++				     int count, int *eof, void *data)
+ {
+-    int len = 0;
++	int len = 0;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    can_init_stats(1);
++	can_init_stats(1);
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;CAN statistic reset #%ld done.\n&quot;, pstats.stats_reset);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;CAN statistic reset #%ld done.\n&quot;, pstats.stats_reset);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_version(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_version(char *page, char **start, off_t off,
++				 int count, int *eof, void *data)
+ {
+-    int len = 0;
++	int len = 0;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len,
+-		    &quot;%06X [ Volkswagen AG - Low Level CAN Framework (LLCF) v%s ]\n&quot;,
+-		    LLCF_VERSION_CODE, VERSION);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;%06X [ Volkswagen AG - Low Level CAN Framework (LLCF) v%s ]\n&quot;,
++			LLCF_VERSION_CODE, VERSION);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_all(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_rcvlist_all(char *page, char **start, off_t off,
++				     int count, int *eof, void *data)
+ {
+-    int len = 0;
+-    struct rcv_dev_list *p;
++	int len = 0;
++	struct rcv_dev_list *p;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    /* RX_ALL */
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\nreceive list 'rx_all':\n&quot;);
++	/* RX_ALL */
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;\nreceive list 'rx_all':\n&quot;);
+ 
+-    /* find receive list for this device */
+-    for (p = rx_dev_list; p; p = p-&gt;next) {
++	/* find receive list for this device */
++	for (p = rx_dev_list; p; p = p-&gt;next) {
+ 
+-	if (p-&gt;rx_all) {
+-	    len = can_print_recv_banner(page, len);
+-	    len = can_print_recv_list(page, len, p-&gt;rx_all, p-&gt;dev);
+-	} else if (p-&gt;dev)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+-    }
++		if (p-&gt;rx_all) {
++			len = can_print_recv_banner(page, len);
++			len = can_print_recv_list(page, len, p-&gt;rx_all, p-&gt;dev);
++		} else if (p-&gt;dev)
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_fil(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_rcvlist_fil(char *page, char **start, off_t off,
++				     int count, int *eof, void *data)
+ {
+-    int len = 0;
+-    struct rcv_dev_list *p;
++	int len = 0;
++	struct rcv_dev_list *p;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    /* RX_FIL */
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\nreceive list 'rx_fil':\n&quot;);
++	/* RX_FIL */
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;\nreceive list 'rx_fil':\n&quot;);
+ 
+-    /* find receive list for this device */
+-    for (p = rx_dev_list; p; p = p-&gt;next) {
++	/* find receive list for this device */
++	for (p = rx_dev_list; p; p = p-&gt;next) {
+ 
+-	if (p-&gt;rx_fil) {
+-	    len = can_print_recv_banner(page, len);
+-	    len = can_print_recv_list(page, len, p-&gt;rx_fil, p-&gt;dev);
+-	} else if (p-&gt;dev)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+-    }
++		if (p-&gt;rx_fil) {
++			len = can_print_recv_banner(page, len);
++			len = can_print_recv_list(page, len, p-&gt;rx_fil, p-&gt;dev);
++		} else if (p-&gt;dev)
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_inv(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_rcvlist_inv(char *page, char **start, off_t off,
++				     int count, int *eof, void *data)
+ {
+-    int len = 0;
+-    struct rcv_dev_list *p;
++	int len = 0;
++	struct rcv_dev_list *p;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    /* RX_INV */
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\nreceive list 'rx_inv':\n&quot;);
++	/* RX_INV */
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;\nreceive list 'rx_inv':\n&quot;);
+ 
+-    /* find receive list for this device */
+-    for (p = rx_dev_list; p; p = p-&gt;next) {
++	/* find receive list for this device */
++	for (p = rx_dev_list; p; p = p-&gt;next) {
+ 
+-	if (p-&gt;rx_inv) {
+-	    len = can_print_recv_banner(page, len);
+-	    len = can_print_recv_list(page, len, p-&gt;rx_inv, p-&gt;dev);
+-	} else if (p-&gt;dev)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+-    }
++		if (p-&gt;rx_inv) {
++			len = can_print_recv_banner(page, len);
++			len = can_print_recv_list(page, len, p-&gt;rx_inv, p-&gt;dev);
++		} else if (p-&gt;dev)
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_sff(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_rcvlist_sff(char *page, char **start, off_t off,
++				     int count, int *eof, void *data)
+ {
+-    int len = 0;
+-    struct rcv_dev_list *p;
++	int len = 0;
++	struct rcv_dev_list *p;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    /* RX_SFF */
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\nreceive list 'rx_sff':\n&quot;);
++	/* RX_SFF */
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;\nreceive list 'rx_sff':\n&quot;);
+ 
+-    /* find receive list for this device */
+-    for (p = rx_dev_list; p; p = p-&gt;next) {
+-	int i, all_empty = 1;
+-	/* check wether at least one list is non-empty */
+-	for(i = 0; i &lt; 0x800; i++)
+-	    if (p-&gt;rx_sff[i]) {
+-		all_empty = 0;
+-		break;
+-	    }
++	/* find receive list for this device */
++	for (p = rx_dev_list; p; p = p-&gt;next) {
++		int i, all_empty = 1;
++		/* check wether at least one list is non-empty */
++		for (i = 0; i &lt; 0x800; i++)
++			if (p-&gt;rx_sff[i]) {
++				all_empty = 0;
++				break;
++			}
+ 
+-	if (!all_empty) {
+-	    len = can_print_recv_banner(page, len);
+-	    for(i = 0; i &lt; 0x800; i++) {
+-		if (p-&gt;rx_sff[i] &amp;&amp; len &lt; PAGE_SIZE - 100)
+-		    len = can_print_recv_list(page, len, p-&gt;rx_sff[i], p-&gt;dev);
+-	    }
+-	} else if (p-&gt;dev)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+-    }
++		if (!all_empty) {
++			len = can_print_recv_banner(page, len);
++			for (i = 0; i &lt; 0x800; i++) {
++				if (p-&gt;rx_sff[i] &amp;&amp; len &lt; PAGE_SIZE - 100)
++					len = can_print_recv_list(page, len, p-&gt;rx_sff[i], p-&gt;dev);
++			}
++		} else if (p-&gt;dev)
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_eff(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_rcvlist_eff(char *page, char **start, off_t off,
++				     int count, int *eof, void *data)
+ {
+-    int len = 0;
+-    struct rcv_dev_list *p;
++	int len = 0;
++	struct rcv_dev_list *p;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    /* RX_EFF */
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\nreceive list 'rx_eff':\n&quot;);
++	/* RX_EFF */
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;\nreceive list 'rx_eff':\n&quot;);
+ 
+-    /* find receive list for this device */
+-    for (p = rx_dev_list; p; p = p-&gt;next) {
++	/* find receive list for this device */
++	for (p = rx_dev_list; p; p = p-&gt;next) {
+ 
+-	if (p-&gt;rx_eff) {
+-	    len = can_print_recv_banner(page, len);
+-	    len = can_print_recv_list(page, len, p-&gt;rx_eff, p-&gt;dev);
+-	} else if (p-&gt;dev)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+-    }
++		if (p-&gt;rx_eff) {
++			len = can_print_recv_banner(page, len);
++			len = can_print_recv_list(page, len, p-&gt;rx_eff, p-&gt;dev);
++		} else if (p-&gt;dev)
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_err(char *page, char **start, off_t off, int count, int *eof, void *data)
++static int can_proc_read_rcvlist_err(char *page, char **start, off_t off,
++				     int count, int *eof, void *data)
+ {
+-    int len = 0;
+-    struct rcv_dev_list *p;
++	int len = 0;
++	struct rcv_dev_list *p;
+ 
+-    MOD_INC_USE_COUNT;
++	MOD_INC_USE_COUNT;
+ 
+-    /* RX_ERR */
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\nreceive list 'rx_err':\n&quot;);
++	/* RX_ERR */
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;\nreceive list 'rx_err':\n&quot;);
+ 
+-    /* find receive list for this device */
+-    for (p = rx_dev_list; p; p = p-&gt;next) {
++	/* find receive list for this device */
++	for (p = rx_dev_list; p; p = p-&gt;next) {
+ 
+-	if (p-&gt;rx_err) {
+-	    len = can_print_recv_banner(page, len);
+-	    len = can_print_recv_list(page, len, p-&gt;rx_err, p-&gt;dev);
+-	} else if (p-&gt;dev)
+-	    len += snprintf(page + len, PAGE_SIZE - len, &quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
+-    }
++		if (p-&gt;rx_err) {
++			len = can_print_recv_banner(page, len);
++			len = can_print_recv_list(page, len, p-&gt;rx_err, p-&gt;dev);
++		} else if (p-&gt;dev)
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;  (%s: no entry)\n&quot;, p-&gt;dev-&gt;name);
++	}
+ 
+-    len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-    MOD_DEC_USE_COUNT;
++	MOD_DEC_USE_COUNT;
+ 
+-    *eof = 1;
+-    return len;
++	*eof = 1;
++	return len;
+ }
+ 
+ /**************************************************/
+@@ -495,96 +548,98 @@
+ 
+ static struct proc_dir_entry *can_create_proc_read_entry(const char *name, mode_t mode, read_proc_t* read_proc, void *data)
+ {
+-    if (can_dir)
+-	return create_proc_read_entry(name, mode, can_dir, read_proc, data);
+-    else
+-	return NULL;
++	if (can_dir)
++		return create_proc_read_entry(name, mode, can_dir, read_proc, data);
++	else
++		return NULL;
+ }
+ 
+ static void can_remove_proc_entry(const char *name)
+ {
+-    if (can_dir)
+-	remove_proc_entry(name, can_dir);
++	if (can_dir)
++		remove_proc_entry(name, can_dir);
+ }
+ 
+-static unsigned long calc_rate(unsigned long oldjif, unsigned long newjif, unsigned long count){
++static unsigned long calc_rate(unsigned long oldjif, unsigned long newjif,
++			       unsigned long count)
++{
++	unsigned long ret = 0;
+ 
+-    unsigned long ret = 0;
++	if (oldjif == newjif)
++		return 0;
+ 
+-    if (oldjif == newjif)
+-	return 0;
++	/* see can_rcv() - this should NEVER happen! */
++	if (count &gt; (ULONG_MAX / HZ)) {
++		printk(KERN_ERR &quot;af_can: calc_rate: count exceeded! %ld\n&quot;, count);
++		return 99999999;
++	}
+ 
+-    if (count &gt; (ULONG_MAX / HZ)) { /* see can_rcv() - this should NEVER happen! */
+-	printk(KERN_ERR &quot;af_can: calc_rate: count exceeded! %ld\n&quot;, count);
+-	return 99999999;
+-    }
++	ret = (count * HZ) / (newjif - oldjif);
+ 
+-    ret = (count * HZ) / (newjif - oldjif);
++	return ret;
++}
+ 
+-    return ret;
+-};
+-
+ /**************************************************/
+ /* af_can statistics stuff                        */
+ /**************************************************/
+ 
+-static void can_init_stats(int caller){
++static void can_init_stats(int caller)
++{
++	memset(&amp;stats, 0, sizeof(stats));
++	stats.jiffies_init  = jiffies;
++	pstats.stats_reset++;
++}
+ 
+-    memset(&amp;stats, 0, sizeof(stats));
+-    stats.jiffies_init  = jiffies;
+-    pstats.stats_reset++;
+-};
++static void can_stat_update(unsigned long data)
++{
++	unsigned long j = jiffies; /* snapshot */
+ 
+-static void can_stat_update(unsigned long data){
++	//DBG(&quot;af_can: can_stat_update() jiffies = %ld\n&quot;, j);
+ 
+-    unsigned long j = jiffies; /* snapshot */
++	if (j &lt; stats.jiffies_init) /* jiffies overflow */
++		can_init_stats(2);
+ 
+-    //DBG(&quot;af_can: can_stat_update() jiffies = %ld\n&quot;, j);
++	/* stats.rx_frames is the definitively max. statistic value */
+ 
+-    if (j &lt; stats.jiffies_init) /* jiffies overflow */
+-	can_init_stats(2);
++	/* prevent overflow in calc_rate() */
++	if (stats.rx_frames &gt; (ULONG_MAX / HZ))
++		can_init_stats(3); /* restart */
+ 
+-    /* stats.rx_frames is the definitively max. statistic value */
+-    if (stats.rx_frames &gt; (ULONG_MAX / HZ)) /* prevent overflow in calc_rate() */
+-	can_init_stats(3); /* restart */
++	/* matches overflow - very improbable */
++	if (stats.matches &gt; (ULONG_MAX / 100))
++		can_init_stats(4);
+ 
+-    if (stats.matches &gt; (ULONG_MAX / 100)) /* matches overflow - very improbable */
+-	can_init_stats(4);
++	/* calc total values */
++	if (stats.rx_frames)
++		stats.total_rx_match_ratio = (stats.matches * 100) / stats.rx_frames;
+ 
+-    /* calc total values */
+-    if (stats.rx_frames)
+-	 stats.total_rx_match_ratio = (stats.matches * 100) / stats.rx_frames;
++	stats.total_tx_rate = calc_rate(stats.jiffies_init, j, stats.tx_frames);
++	stats.total_rx_rate = calc_rate(stats.jiffies_init, j, stats.rx_frames);
+ 
+-    stats.total_tx_rate = calc_rate(stats.jiffies_init, j, stats.tx_frames);
+-    stats.total_rx_rate = calc_rate(stats.jiffies_init, j, stats.rx_frames);
++	/* calc current values */
++	if (stats.rx_frames_delta)
++		stats.current_rx_match_ratio =
++			(stats.matches_delta * 100) / stats.rx_frames_delta;
+ 
+-    /* calc current values */
+-    if (stats.rx_frames_delta)
+-	stats.current_rx_match_ratio = (stats.matches_delta * 100) / stats.rx_frames_delta;
++	stats.current_tx_rate = calc_rate(0, HZ, stats.tx_frames_delta);
++	stats.current_rx_rate = calc_rate(0, HZ, stats.rx_frames_delta);
+ 
+-    stats.current_tx_rate = calc_rate(0, HZ, stats.tx_frames_delta);
+-    stats.current_rx_rate = calc_rate(0, HZ, stats.rx_frames_delta);
++	/* check / update maximum values */
++	if (stats.max_tx_rate &lt; stats.current_tx_rate)
++		stats.max_tx_rate = stats.current_tx_rate;
+ 
+-    /* check / update maximum values */
+-    if (stats.max_tx_rate &lt; stats.current_tx_rate)
+-	stats.max_tx_rate = stats.current_tx_rate;
++	if (stats.max_rx_rate &lt; stats.current_rx_rate)
++		stats.max_rx_rate = stats.current_rx_rate;
+ 
+-    if (stats.max_rx_rate &lt; stats.current_rx_rate)
+-	stats.max_rx_rate = stats.current_rx_rate;
++	if (stats.max_rx_match_ratio &lt; stats.current_rx_match_ratio)
++		stats.max_rx_match_ratio = stats.current_rx_match_ratio;
+ 
+-    if (stats.max_rx_match_ratio &lt; stats.current_rx_match_ratio)
+-	stats.max_rx_match_ratio = stats.current_rx_match_ratio;
++	/* clear values for 'current rate' calculation */
++	stats.tx_frames_delta = 0;
++	stats.rx_frames_delta = 0;
++	stats.matches_delta   = 0;
+ 
+-    /* clear values for 'current rate' calculation */
+-    stats.tx_frames_delta = 0;
+-    stats.rx_frames_delta = 0;
+-    stats.matches_delta   = 0;
+-
+-    /* restart timer */
+-    stattimer.expires = jiffies + HZ; /* every second */
+-    add_timer(&amp;stattimer);
+-};
+-
+-/**************************************************/
+-/* EOF                                            */
+-/**************************************************/
++	/* restart timer */
++	stattimer.expires = jiffies + HZ; /* every second */
++	add_timer(&amp;stattimer);
++}
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/raw.c	2006-09-05 13:23:51 UTC (rev 73)
+@@ -103,11 +103,11 @@
+  */
+ 
+ struct canraw_opt {
+-    int bound;
+-    int ifindex;
+-    int count;
+-    struct can_filter *filter;
+-    can_err_mask_t err_mask;
++	int bound;
++	int ifindex;
++	int count;
++	struct can_filter *filter;
++	can_err_mask_t err_mask;
+ };
+ 
+ #define canraw_sk(sk) ((struct canraw_opt *)&amp;(sk)-&gt;tp_pinfo)
+@@ -115,457 +115,457 @@
+ #define MASK_ALL 0
+ 
+ static struct proto_ops raw_ops = {
+-    .family        = PF_CAN,
+-    .release       = raw_release,
+-    .bind          = raw_bind,
+-    .connect       = sock_no_connect,
+-    .socketpair    = sock_no_socketpair,
+-    .accept        = sock_no_accept,
+-    .getname       = raw_getname,
+-    .poll          = raw_poll,
+-    .ioctl         = NULL,	/* use can_ioctl() from af_can.c */
+-    .listen        = sock_no_listen,
+-    .shutdown      = sock_no_shutdown,
+-    .setsockopt    = raw_setsockopt,
+-    .getsockopt    = raw_getsockopt,
+-    .sendmsg       = raw_sendmsg,
+-    .recvmsg       = raw_recvmsg,
+-    .mmap          = sock_no_mmap,
+-    .sendpage      = sock_no_sendpage,
++	.family        = PF_CAN,
++	.release       = raw_release,
++	.bind          = raw_bind,
++	.connect       = sock_no_connect,
++	.socketpair    = sock_no_socketpair,
++	.accept        = sock_no_accept,
++	.getname       = raw_getname,
++	.poll          = raw_poll,
++	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
++	.listen        = sock_no_listen,
++	.shutdown      = sock_no_shutdown,
++	.setsockopt    = raw_setsockopt,
++	.getsockopt    = raw_getsockopt,
++	.sendmsg       = raw_sendmsg,
++	.recvmsg       = raw_recvmsg,
++	.mmap          = sock_no_mmap,
++	.sendpage      = sock_no_sendpage,
+ };
+ 
+ static __init int raw_init(void)
+ {
+-    printk(banner);
++	printk(banner);
+ 
+-    can_proto_register(CAN_RAW, &amp;raw_ops);
+-    return 0;
++	can_proto_register(CAN_RAW, &amp;raw_ops);
++	return 0;
+ }
+ 
+ static __exit void raw_exit(void)
+ {
+-    can_proto_unregister(CAN_RAW);
++	can_proto_unregister(CAN_RAW);
+ }
+ 
+ static int raw_release(struct socket *sock)
+ {
+-    struct sock *sk = sock-&gt;sk;
+-    struct net_device *dev = NULL;
++	struct sock *sk = sock-&gt;sk;
++	struct net_device *dev = NULL;
+ 
+-    DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
++	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ 
+-    if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-	dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++	if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
++		dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
+ 
+-    /* remove current filters &amp; unregister */
+-    if (canraw_sk(sk)-&gt;count &gt; 0) {
+-	if (canraw_sk(sk)-&gt;bound)
+-	    raw_remove_filters(dev, sk);
+-	kfree(canraw_sk(sk)-&gt;filter);
+-    } else if (canraw_sk(sk)-&gt;bound)
+-	can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
++	/* remove current filters &amp; unregister */
++	if (canraw_sk(sk)-&gt;count &gt; 0) {
++		if (canraw_sk(sk)-&gt;bound)
++			raw_remove_filters(dev, sk);
++		kfree(canraw_sk(sk)-&gt;filter);
++	} else if (canraw_sk(sk)-&gt;bound)
++		can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
+ 
+-    /* remove current error mask */
+-    if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-	can_rx_unregister(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk);
++	/* remove current error mask */
++	if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
++		can_rx_unregister(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk);
+ 
+-    if (dev) {
+-	can_dev_unregister(dev, raw_notifier, sk);
+-	dev_put(dev);
+-    }
++	if (dev) {
++		can_dev_unregister(dev, raw_notifier, sk);
++		dev_put(dev);
++	}
+ 
+-    sock_put(sk);
++	sock_put(sk);
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ static int raw_bind(struct socket *sock, struct sockaddr *uaddr, int len)
+ {
+-    struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+-    struct sock *sk = sock-&gt;sk;
+-    struct net_device *dev;
++	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
++	struct sock *sk = sock-&gt;sk;
++	struct net_device *dev;
+ 
+-    DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
++	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+ 
+-    if (len &lt; sizeof(*addr))
+-	return -EINVAL;
++	if (len &lt; sizeof(*addr))
++		return -EINVAL;
+ 
+-    if (canraw_sk(sk)-&gt;bound) {
++	if (canraw_sk(sk)-&gt;bound) {
+ #if 1
+-	return -EOPNOTSUPP;
++		return -EOPNOTSUPP;
+ #else
+-	/* remove current bindings */
+-	if (canraw_sk(sk)-&gt;ifindex) {
+-	    dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
+-	    ;  /* remove notifier */
+-	} else
+-	    dev = NULL;
+-	if (canraw_sk(sk)-&gt;count &gt; 0) {
+-	    raw_remove_filters(sk);
+-	} else {
+-	    can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
+-	}
+-	if (dev)
+-	    dev_put(dev);
+-	canraw_sk(sk)-&gt;bound = 0;
++		/* remove current bindings */
++		if (canraw_sk(sk)-&gt;ifindex) {
++			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++			;  /* remove notifier */
++		} else
++			dev = NULL;
++		if (canraw_sk(sk)-&gt;count &gt; 0) {
++			raw_remove_filters(sk);
++		} else {
++			can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
++		}
++		if (dev)
++			dev_put(dev);
++		canraw_sk(sk)-&gt;bound = 0;
+ #endif
+-    }
+-
+-    if (addr-&gt;can_ifindex) {
+-	dev = dev_get_by_index(addr-&gt;can_ifindex);
+-	if (!dev) {
+-	    DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
+-	    return -ENODEV;
+ 	}
+-	if (!(dev-&gt;flags &amp; IFF_UP)) {
+-	    sk-&gt;err = ENETDOWN;
+-	    sk-&gt;error_report(sk);
+-	    goto out;
+-	}
+-	can_dev_register(dev, raw_notifier, sk);
+-    } else
+-	dev = NULL;
+ 
+-    canraw_sk(sk)-&gt;ifindex = addr-&gt;can_ifindex;
++	if (addr-&gt;can_ifindex) {
++		dev = dev_get_by_index(addr-&gt;can_ifindex);
++		if (!dev) {
++			DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
++			return -ENODEV;
++		}
++		if (!(dev-&gt;flags &amp; IFF_UP)) {
++			sk-&gt;err = ENETDOWN;
++			sk-&gt;error_report(sk);
++			goto out;
++		}
++		can_dev_register(dev, raw_notifier, sk);
++	} else
++		dev = NULL;
+ 
+-    if (canraw_sk(sk)-&gt;count &gt; 0)   /* filters set by setsockopt */
+-	raw_add_filters(dev, sk);
+-    else
+-	can_rx_register(dev, 0, MASK_ALL, raw_rcv, sk, IDENT);
++	canraw_sk(sk)-&gt;ifindex = addr-&gt;can_ifindex;
+ 
+-    if (canraw_sk(sk)-&gt;err_mask) /* error frame filter set by setsockopt */
+-	can_rx_register(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk, IDENT);
++	if (canraw_sk(sk)-&gt;count &gt; 0)   /* filters set by setsockopt */
++		raw_add_filters(dev, sk);
++	else
++		can_rx_register(dev, 0, MASK_ALL, raw_rcv, sk, IDENT);
+ 
+-    canraw_sk(sk)-&gt;bound = 1;
++	if (canraw_sk(sk)-&gt;err_mask) /* error frame filter set by setsockopt */
++		can_rx_register(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk, IDENT);
+ 
++	canraw_sk(sk)-&gt;bound = 1;
++
+  out:
+-    if (dev)
+-	dev_put(dev);
++	if (dev)
++		dev_put(dev);
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ static int raw_getname(struct socket *sock, struct sockaddr *uaddr,
+ 		       int *len, int peer)
+ {
+-    struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+-    struct sock *sk = sock-&gt;sk;
++	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
++	struct sock *sk = sock-&gt;sk;
+ 
+-    if (peer)
+-	return -EOPNOTSUPP;
++	if (peer)
++		return -EOPNOTSUPP;
+ 
+-    addr-&gt;can_family  = AF_CAN;
+-    addr-&gt;can_ifindex = canraw_sk(sk)-&gt;ifindex;
+-    *len = sizeof(*addr);
++	addr-&gt;can_family  = AF_CAN;
++	addr-&gt;can_ifindex = canraw_sk(sk)-&gt;ifindex;
++	*len = sizeof(*addr);
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ static unsigned int raw_poll(struct file *file, struct socket *sock,
+ 			     poll_table *wait)
+ {
+-    unsigned int mask = 0;
++	unsigned int mask = 0;
+ 
+-    DBG(&quot;socket %p\n&quot;, sock);
++	DBG(&quot;socket %p\n&quot;, sock);
+ 
+-    mask = datagram_poll(file, sock, wait);
+-    return mask;
++	mask = datagram_poll(file, sock, wait);
++	return mask;
+ }
+ 
+ static int raw_setsockopt(struct socket *sock, int level, int optname,
+ 			  char *optval, int optlen)
+ {
+-    struct sock *sk = sock-&gt;sk;
+-    struct can_filter *filter = NULL;
+-    struct net_device *dev = NULL;
+-    can_err_mask_t err_mask = 0;
+-    int count = 0;
+-    int err;
++	struct sock *sk = sock-&gt;sk;
++	struct can_filter *filter = NULL;
++	struct net_device *dev = NULL;
++	can_err_mask_t err_mask = 0;
++	int count = 0;
++	int err;
+ 
+-    if (level != SOL_CAN_RAW)
+-	return -EINVAL;
+-
+-    switch (optname) {
+-    case CAN_RAW_FILTER:
+-	if (optlen) {
+-	    if (optlen % sizeof(struct can_filter) != 0)
++	if (level != SOL_CAN_RAW)
+ 		return -EINVAL;
+-	    if (!(filter = kmalloc(optlen, GFP_KERNEL)))
+-		return -ENOMEM;
+-	    if (err = copy_from_user(filter, optval, optlen)) {
+-		kfree(filter);
+-		return err;
+-	    }
+-	    count = optlen / sizeof(struct can_filter);
+-	}
+ 
+-	if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-	    dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++	switch (optname) {
++	case CAN_RAW_FILTER:
++		if (optlen) {
++			if (optlen % sizeof(struct can_filter) != 0)
++				return -EINVAL;
++			if (!(filter = kmalloc(optlen, GFP_KERNEL)))
++				return -ENOMEM;
++			if (err = copy_from_user(filter, optval, optlen)) {
++				kfree(filter);
++				return err;
++			}
++			count = optlen / sizeof(struct can_filter);
++		}
+ 
+-	/* remove current filters &amp; unregister */
+-	if (canraw_sk(sk)-&gt;count &gt; 0) {
++		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
++			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
+ 
+-	    if (canraw_sk(sk)-&gt;bound)
+-		raw_remove_filters(dev, sk);
++		/* remove current filters &amp; unregister */
++		if (canraw_sk(sk)-&gt;count &gt; 0) {
+ 
+-	    kfree(canraw_sk(sk)-&gt;filter);
+-	    canraw_sk(sk)-&gt;count = 0;
+-	    canraw_sk(sk)-&gt;filter = NULL;
+-	} else if (canraw_sk(sk)-&gt;bound)
+-	    can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
++			if (canraw_sk(sk)-&gt;bound)
++				raw_remove_filters(dev, sk);
+ 
+-	/* add new filters &amp; register */
+-	if (optlen) {
+-	    canraw_sk(sk)-&gt;filter = filter;
+-	    canraw_sk(sk)-&gt;count  = count;
+-	    if (canraw_sk(sk)-&gt;bound)
+-		raw_add_filters(dev, sk);
+-	} else if (canraw_sk(sk)-&gt;bound)
+-	    can_rx_register(dev, 0, MASK_ALL, raw_rcv, sk, IDENT);
++			kfree(canraw_sk(sk)-&gt;filter);
++			canraw_sk(sk)-&gt;count = 0;
++			canraw_sk(sk)-&gt;filter = NULL;
++		} else if (canraw_sk(sk)-&gt;bound)
++			can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
+ 
+-	if (dev)
+-	    dev_put(dev);
++		/* add new filters &amp; register */
++		if (optlen) {
++			canraw_sk(sk)-&gt;filter = filter;
++			canraw_sk(sk)-&gt;count  = count;
++			if (canraw_sk(sk)-&gt;bound)
++				raw_add_filters(dev, sk);
++		} else if (canraw_sk(sk)-&gt;bound)
++			can_rx_register(dev, 0, MASK_ALL, raw_rcv, sk, IDENT);
+ 
+-	break;
++		if (dev)
++			dev_put(dev);
+ 
+-    case CAN_RAW_ERR_FILTER:
+-	if (optlen) {
+-	    if (optlen != sizeof(err_mask))
+-		return -EINVAL;
+-	    if (err = copy_from_user(&amp;err_mask, optval, optlen)) {
+-		return err;
+-	    }
+-	}
++		break;
+ 
+-	err_mask &amp;= CAN_ERR_MASK;
++	case CAN_RAW_ERR_FILTER:
++		if (optlen) {
++			if (optlen != sizeof(err_mask))
++				return -EINVAL;
++			if (err = copy_from_user(&amp;err_mask, optval, optlen)) {
++				return err;
++			}
++		}
+ 
+-	if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-	    dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++		err_mask &amp;= CAN_ERR_MASK;
+ 
+-	/* remove current error mask */
+-	if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-	    can_rx_unregister(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk);
++		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
++			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
+ 
+-	/* add new error mask */
+-	if (optlen) {
+-	    canraw_sk(sk)-&gt;err_mask = err_mask;
+-	    if (canraw_sk(sk)-&gt;err_mask &amp; canraw_sk(sk)-&gt;bound)
+-		can_rx_register(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk, IDENT);
+-	}
++		/* remove current error mask */
++		if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
++			can_rx_unregister(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk);
+ 
+-	if (dev)
+-	    dev_put(dev);
++		/* add new error mask */
++		if (optlen) {
++			canraw_sk(sk)-&gt;err_mask = err_mask;
++			if (canraw_sk(sk)-&gt;err_mask &amp; canraw_sk(sk)-&gt;bound)
++				can_rx_register(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk, IDENT);
++		}
+ 
+-	break;
++		if (dev)
++			dev_put(dev);
+ 
+-    default:
+-	return -ENOPROTOOPT;
+-    }
+-    return 0;
++		break;
++
++	default:
++		return -ENOPROTOOPT;
++	}
++	return 0;
+ }
+ 
+ static int raw_getsockopt(struct socket *sock, int level, int optname,
+ 			  char *optval, int *optlen)
+ {
+-    struct sock *sk = sock-&gt;sk;
+-    struct can_filter *filter = canraw_sk(sk)-&gt;filter;
+-    int len;
++	struct sock *sk = sock-&gt;sk;
++	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	int len;
+ 
+-    if (level != SOL_CAN_RAW)
+-	return -EINVAL;
++	if (level != SOL_CAN_RAW)
++		return -EINVAL;
+ 
+-    switch (optname) {
+-    case CAN_RAW_FILTER:
+-	if (get_user(len, optlen))
+-	    return -EFAULT;
++	switch (optname) {
++	case CAN_RAW_FILTER:
++		if (get_user(len, optlen))
++			return -EFAULT;
+ 
+-	if (filter) {
+-	    int filter_size = canraw_sk(sk)-&gt;count * sizeof(struct can_filter);
+-	    if (len &lt; filter_size)
+-		return -EINVAL;
+-	    if (len &gt; filter_size)
+-		len = filter_size;
+-	    if (copy_to_user(optval, filter, len))
+-		return -EFAULT;
+-	} else
+-	    len = 0;
+-	if (put_user(len, optlen))
+-	    return -EFAULT;
+-	break;
++		if (filter) {
++			int filter_size = canraw_sk(sk)-&gt;count * sizeof(struct can_filter);
++			if (len &lt; filter_size)
++				return -EINVAL;
++			if (len &gt; filter_size)
++				len = filter_size;
++			if (copy_to_user(optval, filter, len))
++				return -EFAULT;
++		} else
++			len = 0;
++		if (put_user(len, optlen))
++			return -EFAULT;
++		break;
+ 
+-    case CAN_RAW_ERR_FILTER:
+-	if (get_user(len, optlen))
+-	    return -EFAULT;
++	case CAN_RAW_ERR_FILTER:
++		if (get_user(len, optlen))
++			return -EFAULT;
+ 
+-	if (len &lt; sizeof(can_err_mask_t))
+-	    return -EINVAL;
++		if (len &lt; sizeof(can_err_mask_t))
++			return -EINVAL;
+ 
+-	if (len &gt; sizeof(can_err_mask_t))
+-	    len = sizeof(can_err_mask_t);
++		if (len &gt; sizeof(can_err_mask_t))
++			len = sizeof(can_err_mask_t);
+ 
+-	if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;err_mask, len))
+-	    return -EFAULT;
++		if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;err_mask, len))
++			return -EFAULT;
+ 
+-	if (put_user(len, optlen))
+-	    return -EFAULT;
+-	break;
++		if (put_user(len, optlen))
++			return -EFAULT;
++		break;
+ 
+-    default:
+-	return -ENOPROTOOPT;
+-    }
+-    return 0;
++	default:
++		return -ENOPROTOOPT;
++	}
++	return 0;
+ }
+ 
+ static void raw_add_filters(struct net_device *dev, struct sock *sk)
+ {
+-    struct can_filter *filter = canraw_sk(sk)-&gt;filter;
+-    int i;
++	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	int i;
+ 
+-    for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
+-	can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
+-			raw_rcv, sk, IDENT);
+-	DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+-	    filter[i].can_id, filter[i].can_mask,
+-	    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+-    }
++	for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
++		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
++				raw_rcv, sk, IDENT);
++		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
++		    filter[i].can_id, filter[i].can_mask,
++		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
++	}
+ }
+ 
+ static void raw_remove_filters(struct net_device *dev, struct sock *sk)
+ {
+-    struct can_filter *filter = canraw_sk(sk)-&gt;filter;
+-    int i;
++	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	int i;
+ 
+-    for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
+-	can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
+-			  raw_rcv, sk);
+-	DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+-	    filter[i].can_id, filter[i].can_mask,
+-	    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+-    }
++	for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
++		can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
++				  raw_rcv, sk);
++		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
++		    filter[i].can_id, filter[i].can_mask,
++		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
++	}
+ }
+ 
+ static int raw_sendmsg(struct socket *sock, struct msghdr *msg, int size,
+ 		       struct scm_cookie *scm)
+ {
+-    struct sock *sk = sock-&gt;sk;
+-    struct sk_buff *skb;
+-    struct net_device *dev;
+-    int ifindex;
+-    int err;
++	struct sock *sk = sock-&gt;sk;
++	struct sk_buff *skb;
++	struct net_device *dev;
++	int ifindex;
++	int err;
+ 
+-    DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
++	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ 
+-    if (msg-&gt;msg_name) {
+-	struct sockaddr_can *addr = (struct sockaddr_can *)msg-&gt;msg_name;
+-	if (addr-&gt;can_family != AF_CAN)
+-	    return -EINVAL;
+-	ifindex = addr-&gt;can_ifindex;
+-    } else
+-	ifindex = canraw_sk(sk)-&gt;ifindex;
++	if (msg-&gt;msg_name) {
++		struct sockaddr_can *addr = (struct sockaddr_can *)msg-&gt;msg_name;
++		if (addr-&gt;can_family != AF_CAN)
++			return -EINVAL;
++		ifindex = addr-&gt;can_ifindex;
++	} else
++		ifindex = canraw_sk(sk)-&gt;ifindex;
+ 
+-    if (!(dev = dev_get_by_index(ifindex))) {
+-	DBG(&quot;device %d not found\n&quot;, ifindex);
+-	return -ENXIO;
+-    }
++	if (!(dev = dev_get_by_index(ifindex))) {
++		DBG(&quot;device %d not found\n&quot;, ifindex);
++		return -ENXIO;
++	}
+ 
+-    skb = alloc_skb(size, GFP_KERNEL);
+-    if ((err = memcpy_fromiovec(skb_put(skb, size), msg-&gt;msg_iov, size)) &lt; 0) {
+-	kfree_skb(skb);
+-	dev_put(dev);
+-	return err;
+-    }
+-    skb-&gt;dev = dev;
++	skb = alloc_skb(size, GFP_KERNEL);
++	if ((err = memcpy_fromiovec(skb_put(skb, size), msg-&gt;msg_iov, size)) &lt; 0) {
++		kfree_skb(skb);
++		dev_put(dev);
++		return err;
++	}
++	skb-&gt;dev = dev;
+ 
+-    DBG(&quot;sending skbuff to interface %d\n&quot;, ifindex);
+-    DBG_SKB(skb);
++	DBG(&quot;sending skbuff to interface %d\n&quot;, ifindex);
++	DBG_SKB(skb);
+ 
+-    err = can_send(skb);
++	err = can_send(skb);
+ 
+-    dev_put(dev);
++	dev_put(dev);
+ 
+-    if (err)
+-	return err;
++	if (err)
++		return err;
+ 
+-    return size;
++	return size;
+ }
+ 
+ static int raw_recvmsg(struct socket *sock, struct msghdr *msg, int size,
+ 		       int flags, struct scm_cookie *scm)
+ {
+-    struct sock *sk = sock-&gt;sk;
+-    struct sk_buff *skb;
+-    int error = 0;
+-    int noblock;
++	struct sock *sk = sock-&gt;sk;
++	struct sk_buff *skb;
++	int error = 0;
++	int noblock;
+ 
+-    DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
++	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ 
+-    noblock =  flags &amp; MSG_DONTWAIT;
+-    flags   &amp;= ~MSG_DONTWAIT;
+-    if (!(skb = skb_recv_datagram(sk, flags, noblock, &amp;error))) {
+-	return error;
+-    }
++	noblock =  flags &amp; MSG_DONTWAIT;
++	flags   &amp;= ~MSG_DONTWAIT;
++	if (!(skb = skb_recv_datagram(sk, flags, noblock, &amp;error))) {
++		return error;
++	}
+ 
+-    DBG(&quot;delivering skbuff %p\n&quot;, skb);
+-    DBG_SKB(skb);
++	DBG(&quot;delivering skbuff %p\n&quot;, skb);
++	DBG_SKB(skb);
+ 
+-    if (size &lt; skb-&gt;len)
+-	msg-&gt;msg_flags |= MSG_TRUNC;
+-    else
+-	size = skb-&gt;len;
+-    if ((error = memcpy_toiovec(msg-&gt;msg_iov, skb-&gt;data, size)) &lt; 0) {
+-	skb_free_datagram(sk, skb);
+-	return error;
+-    }
++	if (size &lt; skb-&gt;len)
++		msg-&gt;msg_flags |= MSG_TRUNC;
++	else
++		size = skb-&gt;len;
++	if ((error = memcpy_toiovec(msg-&gt;msg_iov, skb-&gt;data, size)) &lt; 0) {
++		skb_free_datagram(sk, skb);
++		return error;
++	}
+ 
+-    sock_recv_timestamp(msg, sk, skb);
++	sock_recv_timestamp(msg, sk, skb);
+ 
+-    if (msg-&gt;msg_name) {
+-	msg-&gt;msg_namelen = sizeof(struct sockaddr_can);
+-	memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+-    }
++	if (msg-&gt;msg_name) {
++		msg-&gt;msg_namelen = sizeof(struct sockaddr_can);
++		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
++	}
+ 
+-    DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+-    skb_free_datagram(sk, skb);
++	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
++	skb_free_datagram(sk, skb);
+ 
+-    return size;
++	return size;
+ }
+ 
+ static void raw_rcv(struct sk_buff *skb, void *data)
+ {
+-    struct sock *sk = (struct sock*)data;
+-    struct sockaddr_can *addr;
+-    int error;
++	struct sock *sk = (struct sock*)data;
++	struct sockaddr_can *addr;
++	int error;
+ 
+-    DBG(&quot;received skbuff %p, sk %p\n&quot;, skb, sk);
+-    DBG_SKB(skb);
++	DBG(&quot;received skbuff %p, sk %p\n&quot;, skb, sk);
++	DBG_SKB(skb);
+ 
+-    addr = (struct sockaddr_can *)skb-&gt;cb;
+-    memset(addr, 0, sizeof(*addr));
+-    addr-&gt;can_family  = AF_CAN;
+-    addr-&gt;can_ifindex = skb-&gt;dev-&gt;ifindex;
++	addr = (struct sockaddr_can *)skb-&gt;cb;
++	memset(addr, 0, sizeof(*addr));
++	addr-&gt;can_family  = AF_CAN;
++	addr-&gt;can_ifindex = skb-&gt;dev-&gt;ifindex;
+ 
+-    if ((error = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
+-	DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, error);
+-	DBG(&quot;freeing skbuff %p\n&quot;, skb);
+-	kfree_skb(skb);
+-    }
++	if ((error = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
++		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, error);
++		DBG(&quot;freeing skbuff %p\n&quot;, skb);
++		kfree_skb(skb);
++	}
+ }
+ 
+ static void raw_notifier(unsigned long msg, void *data)
+ {
+-    struct sock *sk = (struct sock *)data;
++	struct sock *sk = (struct sock *)data;
+ 
+-    DBG(&quot;called for sock %p\n&quot;, sk);
++	DBG(&quot;called for sock %p\n&quot;, sk);
+ 
+-    switch (msg) {
+-    case NETDEV_UNREGISTER:
+-	canraw_sk(sk)-&gt;ifindex = 0;
+-	/* fallthrough */
+-    case NETDEV_DOWN:
+-	sk-&gt;err = ENETDOWN;
+-	sk-&gt;error_report(sk);
+-	break;
+-    }
++	switch (msg) {
++	case NETDEV_UNREGISTER:
++		canraw_sk(sk)-&gt;ifindex = 0;
++		/* fallthrough */
++	case NETDEV_DOWN:
++		sk-&gt;err = ENETDOWN;
++		sk-&gt;error_report(sk);
++		break;
++	}
+ }
+ 
+ 
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2006-09-05 13:21:03 UTC (rev 72)
++++ trunk/kernel/2.4/can/vcan.c	2006-09-05 13:23:51 UTC (rev 73)
+@@ -86,44 +86,44 @@
+ static int vcan_init(struct net_device *dev);
+ 
+ static struct net_device vcan_devs[NDEVICES] = {
+-    { .init = vcan_init, .name = &quot;vcan%d&quot; },
+-    { .init = vcan_init, .name = &quot;vcan%d&quot; },
+-    { .init = vcan_init, .name = &quot;vcan%d&quot; },
+-    { .init = vcan_init, .name = &quot;vcan%d&quot; },
++	{ .init = vcan_init, .name = &quot;vcan%d&quot; },
++	{ .init = vcan_init, .name = &quot;vcan%d&quot; },
++	{ .init = vcan_init, .name = &quot;vcan%d&quot; },
++	{ .init = vcan_init, .name = &quot;vcan%d&quot; },
+ };
+ 
+ static int vcan_open(struct net_device *dev)
+ {
+-    DBG(&quot;%s: interface up\n&quot;, dev-&gt;name);
++	DBG(&quot;%s: interface up\n&quot;, dev-&gt;name);
+ 
+-    netif_start_queue(dev);
+-    return 0;
++	netif_start_queue(dev);
++	return 0;
+ }
+ 
+ static int vcan_stop(struct net_device *dev)
+ {
+-    DBG(&quot;%s: interface down\n&quot;, dev-&gt;name);
++	DBG(&quot;%s: interface down\n&quot;, dev-&gt;name);
+ 
+-    netif_stop_queue(dev);
+-    return 0;
++	netif_stop_queue(dev);
++	return 0;
+ }
+ 
+ #ifdef DO_LOOPBACK
+ 
+ static void vcan_rx(struct sk_buff *skb, struct net_device *dev)
+ {
+-    struct net_device_stats *stats = netdev_priv(dev);
+-    stats-&gt;rx_packets++;
+-    stats-&gt;rx_bytes += skb-&gt;len;
++	struct net_device_stats *stats = netdev_priv(dev);
++	stats-&gt;rx_packets++;
++	stats-&gt;rx_bytes += skb-&gt;len;
+ 
+-    skb-&gt;protocol  = htons(ETH_P_CAN);
+-    skb-&gt;dev       = dev;
+-    skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++	skb-&gt;protocol  = htons(ETH_P_CAN);
++	skb-&gt;dev       = dev;
++	skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 
+-    DBG(&quot;received skbuff on interface %d\n&quot;, dev-&gt;ifindex);
+-    DBG_SKB(skb);
++	DBG(&quot;received skbuff on interface %d\n&quot;, dev-&gt;ifindex);
++	DBG_SKB(skb);
+ 
+-    netif_rx(skb);
++	netif_rx(skb);
+ }
+ 
+ #endif
+@@ -131,118 +131,120 @@
+ 
+ static int vcan_tx(struct sk_buff *skb, struct net_device *dev)
+ {
+-    struct net_device_stats *stats = netdev_priv(dev);
++	struct net_device_stats *stats = netdev_priv(dev);
+ 
+-    DBG(&quot;sending skbuff on interface %s\n&quot;, dev-&gt;name);
+-    DBG_SKB(skb);
+-    DBG_FRAME(&quot;VCAN: transmit CAN frame&quot;, (struct can_frame *)skb-&gt;data);
++	DBG(&quot;sending skbuff on interface %s\n&quot;, dev-&gt;name);
++	DBG_SKB(skb);
++	DBG_FRAME(&quot;VCAN: transmit CAN frame&quot;, (struct can_frame *)skb-&gt;data);
+ 
+ #ifdef DO_LOOPBACK
+-    if (atomic_read(&amp;skb-&gt;users) != 1) {
+-	struct sk_buff *old_skb = skb;
+-	skb = skb_clone(old_skb, GFP_ATOMIC);
+-	DBG(&quot;  freeing old skbuff %p, using new skbuff %p\n&quot;, old_skb, skb);
+-	kfree_skb(old_skb);
+-	if (!skb) {
+-	    return 0;
+-	}
+-    } else
+-	skb_orphan(skb);
++	if (atomic_read(&amp;skb-&gt;users) != 1) {
++		struct sk_buff *old_skb = skb;
++		skb = skb_clone(old_skb, GFP_ATOMIC);
++		DBG(&quot;  freeing old skbuff %p, using new skbuff %p\n&quot;,
++		    old_skb, skb);
++		kfree_skb(old_skb);
++		if (!skb) {
++			return 0;
++		}
++	} else
++		skb_orphan(skb);
+ #endif
+ 
+-    stats-&gt;tx_packets++;
+-    stats-&gt;tx_bytes += skb-&gt;len;
++	stats-&gt;tx_packets++;
++	stats-&gt;tx_bytes += skb-&gt;len;
+ #ifdef DO_LOOPBACK
+-    vcan_rx(skb, dev);
++	vcan_rx(skb, dev);
+ #else
+-    stats-&gt;rx_packets++;
+-    stats-&gt;rx_bytes += skb-&gt;len;
+-    kfree_skb(skb);
++	stats-&gt;rx_packets++;
++	stats-&gt;rx_bytes += skb-&gt;len;
++	kfree_skb(skb);
+ #endif
+-    return 0;
++	return 0;
+ }
+ 
+ static int vcan_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ {
+-    return -EOPNOTSUPP;
++	return -EOPNOTSUPP;
+ }
+ 
+ static int vcan_rebuild_header(struct sk_buff *skb)
+ {
+-    DBG(&quot;called on skbuff %p\n&quot;, skb);
+-    DBG_SKB(skb);
+-    return 0;
++	DBG(&quot;called on skbuff %p\n&quot;, skb);
++	DBG_SKB(skb);
++	return 0;
+ }
+ 
+ static int vcan_header(struct sk_buff *skb, struct net_device *dev,
+ 		       unsigned short type, void *daddr, void *saddr,
+ 		       unsigned int len)
+ {
+-    DBG(&quot;called skbuff %p device %p\n&quot;, skb, dev);
+-    DBG_SKB(skb);
+-    return 0;
++	DBG(&quot;called skbuff %p device %p\n&quot;, skb, dev);
++	DBG_SKB(skb);
++	return 0;
+ }
+ 
+ 
+ static struct net_device_stats *vcan_get_stats(struct net_device *dev)
+ {
+-    struct net_device_stats *stats = netdev_priv(dev);
+-    return stats;
++	struct net_device_stats *stats = netdev_priv(dev);
++	return stats;
+ }
+ 
+ static int vcan_init(struct net_device *dev)
+ {
+-    DBG(&quot;dev %s\n&quot;, dev-&gt;name);
++	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+ 
+-    ether_setup(dev);
++	ether_setup(dev);
+ 
+-    dev-&gt;priv              = kmalloc(sizeof(struct net_device_stats), GFP_KERNEL);
+-    if (!dev-&gt;priv)
+-	return -ENOMEM;
+-    memset(dev-&gt;priv, 0, sizeof(struct net_device_stats));
++	dev-&gt;priv              = kmalloc(sizeof(struct net_device_stats), GFP_KERNEL);
++	if (!dev-&gt;priv)
++		return -ENOMEM;
++	memset(dev-&gt;priv, 0, sizeof(struct net_device_stats));
+ 
+-    dev-&gt;open              = vcan_open;
+-    dev-&gt;stop              = vcan_stop;
+-    dev-&gt;set_config        = NULL;
+-    dev-&gt;hard_start_xmit   = vcan_tx;
+-    dev-&gt;do_ioctl          = vcan_ioctl;
+-    dev-&gt;get_stats         = vcan_get_stats;
++	dev-&gt;open              = vcan_open;
++	dev-&gt;stop              = vcan_stop;
++	dev-&gt;set_config        = NULL;
++	dev-&gt;hard_start_xmit   = vcan_tx;
++	dev-&gt;do_ioctl          = vcan_ioctl;
++	dev-&gt;get_stats         = vcan_get_stats;
+ 
+-    dev-&gt;mtu               = sizeof(struct can_frame);
+-    dev-&gt;flags             = IFF_LOOPBACK;
+-    dev-&gt;hard_header       = vcan_header;
+-    dev-&gt;rebuild_header    = vcan_rebuild_header;
+-    dev-&gt;hard_header_cache = NULL;
+-    dev-&gt;type              = ARPHRD_LOOPBACK;
++	dev-&gt;mtu               = sizeof(struct can_frame);
++	dev-&gt;flags             = IFF_LOOPBACK;
++	dev-&gt;hard_header       = vcan_header;
++	dev-&gt;rebuild_header    = vcan_rebuild_header;
++	dev-&gt;hard_header_cache = NULL;
++	dev-&gt;type              = ARPHRD_LOOPBACK;
+ 
+-    SET_MODULE_OWNER(dev);
++	SET_MODULE_OWNER(dev);
+ 
+-    return 0;
++	return 0;
+ }
+ 
+ static __init int vcan_init_module(void)
+ {
+-    int i, ndev = 0, result;
++	int i, ndev = 0, result;
+ 
+-    printk(banner);
++	printk(banner);
+ 
+-    for (i = 0; i &lt; NDEVICES; i++) {
+-	if (result = register_netdev(vcan_devs + i))
+-	    printk(KERN_ERR &quot;vcan: error %d registering interface %s\n&quot;,
+-		   result, vcan_devs[i].name);
+-	else {
+-	    DBG(&quot;successfully registered interface %s\n&quot;, vcan_devs[i].name);
+-	    ndev++;
++	for (i = 0; i &lt; NDEVICES; i++) {
++		if (result = register_netdev(vcan_devs + i))
++			printk(KERN_ERR &quot;vcan: error %d registering interface %s\n&quot;,
++			       result, vcan_devs[i].name);
++		else {
++			DBG(&quot;successfully registered interface %s\n&quot;,
++			    vcan_devs[i].name);
++			ndev++;
++		}
+ 	}
+-    }
+-    return ndev ? 0 : -ENODEV;
++	return ndev ? 0 : -ENODEV;
+ }
+ 
+ static __exit void vcan_cleanup_module(void)
+ {
+-    int i;
+-    for (i = 0; i &lt; NDEVICES; i++)
+-	unregister_netdev(vcan_devs + i);
++	int i;
++	for (i = 0; i &lt; NDEVICES; i++)
++		unregister_netdev(vcan_devs + i);
+ }
+ 
+ module_init(vcan_init_module);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000052.html">r72 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000054.html">r74 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

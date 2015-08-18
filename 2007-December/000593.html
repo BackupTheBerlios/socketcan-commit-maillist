@@ -1,0 +1,243 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r611 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r611%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712121355.lBCDtfvX018291%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000592.html">
+   <LINK REL="Next"  HREF="000594.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r611 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r611%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712121355.lBCDtfvX018291%40sheep.berlios.de%3E"
+       TITLE="r611 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 12 14:55:41 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000592.html">r610 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000594.html">r612 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#593">[ date ]</a>
+              <a href="thread.html#593">[ thread ]</a>
+              <a href="subject.html#593">[ subject ]</a>
+              <a href="author.html#593">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-12 14:55:36 +0100 (Wed, 12 Dec 2007)
+New Revision: 611
+
+Modified:
+   trunk/kernel/2.4/net/can/bcm.c
+Log:
+Updated bcm.c to use mod_timer() and setup_timer().
+
+
+Modified: trunk/kernel/2.4/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/net/can/bcm.c	2007-12-12 13:54:42 UTC (rev 610)
++++ trunk/kernel/2.4/net/can/bcm.c	2007-12-12 13:55:36 UTC (rev 611)
+@@ -53,6 +53,7 @@
+ #include &lt;linux/can/core.h&gt;
+ #include &lt;linux/can/version.h&gt;
+ #include &lt;linux/can/bcm.h&gt;
++#include &quot;compat.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+@@ -378,16 +379,16 @@
+ 
+ 	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 
+-		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-		add_timer(&amp;op-&gt;timer);
++		/* send (next) frame */
++		bcm_can_tx(op);
++		mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ 
+-		bcm_can_tx(op); /* send (next) frame */
+ 	} else {
+ 		if (op-&gt;j_ival2) {
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-			add_timer(&amp;op-&gt;timer);
+ 
+-			bcm_can_tx(op); /* send (next) frame */
++			/* send (next) frame */
++			bcm_can_tx(op);
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival2);
+ 		}
+ 	}
+ 
+@@ -438,9 +439,9 @@
+ 
+ 		lastdata-&gt;can_dlc |= RX_THR; /* mark as 'throttled' */
+ 
+-		if (!(op-&gt;thrtimer.expires)) { /* start only the first time */
+-			op-&gt;thrtimer.expires = nexttx;
+-			add_timer(&amp;op-&gt;thrtimer);
++		if (!(op-&gt;thrtimer.expires)) {
++			/* start only the first time */
++			mod_timer(&amp;op-&gt;thrtimer, nexttx);
+ 		}
+ 	} else
+ 		bcm_rx_changed(op, rxdata); /* send RX_CHANGED to the user */
+@@ -491,12 +492,8 @@
+ 	if (op-&gt;flags &amp; RX_NO_AUTOTIMER)
+ 		return;
+ 
+-	if (op-&gt;j_ival1) {
+-
+-		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-
+-		add_timer(&amp;op-&gt;timer);
+-	}
++	if (op-&gt;j_ival1)
++		mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ }
+ 
+ /*
+@@ -817,17 +814,12 @@
+ 		op-&gt;ifindex = ifindex;
+ 
+ 		/* initialize uninitialized (kmalloc) structure */
+-		init_timer(&amp;op-&gt;timer);
++		setup_timer(&amp;op-&gt;timer, bcm_tx_timeout_handler,
++			    (unsigned long)op);
+ 
+ 		/* currently unused in tx_ops */
+ 		init_timer(&amp;op-&gt;thrtimer);
+ 
+-		/* handler for tx_ops */
+-		op-&gt;timer.function = bcm_tx_timeout_handler;
+-
+-		/* timer.data points to this op-structure */
+-		op-&gt;timer.data = (unsigned long)op;
+-
+ 		/* add this bcm_op to the list of the tx_ops */
+ 		bcm_insert_op(&amp;bo-&gt;tx_ops, op);
+ 
+@@ -867,19 +859,14 @@
+ 	if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp;
+ 	    ((op-&gt;j_ival1 &amp;&amp; op-&gt;count) || op-&gt;j_ival2)) {
+ 
+-		del_timer(&amp;op-&gt;timer);
+-
+ 		/* spec: send can_frame when starting timer */
+ 		op-&gt;flags |= TX_ANNOUNCE;
+ 
+ 		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
+-		} else {
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-		}
+-
+-		add_timer(&amp;op-&gt;timer);
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
++		} else
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival2);
+ 	}
+ 
+ 	if (op-&gt;flags &amp; TX_ANNOUNCE)
+@@ -999,23 +986,13 @@
+ 		op-&gt;ifindex = ifindex;
+ 
+ 		/* initialize uninitialized (kmalloc) structure */
+-		init_timer(&amp;op-&gt;timer);
++		setup_timer(&amp;op-&gt;timer, bcm_rx_timeout_handler,
++			    (unsigned long)op);
+ 
+ 		/* init throttle timer for RX_CHANGED */
+-		init_timer(&amp;op-&gt;thrtimer);
++		setup_timer(&amp;op-&gt;thrtimer, bcm_rx_thr_handler,
++			    (unsigned long)op);
+ 
+-		/* handler for rx timeouts */
+-		op-&gt;timer.function = bcm_rx_timeout_handler;
+-
+-		/* timer.data points to this op-structure */
+-		op-&gt;timer.data = (unsigned long)op;
+-
+-		/* handler for RX_CHANGED throttle timeouts */
+-		op-&gt;thrtimer.function = bcm_rx_thr_handler;
+-
+-		/* timer.data points to this op-structure */
+-		op-&gt;thrtimer.data = (unsigned long)op;
+-
+ 		op-&gt;thrtimer.expires = 0; /* mark disabled timer */
+ 
+ 		/* add this bcm_op to the list of the tx_ops */
+@@ -1054,30 +1031,22 @@
+ 			op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ 
+ 			/* disable an active timer due to zero value? */
+-			if (!op-&gt;j_ival1) {
++			if (!op-&gt;j_ival1)
+ 				del_timer(&amp;op-&gt;timer);
+-			}
+ 
+ 			/* free currently blocked msgs ? */
+-			if (op-&gt;thrtimer.expires) { /* blocked by timer? */
+-				del_timer(&amp;op-&gt;thrtimer);
++			if (op-&gt;thrtimer.expires) {
+ 				/* send blocked msgs hereafter */
+-				op-&gt;thrtimer.expires = jiffies + 2;
+-				add_timer(&amp;op-&gt;thrtimer);
++				mod_timer(&amp;op-&gt;thrtimer, jiffies + 2);
+ 			}
++
+ 			/* if (op-&gt;j_ival2) is zero, no (new) throttling     */
+ 			/* will happen. For details see functions            */
+ 			/* bcm_rx_update_and_send() and bcm_rx_thr_handler() */
+ 		}
+ 
+-		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1) {
+-
+-			del_timer(&amp;op-&gt;timer);
+-
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-
+-			add_timer(&amp;op-&gt;timer);
+-		}
++		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1)
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ 	}
+ 
+ 	/* now we can register for can_ids, if we added a new bcm_op */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000592.html">r610 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000594.html">r612 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#593">[ date ]</a>
+              <a href="thread.html#593">[ thread ]</a>
+              <a href="subject.html#593">[ subject ]</a>
+              <a href="author.html#593">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

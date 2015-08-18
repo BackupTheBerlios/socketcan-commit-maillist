@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r169 - in trunk/kernel: 2.4/can 2.6/drivers/net/can	2.6/drivers/net/can/sja1000 2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r169%20-%20in%20trunk/kernel%3A%202.4/can%202.6/drivers/net/can%0A%092.6/drivers/net/can/sja1000%202.6/net/can&In-Reply-To=%3C200703051355.l25Dtcl4031517%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000152.html">
+   <LINK REL="Next"  HREF="000154.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r169 - in trunk/kernel: 2.4/can 2.6/drivers/net/can	2.6/drivers/net/can/sja1000 2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r169%20-%20in%20trunk/kernel%3A%202.4/can%202.6/drivers/net/can%0A%092.6/drivers/net/can/sja1000%202.6/net/can&In-Reply-To=%3C200703051355.l25Dtcl4031517%40sheep.berlios.de%3E"
+       TITLE="r169 - in trunk/kernel: 2.4/can 2.6/drivers/net/can	2.6/drivers/net/can/sja1000 2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar  5 14:55:38 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000152.html">r168 - in trunk/kernel: 2.4/can 2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000154.html">r170 - in trunk/kernel: 2.4/can 2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#153">[ date ]</a>
+              <a href="thread.html#153">[ thread ]</a>
+              <a href="subject.html#153">[ subject ]</a>
+              <a href="author.html#153">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-05 14:55:34 +0100 (Mon, 05 Mar 2007)
+New Revision: 169
+
+Modified:
+   trunk/kernel/2.4/can/can.h
+   trunk/kernel/2.6/drivers/net/can/Makefile
+   trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+   trunk/kernel/2.6/net/can/Makefile
+Log:
+Defined ARPHARD_CAN as 280 (formerly 804) due to my RFC on the socketcan-core
+mailinglist. Had a phonecall with Marc who sees no problem with ARPHRD_CAN 280
+
+
+Modified: trunk/kernel/2.4/can/can.h
+===================================================================
+--- trunk/kernel/2.4/can/can.h	2007-03-05 13:33:59 UTC (rev 168)
++++ trunk/kernel/2.4/can/can.h	2007-03-05 13:55:34 UTC (rev 169)
+@@ -1,7 +1,7 @@
+ /*
+  * can.h
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -66,7 +66,7 @@
+ #define ETH_P_CAN	0x000C	/* to be moved to include/linux/if_ether.h */
+ 
+ /* ARP protocol identifier (dummy type for non ARP hardware) */
+-#define ARPHRD_CAN	804	/* to be moved to include/linux/if_arp.h */
++#define ARPHRD_CAN	280	/* to be moved to include/linux/if_arp.h */
+ 
+ 
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Makefile	2007-03-05 13:33:59 UTC (rev 168)
++++ trunk/kernel/2.6/drivers/net/can/Makefile	2007-03-05 13:55:34 UTC (rev 169)
+@@ -36,7 +36,7 @@
+ ifneq ($(KBUILD_EXTMOD),)
+ EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include \
+ 		-DETH_P_CAN=0x000C \
+-		-DARPHRD_CAN=804
++		-DARPHRD_CAN=280
+ endif
+ 
+ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2007-03-05 13:33:59 UTC (rev 168)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2007-03-05 13:55:34 UTC (rev 169)
+@@ -56,7 +56,7 @@
+ ifneq ($(KBUILD_EXTMOD),)
+ EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include \
+ 		-DETH_P_CAN=0x000C \
+-		-DARPHRD_CAN=804
++		-DARPHRD_CAN=280
+ endif
+ 
+ obj-m := sja1000-isa.o sja1000-gw2.o sja1000-mem.o
+
+Modified: trunk/kernel/2.6/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/net/can/Makefile	2007-03-05 13:33:59 UTC (rev 168)
++++ trunk/kernel/2.6/net/can/Makefile	2007-03-05 13:55:34 UTC (rev 169)
+@@ -70,7 +70,7 @@
+ 		-DETH_P_CAN=0x000C \
+ 		-DPF_CAN=29 \
+ 		-DAF_CAN=PF_CAN \
+-		-DARPHRD_CAN=804
++		-DARPHRD_CAN=280
+ endif
+ 
+ obj-$(CONFIG_CAN)	+= can.o
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000152.html">r168 - in trunk/kernel: 2.4/can 2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000154.html">r170 - in trunk/kernel: 2.4/can 2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#153">[ date ]</a>
+              <a href="thread.html#153">[ thread ]</a>
+              <a href="subject.html#153">[ subject ]</a>
+              <a href="author.html#153">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,203 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r764 - trunk/kernel/2.6/drivers/net/can/old/ccan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r764%20-%20trunk/kernel/2.6/drivers/net/can/old/ccan&In-Reply-To=%3C200806111409.m5BE97en012435%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000743.html">
+   <LINK REL="Next"  HREF="000745.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r764 - trunk/kernel/2.6/drivers/net/can/old/ccan</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r764%20-%20trunk/kernel/2.6/drivers/net/can/old/ccan&In-Reply-To=%3C200806111409.m5BE97en012435%40sheep.berlios.de%3E"
+       TITLE="r764 - trunk/kernel/2.6/drivers/net/can/old/ccan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 11 16:09:07 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000743.html">r763 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000745.html">r765 - trunk/kernel/2.6/drivers/net/can/old/ccan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#744">[ date ]</a>
+              <a href="thread.html#744">[ thread ]</a>
+              <a href="subject.html#744">[ subject ]</a>
+              <a href="author.html#744">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-06-11 16:09:06 +0200 (Wed, 11 Jun 2008)
+New Revision: 764
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c
+Log:
+ccan: coding style fixes and use linux/io.h
+
+Various coding style fixes:
+- Spaces around operators, no spaces after and before braces etc.
+- Use __func__ instead of the gcc specific __FUNCTION__.
+
+Furthermore, use linux/io.h instead of asm/io.h for newer
+Linux 2.6 kernels.
+
+Signed-off-by: Robert Schwebel &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">r.schwebel at pengutronix.de</A>&gt;
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c	2008-06-11 14:01:41 UTC (rev 763)
++++ trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c	2008-06-11 14:09:06 UTC (rev 764)
+@@ -38,7 +38,11 @@
+ #include &lt;linux/list.h&gt;
+ #include &lt;linux/delay.h&gt;
+ #include &lt;linux/workqueue.h&gt;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,16)
++#include &lt;linux/io.h&gt;
++#else
+ #include &lt;asm/io.h&gt;
++#endif
+ 
+ #include &lt;linux/can/dev.h&gt;
+ #include &lt;linux/can/error.h&gt;
+@@ -134,7 +138,7 @@
+ 
+ 	if (ctrl &amp; IF_MCONT_MSGLST) {
+ 		priv-&gt;can.net_stats.rx_errors++;
+-		DBG(&quot;%s: msg lost in buffer %d\n&quot;, __FUNCTION__, objno);
++		DBG(&quot;%s: msg lost in buffer %d\n&quot;, __func__, objno);
+ 	}
+ 
+ 	frame-&gt;can_dlc = ctrl &amp; 0xf;
+@@ -181,7 +185,7 @@
+ 
+ 	ccan_object_put(dev, 0, objno, IF_COMM_ALL &amp; ~IF_COMM_TXRQST);
+ 
+-	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__,
++	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __func__,
+ 		objno, ccan_read_reg32(dev, CAN_MSGVAL));
+ 
+ 	return 0;
+@@ -195,7 +199,7 @@
+ 	priv-&gt;write_reg(dev, CAN_IF_MCONT(iface), 0);
+ 	ccan_object_put(dev, 0, objno, IF_COMM_ARB | IF_COMM_CONTROL);
+ 
+-	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__,
++	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __func__,
+ 		objno, ccan_read_reg32(dev, CAN_MSGVAL));
+ 
+ 	return 0;
+@@ -253,9 +257,9 @@
+ 		     ((tseg1 &lt;&lt; BTR_TSEG1_SHIFT) &amp; BTR_TSEG1_MASK) |
+ 		     ((tseg2 &lt;&lt; BTR_TSEG2_SHIFT) &amp; BTR_TSEG2_MASK);
+ 
+-	DBG(&quot;%s: brp = %d sjw = %d seg1 = %d seg2 = %d\n&quot;, __FUNCTION__,
++	DBG(&quot;%s: brp = %d sjw = %d seg1 = %d seg2 = %d\n&quot;, __func__,
+ 		brp, sjw, tseg1, tseg2);
+-	DBG(&quot;%s: setting BTR to %04x\n&quot;, __FUNCTION__, reg_timing);
++	DBG(&quot;%s: setting BTR to %04x\n&quot;, __func__, reg_timing);
+ 
+ 	spin_lock_irq(&amp;priv-&gt;can.irq_lock);
+ 
+@@ -274,7 +278,7 @@
+ {
+ 	switch (mode) {
+ 	case CAN_MODE_START:
+-		DBG(&quot;%s: CAN_MODE_START requested\n&quot;, __FUNCTION__);
++		DBG(&quot;%s: CAN_MODE_START requested\n&quot;, __func__);
+ 		break;
+ 	default:
+ 		return -EOPNOTSUPP;
+@@ -303,7 +307,7 @@
+ 		*state = CAN_STATE_ACTIVE;
+ #ifdef CCAN_DEBUG
+ 	DBG(&quot;buffer statistic:\n&quot;);
+-	for (i=0; i&lt;= MAX_OBJECT; i++)
++	for (i = 0; i &lt;= MAX_OBJECT; i++)
+ 		DBG(&quot;%d: %d\n&quot;, i, priv-&gt;bufstat[i]);
+ #endif
+ 	return 0;
+@@ -337,7 +341,7 @@
+ 			dev_info(ND2D(dev), &quot;left busoff state\n&quot;);
+ 	}
+ 
+-	if ( diff &amp; STATUS_LEC_MASK) {
++	if (diff &amp; STATUS_LEC_MASK) {
+ 		switch (status &amp; STATUS_LEC_MASK) {
+ 		case LEC_STUFF_ERROR:
+ 			dev_info(ND2D(dev), &quot;suffing error\n&quot;);
+@@ -417,7 +421,7 @@
+ 				 * case on the Magnachip h7202.
+ 				 */
+ 				priv-&gt;write_reg(dev, CAN_CONTROL, CONTROL_EIE |
+-						CONTROL_IE );
++						CONTROL_IE);
+ 				schedule_delayed_work(&amp;priv-&gt;work, HZ / 10);
+ 				goto exit;
+ 			}
+@@ -476,10 +480,10 @@
+ 	int i;
+ 
+ 	/* setup message objects */
+-	for(i = 0; i &lt;= MAX_OBJECT; i++)
++	for (i = 0; i &lt;= MAX_OBJECT; i++)
+ 		ccan_inval_object(dev, 0, i);
+ 
+-	for(i = MAX_TRANSMIT_OBJECT + 1; i &lt; MAX_OBJECT; i++)
++	for (i = MAX_TRANSMIT_OBJECT + 1; i &lt; MAX_OBJECT; i++)
+ 		ccan_setup_receive_object(dev, 0, i, 0, 0,
+ 					  IF_MCONT_RXIE | IF_MCONT_UMASK);
+ 
+@@ -487,7 +491,7 @@
+ 				  IF_MCONT_RXIE | IF_MCONT_UMASK);
+ 
+ #ifdef CCAN_DEBUG
+-	for(i = 0; i &lt;= MAX_OBJECT; i++)
++	for (i = 0; i &lt;= MAX_OBJECT; i++)
+ 		priv-&gt;bufstat[i] = 0;
+ #endif
+ 
+@@ -500,7 +504,7 @@
+ 	struct ccan_priv *priv;
+ 
+ 	dev = alloc_candev(sizeof_priv);
+-	if(!dev)
++	if (!dev)
+ 		return NULL;
+ 
+ 	priv = netdev_priv(dev);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000743.html">r763 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000745.html">r765 - trunk/kernel/2.6/drivers/net/can/old/ccan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#744">[ date ]</a>
+              <a href="thread.html#744">[ thread ]</a>
+              <a href="subject.html#744">[ subject ]</a>
+              <a href="author.html#744">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

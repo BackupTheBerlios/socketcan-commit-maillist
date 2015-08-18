@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> socketcanutilites
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2013-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20socketcanutilites&In-Reply-To=%3C1367606901.19009.YahooMailNeo%40web140202.mail.bf1.yahoo.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>socketcanutilites</H1>
+    <B>Amaras Sathui</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20socketcanutilites&In-Reply-To=%3C1367606901.19009.YahooMailNeo%40web140202.mail.bf1.yahoo.com%3E"
+       TITLE="socketcanutilites">amarasathi at yahoo.com
+       </A><BR>
+    <I>Fri May  3 20:48:21 CEST 2013</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#909">[ date ]</a>
+              <a href="thread.html#909">[ thread ]</a>
+              <a href="subject.html#909">[ subject ]</a>
+              <a href="author.html#909">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hi,
+&#160;&#160;&#160; 
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; I am new to socket can&#160; i downloaded the socketcan utilities and when i try to run it i am getting the errors.
+I compiled&#160; iproute2-2.6.39.
+
+I made the following modifications 
+
+
+In make file commented the below lines
+
+DESTDIR
+DBM_INCLUDE
+CC
+
+and the modifications  made are
+
+setenv GNUEABI arm-xilinx-linux-gnueabi
+setenv CC GNUEABI-gcc
+setenv LD GNUEABI-ld
+setenv NM GNUEABI-nm
+setenv AR GNUEABI-ar
+setenv RANLIB GNUEABI-ranlib
+setenv CXX GNUEABI-c++
+setenv PREFIX /proj/epdsw/kedar/linux-xlnx/linux-xlnx/usr/
+setenv CROSS_COMPILE_PREFIX PREFIX
+setenv PATH /proj/epdsw/sadanand/arm-2010.09/bin:$PATH
+setenv DBM_INCLUDE /usr/include
+setenv INCLUDES /usr/include
+setenv DESTDIR PREFIX
+
+
+and after that i am using 
+./configure --host=arm-xilinx-linux-gnueabi  --prefix=$PREFIX --enable-debug
+the above command 
+and it's output is
+TC schedulers
+ATM    no
+IPT    using xtables
+iptables modules directory: /lib/xtables
+
+when i try to use make command i am getting below error
+
+make[1]: Entering directory `/proj/epdsw/kedar/linux-xlnx/user/iproute2-2.6.39/lib'
+GNUEABI-gcc -D_GNU_SOURCE -O2 -Wstrict-prototypes
+ -Wall -I../include -DRESOLVE_HOSTNAMES -DLIBDIR=\&quot;/usr/lib/\&quot; -fPIC   -c -o ll_map.o ll_map.c
+make[1]: GNUEABI-gcc: Command not found
+make[1]: *** [ll_map.o] Error 127
+make[1]: Leaving directory `/proj/epdsw/kedar/linux-xlnx/user/iproute2-2.6.39/lib'
+make: *** [all] Error 2
+
+Please help me 
+
+waiting for ur response
+
+Regards,
+Kedar
+&#65279; &#65279; 
+-------------- next part --------------
+An HTML attachment was scrubbed...
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/socketcan-commit/attachments/20130503/49235e24/attachment.html">https://lists.berlios.de/pipermail/socketcan-commit/attachments/20130503/49235e24/attachment.html</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#909">[ date ]</a>
+              <a href="thread.html#909">[ thread ]</a>
+              <a href="subject.html#909">[ subject ]</a>
+              <a href="author.html#909">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

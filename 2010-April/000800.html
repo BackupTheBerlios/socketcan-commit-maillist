@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1168 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1168%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C201004161903.o3GJ3GUV021008%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000799.html">
+   <LINK REL="Next"  HREF="000801.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1168 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1168%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C201004161903.o3GJ3GUV021008%40sheep.berlios.de%3E"
+       TITLE="r1168 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 16 21:03:16 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000799.html">r1167 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000801.html">r1169 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#800">[ date ]</a>
+              <a href="thread.html#800">[ thread ]</a>
+              <a href="subject.html#800">[ subject ]</a>
+              <a href="author.html#800">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-04-16 21:03:14 +0200 (Fri, 16 Apr 2010)
+New Revision: 1168
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+As Stephen Hellriegel pointed out in
+<A HREF="https://lists.berlios.de/pipermail/socketcan-users/2010-April/001378.html">https://lists.berlios.de/pipermail/socketcan-users/2010-April/001378.html</A>
+it does not make sense to monitor the tx data flow in the slcan driver as
+we do not know anything about the CAN specific problems that may occur in the
+slcan device.
+
+Therefore we just wait until the ASCII data is sent on the serial line without
+having a separate timeout handler in the slcan driver.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2010-04-16 08:46:17 UTC (rev 1167)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2010-04-16 19:03:14 UTC (rev 1168)
+@@ -124,7 +124,6 @@
+  * to use the slcan driver with an existing kernel.
+  */
+ 
+-#define SLC_CHECK_TRANSMIT
+ #define SLCAN_MAGIC 0x53CA
+ 
+ static int maxdev = 10;		/* MAX number of SLCAN channels;
+@@ -387,9 +386,6 @@
+ #else
+ 	actual = sl-&gt;tty-&gt;ops-&gt;write(sl-&gt;tty, sl-&gt;xbuff, strlen(sl-&gt;xbuff));
+ #endif
+-#ifdef SLC_CHECK_TRANSMIT
+-	sl-&gt;dev-&gt;trans_start = jiffies;
+-#endif
+ 	sl-&gt;xleft = strlen(sl-&gt;xbuff) - actual;
+ 	sl-&gt;xhead = sl-&gt;xbuff + actual;
+ 	stats-&gt;tx_bytes += cf-&gt;can_dlc;
+@@ -431,41 +427,7 @@
+ 	sl-&gt;xhead += actual;
+ }
+ 
+-static void slc_tx_timeout(struct net_device *dev)
+-{
+-	struct slcan *sl = netdev_priv(dev);
+ 
+-	spin_lock(&amp;sl-&gt;lock);
+-
+-	if (netif_queue_stopped(dev)) {
+-		if (!netif_running(dev))
+-			goto out;
+-
+-		/* May be we must check transmitter timeout here ?
+-		 *      14 Oct 1994 Dmitry Gorodchanin.
+-		 */
+-#ifdef SLC_CHECK_TRANSMIT
+-		if (time_before(jiffies, dev-&gt;trans_start + 20 * HZ))  {
+-			/* 20 sec timeout not reached */
+-			goto out;
+-		}
+-		printk(KERN_WARNING &quot;%s: transmit timed out, %s?\n&quot;, dev-&gt;name,
+-#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,26)
+-		       (sl-&gt;tty-&gt;driver-&gt;chars_in_buffer(sl-&gt;tty) || sl-&gt;xleft)
+-#else
+-		       (tty_chars_in_buffer(sl-&gt;tty) || sl-&gt;xleft)
+-#endif
+-		       ? &quot;bad line quality&quot; : &quot;driver error&quot;);
+-		sl-&gt;xleft = 0;
+-		sl-&gt;tty-&gt;flags &amp;= ~(1 &lt;&lt; TTY_DO_WRITE_WAKEUP);
+-		netif_wake_queue(sl-&gt;dev);
+-#endif
+-	}
+-out:
+-	spin_unlock(&amp;sl-&gt;lock);
+-}
+-
+-
+ /******************************************
+  *   Routines looking at netdevice side.
+  ******************************************/
+@@ -554,9 +516,6 @@
+ 	.ndo_open               = slc_open,
+ 	.ndo_stop               = slc_close,
+ 	.ndo_start_xmit         = slc_xmit,
+-#ifdef SLC_CHECK_TRANSMIT
+-	.ndo_tx_timeout		= slc_tx_timeout,
+-#endif
+ };
+ #endif
+ 
+@@ -585,12 +544,6 @@
+ 
+ 	dev-&gt;mtu		= sizeof(struct can_frame);
+ 	dev-&gt;type		= ARPHRD_CAN;
+-#ifdef SLC_CHECK_TRANSMIT
+-#if LINUX_VERSION_CODE &lt;= KERNEL_VERSION(2,6,28)
+-	dev-&gt;tx_timeout		= slc_tx_timeout;
+-#endif
+-	dev-&gt;watchdog_timeo	= 20*HZ;
+-#endif
+ 
+ 	/* New-style flags. */
+ 	dev-&gt;flags		= IFF_NOARP;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000799.html">r1167 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000801.html">r1169 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#800">[ date ]</a>
+              <a href="thread.html#800">[ thread ]</a>
+              <a href="subject.html#800">[ subject ]</a>
+              <a href="author.html#800">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

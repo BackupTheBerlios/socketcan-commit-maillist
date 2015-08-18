@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1225 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1225%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101209185859.BC507480E71%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000856.html">
+   <LINK REL="Next"  HREF="000858.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1225 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1225%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101209185859.BC507480E71%40sheep.berlios.de%3E"
+       TITLE="r1225 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  9 19:58:59 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000856.html">r1224 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000858.html">r1226 - in trunk/kernel/2.6: . drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#857">[ date ]</a>
+              <a href="thread.html#857">[ thread ]</a>
+              <a href="subject.html#857">[ subject ]</a>
+              <a href="author.html#857">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-12-09 19:58:59 +0100 (Thu, 09 Dec 2010)
+New Revision: 1225
+
+Modified:
+   trunk/kernel/2.6/net/can/gw.c
+Log:
+cangw: Do not use skb-&gt;sk to detect already routed CAN frames.
+
+As the latest changes to the can-gw have shown, the use of skb-&gt;sk created
+several problems and still looks like a bad hack.
+
+While checking the struct skbuff for usable containers to detect routed CAN-
+frames that do not interfere with other sophisticated network technique, the
+pointers to the [transport|network|mac]_header looked interesting.
+
+So we mark routed frames by setting some mac header length which is not
+relevant for the CAN frames located in the skb-&gt;data section.
+
+As dev-&gt;header_ops is not set in CAN netdevices no one is ever accessing the
+various header offsets in the CAN skbuffs anyway. E.g. using the packet socket
+to read CAN frames is still working after this change to gw.c .
+
+
+
+Modified: trunk/kernel/2.6/net/can/gw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/gw.c	2010-12-09 18:03:47 UTC (rev 1224)
++++ trunk/kernel/2.6/net/can/gw.c	2010-12-09 18:58:59 UTC (rev 1225)
+@@ -63,7 +63,7 @@
+ #include &lt;socketcan/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define CAN_GW_VERSION &quot;20101205&quot;
++#define CAN_GW_VERSION &quot;20101209&quot;
+ static __initdata const char banner[] =
+ 	KERN_INFO &quot;can: netlink gateway (rev &quot; CAN_GW_VERSION &quot;)\n&quot;;
+ 
+@@ -77,8 +77,6 @@
+ 
+ static struct kmem_cache *cgw_cache __read_mostly;
+ 
+-static struct sock gw_dummy_sk;
+-
+ /* structure that contains the (on-the-fly) CAN frame modifications */
+ struct cf_mod {
+ 	struct {
+@@ -346,8 +344,8 @@
+ 	struct sk_buff *nskb;
+ 	int modidx = 0;
+ 
+-	/* do not handle already routed frames */
+-	if (skb-&gt;sk == &amp;gw_dummy_sk)
++	/* do not handle already routed frames - see comment below */
++	if (skb_mac_header_was_set(skb))
+ 		return;
+ 
+ 	if (!(gwj-&gt;dst.dev-&gt;flags &amp; IFF_UP)) {
+@@ -371,8 +369,15 @@
+ 		return;
+ 	}
+ 
+-	/* mark routed frames with a 'special' sk value */
+-	nskb-&gt;sk = &amp;gw_dummy_sk;
++	/*
++	 * Mark routed frames by setting some mac header length which is
++	 * not relevant for the CAN frames located in the skb-&gt;data section.
++	 *
++	 * As dev-&gt;header_ops is not set in CAN netdevices no one is ever
++	 * accessing the various header offsets in the CAN skbuffs anyway.
++	 * E.g. using the packet socket to read CAN frames is still working.
++	 */
++	skb_set_mac_header(nskb, 8);
+ 	nskb-&gt;dev = gwj-&gt;dst.dev;
+ 
+ 	/* pointer to modifiable CAN frame */
+@@ -929,11 +934,6 @@
+ 	notifier.notifier_call = cgw_notifier;
+ 	register_netdevice_notifier(&amp;notifier);
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,33)
+-	/* initialize struct for dev_pick_tx() */
+-	sk_tx_queue_clear(&amp;gw_dummy_sk);
+-#endif
+-
+ 	if (__rtnl_register(PF_CAN, RTM_GETROUTE, NULL, cgw_dump_jobs)) {
+ 		unregister_netdevice_notifier(&amp;notifier);
+ 		kmem_cache_destroy(cgw_cache);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000856.html">r1224 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000858.html">r1226 - in trunk/kernel/2.6: . drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#857">[ date ]</a>
+              <a href="thread.html#857">[ thread ]</a>
+              <a href="subject.html#857">[ subject ]</a>
+              <a href="author.html#857">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

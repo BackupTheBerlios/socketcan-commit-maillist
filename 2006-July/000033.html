@@ -1,0 +1,1435 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r54 - in trunk: can-utils doc kernel/2.4/can kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000 kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can kernel/2.6/net/can test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r54%20-%20in%20trunk%3A%20can-utils%20doc%20kernel/2.4/can%20kernel/2.4/drivers/mscan%20kernel/2.4/drivers/sja1000%20kernel/2.6/drivers/net/can%20kernel/2.6/drivers/net/can/sja1000%20kernel/2.6/include/linux/can%20kernel/2.6/net/can%20test&In-Reply-To=%3C200607070659.k676xuS8000217%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000031.html">
+   <LINK REL="Next"  HREF="000032.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r54 - in trunk: can-utils doc kernel/2.4/can kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000 kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can kernel/2.6/net/can test</H1>
+    <B>thuermann at berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r54%20-%20in%20trunk%3A%20can-utils%20doc%20kernel/2.4/can%20kernel/2.4/drivers/mscan%20kernel/2.4/drivers/sja1000%20kernel/2.6/drivers/net/can%20kernel/2.6/drivers/net/can/sja1000%20kernel/2.6/include/linux/can%20kernel/2.6/net/can%20test&In-Reply-To=%3C200607070659.k676xuS8000217%40sheep.berlios.de%3E"
+       TITLE="r54 - in trunk: can-utils doc kernel/2.4/can kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000 kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can kernel/2.6/net/can test">thuermann at berlios.de
+       </A><BR>
+    <I>Fri Jul  7 08:59:56 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000031.html">[Socketcan-commit] r53 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000032.html">[Socketcan-commit] r55 - in trunk: doc kernel/2.6/include/linux/can kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#33">[ date ]</a>
+              <a href="thread.html#33">[ thread ]</a>
+              <a href="subject.html#33">[ subject ]</a>
+              <a href="author.html#33">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-07-07 08:58:26 +0200 (Fri, 07 Jul 2006)
+New Revision: 54
+
+Added:
+   trunk/kernel/2.6/include/linux/can/version.h
+Removed:
+   trunk/kernel/2.6/drivers/net/can/sja1000/version.h
+   trunk/kernel/2.6/net/can/version.h
+Modified:
+   trunk/can-utils/Makefile
+   trunk/can-utils/can-sniffer.c
+   trunk/can-utils/candump.c
+   trunk/can-utils/terminal.h
+   trunk/doc/Makefile
+   trunk/doc/legal.tex
+   trunk/doc/llcf-api.tex
+   trunk/kernel/2.4/can/Makefile
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/bcm.h
+   trunk/kernel/2.4/can/can.h
+   trunk/kernel/2.4/can/can_error.h
+   trunk/kernel/2.4/can/can_ioctl.h
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.4/can/raw.h
+   trunk/kernel/2.4/can/vcan.c
+   trunk/kernel/2.4/can/version.h
+   trunk/kernel/2.4/drivers/mscan/Makefile
+   trunk/kernel/2.4/drivers/mscan/mscan.h
+   trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+   trunk/kernel/2.4/drivers/mscan/mscan_net.c
+   trunk/kernel/2.4/drivers/mscan/mscan_proc.c
+   trunk/kernel/2.4/drivers/sja1000/Makefile
+   trunk/kernel/2.4/drivers/sja1000/isa.c
+   trunk/kernel/2.4/drivers/sja1000/proc.c
+   trunk/kernel/2.4/drivers/sja1000/sja1000.c
+   trunk/kernel/2.4/drivers/sja1000/sja1000.h
+   trunk/kernel/2.4/drivers/sja1000/trajet-gw2.c
+   trunk/kernel/2.6/drivers/net/can/Makefile
+   trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+   trunk/kernel/2.6/drivers/net/can/sja1000/isa.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/proc.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+   trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/include/linux/can/af_can.h
+   trunk/kernel/2.6/include/linux/can/bcm.h
+   trunk/kernel/2.6/include/linux/can/can.h
+   trunk/kernel/2.6/include/linux/can/can_error.h
+   trunk/kernel/2.6/include/linux/can/can_ioctl.h
+   trunk/kernel/2.6/include/linux/can/raw.h
+   trunk/kernel/2.6/net/can/Makefile
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+   trunk/kernel/2.6/net/can/raw.c
+   trunk/test/Makefile
+   trunk/test/canecho.c
+   trunk/test/tst-bcm-cycle.c
+   trunk/test/tst-bcm-filter.c
+   trunk/test/tst-bcm-rtr.c
+   trunk/test/tst-bcm-single.c
+   trunk/test/tst-bcm-throttle.c
+   trunk/test/tst-bcm-tx_read.c
+   trunk/test/tst-err.c
+   trunk/test/tst-proc.c
+   trunk/test/tst-raw-filter.c
+   trunk/test/tst-raw-sendto.c
+   trunk/test/tst-raw.c
+Log:
+Remove remnants of the proects VW history (Email addresses, Makefile targets).
+Move version.h to include/linux/can.
+Fix Makefiles to include raw.ko and bcm.ko in compilation and to make
+vcan compile again.
+Change ioctl names in SJA1000 driver to make it compile again.
+Add parenthesis and comparison in vcan.c to eliminate gcc warning.
+
+
+Modified: trunk/can-utils/Makefile
+===================================================================
+--- trunk/can-utils/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/can-utils/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,28 +38,16 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.4/can -fno-strict-aliasing
+ 
+-PROGRAMS_GPL = 	candump		\
+-		can-sniffer
++PROGRAMS = candump can-sniffer
+ 
+-PROGRAMS_VW = 	tpdump		\
+-		tp20-sniffer	\
+-		mcnet-vit-emu	\
+-		mcnet-sniffer	\
+-		pq35speed
++all: $(PROGRAMS)
+ 
+-default: all-gpl
+-
+-all: all-gpl all-vw
+-
+-all-gpl: $(PROGRAMS_GPL)
+-all-vw:  $(PROGRAMS_VW)
+-
+ clean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW)
++	rm -f $(PROGRAMS)
+ 
+ distclean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW) *~
++	rm -f $(PROGRAMS) *~
+
+Modified: trunk/can-utils/can-sniffer.c
+===================================================================
+--- trunk/can-utils/can-sniffer.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/can-utils/can-sniffer.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/can-utils/candump.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/can-utils/terminal.h
+===================================================================
+--- trunk/can-utils/terminal.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/can-utils/terminal.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/doc/Makefile
+===================================================================
+--- trunk/doc/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/doc/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -10,7 +10,7 @@
+ #  Copyright (c) 2005 Volkswagen Group Electronic Research
+ #  38436 Wolfsburg, GERMANY
+ #
+-#  contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>
++#  contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>
+ #
+ #  Idea, Design, Implementation:
+ #  Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+
+Modified: trunk/doc/legal.tex
+===================================================================
+--- trunk/doc/legal.tex	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/doc/legal.tex	2006-07-07 06:58:26 UTC (rev 54)
+@@ -49,7 +49,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ \end{code}
+
+Modified: trunk/doc/llcf-api.tex
+===================================================================
+--- trunk/doc/llcf-api.tex	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/doc/llcf-api.tex	2006-07-07 06:58:26 UTC (rev 54)
+@@ -75,7 +75,7 @@
+ der Volkswagen AG eine besondere EMail-Adresse eingerichtet, auf der
+ die Autoren erreichbar sind:\\
+ 
+-{\Large \tt contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>}\\
++{\Large \tt contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>}\\
+ 
+ Postadresse:\\
+ Volkswagen AG\\
+
+Modified: trunk/kernel/2.4/can/Makefile
+===================================================================
+--- trunk/kernel/2.4/can/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -DMODULE $(DEBUG) \
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/af_can.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/af_can.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/bcm.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/bcm.h
+===================================================================
+--- trunk/kernel/2.4/can/bcm.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/bcm.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/can.h
+===================================================================
+--- trunk/kernel/2.4/can/can.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/can.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/can_error.h
+===================================================================
+--- trunk/kernel/2.4/can/can_error.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/can_error.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.4/can/can_ioctl.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/can_ioctl.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/proc.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/raw.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/raw.h
+===================================================================
+--- trunk/kernel/2.4/can/raw.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/raw.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/vcan.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/can/version.h
+===================================================================
+--- trunk/kernel/2.4/can/version.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/can/version.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/mscan/Makefile
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/mscan/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../can \
+ 		-DMODULE $(DEBUG) -I$(KERNELDIR)/include \
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan.h
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/mscan/mscan.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_net.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_net.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/mscan/mscan_net.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_proc.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_proc.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/mscan/mscan_proc.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/sja1000/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../can \
+ 		-DMODULE -I$(KERNELDIR)/include \
+
+Modified: trunk/kernel/2.4/drivers/sja1000/isa.c
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/isa.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/sja1000/isa.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/sja1000/proc.c
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/proc.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/sja1000/proc.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/sja1000.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/sja1000/sja1000.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/sja1000/sja1000.h
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/sja1000.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/sja1000/sja1000.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.4/drivers/sja1000/trajet-gw2.c
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/trajet-gw2.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.4/drivers/sja1000/trajet-gw2.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -31,7 +31,7 @@
+ CFLAGS		+= -Idrivers/net -Inet
+ 
+ ifneq ($(KBUILD_EXTMOD),)
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../include
++EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include
+ endif
+ 
+ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/isa.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/isa.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/isa.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/proc.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/proc.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/proc.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -584,10 +584,10 @@
+ 		return -EINVAL;
+ 
+ 	switch (cmd) {
+-	case SIOCSRATE:
++	case SIOCSCANBAUDRATE:
+ 		;
+ 		return 0;
+-	case SIOCGRATE:
++	case SIOCGCANBAUDRATE:
+ 		;
+ 		return 0;
+ 	}
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Deleted: trunk/kernel/2.6/drivers/net/can/sja1000/version.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/version.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/version.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -1,72 +0,0 @@
+-/*
+- * version.h
+- *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions, the following disclaimer and
+- *    the referenced file 'COPYING'.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+- * file from the main directory of the linux kernel source.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
+- *
+- */
+-
+-#ifndef VERSION_H
+-#define VERSION_H
+-
+-#define RCSID(s) asm(&quot;.section .rodata.str1.1,\&quot;aMS\&quot;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">, at progbits</A>,1\n\t&quot; \
+-		     &quot;.string \&quot;&quot; s &quot;\&quot;\n\t.previous\n&quot;)
+-
+-RCSID(&quot;$Id$&quot;);
+-
+-#define MAJORVERSION 2
+-#define MINORVERSION 0
+-#define PATCHLEVEL   0
+-#define EXTRAVERSION &quot;-pre2&quot;
+-
+-#define LLCF_VERSION_CODE (((MAJORVERSION) &lt;&lt; 16) + ((MINORVERSION) &lt;&lt; 8) \
+-				+ (PATCHLEVEL))
+-
+-/* stringification:  these are the usual macros to stringify with macro
+-   expansion.   The str() macro does the expansion, the xstr() macro is
+-   for the actual stringification.
+-*/
+-#define str(arg) xstr(arg)
+-#define xstr(arg) #arg
+-
+-#define VERSION str(MAJORVERSION) &quot;.&quot; str(MINORVERSION) &quot;.&quot; str(PATCHLEVEL) \
+-	EXTRAVERSION
+-#define BANNER(name) KERN_INFO name &quot; v&quot; VERSION &quot;\n&quot;
+-
+-#endif /* VERSION_H */
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -47,8 +47,8 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+ 
+-#include &lt;net/can/af_can.h&gt;
+-#include &lt;net/can/version.h&gt;
++#include &lt;linux/can/af_can.h&gt;
++#include &lt;linux/can/version.h&gt;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+@@ -216,7 +216,7 @@
+ 		if (!(vcan_devs[i] = alloc_netdev(sizeof(struct net_device_stats),
+ 						  &quot;vcan%d&quot;, vcan_init)))
+ 			printk(KERN_ERR &quot;vcan: error allocating net_device\n&quot;);
+-		else if (result = register_netdev(vcan_devs[i])) {
++		else if ((result = register_netdev(vcan_devs[i])) &lt; 0) {
+ 			printk(KERN_ERR &quot;vcan: error %d registering interface %s\n&quot;,
+ 			       result, vcan_devs[i]-&gt;name);
+ 			free_netdev(vcan_devs[i]);
+
+Modified: trunk/kernel/2.6/include/linux/can/af_can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/af_can.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/include/linux/can/af_can.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/bcm.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/bcm.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/include/linux/can/bcm.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/include/linux/can/can.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/can_error.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can_error.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/include/linux/can/can_error.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can_ioctl.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/include/linux/can/can_ioctl.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/raw.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/raw.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/include/linux/can/raw.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Copied: trunk/kernel/2.6/include/linux/can/version.h (from rev 53, trunk/kernel/2.6/net/can/version.h)
+===================================================================
+--- trunk/kernel/2.6/net/can/version.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/include/linux/can/version.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -0,0 +1,72 @@
++/*
++ * version.h
++ *
++ * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#ifndef VERSION_H
++#define VERSION_H
++
++#define RCSID(s) asm(&quot;.section .rodata.str1.1,\&quot;aMS\&quot;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">, at progbits</A>,1\n\t&quot; \
++		     &quot;.string \&quot;&quot; s &quot;\&quot;\n\t.previous\n&quot;)
++
++RCSID(&quot;$Id$&quot;);
++
++#define MAJORVERSION 2
++#define MINORVERSION 0
++#define PATCHLEVEL   0
++#define EXTRAVERSION &quot;-pre2&quot;
++
++#define LLCF_VERSION_CODE (((MAJORVERSION) &lt;&lt; 16) + ((MINORVERSION) &lt;&lt; 8) \
++				+ (PATCHLEVEL))
++
++/* stringification:  these are the usual macros to stringify with macro
++   expansion.   The str() macro does the expansion, the xstr() macro is
++   for the actual stringification.
++*/
++#define str(arg) xstr(arg)
++#define xstr(arg) #arg
++
++#define VERSION str(MAJORVERSION) &quot;.&quot; str(MINORVERSION) &quot;.&quot; str(PATCHLEVEL) \
++	EXTRAVERSION
++#define BANNER(name) KERN_INFO name &quot; v&quot; VERSION &quot;\n&quot;
++
++#endif /* VERSION_H */
+
+Modified: trunk/kernel/2.6/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/net/can/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/net/can/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,12 +38,10 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ 
+ 
+-MOD_VW  = can-tpgen.o can-tp20.o can-tp16.o can-mcnet.o
+-
+ ifeq ($(KERNELRELEASE),)
+ 
+ KERNELDIR = /usr/src/linux
+@@ -55,10 +53,10 @@
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN=m modules
+ 
+ raw: can
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN=m CONFIG_RAW=m modules
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN=m CONFIG_CAN_RAW=m modules
+ 
+ bcm: can
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN=m CONFIG_BCM=m modules
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN=m CONFIG_CAN_BCM=m modules
+ 
+ clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+@@ -72,18 +70,16 @@
+ EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../include
+ endif
+ 
+-obj-$(CONFIG_CAN) += can.o
+-can-objs       := af_can.o proc.o
++obj-$(CONFIG_CAN)	+= can.o
++can-objs		:= af_can.o proc.o
+ 
+-obj-$(CONFIG_CAN) += candev.o
+-candev-objs	:= can_device.o
++obj-$(CONFIG_CAN)	+= candev.o
++candev-objs		:= can_device.o
+ 
+-obj-$(CONFIG_CAN_BCM)	+= bcm.o
+-obj-$(CONFIG_CAN_RAW)	+= raw.o
++obj-$(CONFIG_CAN_RAW)	+= can-raw.o
++can-raw-objs		:= raw.o
+ 
+-can-tpgen-objs := tp_gen.o
+-can-tp20-objs  := tp20.o
+-can-tp16-objs  := tp16.o
+-can-mcnet-objs := mcnet.o
++obj-$(CONFIG_CAN_BCM)	+= can-bcm.o
++can-bcm-objs		:= bcm.o
+ 
+ endif
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -55,8 +55,8 @@
+ #include &lt;asm/uaccess.h&gt;
+ 
+ #include &lt;linux/can/af_can.h&gt;
++#include &lt;linux/can/version.h&gt;
+ 
+-#include &quot;version.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/net/can/bcm.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -52,8 +52,8 @@
+ 
+ #include &lt;linux/can/af_can.h&gt;
+ #include &lt;linux/can/bcm.h&gt;
++#include &lt;linux/can/version.h&gt;
+ 
+-#include &quot;version.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/net/can/proc.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -46,8 +46,8 @@
+ #include &lt;linux/proc_fs.h&gt;
+ 
+ #include &lt;linux/can/af_can.h&gt;
++#include &lt;linux/can/version.h&gt;
+ 
+-#include &quot;version.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/net/can/raw.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -54,12 +54,11 @@
+ #include &lt;linux/can/af_can.h&gt;
+ #include &lt;linux/can/can_error.h&gt;
+ #include &lt;linux/can/raw.h&gt;
++#include &lt;linux/can/version.h&gt;
+ 
+-#include &quot;version.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-
+ #define NAME &quot;RAW sockets for LLCF&quot;
+ #define IDENT &quot;raw&quot;
+ static __initdata const char banner[] = BANNER(NAME);
+
+Deleted: trunk/kernel/2.6/net/can/version.h
+===================================================================
+--- trunk/kernel/2.6/net/can/version.h	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/kernel/2.6/net/can/version.h	2006-07-07 06:58:26 UTC (rev 54)
+@@ -1,72 +0,0 @@
+-/*
+- * version.h
+- *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions, the following disclaimer and
+- *    the referenced file 'COPYING'.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+- * file from the main directory of the linux kernel source.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
+- *
+- */
+-
+-#ifndef VERSION_H
+-#define VERSION_H
+-
+-#define RCSID(s) asm(&quot;.section .rodata.str1.1,\&quot;aMS\&quot;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">, at progbits</A>,1\n\t&quot; \
+-		     &quot;.string \&quot;&quot; s &quot;\&quot;\n\t.previous\n&quot;)
+-
+-RCSID(&quot;$Id$&quot;);
+-
+-#define MAJORVERSION 2
+-#define MINORVERSION 0
+-#define PATCHLEVEL   0
+-#define EXTRAVERSION &quot;-pre2&quot;
+-
+-#define LLCF_VERSION_CODE (((MAJORVERSION) &lt;&lt; 16) + ((MINORVERSION) &lt;&lt; 8) \
+-				+ (PATCHLEVEL))
+-
+-/* stringification:  these are the usual macros to stringify with macro
+-   expansion.   The str() macro does the expansion, the xstr() macro is
+-   for the actual stringification.
+-*/
+-#define str(arg) xstr(arg)
+-#define xstr(arg) #arg
+-
+-#define VERSION str(MAJORVERSION) &quot;.&quot; str(MINORVERSION) &quot;.&quot; str(PATCHLEVEL) \
+-	EXTRAVERSION
+-#define BANNER(name) KERN_INFO name &quot; v&quot; VERSION &quot;\n&quot;
+-
+-#endif /* VERSION_H */
+
+Modified: trunk/test/Makefile
+===================================================================
+--- trunk/test/Makefile	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/Makefile	2006-07-07 06:58:26 UTC (rev 54)
+@@ -38,11 +38,11 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.4/can -fno-strict-aliasing
+ 
+-PROGRAMS_GPL = 	tst-raw		\
++PROGRAMS = 	tst-raw		\
+ 		tst-raw-filter	\
+ 		tst-err		\
+ 		tst-raw-sendto	\
+@@ -55,20 +55,10 @@
+ 		tst-proc	\
+ 		canecho
+ 
+-PROGRAMS_VW = 	tp20-client	\
+-		tp20-server	\
+-		tp16-client	\
+-		tp16-server
++all: $(PROGRAMS)
+ 
+-default: all-gpl
+-
+-all: all-gpl all-vw
+-
+-all-gpl: $(PROGRAMS_GPL)
+-all-vw:  $(PROGRAMS_VW)
+-
+ clean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW)
++	rm -f $(PROGRAMS)
+ 
+ distclean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW) *~
++	rm -f $(PROGRAMS) *~
+
+Modified: trunk/test/canecho.c
+===================================================================
+--- trunk/test/canecho.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/canecho.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-bcm-cycle.c
+===================================================================
+--- trunk/test/tst-bcm-cycle.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-bcm-cycle.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-bcm-filter.c
+===================================================================
+--- trunk/test/tst-bcm-filter.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-bcm-filter.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-bcm-rtr.c
+===================================================================
+--- trunk/test/tst-bcm-rtr.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-bcm-rtr.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-bcm-single.c
+===================================================================
+--- trunk/test/tst-bcm-single.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-bcm-single.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-bcm-throttle.c
+===================================================================
+--- trunk/test/tst-bcm-throttle.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-bcm-throttle.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-bcm-tx_read.c
+===================================================================
+--- trunk/test/tst-bcm-tx_read.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-bcm-tx_read.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-err.c
+===================================================================
+--- trunk/test/tst-err.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-err.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-proc.c
+===================================================================
+--- trunk/test/tst-proc.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-proc.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-raw-filter.c
+===================================================================
+--- trunk/test/tst-raw-filter.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-raw-filter.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-raw-sendto.c
+===================================================================
+--- trunk/test/tst-raw-sendto.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-raw-sendto.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: trunk/test/tst-raw.c
+===================================================================
+--- trunk/test/tst-raw.c	2006-07-06 04:14:33 UTC (rev 53)
++++ trunk/test/tst-raw.c	2006-07-07 06:58:26 UTC (rev 54)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000031.html">[Socketcan-commit] r53 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000032.html">[Socketcan-commit] r55 - in trunk: doc kernel/2.6/include/linux/can kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#33">[ date ]</a>
+              <a href="thread.html#33">[ thread ]</a>
+              <a href="subject.html#33">[ subject ]</a>
+              <a href="author.html#33">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

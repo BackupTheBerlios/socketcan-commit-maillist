@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r347 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r347%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706122024.l5CKOjd3028987%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000329.html">
+   <LINK REL="Next"  HREF="000331.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r347 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r347%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706122024.l5CKOjd3028987%40sheep.berlios.de%3E"
+       TITLE="r347 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 12 22:24:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000329.html">r346 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000331.html">r348 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#330">[ date ]</a>
+              <a href="thread.html#330">[ thread ]</a>
+              <a href="subject.html#330">[ subject ]</a>
+              <a href="author.html#330">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-12 22:24:42 +0200 (Tue, 12 Jun 2007)
+New Revision: 347
+
+Modified:
+   branches/ha/locktest/net/can/bcm.c
+   branches/ha/locktest/net/can/raw.c
+Log:
+Using generic netdev_notifier for notification in raw.c now which makes
+the use of the notifier list in af_can.c obsolete.
+TODO: port this change to bcm.c / test this stuff.
+to be continued ...
+
+
+Modified: branches/ha/locktest/net/can/bcm.c
+===================================================================
+--- branches/ha/locktest/net/can/bcm.c	2007-06-12 14:36:55 UTC (rev 346)
++++ branches/ha/locktest/net/can/bcm.c	2007-06-12 20:24:42 UTC (rev 347)
+@@ -1473,7 +1473,7 @@
+ 
+ 	DBG(&quot;msg %ld sk %p dev %p&quot;
+ 	    &quot; dev-&gt;ifindex %d bo-&gt;ifindex %d\n&quot;,
+-	    __func__, msg, sk, dev, dev-&gt;ifindex, bo-&gt;ifindex);
++	    msg, sk, dev, dev-&gt;ifindex, bo-&gt;ifindex);
+ 
+ 	switch (msg) {
+ 
+
+Modified: branches/ha/locktest/net/can/raw.c
+===================================================================
+--- branches/ha/locktest/net/can/raw.c	2007-06-12 14:36:55 UTC (rev 346)
++++ branches/ha/locktest/net/can/raw.c	2007-06-12 20:24:42 UTC (rev 347)
+@@ -93,7 +93,7 @@
+ struct raw_opt {
+ 	int bound;
+ 	struct net_device *dev;
+-	struct can_notif notifier;
++	struct notifier_block notifier;
+ 	int loopback;
+ 	int recv_own_msgs;
+ 	int count;                 /* number of active filters */
+@@ -197,16 +197,23 @@
+ 			  raw_rcv, sk);
+ }
+ 
+-static void raw_notifier(unsigned long msg, struct sock *sk,
+-			 struct net_device *dev)
++static int raw_notifier(struct notifier_block *nb,
++			unsigned long msg, void *data)
+ {
+-	struct raw_opt *ro = raw_sk(sk);
++	struct net_device *dev = (struct net_device *)data;
++	struct raw_opt *ro = container_of(nb, struct raw_opt, notifier);
+ 
+-	DBG(&quot;msg %ld sk %p dev %p ro-&gt;dev %p\n&quot;,
+-	    __func__, msg, sk, dev, ro-&gt;dev);
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	struct raw_sock *rs = container_of(ro, struct raw_sock, opt);
++	struct sock *sk = &amp;rs-&gt;sk;
++#else
++#error Support me ;-)
++#endif
+ 
++	DBG(&quot;msg %ld sk %p dev %p ro-&gt;dev %p\n&quot;, msg, sk, dev, ro-&gt;dev);
++
+ 	if (ro-&gt;dev != dev)
+-		return;
++		return NOTIFY_DONE;
+ 
+ 	switch (msg) {
+ 
+@@ -239,6 +246,8 @@
+ 			sk-&gt;sk_error_report(sk);
+ 		break;
+ 	}
++
++	return NOTIFY_DONE;
+ }
+ 
+ static int raw_init(struct sock *sk)
+@@ -259,10 +268,9 @@
+ 	ro-&gt;recv_own_msgs    = 0;
+ 
+ 	/* set notifier */
+-	ro-&gt;notifier.func    = raw_notifier;
+-	ro-&gt;notifier.sk      = sk;
++	ro-&gt;notifier.notifier_call = raw_notifier;
+ 
+-	can_register_notifier(&amp;ro-&gt;notifier);
++	register_netdevice_notifier(&amp;ro-&gt;notifier);
+ 
+ 	return 0;
+ }
+@@ -293,7 +301,7 @@
+ 
+ 	release_sock(sk);
+ 
+-	can_unregister_notifier(&amp;ro-&gt;notifier);
++	unregister_netdevice_notifier(&amp;ro-&gt;notifier);
+ 	sock_put(sk);
+ 
+ 	return 0;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000329.html">r346 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000331.html">r348 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#330">[ date ]</a>
+              <a href="thread.html#330">[ thread ]</a>
+              <a href="subject.html#330">[ subject ]</a>
+              <a href="author.html#330">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

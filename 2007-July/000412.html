@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r430 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r430%20-%20trunk/can-utils&In-Reply-To=%3C200707160829.l6G8TVsg005476%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000411.html">
+   <LINK REL="Next"  HREF="000413.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r430 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r430%20-%20trunk/can-utils&In-Reply-To=%3C200707160829.l6G8TVsg005476%40sheep.berlios.de%3E"
+       TITLE="r430 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul 16 10:29:31 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000411.html">r429 - trunk/kernel/2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000413.html">r431 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#412">[ date ]</a>
+              <a href="thread.html#412">[ thread ]</a>
+              <a href="subject.html#412">[ subject ]</a>
+              <a href="author.html#412">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-07-16 10:29:28 +0200 (Mon, 16 Jul 2007)
+New Revision: 430
+
+Modified:
+   trunk/can-utils/cansniffer.c
+Log:
+Added -B option to display binary content with a gap after each data byte.
+This option is similar to -b but may exceed the 80 char boundary.
+
+
+Modified: trunk/can-utils/cansniffer.c
+===================================================================
+--- trunk/can-utils/cansniffer.c	2007-07-13 10:05:21 UTC (rev 429)
++++ trunk/can-utils/cansniffer.c	2007-07-16 08:29:28 UTC (rev 430)
+@@ -123,6 +123,7 @@
+ static long hold = HOLD;
+ static long loop = LOOP;
+ static unsigned char binary = 0;
++static unsigned char binary_gap = 0;
+ static unsigned char color  = 0;
+ 
+ void rx_setup (int fd, int id);
+@@ -141,6 +142,7 @@
+ 	&quot;\n&quot;
+ 	&quot;q&lt;ENTER&gt;       - quit\n&quot;
+ 	&quot;b&lt;ENTER&gt;       - toggle binary / HEX-ASCII output\n&quot;
++	&quot;B&lt;ENTER&gt;       - toggle binary with gap / HEX-ASCII output (exceeds 80 chars!)\n&quot;
+ 	&quot;c&lt;ENTER&gt;       - toggle color mode\n&quot;
+ 	&quot;#&lt;ENTER&gt;       - notch currently marked/changed bits (can be used repeatedly)\n&quot;
+ 	&quot;*&lt;ENTER&gt;       - clear notched marked\n&quot;
+@@ -169,6 +171,7 @@
+     fprintf(stderr, &quot;         -q         (quiet - all IDs deactivated)\n&quot;);
+     fprintf(stderr, &quot;         -r &lt;name&gt;  (read %sname from file)\n&quot;, SETFNAME);
+     fprintf(stderr, &quot;         -b         (start with binary mode)\n&quot;);
++    fprintf(stderr, &quot;         -B         (start with binary mode with gap - exceeds 80 chars!)\n&quot;);
+     fprintf(stderr, &quot;         -c         (color changes)\n&quot;);
+     fprintf(stderr, &quot;         -t &lt;time&gt;  (timeout for ID display [x100ms] default: %d)\n&quot;, TIMEOUT);
+     fprintf(stderr, &quot;         -h &lt;time&gt;  (hold marker on changes [x100ms] default: %d)\n&quot;, HOLD);
+@@ -206,7 +209,7 @@
+     for (i=0; i &lt; 2048 ;i++) /* default: check all CAN-IDs */
+ 	do_set(i, ENABLE);
+ 
+-    while ((opt = getopt(argc, argv, &quot;m:v:r:t:h:l:qbc&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;m:v:r:t:h:l:qbBc&quot;)) != -1) {
+ 	switch (opt) {
+ 	case 'm':
+ 	    sscanf(optarg, &quot;%x&quot;, &amp;mask);
+@@ -238,8 +241,14 @@
+ 
+ 	case 'b':
+ 	    binary = 1;
++	    binary_gap = 0;
+ 	    break;
+ 
++	case 'B':
++	    binary = 1;
++	    binary_gap = 1;
++	    break;
++
+ 	case 'c':
+ 	    color = 1;
+ 	    break;
+@@ -424,7 +433,17 @@
+ 	running = 0;
+ 	break;
+ 
++    case 'B' :
++	binary_gap = 1;
++	if (binary)
++	    binary = 0;
++	else
++	    binary = 1;
++
++	break;
++
+     case 'b' :
++	binary_gap = 0;
+ 	if (binary)
+ 	    binary = 0;
+ 	else
+@@ -576,8 +595,8 @@
+ 
+     if (binary) {
+ 
+-	for (i=0; i&lt;sniftab[id].current.can_dlc; i++)
+-	    for (j=7; j&gt;=0; j--)
++	for (i=0; i&lt;sniftab[id].current.can_dlc; i++) {
++	    for (j=7; j&gt;=0; j--) {
+ 		if ((color) &amp;&amp; (sniftab[id].marker.data[i] &amp; 1&lt;&lt;j) &amp;&amp;
+ 		    (!(sniftab[id].notch.data[i] &amp; 1&lt;&lt;j)))
+ 		    if (sniftab[id].current.data[i] &amp; 1&lt;&lt;j)
+@@ -589,6 +608,10 @@
+ 			putchar('1');
+ 		    else
+ 			putchar('0');
++	    }
++	    if (binary_gap)
++		putchar(' ');
++	}
+     }
+     else {
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000411.html">r429 - trunk/kernel/2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000413.html">r431 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#412">[ date ]</a>
+              <a href="thread.html#412">[ thread ]</a>
+              <a href="subject.html#412">[ subject ]</a>
+              <a href="author.html#412">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

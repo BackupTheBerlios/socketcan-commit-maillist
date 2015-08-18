@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r337 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r337%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706111928.l5BJSv2Z016829%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000319.html">
+   <LINK REL="Next"  HREF="000321.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r337 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r337%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706111928.l5BJSv2Z016829%40sheep.berlios.de%3E"
+       TITLE="r337 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun 11 21:28:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000319.html">r336 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000321.html">r338 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#320">[ date ]</a>
+              <a href="thread.html#320">[ thread ]</a>
+              <a href="subject.html#320">[ subject ]</a>
+              <a href="author.html#320">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-11 21:28:56 +0200 (Mon, 11 Jun 2007)
+New Revision: 337
+
+Modified:
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Added complete error handling in raw_bind().
+
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-06-11 16:51:54 UTC (rev 336)
++++ trunk/kernel/2.6/net/can/raw.c	2007-06-11 19:28:56 UTC (rev 337)
+@@ -216,9 +216,6 @@
+ 	/* remove current filters &amp; unregister */
+ 	raw_remove_filters(ifindex, sk);
+ 
+-	if (ro-&gt;count &gt; 1)
+-		kfree(ro-&gt;filter);
+-
+ 	/* remove current error mask */
+ 	if (ro-&gt;err_mask)
+ 		can_rx_unregister(ifindex, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+@@ -227,6 +224,9 @@
+ 	if (ifindex)
+ 		can_dev_unregister(ifindex, raw_notifier, sk);
+ 
++	ro-&gt;bound   = 0;
++	ro-&gt;ifindex = 0;
++
+ 	return 0;
+ }
+ 
+@@ -267,8 +267,11 @@
+ 	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+ 	    atomic_read(&amp;sk-&gt;sk_refcnt));
+ 
+-	if (ro-&gt;bound)
++	if (ro-&gt;bound) {
+ 		raw_unbind(sk);
++		if (ro-&gt;count &gt; 1)
++			kfree(ro-&gt;filter);
++	}
+ 
+ 	sock_put(sk);
+ 
+@@ -280,6 +283,7 @@
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
++	int ifindex = addr-&gt;can_ifindex;
+ 	int err = 0;
+ 
+ 	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+@@ -290,27 +294,41 @@
+ 	lock_sock(sk);
+ 
+ 	if (ro-&gt;bound) {
+-		/* remove current bindings / notifier */
++		/* 
++		 * remove current bindings, filters and notifier but
++		 * do not purge the current local filter content.
++		 */
+ 		raw_unbind(sk);
+-		raw_init(sk);
+ 	}
+ 
+-	if (addr-&gt;can_ifindex) {
+-		err = can_dev_register(addr-&gt;can_ifindex, raw_notifier, sk);
+-		if (err)
+-			goto out;
+-	}
++	if (ifindex)
++		err = can_dev_register(ifindex, raw_notifier, sk);
+ 
+-	ro-&gt;ifindex = addr-&gt;can_ifindex;
++	if (err)
++		goto out;
+ 
+ 	/* filters set by default/setsockopt */
+-	raw_add_filters(ro-&gt;ifindex, sk);
++	err = raw_add_filters(ifindex, sk);
++	if (err) {
++		raw_remove_filters(ifindex, sk);
++		if (ifindex)
++			can_dev_unregister(ifindex, raw_notifier, sk);
++		goto out;
++	}
+ 
+ 	/* error frame filter set by setsockopt */
+ 	if (ro-&gt;err_mask)
+-		can_rx_register(ro-&gt;ifindex, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-				raw_rcv, sk, IDENT);
+-
++		err = can_rx_register(ifindex, 0,
++				      ro-&gt;err_mask | CAN_ERR_FLAG,
++				      raw_rcv, sk, IDENT);
++	if (err) {
++		raw_remove_filters(ifindex, sk);
++		if (ifindex)
++			can_dev_unregister(ifindex, raw_notifier, sk);
++		goto out;
++	}
++	
++	ro-&gt;ifindex = ifindex;
+ 	ro-&gt;bound = 1;
+ 
+  out:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000319.html">r336 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000321.html">r338 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#320">[ date ]</a>
+              <a href="thread.html#320">[ thread ]</a>
+              <a href="subject.html#320">[ subject ]</a>
+              <a href="author.html#320">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

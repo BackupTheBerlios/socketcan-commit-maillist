@@ -1,0 +1,1457 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r167 - in trunk/kernel/2.6: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r167%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200703051234.l25CYl6n018681%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000150.html">
+   <LINK REL="Next"  HREF="000152.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r167 - in trunk/kernel/2.6: drivers/net/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r167%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200703051234.l25CYl6n018681%40sheep.berlios.de%3E"
+       TITLE="r167 - in trunk/kernel/2.6: drivers/net/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar  5 13:34:47 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000150.html">r166 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000152.html">r168 - in trunk/kernel: 2.4/can 2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#151">[ date ]</a>
+              <a href="thread.html#151">[ thread ]</a>
+              <a href="subject.html#151">[ subject ]</a>
+              <a href="author.html#151">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-05 13:34:43 +0100 (Mon, 05 Mar 2007)
+New Revision: 167
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Reformated to meet Linux Documentation/Codingstyle (e.g. 80 chars/Line).
+Cosmetics.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-03-05 10:23:51 UTC (rev 166)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-03-05 12:34:43 UTC (rev 167)
+@@ -1,5 +1,5 @@
+ /*
+- * vcan.c
++ * vcan.c - Virtual CAN interface
+  *
+  * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+  * All rights reserved.
+@@ -54,7 +54,8 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-static __initdata const char banner[] = KERN_INFO &quot;CAN: virtual CAN interface &quot; VERSION &quot;\n&quot;; 
++static __initdata const char banner[] = KERN_INFO &quot;CAN: virtual CAN &quot;
++					&quot;interface &quot; VERSION &quot;\n&quot;; 
+ 
+ MODULE_DESCRIPTION(&quot;virtual CAN interface&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -78,6 +79,8 @@
+ /* should be done in af_can.c */
+ #undef  DO_LOOPBACK
+ 
++#define STATSIZE sizeof(struct net_device_stats)
++
+ static int numdev = 4; /* default number of virtual CAN interfaces */
+ module_param(numdev, int, S_IRUGO);
+ MODULE_PARM_DESC(numdev, &quot;Number of virtual CAN devices&quot;);
+@@ -198,7 +201,7 @@
+ 
+ 	ether_setup(dev);
+ 
+-	memset(dev-&gt;priv, 0, sizeof(struct net_device_stats));
++	memset(dev-&gt;priv, 0, STATSIZE);
+ 
+ 	dev-&gt;type              = ARPHRD_CAN;
+ 	dev-&gt;mtu               = sizeof(struct can_frame);
+@@ -229,7 +232,8 @@
+ 	if (numdev &lt; 1)
+ 		numdev = 1; /* register at least one interface */
+ 
+-	printk(KERN_INFO &quot;vcan: registering %d virtual CAN interfaces.\n&quot;, numdev );
++	printk(KERN_INFO &quot;vcan: registering %d virtual CAN interfaces.\n&quot;,
++	       numdev );
+ 
+ 	vcan_devs = kmalloc(numdev * sizeof(struct net_device *), GFP_KERNEL);
+ 	if (!vcan_devs) {
+@@ -241,13 +245,14 @@
+ 	memset(vcan_devs, 0, numdev * sizeof(struct net_device *));
+ 
+ 	for (i = 0; i &lt; numdev; i++) {
+-		if (!(vcan_devs[i] = alloc_netdev(sizeof(struct net_device_stats),
+-						  &quot;vcan%d&quot;, vcan_init))) {
++		if (!(vcan_devs[i] = alloc_netdev(STATSIZE, &quot;vcan%d&quot;,
++						  vcan_init))) {
+ 			printk(KERN_ERR &quot;vcan: error allocating net_device\n&quot;);
+ 			result = -ENOMEM;
+ 			goto out;
+ 		} else if ((result = register_netdev(vcan_devs[i])) &lt; 0) {
+-			printk(KERN_ERR &quot;vcan: error %d registering interface %s\n&quot;,
++			printk(KERN_ERR &quot;vcan: error %d registering &quot;
++			       &quot;interface %s\n&quot;,
+ 			       result, vcan_devs[i]-&gt;name);
+ 			free_netdev(vcan_devs[i]);
+ 			vcan_devs[i] = NULL;
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-03-05 10:23:51 UTC (rev 166)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-03-05 12:34:43 UTC (rev 167)
+@@ -1,7 +1,8 @@
+ /*
+- * af_can.c
++ * af_can.c - Protocol family CAN core module
++ *            (used by different CAN protocol modules)
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -52,6 +53,8 @@
+ #include &lt;linux/spinlock.h&gt;
+ #include &lt;linux/rcupdate.h&gt;
+ #include &lt;linux/socket.h&gt;
++#include &lt;linux/if_ether.h&gt;
++#include &lt;linux/if_arp.h&gt;
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+@@ -67,9 +70,10 @@
+ RCSID(&quot;$Id$&quot;);
+ 
+ #define IDENT &quot;af_can&quot;
+-static __initdata const char banner[] = KERN_INFO &quot;CAN: PF_CAN core &quot; VERSION &quot;\n&quot;; 
++static __initdata const char banner[] = KERN_INFO &quot;CAN: Controller Area &quot;
++					&quot;Network PF_CAN core &quot; VERSION &quot;\n&quot;; 
+ 
+-MODULE_DESCRIPTION(&quot;PF_CAN core&quot;);
++MODULE_DESCRIPTION(&quot;Controller Area Network PF_CAN core&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;, &quot;
+ 	      &quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+@@ -237,11 +241,13 @@
+ {
+ 	int proto = cp-&gt;protocol;
+ 	if (proto &lt; 0 || proto &gt;= CAN_NPROTO) {
+-		printk(KERN_ERR &quot;CAN: protocol number %d out of range\n&quot;, proto);
++		printk(KERN_ERR &quot;CAN: protocol number %d out &quot;
++		       &quot;of range\n&quot;, proto);
+ 		return;
+ 	}
+ 	if (proto_tab[proto]) {
+-		printk(KERN_ERR &quot;CAN: protocol %d already registered\n&quot;, proto);
++		printk(KERN_ERR &quot;CAN: protocol %d already &quot;
++		       &quot;registered\n&quot;, proto);
+ 		return;
+ 	}
+ 
+@@ -252,7 +258,7 @@
+ #endif
+ 	proto_tab[proto] = cp;
+ 
+-	/* use our generic ioctl function if the module doesn't bring its own */
++	/* use generic ioctl function if the module doesn't bring its own */
+ 	if (!cp-&gt;ops-&gt;ioctl)
+ 		cp-&gt;ops-&gt;ioctl = can_ioctl;
+ }
+@@ -340,8 +346,8 @@
+ 		char module_name[30];
+ 		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+ 		if (request_module(module_name) == -ENOSYS)
+-			printk(KERN_INFO &quot;CAN: request_module(%s) not implemented.\n&quot;,
+-			       module_name);
++			printk(KERN_INFO &quot;CAN: request_module(%s) not&quot;
++			       &quot; implemented.\n&quot;, module_name);
+ 	}
+ 
+ 	/* check for success and correct type */
+@@ -416,7 +422,8 @@
+ 		DBG(&quot;creating new dev_rcv_lists for %s\n&quot;, dev-&gt;name);
+ 		if (!(d = kmalloc(sizeof(*d),
+ 				  in_interrupt() ? GFP_ATOMIC : GFP_KERNEL))) {
+-			printk(KERN_ERR &quot;CAN: allocation of receive list failed\n&quot;);
++			printk(KERN_ERR &quot;CAN: allocation of receive &quot;
++			       &quot;list failed\n&quot;);
+ 			return NOTIFY_DONE;
+ 		}
+ 		/* N.B. zeroing the struct is the correct initialization
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-03-05 10:23:51 UTC (rev 166)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-03-05 12:34:43 UTC (rev 167)
+@@ -75,19 +75,19 @@
+ 
+ /* use of last_frames[index].can_dlc */
+ #define RX_RECV    0x40 /* received data for this element */
+-#define RX_THR     0x80 /* this element has not been sent due to throttle functionality */
+-#define BCM_CAN_DLC_MASK 0x0F /* clean flags by masking with BCM_CAN_DLC_MASK */
++#define RX_THR     0x80 /* element not been sent due to throttle feature */
++#define BCM_CAN_DLC_MASK 0x0F /* clean private flags in can_dlc by masking */
+ #define BCM_RX_REGMASK (CAN_EFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG)
+ 
+ #define IDENT &quot;bcm&quot;
+-static __initdata const char banner[] =
+-	KERN_INFO &quot;CAN: broadcast manager (bcm) socket protocol &quot; VERSION &quot;\n&quot;; 
++static __initdata const char banner[] = KERN_INFO
++	&quot;CAN: broadcast manager (bcm) socket protocol &quot; VERSION &quot;\n&quot;; 
+ 
+ MODULE_DESCRIPTION(&quot;PF_CAN bcm sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+-#define GET_U64(p) (*(unsigned long long*)(p)-&gt;data) /* easy access */
++#define GET_U64(p) (*(u64*)(p)-&gt;data) /* easy access */
+ 
+ struct bcm_op {
+ 	struct list_head list;
+@@ -156,11 +156,15 @@
+ static void bcm_send_to_user(struct bcm_op *op, struct bcm_msg_head *head,
+ 			     struct can_frame *frames, struct timeval *tv);
+ 
+-static int  bcm_delete_tx_op(struct list_head *ops, canid_t can_id, int ifindex);
+-static int  bcm_delete_rx_op(struct list_head *ops, canid_t can_id, int ifindex);
++static int  bcm_delete_tx_op(struct list_head *ops, canid_t can_id,
++			     int ifindex);
++static int  bcm_delete_rx_op(struct list_head *ops, canid_t can_id,
++			     int ifindex);
+ static void bcm_remove_op(struct bcm_op *op);
+-static int  bcm_read_op(struct list_head *ops, struct bcm_msg_head *msg_head, int ifindex);
+-static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id, int ifindex);
++static int  bcm_read_op(struct list_head *ops, struct bcm_msg_head *msg_head,
++			int ifindex);
++static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id,
++				  int ifindex);
+ 
+ static struct proto_ops bcm_ops = {
+ 	.family        = PF_CAN,
+@@ -313,23 +317,26 @@
+ 	/* remove bcm_ops, timer, rx_unregister(), etc. */
+ 
+ 	list_for_each_entry_safe(op, next, &amp;bo-&gt;tx_ops, list) {
+-		DBG(&quot;removing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++		DBG(&quot;removing tx_op %p for can_id %03X\n&quot;, op, op-&gt;can_id);
+ 		bcm_remove_op(op);
+ 	}
+ 
+ 	list_for_each_entry_safe(op, next, &amp;bo-&gt;rx_ops, list) {
+-		DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++		DBG(&quot;removing rx_op %p for can_id %03X\n&quot;, op, op-&gt;can_id);
+ 
+ 		/* Don't care if we're bound or not (due to netdev problems) */
+ 		/* can_rx_unregister() is always a save thing to do here     */
+ 		if (op-&gt;ifindex) {
+ 			struct net_device *dev = dev_get_by_index(op-&gt;ifindex);
+ 			if (dev) {
+-				can_rx_unregister(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
++				can_rx_unregister(dev, op-&gt;can_id,
++						  BCM_RX_REGMASK,
++						  bcm_rx_handler, op);
+ 				dev_put(dev);
+ 			}
+ 		} else
+-			can_rx_unregister(NULL, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
++			can_rx_unregister(NULL, op-&gt;can_id, BCM_RX_REGMASK,
++					  bcm_rx_handler, op);
+ 
+ 		bcm_remove_op(op);
+ 	}
+@@ -367,23 +374,29 @@
+ 	if (addr-&gt;can_ifindex) {
+ 		struct net_device *dev = dev_get_by_index(addr-&gt;can_ifindex);
+ 		if (!dev) {
+-			DBG(&quot;could not find device index %d\n&quot;, addr-&gt;can_ifindex);
++			DBG(&quot;could not find device index %d\n&quot;,
++			    addr-&gt;can_ifindex);
+ 			return -ENODEV;
+ 		}
+ 		bo-&gt;ifindex = dev-&gt;ifindex;
+-		can_dev_register(dev, bcm_notifier, sk); /* register notifier */
++		can_dev_register(dev, bcm_notifier, sk); /* register notif. */
+ 		dev_put(dev);
+ 
+-		DBG(&quot;socket %p bound to device %s (idx %d)\n&quot;, sock, dev-&gt;name, dev-&gt;ifindex);
+-	} else
+-		bo-&gt;ifindex = 0; /* no notifier for ifindex = 0 ('any' CAN device) */
++		DBG(&quot;socket %p bound to device %s (idx %d)\n&quot;,
++		    sock, dev-&gt;name, dev-&gt;ifindex);
++	} else {
++		/* no notifier for ifindex = 0 ('any' CAN device) */
++		bo-&gt;ifindex = 0;
++	}
+ 
+ 	bo-&gt;bound = 1;
+ 
+ 	if (proc_dir) {
+-		sprintf(bo-&gt;procname, &quot;%p&quot;, sock); /* unique socket address as filename */
++		/* unique socket address as filename */
++		sprintf(bo-&gt;procname, &quot;%p&quot;, sock);
+ 		bo-&gt;bcm_proc_read = create_proc_read_entry(bo-&gt;procname, 0644,
+-							   proc_dir, bcm_read_proc, sk);
++							   proc_dir,
++							   bcm_read_proc, sk);
+ 	}
+ 
+ 	return 0;
+@@ -406,7 +419,8 @@
+ 	/* check for alternative ifindex for this bcm_op */
+ 
+ 	if (!ifindex &amp;&amp; msg-&gt;msg_name) { /* no bound device as default */
+-		struct sockaddr_can *addr = (struct sockaddr_can *)msg-&gt;msg_name;
++		struct sockaddr_can *addr = 
++			(struct sockaddr_can *)msg-&gt;msg_name;
+ 		if (addr-&gt;can_family != AF_CAN)
+ 			return -EINVAL;
+ 		ifindex = addr-&gt;can_ifindex; /* ifindex from sendto() */
+@@ -419,11 +433,11 @@
+ 
+ 	/* read message head information */
+ 
+-	if ((ret = memcpy_fromiovec((unsigned char*)&amp;msg_head, msg-&gt;msg_iov,
++	if ((ret = memcpy_fromiovec((u8*)&amp;msg_head, msg-&gt;msg_iov,
+ 				    MHSIZ)) &lt; 0)
+ 		return ret;
+ 
+-	DBG(&quot;opcode %d for can_id &lt;%03X&gt;\n&quot;, msg_head.opcode, msg_head.can_id);
++	DBG(&quot;opcode %d for can_id %03X\n&quot;, msg_head.opcode, msg_head.can_id);
+ 
+ 	switch (msg_head.opcode) {
+ 
+@@ -559,7 +573,7 @@
+ 
+ 		/* update existing BCM operation */
+ 
+-		DBG(&quot;TX_SETUP: modifying existing tx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++		DBG(&quot;TX_SETUP: modifying existing tx_op %p for can_id %03X\n&quot;,
+ 		    op, msg_head-&gt;can_id);
+ 
+ 		/* Do we need more space for the can_frames than currently */
+@@ -570,11 +584,14 @@
+ 
+ 		/* update can_frames content */
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-			if ((err = memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, CFSIZ)) &lt; 0)
++			if ((err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
++						    msg-&gt;msg_iov, CFSIZ)) &lt; 0)
+ 				return err;
+ 
+-			if (msg_head-&gt;flags &amp; TX_CP_CAN_ID)
+-				op-&gt;frames[i].can_id = msg_head-&gt;can_id; /* copy can_id into frame */
++			if (msg_head-&gt;flags &amp; TX_CP_CAN_ID) {
++				/* copy can_id into frame */
++				op-&gt;frames[i].can_id = msg_head-&gt;can_id;
++			}
+ 		}
+ 
+ 	} else {
+@@ -585,39 +602,53 @@
+ 
+ 		memset(op, 0, OPSIZ); /* init to zero, e.g. for timers */
+ 
+-		DBG(&quot;TX_SETUP: creating new tx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++		DBG(&quot;TX_SETUP: creating new tx_op %p for can_id %03X\n&quot;,
+ 		    op, msg_head-&gt;can_id);
+ 
+ 		op-&gt;can_id    = msg_head-&gt;can_id;
+ 
+ 		/* create array for can_frames and copy the data */
+-		if (!(op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ, GFP_KERNEL))) {
++		if (!(op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ,
++					   GFP_KERNEL))) {
+ 			kfree(op);
+ 			return -ENOMEM;
+ 		}
+ 
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-			if ((err = memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, CFSIZ)) &lt; 0) {
++			if ((err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
++						    msg-&gt;msg_iov,
++						    CFSIZ)) &lt; 0) {
+ 				kfree(op-&gt;frames);
+ 				kfree(op);
+ 				return err;
+ 			}
+ 
+-			if (msg_head-&gt;flags &amp; TX_CP_CAN_ID)
+-				op-&gt;frames[i].can_id = msg_head-&gt;can_id; /* copy can_id into frame */
++			if (msg_head-&gt;flags &amp; TX_CP_CAN_ID) {
++				/* copy can_id into frame */
++				op-&gt;frames[i].can_id = msg_head-&gt;can_id;
++			}
+ 		}
+ 
+-		op-&gt;last_frames = NULL; /* tx_ops never compare with previous received messages */
++		/* tx_ops never compare with previous received messages */
++		op-&gt;last_frames = NULL;
+ 
+-		op-&gt;sk = sk; /* bcm_can_tx / bcm_tx_timeout_handler needs this */
++		/* bcm_can_tx / bcm_tx_timeout_handler needs this */
++		op-&gt;sk = sk;
++
+ 		op-&gt;ifindex = ifindex;
+ 
+-		init_timer(&amp;op-&gt;timer); /* initialize uninitialized (kmalloc) structure */
+-		init_timer(&amp;op-&gt;thrtimer); /* currently unused in tx_ops */
++		/* initialize uninitialized (kmalloc) structure */
++		init_timer(&amp;op-&gt;timer);
+ 
+-		op-&gt;timer.function = bcm_tx_timeout_handler; /* handler for tx_ops */
+-		op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
++		/* currently unused in tx_ops */
++		init_timer(&amp;op-&gt;thrtimer);
+ 
++		/* handler for tx_ops */
++		op-&gt;timer.function = bcm_tx_timeout_handler;
++
++		/* timer.data points to this op-structure */
++		op-&gt;timer.data = (unsigned long)op;
++
+ 		/* add this bcm_op to the list of the tx_ops */
+ 		list_add(&amp;op-&gt;list, &amp;bo-&gt;tx_ops);
+ 
+@@ -625,15 +656,18 @@
+ 
+ 	if (op-&gt;nframes != msg_head-&gt;nframes) {
+ 		op-&gt;nframes   = msg_head-&gt;nframes;
+-		op-&gt;currframe = 0; /* start multiple frame transmission with index 0 */
++		/* start multiple frame transmission with index 0 */
++		op-&gt;currframe = 0;
+ 	}
+ 
+ 	/* check flags */
+ 
+ 	op-&gt;flags = msg_head-&gt;flags;
+ 
+-	if (op-&gt;flags &amp; TX_RESET_MULTI_IDX)
+-		op-&gt;currframe = 0; /* start multiple frame transmission with index 0 */
++	if (op-&gt;flags &amp; TX_RESET_MULTI_IDX) {
++		/* start multiple frame transmission with index 0 */
++		op-&gt;currframe = 0; 
++	}
+ 
+ 	if (op-&gt;flags &amp; SETTIMER) {
+ 
+@@ -655,21 +689,26 @@
+ 		}
+ 	}
+ 
+-	if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; ((op-&gt;j_ival1 &amp;&amp; op-&gt;count) || op-&gt;j_ival2)) {
++	if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp;
++	    ((op-&gt;j_ival1 &amp;&amp; op-&gt;count) || op-&gt;j_ival2)) {
+ 
+ 		del_timer(&amp;op-&gt;timer);
+ 
+-		op-&gt;flags |= TX_ANNOUNCE; /* spec: send can_frame when starting timer */
++		/* spec: send can_frame when starting timer */
++		op-&gt;flags |= TX_ANNOUNCE;
++
+ 		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)){
+ 			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
+-			DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++			DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=%p &quot;
++			    &quot;exp=0x%08X\n&quot;,
+ 			    op-&gt;timer.function,
+ 			    (char*) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+ 		} else{
+ 			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-			DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=(%p) exp=0x%08X\n&quot;,
++			DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=%p &quot;
++			    &quot;exp=0x%08X\n&quot;,
+ 			    op-&gt;timer.function,
+ 			    (char*) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+@@ -699,7 +738,8 @@
+ 	}
+ 
+ 	if ((msg_head-&gt;flags &amp; RX_RTR_FRAME) &amp;&amp;
+-	    ((msg_head-&gt;nframes != 1) || (!(msg_head-&gt;can_id &amp; CAN_RTR_FLAG)))) {
++	    ((msg_head-&gt;nframes != 1) ||
++	     (!(msg_head-&gt;can_id &amp; CAN_RTR_FLAG)))) {
+ 
+ 		DBG(&quot;RX_SETUP: bad RX_RTR_FRAME setup!\n&quot;);
+ 		return -EINVAL;
+@@ -711,7 +751,7 @@
+ 
+ 		/* update existing BCM operation */
+ 
+-		DBG(&quot;RX_SETUP: modifying existing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++		DBG(&quot;RX_SETUP: modifying existing rx_op %p for can_id %03X\n&quot;,
+ 		    op, msg_head-&gt;can_id);
+ 
+ 		/* Do we need more space for the can_frames than currently */
+@@ -722,15 +762,18 @@
+ 
+ 		if (msg_head-&gt;nframes) {
+ 			/* update can_frames content */
+-			if ((err = memcpy_fromiovec((unsigned char*)op-&gt;frames, msg-&gt;msg_iov, msg_head-&gt;nframes * CFSIZ) &lt; 0))
++			if ((err = memcpy_fromiovec((u8*)op-&gt;frames,
++						    msg-&gt;msg_iov,
++						    msg_head-&gt;nframes
++						    * CFSIZ) &lt; 0))
+ 				return err;
+ 
+-			/* clear received can_frames to indicate 'nothing received' */
++			/* clear last_frames to indicate 'nothing received' */
+ 			memset(op-&gt;last_frames, 0, msg_head-&gt;nframes * CFSIZ);
+ 		}
+ 
+ 		op-&gt;nframes = msg_head-&gt;nframes;
+-		/* Only an update -&gt; do not call can_rx_register() at end of RX_SETUP */
++		/* Only an update -&gt; do not call can_rx_register() */
+ 		do_rx_register = 0;
+ 
+ 	} else {
+@@ -741,7 +784,7 @@
+ 
+ 		memset(op, 0, OPSIZ); /* init to zero, e.g. for timers */
+ 
+-		DBG(&quot;RX_SETUP: creating new rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++		DBG(&quot;RX_SETUP: creating new rx_op %p for can_id %03X\n&quot;,
+ 		    op, msg_head-&gt;can_id);
+ 
+ 		op-&gt;can_id    = msg_head-&gt;can_id;
+@@ -750,31 +793,37 @@
+ 		if (msg_head-&gt;nframes) {
+ 
+ 			/* create array for can_frames and copy the data */
+-			if (!(op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ, GFP_KERNEL))) {
++			if (!(op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ,
++						   GFP_KERNEL))) {
+ 				kfree(op);
+ 				return -ENOMEM;
+ 			}
+ 
+-			if ((err = memcpy_fromiovec((unsigned char*)op-&gt;frames, msg-&gt;msg_iov, msg_head-&gt;nframes * CFSIZ)) &lt; 0) {
++			if ((err = memcpy_fromiovec((u8*)op-&gt;frames,
++						    msg-&gt;msg_iov,
++						    msg_head-&gt;nframes
++						    * CFSIZ)) &lt; 0) {
+ 				kfree(op-&gt;frames);
+ 				kfree(op);
+ 				return err;
+ 			}
+ 
+ 			/* create array for received can_frames */
+-			if (!(op-&gt;last_frames = kmalloc(msg_head-&gt;nframes * CFSIZ, GFP_KERNEL))) {
++			if (!(op-&gt;last_frames = kmalloc(msg_head-&gt;nframes
++							* CFSIZ,
++							GFP_KERNEL))) {
+ 				kfree(op-&gt;frames);
+ 				kfree(op);
+ 				return -ENOMEM;
+ 			}
+ 
+-			/* clear received can_frames to indicate 'nothing received' */
++			/* clear last_frames to indicate 'nothing received' */
+ 			memset(op-&gt;last_frames, 0, msg_head-&gt;nframes * CFSIZ);
+ 		} else {
+ 			/* op-&gt;frames = NULL due to memset */
+ 
+-			/* even when we have the RX_FILTER_ID case, we need to store the last frame */
+-			/* for the throttle functionality */
++			/* even when we have the RX_FILTER_ID case, we need */
++			/* to store the last frame for the throttle feature */
+ 
+ 			/* create array for received can_frames */
+ 			if (!(op-&gt;last_frames = kmalloc(CFSIZ, GFP_KERNEL))) {
+@@ -782,27 +831,37 @@
+ 				return -ENOMEM;
+ 			}
+ 
+-			/* clear received can_frames to indicate 'nothing received' */
++			/* clear last_frames to indicate 'nothing received' */
+ 			memset(op-&gt;last_frames, 0, CFSIZ);
+ 		}
+ 
+ 		op-&gt;sk = sk; /* bcm_delete_rx_op() needs this */
+ 		op-&gt;ifindex = ifindex;
+ 
+-		init_timer(&amp;op-&gt;timer); /* initialize uninitialized (kmalloc) structure */
+-		init_timer(&amp;op-&gt;thrtimer); /* init throttle timer for RX_CHANGED */
++		/* initialize uninitialized (kmalloc) structure */
++		init_timer(&amp;op-&gt;timer);
+ 
+-		op-&gt;timer.function = bcm_rx_timeout_handler; /* handler for rx timeouts */
+-		op-&gt;timer.data = (unsigned long)op; /* timer.data points to this op-structure */
++		/* init throttle timer for RX_CHANGED */
++		init_timer(&amp;op-&gt;thrtimer);
+ 
+-		op-&gt;thrtimer.function = bcm_rx_thr_handler; /* handler for RX_CHANGED throttle timeouts */
+-		op-&gt;thrtimer.data = (unsigned long)op; /* timer.data points to this op-structure */
++		/* handler for rx timeouts */
++		op-&gt;timer.function = bcm_rx_timeout_handler;
++
++		/* timer.data points to this op-structure */
++		op-&gt;timer.data = (unsigned long)op;
++
++		/* handler for RX_CHANGED throttle timeouts */
++		op-&gt;thrtimer.function = bcm_rx_thr_handler;
++
++		/* timer.data points to this op-structure */
++		op-&gt;thrtimer.data = (unsigned long)op;
++
+ 		op-&gt;thrtimer.expires = 0; /* mark disabled timer */
+ 
+ 		/* add this bcm_op to the list of the tx_ops */
+ 		list_add(&amp;op-&gt;list, &amp;bo-&gt;rx_ops);
+ 
+-		do_rx_register = 1; /* call can_rx_register() at end of RX_SETUP */
++		do_rx_register = 1; /* call can_rx_register() */
+ 
+ 	} /* if ((op = bcm_find_op(&amp;bo-&gt;rx_ops, msg_head-&gt;can_id, ifindex))) */
+ 
+@@ -840,18 +899,20 @@
+ 			/* disable an active timer due to zero value? */
+ 			if (!op-&gt;j_ival1) {
+ 				del_timer(&amp;op-&gt;timer);
+-				DBG(&quot;RX_SETUP: disabled timer for rx timeouts.\n&quot;);
++				DBG(&quot;RX_SETUP: disabled timer rx timeouts.\n&quot;);
+ 			}
+ 
+ 			/* free currently blocked msgs ? */
+-			if (op-&gt;thrtimer.expires) { /* running throttle timer? */
++			if (op-&gt;thrtimer.expires) { /* blocked by timer? */
+ 				DBG(&quot;RX_SETUP: unblocking throttled msgs.\n&quot;);
+ 				del_timer(&amp;op-&gt;thrtimer);
+-				op-&gt;thrtimer.expires = jiffies + 2; /* send blocked msgs hereafter */
++				/* send blocked msgs hereafter */
++				op-&gt;thrtimer.expires = jiffies + 2;
+ 				add_timer(&amp;op-&gt;thrtimer);
+ 			}
+-			/* if (op-&gt;j_ival2) is zero, no (new) throttling will happen */
+-			/* see bcm_rx_update_and_send() and bcm_rx_thr_handler()     */
++			/* if (op-&gt;j_ival2) is zero, no (new) throttling     */
++			/* will happen. For details see functions            */
++			/* bcm_rx_update_and_send() and bcm_rx_thr_handler() */
+ 		}
+ 
+ 		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1) {
+@@ -860,7 +921,8 @@
+ 
+ 			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 
+-			DBG(&quot;RX_SETUP: adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++			DBG(&quot;RX_SETUP: adding timer ival1. func=%p data=%p&quot;
++			    &quot; exp=0x%08X\n&quot;,
+ 			    (char *) op-&gt;timer.function,
+ 			    (char *) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+@@ -871,17 +933,21 @@
+ 
+ 	/* now we can register for can_ids, if we added a new bcm_op */
+ 	if (do_rx_register) {
+-		DBG(&quot;RX_SETUP: can_rx_register() for can_id &lt;%03X&gt;. rx_op is (%p)\n&quot;, op-&gt;can_id, op);
++		DBG(&quot;RX_SETUP: can_rx_register() for can_id %03X. &quot;
++		    &quot;rx_op is %p\n&quot;, op-&gt;can_id, op);
+ 
+ 		if (ifindex) {
+ 			struct net_device *dev = dev_get_by_index(ifindex);
+ 
+ 			if (dev) {
+-				can_rx_register(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op, IDENT);
++				can_rx_register(dev, op-&gt;can_id,
++						BCM_RX_REGMASK,
++						bcm_rx_handler, op, IDENT);
+ 				dev_put(dev);
+ 			}
+ 		} else 
+-			can_rx_register(NULL, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op, IDENT);
++			can_rx_register(NULL, op-&gt;can_id, BCM_RX_REGMASK,
++					bcm_rx_handler, op, IDENT);
+ 	}
+ 
+ 	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+@@ -903,7 +969,8 @@
+ 	if (!skb)
+ 		return -ENOMEM;
+ 
+-	if ((err = memcpy_fromiovec(skb_put(skb, CFSIZ), msg-&gt;msg_iov, CFSIZ)) &lt; 0) {
++	if ((err = memcpy_fromiovec(skb_put(skb, CFSIZ), msg-&gt;msg_iov,
++				    CFSIZ)) &lt; 0) {
+ 		kfree_skb(skb);
+ 		return err;
+ 	}
+@@ -925,14 +992,16 @@
+ 	return CFSIZ + MHSIZ;
+ }
+ 
+-static int bcm_read_op(struct list_head *ops, struct bcm_msg_head *msg_head, int ifindex)
++static int bcm_read_op(struct list_head *ops, struct bcm_msg_head *msg_head,
++		       int ifindex)
+ {
+ 	struct bcm_op *op;
+ 	int ret;
+ 
+ 	if ((op = bcm_find_op(ops, msg_head-&gt;can_id, ifindex))) {
+ 
+-		DBG(&quot;TRX_READ: sending status for can_id &lt;%03X&gt;\n&quot;, msg_head-&gt;can_id);
++		DBG(&quot;TRX_READ: sending status for can_id %03X\n&quot;,
++		    msg_head-&gt;can_id);
+ 		/* put current values into msg_head */
+ 		msg_head-&gt;flags   = op-&gt;flags;
+ 		msg_head-&gt;count   = op-&gt;count;
+@@ -946,7 +1015,7 @@
+ 
+ 	} else {
+ 
+-		DBG(&quot;TRX_READ: did not find op for can_id &lt;%03X&gt;\n&quot;,
++		DBG(&quot;TRX_READ: did not find op for can_id %03X\n&quot;,
+ 		    msg_head-&gt;can_id);
+ 		ret = -EINVAL;
+ 	}
+@@ -980,11 +1049,14 @@
+ 	struct bcm_opt *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;&gt;&gt;&gt; socket %p&quot;, sk-&gt;sk_socket);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;&gt;&gt;&gt; socket %p&quot;,
++			sk-&gt;sk_socket);
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; / sk %p&quot;, sk);
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; / bo %p&quot;, bo);
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot; / dropped %lu&quot;, bo-&gt;dropped_usr_msgs);
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot; / bound %s&quot;, bcm_proc_getifname(bo-&gt;ifindex));
++	len += snprintf(page + len, PAGE_SIZE - len, &quot; / dropped %lu&quot;,
++			bo-&gt;dropped_usr_msgs);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot; / bound %s&quot;,
++			bcm_proc_getifname(bo-&gt;ifindex));
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; &lt;&lt;&lt;\n&quot;);
+ 
+ 	list_for_each_entry(op, &amp;bo-&gt;rx_ops, list) {
+@@ -995,17 +1067,22 @@
+ 		if (!op-&gt;frames_abs)
+ 			continue;
+ 
+-		len += snprintf(page + len, PAGE_SIZE - len, &quot;rx_op: %03X %-5s &quot;,
++		len += snprintf(page + len, PAGE_SIZE - len,
++				&quot;rx_op: %03X %-5s &quot;,
+ 				op-&gt;can_id, bcm_proc_getifname(op-&gt;ifindex));
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;[%d]%c &quot;,
+-				op-&gt;nframes,(op-&gt;flags &amp; RX_CHECK_DLC)?'d':' ');
++				op-&gt;nframes,
++				(op-&gt;flags &amp; RX_CHECK_DLC)?'d':' ');
+ 		if (op-&gt;j_ival1)
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;timeo=%ld &quot;, op-&gt;j_ival1);
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;timeo=%ld &quot;, op-&gt;j_ival1);
+ 
+ 		if (op-&gt;j_ival2)
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;thr=%ld &quot;, op-&gt;j_ival2);
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;thr=%ld &quot;, op-&gt;j_ival2);
+ 
+-		len += snprintf(page + len, PAGE_SIZE - len, &quot;# recv %ld (%ld) =&gt; reduction: &quot;,
++		len += snprintf(page + len, PAGE_SIZE - len,
++				&quot;# recv %ld (%ld) =&gt; reduction: &quot;,
+ 				op-&gt;frames_filtered, op-&gt;frames_abs);
+ 
+ 		reduction = 100 - (op-&gt;frames_filtered * 100) / op-&gt;frames_abs;
+@@ -1022,15 +1099,20 @@
+ 
+ 	list_for_each_entry(op, &amp;bo-&gt;tx_ops, list) {
+ 
+-		len += snprintf(page + len, PAGE_SIZE - len, &quot;tx_op: %03X %s [%d] &quot;,
+-				op-&gt;can_id, bcm_proc_getifname(op-&gt;ifindex), op-&gt;nframes);
++		len += snprintf(page + len, PAGE_SIZE - len,
++				&quot;tx_op: %03X %s [%d] &quot;,
++				op-&gt;can_id, bcm_proc_getifname(op-&gt;ifindex),
++				op-&gt;nframes);
+ 		if (op-&gt;j_ival1)
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;t1=%ld &quot;, op-&gt;j_ival1);
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;t1=%ld &quot;,
++					op-&gt;j_ival1);
+ 
+ 		if (op-&gt;j_ival2)
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;t2=%ld &quot;, op-&gt;j_ival2);
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;t2=%ld &quot;,
++					op-&gt;j_ival2);
+ 
+-		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;,
++				op-&gt;frames_abs);
+ 
+ 		if (len &gt; PAGE_SIZE - 100) {
+ 			/* mark output cut off */
+@@ -1091,17 +1173,19 @@
+ {
+ 	struct bcm_op *op = (struct bcm_op*)data;
+ 
+-	DBG(&quot;Called with bcm_op (%p)\n&quot;, op);
++	DBG(&quot;Called with bcm_op %p\n&quot;, op);
+ 
+ 	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 
+ 		op-&gt;count--;
+ 
+-		if (!op-&gt;count &amp;&amp; (op-&gt;flags &amp; TX_COUNTEVT)) { /* create notification to user? */
++		if (!op-&gt;count &amp;&amp; (op-&gt;flags &amp; TX_COUNTEVT)) {
++			/* create notification to user */
+ 
+ 			struct bcm_msg_head msg_head;
+ 
+-			DBG(&quot;sending TX_EXPIRED for can_id &lt;%03X&gt;\n&quot;, op-&gt;can_id);
++			DBG(&quot;sending TX_EXPIRED for can_id %03X\n&quot;,
++			    op-&gt;can_id);
+ 
+ 			msg_head.opcode  = TX_EXPIRED;
+ 			msg_head.flags   = op-&gt;flags;
+@@ -1123,7 +1207,7 @@
+ 		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 		add_timer(&amp;op-&gt;timer);
+ 
+-		DBG(&quot;adding timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++		DBG(&quot;adding timer ival1. func=%p data=%p exp=0x%08X\n&quot;,
+ 		    op-&gt;timer.function,
+ 		    (char*) op-&gt;timer.data,
+ 		    (unsigned int) op-&gt;timer.expires);
+@@ -1134,7 +1218,7 @@
+ 			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+ 			add_timer(&amp;op-&gt;timer);
+ 
+-			DBG(&quot;adding timer ival2. func=%p data=(%p) exp=0x%08X\n&quot;,
++			DBG(&quot;adding timer ival2. func=%p data=%p exp=0x%08X\n&quot;,
+ 			    op-&gt;timer.function,
+ 			    (char*) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+@@ -1160,15 +1244,16 @@
+ 
+ 	del_timer(&amp;op-&gt;timer); /* disable timeout */
+ 
+-	DBG(&quot;Called with bcm_op (%p)\n&quot;, op);
++	DBG(&quot;Called with bcm_op %p\n&quot;, op);
+ 
+ 	if (skb-&gt;len == sizeof(rxframe)) {
+ 		memcpy(&amp;rxframe, skb-&gt;data, sizeof(rxframe));
+ 		skb_get_timestamp(skb, &amp;op-&gt;rx_stamp); /* save rx timestamp */
+-		op-&gt;rx_ifindex = skb-&gt;dev-&gt;ifindex; /* save originator for recvfrom() */
++		/* save originator for recvfrom() */
++		op-&gt;rx_ifindex = skb-&gt;dev-&gt;ifindex;
+ 		op-&gt;frames_abs++; /* statistics */
+ 		kfree_skb(skb);
+-		DBG(&quot;got can_frame with can_id &lt;%03X&gt;\n&quot;, rxframe.can_id);
++		DBG(&quot;got can_frame with can_id %03X\n&quot;, rxframe.can_id);
+ 	} else {
+ 		DBG(&quot;Wrong skb-&gt;len = %d\n&quot;, skb-&gt;len);
+ 		kfree_skb(skb);
+@@ -1178,7 +1263,7 @@
+ 	DBG_FRAME(&quot;BCM: bcm_rx_handler: CAN frame&quot;, &amp;rxframe);
+ 
+ 	if (op-&gt;can_id != rxframe.can_id) {
+-		DBG(&quot;ERROR! Got wrong can_id &lt;%03X&gt;! Expected &lt;%03X&gt;.\n&quot;,
++		DBG(&quot;ERROR! Got wrong can_id %03X! Expected %03X.\n&quot;,
+ 		    rxframe.can_id, op-&gt;can_id);
+ 		return;
+ 	}
+@@ -1212,7 +1297,8 @@
+ 		for (i=1; i &lt; op-&gt;nframes; i++) {
+ 
+ 			if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
+-			    (GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;op-&gt;frames[i]))) {
++			    (GET_U64(&amp;op-&gt;frames[0]) &amp;
++			     GET_U64(&amp;op-&gt;frames[i]))) {
+ 				DBG(&quot;found MUX index %d\n&quot;, i);
+ 				bcm_rx_cmp_to_index(op, i, &amp;rxframe);
+ 				break;
+@@ -1236,7 +1322,8 @@
+ 
+ 	/* do a real check in can_data */
+ 
+-	DBG(&quot;op-&gt;frames[index].data = 0x%016llx\n&quot;, GET_U64(&amp;op-&gt;frames[index]));
++	DBG(&quot;op-&gt;frames[index].data = 0x%016llx\n&quot;,
++	    GET_U64(&amp;op-&gt;frames[index]));
+ 	DBG(&quot;op-&gt;last_frames[index].data = 0x%016llx\n&quot;,
+ 	    GET_U64(&amp;op-&gt;last_frames[index]));
+ 	DBG(&quot;rxdata-&gt;data = 0x%016llx\n&quot;, GET_U64(rxdata));
+@@ -1253,9 +1340,11 @@
+ 
+ 		/* do a real check in dlc */
+ 
+-		if (rxdata-&gt;can_dlc != (op-&gt;last_frames[index].can_dlc &amp; BCM_CAN_DLC_MASK)) {
++		if (rxdata-&gt;can_dlc != (op-&gt;last_frames[index].can_dlc &amp;
++					BCM_CAN_DLC_MASK)) {
+ 			DBG(&quot;dlc change :)\n&quot;);
+-			bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
++			bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index],
++					       rxdata);
+ 			return;
+ 		}
+ 	}
+@@ -1281,7 +1370,7 @@
+ 			op-&gt;thrtimer.expires = nexttx;
+ 			add_timer(&amp;op-&gt;thrtimer);
+ 
+-			DBG(&quot;adding thrtimer. func=%p data=(%p) exp=0x%08X\n&quot;,
++			DBG(&quot;adding thrtimer. func=%p data=%p exp=0x%08X\n&quot;,
+ 			    op-&gt;thrtimer.function,
+ 			    (char*) op-&gt;thrtimer.data,
+ 			    (unsigned int) op-&gt;thrtimer.expires);
+@@ -1299,7 +1388,8 @@
+ 
+ 		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 
+-		DBG(&quot;adding rx timeout timer ival1. func=%p data=(%p) exp=0x%08X\n&quot;,
++		DBG(&quot;adding rx timeout timer ival1. func=%p data=%p &quot;
++		    &quot;exp=0x%08X\n&quot;,
+ 		    op-&gt;timer.function,
+ 		    (char*) op-&gt;timer.data,
+ 		    (unsigned int) op-&gt;timer.expires);
+@@ -1317,9 +1407,9 @@
+ 	op-&gt;frames_filtered++; /* statistics */
+ 
+ 	if (op-&gt;frames_filtered &gt; ULONG_MAX/100)
+-		op-&gt;frames_filtered = op-&gt;frames_abs = 0; /* restart - spinlock ? */
++		op-&gt;frames_filtered = op-&gt;frames_abs = 0; /* restart */
+ 
+-	DBG(&quot;setting j_lastmsg to 0x%08X for rx_op(%p)\n&quot;,
++	DBG(&quot;setting j_lastmsg to 0x%08X for rx_op %p\n&quot;,
+ 	    (unsigned int) op-&gt;j_lastmsg, op);
+ 	DBG(&quot;sending notification\n&quot;);
+ 
+@@ -1340,7 +1430,7 @@
+ 	struct bcm_op *op = (struct bcm_op*)data;
+ 	struct bcm_msg_head msg_head;
+ 
+-	DBG(&quot;sending RX_TIMEOUT for can_id &lt;%03X&gt;. op is (%p)\n&quot;, op-&gt;can_id, op);
++	DBG(&quot;sending RX_TIMEOUT for can_id %03X. op is %p\n&quot;, op-&gt;can_id, op);
+ 
+ 	msg_head.opcode  = RX_TIMEOUT;
+ 	msg_head.flags   = op-&gt;flags;
+@@ -1354,7 +1444,7 @@
+ 
+ 	/* no restart of the timer is done here! */
+ 
+-	/* if the user wants to be informed, when cyclic CAN-Messages come back ... */
++	/* if user wants to be informed, when cyclic CAN-Messages come back */
+ 	if ((op-&gt;flags &amp; RX_ANNOUNCE_RESUME) &amp;&amp; op-&gt;last_frames) {
+ 		/* clear received can_frames to indicate 'nothing received' */
+ 		memset(op-&gt;last_frames, 0, op-&gt;nframes * CFSIZ);
+@@ -1372,18 +1462,19 @@
+ 
+ 	if (op-&gt;nframes &gt; 1){
+ 
+-		DBG(&quot;sending MUX RX_CHANGED for can_id &lt;%03X&gt;. op is (%p)\n&quot;,
++		DBG(&quot;sending MUX RX_CHANGED for can_id %03X. op is %p\n&quot;,
+ 		    op-&gt;can_id, op);
+ 		/* for MUX filter we start at index 1 */
+ 		for (i=1; i&lt;op-&gt;nframes; i++){
+-			if ((op-&gt;last_frames) &amp;&amp; (op-&gt;last_frames[i].can_dlc &amp; RX_THR)){
++			if ((op-&gt;last_frames) &amp;&amp;
++			    (op-&gt;last_frames[i].can_dlc &amp; RX_THR)){
+ 				op-&gt;last_frames[i].can_dlc &amp;= ~RX_THR;
+ 				bcm_rx_changed(op, &amp;op-&gt;last_frames[i]);
+ 			}
+ 		}
+ 	} else {
+ 
+-		DBG(&quot;sending simple RX_CHANGED for can_id &lt;%03X&gt;. op is (%p)\n&quot;,
++		DBG(&quot;sending simple RX_CHANGED for can_id %03X. op is %p\n&quot;,
+ 		    op-&gt;can_id, op);
+ 		/* for RX_FILTER_ID and simple filter */
+ 		if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames[0].can_dlc &amp; RX_THR)){
+@@ -1409,7 +1500,8 @@
+ 		return;
+ 
+ 	memcpy(skb_put(skb, sizeof(*head)), head, sizeof(*head));
+-	firstframe = (struct can_frame *) skb-&gt;tail; /* can_frames starting here */
++	/* can_frames starting here */
++	firstframe = (struct can_frame *) skb-&gt;tail;
+ 
+ 	if (tv)
+ 		skb_set_timestamp(skb, tv); /* restore timestamp */
+@@ -1417,15 +1509,16 @@
+ 	addr = (struct sockaddr_can *)skb-&gt;cb;
+ 	memset(addr, 0, sizeof(*addr));
+ 	addr-&gt;can_family  = AF_CAN;
+-	addr-&gt;can_ifindex = op-&gt;rx_ifindex; /* restore originator for recvfrom() */
++	/* restore originator for recvfrom() */
++	addr-&gt;can_ifindex = op-&gt;rx_ifindex;
+ 
+ 	if (head-&gt;nframes){
+ 		memcpy(skb_put(skb, datalen), frames, datalen);
+ 
+-		/* the BCM uses the can_dlc-element of the can_frame structure
+-		   for internal purposes. This is only relevant for updates
+-		   that are generated by the BCM, where nframes is 1
+-		*/
++		/* the BCM uses the can_dlc-element of the can_frame */
++		/* structure for internal purposes. This is only     */
++		/* relevant for updates that are generated by the    */
++		/* BCM, where nframes is 1                           */
+ 		if (head-&gt;nframes == 1)
+ 			firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
+ 	}
+@@ -1441,7 +1534,8 @@
+ /* bcm_op handling: find &amp; delete bcm_op elements */
+ /**************************************************/
+ 
+-static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id, int ifindex)
++static struct bcm_op *bcm_find_op(struct list_head *ops, canid_t can_id,
++				  int ifindex)
+ {
+ 	struct bcm_op *op;
+ 
+@@ -1458,18 +1552,25 @@
+ 
+ 	list_for_each_entry_safe(op, n, ops, list) {
+ 		if ((op-&gt;can_id == can_id) &amp;&amp; (op-&gt;ifindex == ifindex)) {
+-			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;, op, op-&gt;can_id);
++			DBG(&quot;removing rx_op %p for can_id %03X\n&quot;,
++			    op, op-&gt;can_id);
+ 
+-			/* Don't care if we're bound or not (due to netdev problems) */
+-			/* can_rx_unregister() is always a save thing to do here     */
++			/* Don't care if we're bound or not (due to netdev */
++			/* problems) can_rx_unregister() is always a save  */
++			/* thing to do here.                               */
+ 			if (op-&gt;ifindex) {
+-				struct net_device *dev = dev_get_by_index(op-&gt;ifindex);
++				struct net_device *dev =
++					dev_get_by_index(op-&gt;ifindex);
+ 				if (dev) {
+-					can_rx_unregister(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
++					can_rx_unregister(dev, op-&gt;can_id,
++							  BCM_RX_REGMASK,
++							  bcm_rx_handler, op);
+ 					dev_put(dev);
+ 				}
+ 			} else
+-				can_rx_unregister(NULL, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
++				can_rx_unregister(NULL, op-&gt;can_id,
++						  BCM_RX_REGMASK,
++						  bcm_rx_handler, op);
+ 
+ 			list_del(&amp;op-&gt;list);
+ 			bcm_remove_op(op);
+@@ -1486,7 +1587,7 @@
+ 
+ 	list_for_each_entry_safe(op, n, ops, list) {
+ 		if ((op-&gt;can_id == can_id) &amp;&amp; (op-&gt;ifindex == ifindex)) {
+-			DBG(&quot;removing rx_op (%p) for can_id &lt;%03X&gt;\n&quot;,
++			DBG(&quot;removing rx_op %p for can_id %03X\n&quot;,
+ 			    op, op-&gt;can_id);
+ 			list_del(&amp;op-&gt;list);
+ 			bcm_remove_op(op);
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-03-05 10:23:51 UTC (rev 166)
++++ trunk/kernel/2.6/net/can/proc.c	2007-03-05 12:34:43 UTC (rev 167)
+@@ -1,7 +1,7 @@
+ /*
+- * af_can_proc.c
++ * proc.c - procfs support for Protocol family CAN core module
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -69,9 +69,9 @@
+ static void can_init_stats(int caller);
+ static void can_stat_update(unsigned long data);
+ 
+-static struct proc_dir_entry *can_create_proc_read_entry(const char *name,
++static struct proc_dir_entry *can_create_proc_readentry(const char *name,
+ 	mode_t mode, read_proc_t* read_proc, void *data);
+-static void can_remove_proc_entry(const char *name);
++static void can_remove_proc_readentry(const char *name);
+ static unsigned long calc_rate(unsigned long oldjif, unsigned long newjif,
+ 			       unsigned long count);
+ 
+@@ -126,7 +126,7 @@
+ 	can_dir = proc_mkdir(CAN_PROC_DIR, NULL);
+ 
+ 	if (!can_dir) {
+-		printk(KERN_INFO &quot;af_can: failed to create CAN_PROC_DIR. &quot;
++		printk(KERN_INFO &quot;CAN: failed to create CAN_PROC_DIR. &quot;
+ 		       &quot;CONFIG_PROC_FS missing?\n&quot;);
+ 		return;
+ 	}
+@@ -134,23 +134,23 @@
+ 	can_dir-&gt;owner = THIS_MODULE;
+ 
+ 	/* own procfs entries from the AF_CAN core */
+-	pde_version     = can_create_proc_read_entry(
++	pde_version     = can_create_proc_readentry(
+ 		CAN_PROC_VERSION, 0644, can_proc_read_version, NULL);
+-	pde_stats       = can_create_proc_read_entry(
++	pde_stats       = can_create_proc_readentry(
+ 		CAN_PROC_STATS, 0644, can_proc_read_stats, NULL);
+-	pde_reset_stats = can_create_proc_read_entry(
++	pde_reset_stats = can_create_proc_readentry(
+ 		CAN_PROC_RESET_STATS, 0644, can_proc_read_reset_stats, NULL);
+-	pde_rcvlist_all = can_create_proc_read_entry(
++	pde_rcvlist_all = can_create_proc_readentry(
+ 		CAN_PROC_RCVLIST_ALL, 0644, can_proc_read_rcvlist_all, NULL);
+-	pde_rcvlist_fil = can_create_proc_read_entry(
++	pde_rcvlist_fil = can_create_proc_readentry(
+ 		CAN_PROC_RCVLIST_FIL, 0644, can_proc_read_rcvlist_fil, NULL);
+-	pde_rcvlist_inv = can_create_proc_read_entry(
++	pde_rcvlist_inv = can_create_proc_readentry(
+ 		CAN_PROC_RCVLIST_INV, 0644, can_proc_read_rcvlist_inv, NULL);
+-	pde_rcvlist_sff = can_create_proc_read_entry(
++	pde_rcvlist_sff = can_create_proc_readentry(
+ 		CAN_PROC_RCVLIST_SFF, 0644, can_proc_read_rcvlist_sff, NULL);
+-	pde_rcvlist_eff = can_create_proc_read_entry(
++	pde_rcvlist_eff = can_create_proc_readentry(
+ 		CAN_PROC_RCVLIST_EFF, 0644, can_proc_read_rcvlist_eff, NULL);
+-	pde_rcvlist_err = can_create_proc_read_entry(
++	pde_rcvlist_err = can_create_proc_readentry(
+ 		CAN_PROC_RCVLIST_ERR, 0644, can_proc_read_rcvlist_err, NULL);
+ 
+ 	if (stats_timer) {
+@@ -166,31 +166,31 @@
+ {
+ 	/* procfs remove */
+ 	if (pde_version)
+-		can_remove_proc_entry(CAN_PROC_VERSION);
++		can_remove_proc_readentry(CAN_PROC_VERSION);
+ 
+ 	if (pde_stats)
+-		can_remove_proc_entry(CAN_PROC_STATS);
++		can_remove_proc_readentry(CAN_PROC_STATS);
+ 
+ 	if (pde_reset_stats)
+-		can_remove_proc_entry(CAN_PROC_RESET_STATS);
++		can_remove_proc_readentry(CAN_PROC_RESET_STATS);
+ 
+ 	if (pde_rcvlist_all)
+-		can_remove_proc_entry(CAN_PROC_RCVLIST_ALL);
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_ALL);
+ 
+ 	if (pde_rcvlist_fil)
+-		can_remove_proc_entry(CAN_PROC_RCVLIST_FIL);
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_FIL);
+ 
+ 	if (pde_rcvlist_inv)
+-		can_remove_proc_entry(CAN_PROC_RCVLIST_INV);
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_INV);
+ 
+ 	if (pde_rcvlist_sff)
+-		can_remove_proc_entry(CAN_PROC_RCVLIST_SFF);
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_SFF);
+ 
+ 	if (pde_rcvlist_eff)
+-		can_remove_proc_entry(CAN_PROC_RCVLIST_EFF);
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_EFF);
+ 
+ 	if (pde_rcvlist_err)
+-		can_remove_proc_entry(CAN_PROC_RCVLIST_ERR);
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_ERR);
+ 
+ 	if (can_dir)
+ 		remove_proc_entry(CAN_PROC_DIR, NULL);
+@@ -200,8 +200,8 @@
+ /* proc read functions                            */
+ /**************************************************/
+ 
+-static int can_print_recv_list(char *page, int len, struct hlist_head *rx_list,
+-			       struct net_device *dev)
++static int can_print_rcvlist(char *page, int len, struct hlist_head *rx_list,
++			     struct net_device *dev)
+ {
+ 	struct receiver *r;
+ 	struct hlist_node *n;
+@@ -322,7 +322,8 @@
+ 	can_init_stats(1);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;CAN statistic reset #%ld done.\n&quot;, pstats.stats_reset);
++			&quot;CAN statistic reset #%ld done.\n&quot;,
++			pstats.stats_reset);
+ 
+ 	*eof = 1;
+ 	return len;
+@@ -334,9 +335,8 @@
+ 	int len = 0;
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;%06X [ Volkswagen AG - Low Level CAN Framework (LLCF) v%s ]\n&quot;,
+-			LLCF_VERSION_CODE, VERSION);
+-
++			&quot;%06X [ Volkswagen Group - Low Level CAN Framework&quot;
++			&quot; (LLCF) v%s ]\n&quot;, LLCF_VERSION_CODE, VERSION);
+ 	*eof = 1;
+ 	return len;
+ }
+@@ -358,7 +358,7 @@
+ 
+ 		if (!hlist_empty(&amp;d-&gt;rx_all)) {
+ 			len = can_print_recv_banner(page, len);
+-			len = can_print_recv_list(page, len, &amp;d-&gt;rx_all, d-&gt;dev);
++			len = can_print_rcvlist(page, len, &amp;d-&gt;rx_all, d-&gt;dev);
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+@@ -391,7 +391,7 @@
+ 
+ 		if (!hlist_empty(&amp;d-&gt;rx_fil)) {
+ 			len = can_print_recv_banner(page, len);
+-			len = can_print_recv_list(page, len, &amp;d-&gt;rx_fil, d-&gt;dev);
++			len = can_print_rcvlist(page, len, &amp;d-&gt;rx_fil, d-&gt;dev);
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+@@ -424,7 +424,7 @@
+ 
+ 		if (!hlist_empty(&amp;d-&gt;rx_inv)) {
+ 			len = can_print_recv_banner(page, len);
+-			len = can_print_recv_list(page, len, &amp;d-&gt;rx_inv, d-&gt;dev);
++			len = can_print_rcvlist(page, len, &amp;d-&gt;rx_inv, d-&gt;dev);
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+@@ -465,8 +465,11 @@
+ 		if (!all_empty) {
+ 			len = can_print_recv_banner(page, len);
+ 			for (i = 0; i &lt; 0x800; i++) {
+-				if (!hlist_empty(&amp;d-&gt;rx_sff[i]) &amp;&amp; len &lt; PAGE_SIZE - 100)
+-					len = can_print_recv_list(page, len, &amp;d-&gt;rx_sff[i], d-&gt;dev);
++				if (!hlist_empty(&amp;d-&gt;rx_sff[i]) &amp;&amp;
++				    len &lt; PAGE_SIZE - 100)
++					len = can_print_rcvlist(page, len,
++								&amp;d-&gt;rx_sff[i],
++								d-&gt;dev);
+ 			}
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+@@ -500,7 +503,7 @@
+ 
+ 		if (!hlist_empty(&amp;d-&gt;rx_eff)) {
+ 			len = can_print_recv_banner(page, len);
+-			len = can_print_recv_list(page, len, &amp;d-&gt;rx_eff, d-&gt;dev);
++			len = can_print_rcvlist(page, len, &amp;d-&gt;rx_eff, d-&gt;dev);
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+@@ -533,7 +536,7 @@
+ 
+ 		if (!hlist_empty(&amp;d-&gt;rx_err)) {
+ 			len = can_print_recv_banner(page, len);
+-			len = can_print_recv_list(page, len, &amp;d-&gt;rx_err, d-&gt;dev);
++			len = can_print_rcvlist(page, len, &amp;d-&gt;rx_err, d-&gt;dev);
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+@@ -553,15 +556,19 @@
+ /* proc utility functions                         */
+ /**************************************************/
+ 
+-static struct proc_dir_entry *can_create_proc_read_entry(const char *name, mode_t mode, read_proc_t* read_proc, void *data)
++static struct proc_dir_entry *can_create_proc_readentry(const char *name,
++							mode_t mode,
++							read_proc_t* read_proc,
++							void *data)
+ {
+ 	if (can_dir)
+-		return create_proc_read_entry(name, mode, can_dir, read_proc, data);
++		return create_proc_read_entry(name, mode, can_dir, read_proc,
++					      data);
+ 	else
+ 		return NULL;
+ }
+ 
+-static void can_remove_proc_entry(const char *name)
++static void can_remove_proc_readentry(const char *name)
+ {
+ 	if (can_dir)
+ 		remove_proc_entry(name, can_dir);
+@@ -577,7 +584,8 @@
+ 
+ 	/* see can_rcv() - this should NEVER happen! */
+ 	if (count &gt; (ULONG_MAX / HZ)) {
+-		printk(KERN_ERR &quot;af_can: calc_rate: count exceeded! %ld\n&quot;, count);
++		printk(KERN_ERR &quot;CAN: calc_rate: count exceeded! %ld\n&quot;,
++		       count);
+ 		return 99999999;
+ 	}
+ 
+@@ -601,7 +609,7 @@
+ {
+ 	unsigned long j = jiffies; /* snapshot */
+ 
+-	//DBG(&quot;af_can: can_stat_update() jiffies = %ld\n&quot;, j);
++	//DBG(&quot;CAN: can_stat_update() jiffies = %ld\n&quot;, j);
+ 
+ 	if (j &lt; stats.jiffies_init) /* jiffies overflow */
+ 		can_init_stats(2);
+@@ -618,10 +626,13 @@
+ 
+ 	/* calc total values */
+ 	if (stats.rx_frames)
+-		stats.total_rx_match_ratio = (stats.matches * 100) / stats.rx_frames;
++		stats.total_rx_match_ratio = (stats.matches * 100) / 
++						stats.rx_frames;
+ 
+-	stats.total_tx_rate = calc_rate(stats.jiffies_init, j, stats.tx_frames);
+-	stats.total_rx_rate = calc_rate(stats.jiffies_init, j, stats.rx_frames);
++	stats.total_tx_rate = calc_rate(stats.jiffies_init, j,
++					stats.tx_frames);
++	stats.total_rx_rate = calc_rate(stats.jiffies_init, j,
++					stats.rx_frames);
+ 
+ 	/* calc current values */
+ 	if (stats.rx_frames_delta)
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-03-05 10:23:51 UTC (rev 166)
++++ trunk/kernel/2.6/net/can/raw.c	2007-03-05 12:34:43 UTC (rev 167)
+@@ -1,7 +1,7 @@
+ /*
+- * raw.c
++ * raw.c - Raw sockets for protocol family CAN
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -63,7 +63,8 @@
+ RCSID(&quot;$Id$&quot;);
+ 
+ #define IDENT &quot;raw&quot;
+-static __initdata const char banner[] = KERN_INFO &quot;CAN: raw socket protocol &quot; VERSION &quot;\n&quot;; 
++static __initdata const char banner[] = KERN_INFO &quot;CAN: raw socket protocol&quot;
++					&quot; &quot; VERSION &quot;\n&quot;; 
+ 
+ MODULE_DESCRIPTION(&quot;PF_CAN raw sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -150,6 +151,8 @@
+ #define RAW_CAP CAP_NET_RAW
+ #endif
+ 
++#undef CAN_RAW_SUPPORT_REBIND /* use bind on already bound socket */
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ 
+ struct raw_sock {
+@@ -244,7 +247,8 @@
+ 
+ 	/* remove current error mask */
+ 	if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
++		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++				  raw_rcv, sk);
+ 
+ 	if (dev) {
+ 		can_dev_unregister(dev, raw_notifier, sk);
+@@ -269,9 +273,7 @@
+ 		return -EINVAL;
+ 
+ 	if (ro-&gt;bound) {
+-#if 1
+-		return -EINVAL;
+-#else
++#ifdef CAN_RAW_SUPPORT_REBIND
+ 		/* remove current bindings / notifier */
+ 		if (ro-&gt;ifindex) {
+ 			dev = dev_get_by_index(ro-&gt;ifindex);
+@@ -297,6 +299,8 @@
+ 			dev_put(dev);
+ 
+ 		ro-&gt;bound = 0;
++#else
++		return -EINVAL;
+ #endif
+ 	}
+ 
+@@ -321,7 +325,8 @@
+ 	raw_add_filters(dev, sk); /* filters set by default/setsockopt */
+ 
+ 	if (ro-&gt;err_mask) /* error frame filter set by setsockopt */
+-		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
++		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++				raw_rcv, sk, IDENT);
+ 
+ 	ro-&gt;bound = 1;
+ 
+@@ -432,12 +437,14 @@
+ 
+ 		/* remove current error mask */
+ 		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-			can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
++			can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++					  raw_rcv, sk);
+ 
+ 		/* add new error mask */
+ 		ro-&gt;err_mask = err_mask;
+ 		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
++			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++					raw_rcv, sk, IDENT);
+ 
+ 		if (dev)
+ 			dev_put(dev);
+@@ -600,7 +607,8 @@
+ 	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ 
+ 	if (msg-&gt;msg_name) {
+-		struct sockaddr_can *addr = (struct sockaddr_can *)msg-&gt;msg_name;
++		struct sockaddr_can *addr =
++			(struct sockaddr_can *)msg-&gt;msg_name;
+ 		if (addr-&gt;can_family != AF_CAN)
+ 			return -EINVAL;
+ 		ifindex = addr-&gt;can_ifindex;
+@@ -617,7 +625,8 @@
+ 		return -ENOMEM;
+ 	}
+ 
+-	if ((err = memcpy_fromiovec(skb_put(skb, size), msg-&gt;msg_iov, size)) &lt; 0) {
++	if ((err = memcpy_fromiovec(skb_put(skb, size),
++				    msg-&gt;msg_iov, size)) &lt; 0) {
+ 		kfree_skb(skb);
+ 		dev_put(dev);
+ 		return err;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000150.html">r166 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000152.html">r168 - in trunk/kernel: 2.4/can 2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#151">[ date ]</a>
+              <a href="thread.html#151">[ thread ]</a>
+              <a href="subject.html#151">[ subject ]</a>
+              <a href="author.html#151">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1269 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1269%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110901091854.EE2034811C2%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000899.html">
+   <LINK REL="Next"  HREF="000901.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1269 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1269%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110901091854.EE2034811C2%40sheep.berlios.de%3E"
+       TITLE="r1269 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep  1 11:18:54 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000899.html">r1268 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000901.html">r1270 - trunk/kernel/2.6/include/socketcan/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#900">[ date ]</a>
+              <a href="thread.html#900">[ thread ]</a>
+              <a href="subject.html#900">[ subject ]</a>
+              <a href="author.html#900">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-09-01 11:18:54 +0200 (Thu, 01 Sep 2011)
+New Revision: 1269
+
+Modified:
+   trunk/kernel/2.6/net/can/gw.c
+Log:
+Beautify check for valid CAN netdevices.
+
+
+Modified: trunk/kernel/2.6/net/can/gw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/gw.c	2011-09-01 09:13:28 UTC (rev 1268)
++++ trunk/kernel/2.6/net/can/gw.c	2011-09-01 09:18:54 UTC (rev 1269)
+@@ -821,23 +821,19 @@
+ 	if (!gwj-&gt;src.dev)
+ 		goto out;
+ 
+-	if (gwj-&gt;src.dev-&gt;type != ARPHRD_CAN)
++	/* check for CAN netdev not using header_ops - see gw_rcv() */
++	if (gwj-&gt;src.dev-&gt;type != ARPHRD_CAN || gwj-&gt;src.dev-&gt;header_ops)
+ 		goto put_src_out;
+ 
+-	if (gwj-&gt;src.dev-&gt;header_ops)
+-		goto put_src_out;
+-
+ 	gwj-&gt;dst.dev = dev_get_by_index(&amp;init_net, gwj-&gt;ccgw.dst_idx);
+ 
+ 	if (!gwj-&gt;dst.dev)
+ 		goto put_src_out;
+ 
+-	if (gwj-&gt;dst.dev-&gt;type != ARPHRD_CAN)
++	/* check for CAN netdev not using header_ops - see gw_rcv() */
++	if (gwj-&gt;dst.dev-&gt;type != ARPHRD_CAN || gwj-&gt;dst.dev-&gt;header_ops)
+ 		goto put_src_dst_out;
+ 
+-	if (gwj-&gt;dst.dev-&gt;header_ops)
+-		goto put_src_dst_out;
+-
+ 	ASSERT_RTNL();
+ 
+ 	err = cgw_register_filter(gwj);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000899.html">r1268 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000901.html">r1270 - trunk/kernel/2.6/include/socketcan/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#900">[ date ]</a>
+              <a href="thread.html#900">[ thread ]</a>
+              <a href="subject.html#900">[ subject ]</a>
+              <a href="author.html#900">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

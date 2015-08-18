@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r108 - in trunk/kernel: 2.4/can 2.6/include/linux 2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r108%20-%20in%20trunk/kernel%3A%202.4/can%202.6/include/linux%202.6/net/can&In-Reply-To=%3C200611291436.kATEap5X006743%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000090.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r108 - in trunk/kernel: 2.4/can 2.6/include/linux 2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r108%20-%20in%20trunk/kernel%3A%202.4/can%202.6/include/linux%202.6/net/can&In-Reply-To=%3C200611291436.kATEap5X006743%40sheep.berlios.de%3E"
+       TITLE="r108 - in trunk/kernel: 2.4/can 2.6/include/linux 2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 29 15:36:51 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000090.html">r107 - trunk/kernel/2.6/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#91">[ date ]</a>
+              <a href="thread.html#91">[ thread ]</a>
+              <a href="subject.html#91">[ subject ]</a>
+              <a href="author.html#91">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-11-29 15:36:49 +0100 (Wed, 29 Nov 2006)
+New Revision: 108
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.6/include/linux/can.h
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Introduced return values for socketcan internal functions can_rx_register()
+and can_rx_unregister().
+Background: When hot-unplugging CAN netdevices (like CAN USB devices) the
+device structures are removed due to the notifier in af_can.c.
+As this notification is passed to the user-app, the user-app closes the socket
+which causes the socket to remove the already nonexistent RX-entries.
+This 'usual' unplugging event lead to a kernel error logging ...
+Now the retval of the (un)register-functions gives the information to be
+handled (if sensefull).
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2006-11-28 09:45:23 UTC (rev 107)
++++ trunk/kernel/2.4/can/af_can.c	2006-11-29 14:36:49 UTC (rev 108)
+@@ -463,27 +463,31 @@
+ /* af_can rx path                                 */
+ /**************************************************/
+ 
+-void can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-		     void (*func)(struct sk_buff *, void *), void *data,
+-		     char *ident)
++int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
++		    void (*func)(struct sk_buff *, void *), void *data,
++		    char *ident)
+ {
+ 	struct receiver *r, **rl;
+ 	struct dev_rcv_lists *d;
++	int ret = 0;
+ 
+ 	/* insert new receiver  (dev,canid,mask) -&gt; (func,data) */
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
+ 	    dev, can_id, mask, func, data, ident);
+ 
+-	if (!(r = kmem_cache_alloc(rcv_cache, GFP_KERNEL)))
++	if (!(r = kmem_cache_alloc(rcv_cache, GFP_KERNEL))) {
++		ret = -ENOMEM;
+ 		goto out;
++	}
+ 
+ 	write_lock_bh(&amp;rcv_lists_lock);
+ 
+ 	if (!(d = find_dev_rcv_lists(dev))) {
+-		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
++		    dev-&gt;name, can_id, mask);
+ 		kmem_cache_free(rcv_cache, r);
++		ret = -ENODEV;
+ 		goto out_unlock;
+ 	}
+ 
+@@ -507,7 +511,7 @@
+  out_unlock:
+ 	write_unlock_bh(&amp;rcv_lists_lock);
+  out:
+-	return;
++	return ret;
+ }
+ 
+ static void can_rx_delete_all(struct receiver **rl)
+@@ -521,11 +525,12 @@
+ 	*rl = NULL;
+ }
+ 
+-void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		       void (*func)(struct sk_buff *, void *), void *data)
++int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++		      void (*func)(struct sk_buff *, void *), void *data)
+ {
+ 	struct receiver *r, **rl;
+ 	struct dev_rcv_lists *d;
++	int ret = 0;
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+ 	    dev, can_id, mask, func, data);
+@@ -533,8 +538,9 @@
+ 	write_lock_bh(&amp;rcv_lists_lock);
+ 
+ 	if (!(d = find_dev_rcv_lists(dev))) {
+-		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
++		    dev-&gt;name, can_id, mask);
++		ret = -ENODEV;
+ 		goto out;
+ 	}
+ 
+@@ -556,8 +562,9 @@
+ 	 */
+ 
+ 	if (!r) {
+-		printk(KERN_ERR &quot;CAN: receive list entry not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		DBG(&quot;receive list entry not found for &quot;
++		    &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 
+@@ -570,6 +577,8 @@
+ 
+  out:
+ 	write_unlock_bh(&amp;rcv_lists_lock);
++
++	return ret;
+ }
+ 
+ static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2006-11-28 09:45:23 UTC (rev 107)
++++ trunk/kernel/2.4/can/af_can.h	2006-11-29 14:36:49 UTC (rev 108)
+@@ -112,10 +112,10 @@
+ 
+ void can_proto_register(struct can_proto *cp);
+ void can_proto_unregister(struct can_proto *cp);
+-void can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
++int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		     void (*func)(struct sk_buff *, void *), void *data,
+ 		     char *ident);
+-void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++int  can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		       void (*func)(struct sk_buff *, void *), void *data);
+ void can_dev_register(struct net_device *dev,
+ 		      void (*func)(unsigned long msg, void *), void *data);
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2006-11-28 09:45:23 UTC (rev 107)
++++ trunk/kernel/2.6/include/linux/can.h	2006-11-29 14:36:49 UTC (rev 108)
+@@ -139,10 +139,10 @@
+ 
+ void can_proto_register(struct can_proto *cp);
+ void can_proto_unregister(struct can_proto *cp);
+-void can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
++int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		     void (*func)(struct sk_buff *, void *), void *data,
+ 		     char *ident);
+-void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++int  can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		       void (*func)(struct sk_buff *, void *), void *data);
+ void can_dev_register(struct net_device *dev,
+ 		      void (*func)(unsigned long msg, void *), void *data);
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-11-28 09:45:23 UTC (rev 107)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-11-29 14:36:49 UTC (rev 108)
+@@ -502,28 +502,32 @@
+ /* af_can rx path                                 */
+ /**************************************************/
+ 
+-void can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-		     void (*func)(struct sk_buff *, void *), void *data,
+-		     char *ident)
++int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
++		    void (*func)(struct sk_buff *, void *), void *data,
++		    char *ident)
+ {
+ 	struct receiver *r;
+ 	struct hlist_head *rl;
+ 	struct dev_rcv_lists *d;
++	int ret = 0;
+ 
+ 	/* insert new receiver  (dev,canid,mask) -&gt; (func,data) */
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
+ 	    dev, can_id, mask, func, data, ident);
+ 
+-	if (!(r = kmem_cache_alloc(rcv_cache, GFP_KERNEL)))
++	if (!(r = kmem_cache_alloc(rcv_cache, GFP_KERNEL))) {
++		ret = -ENOMEM;
+ 		goto out;
++	}
+ 
+ 	spin_lock(&amp;rcv_lists_lock);
+ 
+ 	if (!(d = find_dev_rcv_lists(dev))) {
+-		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
++		    dev-&gt;name, can_id, mask);
+ 		kmem_cache_free(rcv_cache, r);
++		ret = -ENODEV;
+ 		goto out_unlock;
+ 	}
+ 
+@@ -546,7 +550,7 @@
+  out_unlock:
+ 	spin_unlock(&amp;rcv_lists_lock);
+  out:
+-	return;
++	return ret;
+ }
+ 
+ static void can_rcv_lists_delete(struct rcu_head *rp)
+@@ -572,13 +576,14 @@
+ 	}
+ }
+ 
+-void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		       void (*func)(struct sk_buff *, void *), void *data)
++int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++		      void (*func)(struct sk_buff *, void *), void *data)
+ {
+ 	struct receiver *r;
+ 	struct hlist_head *rl;
+ 	struct hlist_node *next;
+ 	struct dev_rcv_lists *d;
++	int ret = 0;
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+ 	    dev, can_id, mask, func, data);
+@@ -588,8 +593,9 @@
+ 	spin_lock(&amp;rcv_lists_lock);
+ 
+ 	if (!(d = find_dev_rcv_lists(dev))) {
+-		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
++		    dev-&gt;name, can_id, mask);
++		ret = -ENODEV;
+ 		goto out;
+ 	}
+ 
+@@ -612,8 +618,9 @@
+ 	 */
+ 
+ 	if (!next) {
+-		printk(KERN_ERR &quot;CAN: receive list entry not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		DBG(&quot;receive list entry not found for &quot;
++		    &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
++		ret = -EINVAL;
+ 		r = NULL;
+ 		goto out;
+ 	}
+@@ -630,6 +637,8 @@
+ 	/* schedule the receiver item for deletion */
+ 	if (r)
+ 		call_rcu(&amp;r-&gt;rcu, can_rx_delete);
++
++	return ret;
+ }
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000090.html">r107 - trunk/kernel/2.6/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#91">[ date ]</a>
+              <a href="thread.html#91">[ thread ]</a>
+              <a href="subject.html#91">[ subject ]</a>
+              <a href="author.html#91">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

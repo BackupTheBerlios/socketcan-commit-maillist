@@ -1,0 +1,1465 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r650 - in branches/cannetdriver26: . drivers/net/can	drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r650%20-%20in%20branches/cannetdriver26%3A%20.%20drivers/net/can%0A%09drivers/net/can/sja1000&In-Reply-To=%3C200801091133.m09BXU8N024639%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000631.html">
+   <LINK REL="Next"  HREF="000633.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r650 - in branches/cannetdriver26: . drivers/net/can	drivers/net/can/sja1000</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r650%20-%20in%20branches/cannetdriver26%3A%20.%20drivers/net/can%0A%09drivers/net/can/sja1000&In-Reply-To=%3C200801091133.m09BXU8N024639%40sheep.berlios.de%3E"
+       TITLE="r650 - in branches/cannetdriver26: . drivers/net/can	drivers/net/can/sja1000">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:33:30 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000631.html">r649 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000633.html">r651 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#632">[ date ]</a>
+              <a href="thread.html#632">[ thread ]</a>
+              <a href="subject.html#632">[ subject ]</a>
+              <a href="author.html#632">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:33:22 +0100 (Wed, 09 Jan 2008)
+New Revision: 650
+
+Added:
+   branches/cannetdriver26/drivers/net/can/sja1000/
+   branches/cannetdriver26/drivers/net/can/sja1000/Makefile
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h
+Modified:
+   branches/cannetdriver26/Makefile
+   branches/cannetdriver26/drivers/net/can/Kconfig
+   branches/cannetdriver26/drivers/net/can/Makefile
+Log:
+Add new SJA1000 using the CAN device interface
+
+Modified: branches/cannetdriver26/Makefile
+===================================================================
+--- branches/cannetdriver26/Makefile	2008-01-09 11:31:04 UTC (rev 649)
++++ branches/cannetdriver26/Makefile	2008-01-09 11:33:22 UTC (rev 650)
+@@ -5,6 +5,7 @@
+ TOPDIR    := $(PWD)
+ 
+ export CONFIG_CAN_VCAN=m
++export CONFIG_CAN_SJA1000=m
+ export CONFIG_CAN_SJA1000_OLD=m
+ export CONFIG_CAN_I82527_OLD=m
+ 
+
+Modified: branches/cannetdriver26/drivers/net/can/Kconfig
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/Kconfig	2008-01-09 11:31:04 UTC (rev 649)
++++ branches/cannetdriver26/drivers/net/can/Kconfig	2008-01-09 11:33:22 UTC (rev 650)
+@@ -34,6 +34,18 @@
+ 	  a problem with CAN support and want to see more of what is going
+ 	  on.
+ 
++config CAN_SJA1000
++       	tristate &quot;Philips SJA1000&quot;
++	---help---
++	  The SJA1000 is one of the top CAN controllers out there. As it
++	  has a multiplexed interface it fits directly to 8051
++	  microcontrollers or into the PC I/O port space. The SJA1000
++	  is a full CAN controller, with shadow registers for RX and TX.
++	  It can send and receive any kinds of CAN frames (SFF/EFF/RTR)
++	  with a single (simple) filter setup.
++
++	  This driver will use the new device interface.
++
+ config CAN_SJA1000_OLD
+ 	depends on CAN
+ 	tristate &quot;Philips SJA1000 (old)&quot;
+
+Modified: branches/cannetdriver26/drivers/net/can/Makefile
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/Makefile	2008-01-09 11:31:04 UTC (rev 649)
++++ branches/cannetdriver26/drivers/net/can/Makefile	2008-01-09 11:33:22 UTC (rev 650)
+@@ -12,6 +12,7 @@
+ export CONFIG_CAN_VCAN=m
+ export CONFIG_CAN_SJA1000_OLD=m
+ export CONFIG_CAN_I82527_OLD=m
++export CONFIG_CAN_SJA1000=m
+ 
+ modules modules_install clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $@ TOPDIR=$(TOPDIR)
+@@ -24,6 +25,7 @@
+ obj-$(CONFIG_CAN_SLCAN)		+= slcan.o
+ obj-$(CONFIG_CAN_SJA1000_OLD)	+= old/sja1000/
+ obj-$(CONFIG_CAN_I82527_OLD)	+= old/i82527/
++obj-$(CONFIG_CAN_SJA1000)	+= sja1000/
+ obj-$(CONFIG_CAN_MSCAN)		+= mscan/
+ obj-$(CONFIG_CAN_CCAN)		+= ccan/
+ 
+
+Added: branches/cannetdriver26/drivers/net/can/sja1000/Makefile
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/Makefile	2008-01-09 11:31:04 UTC (rev 649)
++++ branches/cannetdriver26/drivers/net/can/sja1000/Makefile	2008-01-09 11:33:22 UTC (rev 650)
+@@ -0,0 +1,60 @@
++#
++#  $Id: Makefile 443 2007-07-25 11:41:27Z hartkopp $
++#
++#  Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++#  All rights reserved.
++#
++#  Redistribution and use in source and binary forms, with or without
++#  modification, are permitted provided that the following conditions
++#  are met:
++#  1. Redistributions of source code must retain the above copyright
++#     notice, this list of conditions, the following disclaimer and
++#     the referenced file 'COPYING'.
++#  2. Redistributions in binary form must reproduce the above copyright
++#     notice, this list of conditions and the following disclaimer in the
++#     documentation and/or other materials provided with the distribution.
++#  3. Neither the name of Volkswagen nor the names of its contributors
++#     may be used to endorse or promote products derived from this software
++#     without specific prior written permission.
++#
++#  Alternatively, provided that this notice is retained in full, this
++#  software may be distributed under the terms of the GNU General
++#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++#  file from the main directory of the linux kernel source.
++#
++#  The provided data structures and external interfaces from this code
++#  are not restricted to be used by modules with a GPL compatible license.
++#
++#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++#  DAMAGE.
++#
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++
++
++ifeq ($(KERNELRELEASE),)
++
++KERNELDIR := /lib/modules/$(shell uname -r)/build
++PWD       := $(shell pwd)
++TOPDIR    := $(PWD)/../../../..
++
++modules modules_install clean:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) $@ TOPDIR=$(TOPDIR)
++
++else
++
++-include $(TOPDIR)/Makefile.common
++#EXTRA_CFLAGS += -I$(TOPDIR)/drivers/net/can/hal
++
++obj-$(CONFIG_CAN_SJA1000) += sja1000.o
++
++endif
+
+Added: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:31:04 UTC (rev 649)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:33:22 UTC (rev 650)
+@@ -0,0 +1,1053 @@
++/*
++ * sja1000.c -  Philips SJA1000 network device driver
++ *
++ * Copyright (c) 2003 Matthias Brukner, Trajet Gmbh, Rebenring 33,
++ * 38106 Braunschweig, GERMANY
++ *
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
++ * GPL apply INSTEAD OF those given above.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;linux/module.h&gt;
++#include &lt;linux/init.h&gt;
++#include &lt;linux/kernel.h&gt;
++#include &lt;linux/version.h&gt;
++#include &lt;linux/sched.h&gt;
++#include &lt;linux/types.h&gt;
++#include &lt;linux/fcntl.h&gt;
++#include &lt;linux/interrupt.h&gt;
++#include &lt;linux/ptrace.h&gt;
++#include &lt;linux/string.h&gt;
++#include &lt;linux/errno.h&gt;
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/if_arp.h&gt;
++#include &lt;linux/if_ether.h&gt;
++#include &lt;linux/skbuff.h&gt;
++#include &lt;linux/delay.h&gt;
++
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/dev.h&gt;
++#include &lt;linux/can/error.h&gt;
++#include &lt;linux/can/dev.h&gt;
++#include &lt;linux/can/ioctl.h&gt;	/* for struct can_device_stats */
++
++#include &quot;sja1000.h&quot;
++
++#include &lt;linux/can/version.h&gt;	/* for RCSID. Removed by mkpatch script */
++RCSID(&quot;$Id: sja1000.c 531 2007-10-19 07:38:29Z hartkopp $&quot;);
++
++MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
++MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
++MODULE_DESCRIPTION(&quot;Socketcan &quot; CHIP_NAME &quot; network device driver&quot;);
++
++#define CONFIG_CAN_DEBUG_DEVICES
++#ifdef CONFIG_CAN_DEBUG_DEVICES
++#define DBG(args...)   ((priv-&gt;debug &gt; 0) ? printk(args) : 0)
++/* logging in interrupt context! */
++#define iDBG(args...)  ((priv-&gt;debug &gt; 1) ? printk(args) : 0)
++#define iiDBG(args...) ((priv-&gt;debug &gt; 2) ? printk(args) : 0)
++#else
++#define DBG(args...)
++#define iDBG(args...)
++#define iiDBG(args...)
++#endif
++
++/* driver and version information */
++static const char *drv_name = &quot;SJA1000DEV&quot;;
++static const char *drv_version = &quot;0.2.0&quot;;
++static const char *drv_reldate = &quot;2007-10-25&quot;;
++
++#ifdef CONFIG_CAN_DEBUG_DEVICES
++static const char *ecc_errors[] = {
++	NULL,
++	NULL,
++	&quot;ID.28 to ID.28&quot;,
++	&quot;start of frame&quot;,
++	&quot;bit SRTR&quot;,
++	&quot;bit IDE&quot;,
++	&quot;ID.20 to ID.18&quot;,
++	&quot;ID.17 to ID.13&quot;,
++	&quot;CRC sequence&quot;,
++	&quot;reserved bit 0&quot;,
++	&quot;data field&quot;,
++	&quot;data length code&quot;,
++	&quot;bit RTR&quot;,
++	&quot;reserved bit 1&quot;,
++	&quot;ID.4 to ID.0&quot;,
++	&quot;ID.12 to ID.5&quot;,
++	NULL,
++	&quot;active error flag&quot;,
++	&quot;intermission&quot;,
++	&quot;tolerate dominant bits&quot;,
++	NULL,
++	NULL,
++	&quot;passive error flag&quot;,
++	&quot;error delimiter&quot;,
++	&quot;CRC delimiter&quot;,
++	&quot;acknowledge slot&quot;,
++	&quot;end of frame&quot;,
++	&quot;acknowledge delimiter&quot;,
++	&quot;overload flag&quot;,
++	NULL,
++	NULL,
++	NULL
++};
++
++static const char *ecc_types[] = {
++	&quot;bit error&quot;,
++	&quot;form error&quot;,
++	&quot;stuff error&quot;,
++	&quot;other type of error&quot;
++};
++#endif
++
++static int debug = 0;
++static int echo = 1;
++static int restart_ms = 0;
++
++module_param(debug, int, S_IRUGO | S_IWUSR);
++module_param(echo, int, S_IRUGO);
++module_param(restart_ms, int, S_IRUGO);
++
++MODULE_PARM_DESC(debug, &quot;Set debug mask (default: 0)&quot;);
++MODULE_PARM_DESC(echo, &quot;Echo sent frames. (default 1)&quot;);
++MODULE_PARM_DESC(restart_ms, &quot;Restart time after bus-off in ms(default 0)&quot;);
++
++/*
++ * CAN network devices *should* support a local echo functionality
++ * (see Documentation/networking/can.txt). To test the handling of CAN
++ * interfaces that do not support the local echo both driver types are
++ * implemented inside this sja1000 driver. In the case that the driver does
++ * not support the echo the IFF_ECHO remains clear in dev-&gt;flags.
++ * This causes the PF_CAN core to perform the echo as a fallback solution.
++ */
++
++/* function declarations */
++
++static void can_restart_dev(unsigned long data);
++static void chipset_init(struct net_device *dev, int wake);
++static void chipset_init_trx(struct net_device *dev);
++int set_reset_mode(struct net_device *dev);
++
++static int sja1000_probe_chip(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	if (dev-&gt;base_addr &amp;&amp; (priv-&gt;read_reg(dev, 0) == 0xFF)) {
++		printk(KERN_INFO &quot;%s: probing @0x%lX failed\n&quot;,
++		       drv_name, dev-&gt;base_addr);
++		return 0;
++	}
++	return 1;
++}
++
++static void can_restart_now(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++	struct sk_buff *skb;
++	struct can_frame *cf;
++
++	/* Cancel restart in progress */
++	if (priv-&gt;timer.expires) {
++		del_timer(&amp;priv-&gt;timer);
++		/* mark inactive timer */
++		priv-&gt;timer.expires = 0;
++	}
++
++	/* count number of restarts */
++	priv-&gt;can.can_stats.restarts++;
++	chipset_init(dev, 1);
++
++	/* send restart message upstream */
++	skb = dev_alloc_skb(sizeof(struct can_frame));
++	if (skb == NULL)
++		return;
++	skb-&gt;dev = dev;
++	skb-&gt;protocol = htons(ETH_P_CAN);
++	cf = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
++	memset(cf, 0, sizeof(struct can_frame));
++	cf-&gt;can_id = CAN_ERR_FLAG | CAN_ERR_RESTARTED;
++	cf-&gt;can_dlc = CAN_ERR_DLC;
++
++	netif_rx(skb);
++
++	dev-&gt;last_rx = jiffies;
++	stats-&gt;rx_packets++;
++	stats-&gt;rx_bytes += cf-&gt;can_dlc;
++}
++
++int set_reset_mode(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	unsigned char status = priv-&gt;read_reg(dev, REG_MOD);
++	int i;
++
++	priv-&gt;can.can_stats.bus_error_at_init = priv-&gt;can.can_stats.bus_error;
++
++	/* disable interrupts */
++	priv-&gt;write_reg(dev, REG_IER, IRQ_OFF);
++
++	for (i = 0; i &lt; 100; i++) {
++		/* check reset bit */
++		if (status &amp; MOD_RM) {
++			if (i &gt; 1) {
++				iDBG(KERN_INFO &quot;%s: %s looped %d times\n&quot;,
++				     dev-&gt;name, __FUNCTION__, i);
++			}
++			priv-&gt;can.state = CAN_STATE_STOPPED;
++			return 0;
++		}
++
++		priv-&gt;write_reg(dev, REG_MOD, MOD_RM);	/* reset chip */
++		status = priv-&gt;read_reg(dev, REG_MOD);
++		udelay(10);
++	}
++
++	printk(KERN_ERR &quot;%s: setting sja1000 into reset mode failed!\n&quot;,
++	       dev-&gt;name);
++	return 1;
++
++}
++
++static int set_normal_mode(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	unsigned char status = priv-&gt;read_reg(dev, REG_MOD);
++	int i;
++
++	for (i = 0; i &lt; 100; i++) {
++		/* check reset bit */
++		if ((status &amp; MOD_RM) == 0) {
++#ifdef CONFIG_CAN_DEBUG_DEVICES
++			if (i &gt; 1) {
++				struct sja1000_priv *priv = netdev_priv(dev);
++				iDBG(KERN_INFO &quot;%s: %s looped %d times\n&quot;,
++				     dev-&gt;name, __FUNCTION__, i);
++			}
++#endif
++			priv-&gt;can.state = CAN_STATE_ACTIVE;
++			/* enable all interrupts */
++			priv-&gt;write_reg(dev, REG_IER, IRQ_ALL);
++
++			return 0;
++		}
++
++		/* set chip to normal mode */
++		priv-&gt;write_reg(dev, REG_MOD, 0x00);
++		status = priv-&gt;read_reg(dev, REG_MOD);
++		udelay(10);
++	}
++
++	printk(KERN_ERR &quot;%s: setting sja1000 into normal mode failed!\n&quot;,
++	       dev-&gt;name);
++	return 1;
++
++}
++
++static int sja1000_set_mode(struct net_device *dev, can_mode_t mode)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	switch (mode) {
++	case CAN_MODE_START:
++		DBG(&quot;%s: CAN_MODE_START requested\n&quot;, __FUNCTION__);
++		if (!priv-&gt;open_time)
++			return -EINVAL;
++		set_reset_mode(dev);
++		can_restart_now(dev);
++		break;
++
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
++
++static int sja1000_get_state(struct net_device *dev, can_state_t *state)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	u8 status;
++
++	/* FIXME: inspecting the status register to get the current state
++	 * is not really necessary, because state changes are handled by
++	 * in the ISR and the variable priv-&gt;can.state gets updated. The
++	 * CAN devicde interface needs fixing!
++	 */
++
++	spin_lock_irq(&amp;priv-&gt;can.irq_lock);
++
++	if (priv-&gt;can.state == CAN_STATE_STOPPED) {
++		*state =  CAN_STATE_STOPPED;
++	} else {
++		status = priv-&gt;read_reg(dev, REG_SR);
++		if (status &amp; SR_BS)
++			*state = CAN_STATE_BUS_PASSIVE;
++		else if (status &amp; SR_ES) {
++			if (priv-&gt;read_reg(dev, REG_TXERR) &gt; 127 ||
++			    priv-&gt;read_reg(dev, REG_RXERR) &gt; 127 )
++				*state = CAN_STATE_BUS_PASSIVE;
++			else
++				*state = CAN_STATE_BUS_WARNING;
++		}
++		else
++			*state = CAN_STATE_ACTIVE;
++	}
++#ifdef CONFIG_CAN_DEBUG_DEVICES
++	/* Check state */
++	if (*state != priv-&gt;can.state)
++		printk(KERN_ERR
++		       &quot;%s: Oops, state mismatch: hard %d != soft %d\n&quot;,
++		       dev-&gt;name, *state, priv-&gt;can.state);
++#endif
++	spin_unlock_irq(&amp;priv-&gt;can.irq_lock);
++	return 0;
++}
++
++static int sja1000_set_bittime(struct net_device *dev, struct can_bittime *bt)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	u8 btr0, btr1;
++	int state;
++	switch (bt-&gt;type) {
++	case CAN_BITTIME_BTR:
++		btr0 = bt-&gt;btr.btr0;
++		btr1 = bt-&gt;btr.btr1;
++		break;
++
++	case CAN_BITTIME_STD:
++		btr0 = ((bt-&gt;std.brp - 1) &amp; 0x3f) |
++		    (((bt-&gt;std.sjw - 1) &amp; 0x3) &lt;&lt; 6);
++		btr1 = ((bt-&gt;std.prop_seg +
++			 bt-&gt;std.phase_seg1 - 1) &amp; 0xf) |
++		    (((bt-&gt;std.phase_seg2 - 1) &amp; 0x7) &lt;&lt; 4) |
++		    ((bt-&gt;std.sam &amp; 1) &lt;&lt; 7);
++		break;
++
++	default:
++		return -EINVAL;
++	}
++	DBG(&quot;%s: BTR0 0x%02x BTR1 0x%02x\n&quot;, dev-&gt;name, btr0, btr1);
++
++	spin_lock_irq(&amp;priv-&gt;can.irq_lock);
++	state = priv-&gt;can.state;
++	if (state != CAN_STATE_STOPPED)
++		set_reset_mode(dev);
++	priv-&gt;write_reg(dev, REG_BTR0, btr0);
++	priv-&gt;write_reg(dev, REG_BTR1, btr1);
++	spin_unlock_irq(&amp;priv-&gt;can.irq_lock);
++
++	if (state != CAN_STATE_STOPPED)
++		can_restart_now(dev);
++
++	return 0;
++}
++
++/*
++ * initialize SJA1000 chip:
++ *   - reset chip
++ *   - set output mode
++ *   - set baudrate
++ *   - enable interrupts
++ *   - start operating mode
++ */
++static void chipset_init_regs(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	struct can_bittime bt;
++	int err;
++
++	/* set clock divider and output control register */
++	priv-&gt;write_reg(dev, REG_CDR, priv-&gt;cdr | CDR_PELICAN);
++
++	/* set acceptance filter (accept all) */
++	priv-&gt;write_reg(dev, REG_ACCC0, 0x00);
++	priv-&gt;write_reg(dev, REG_ACCC1, 0x00);
++	priv-&gt;write_reg(dev, REG_ACCC2, 0x00);
++	priv-&gt;write_reg(dev, REG_ACCC3, 0x00);
++
++	priv-&gt;write_reg(dev, REG_ACCM0, 0xFF);
++	priv-&gt;write_reg(dev, REG_ACCM1, 0xFF);
++	priv-&gt;write_reg(dev, REG_ACCM2, 0xFF);
++	priv-&gt;write_reg(dev, REG_ACCM3, 0xFF);
++
++	/* set bit timing */
++	if (priv-&gt;can.bitrate) {
++		bt.type = CAN_BITTIME_STD;
++		err = can_calc_bittime(&amp;priv-&gt;can, priv-&gt;can.bitrate, &amp;bt.std);
++		if (err)
++			dev_err(ND2D(dev), &quot;failed to calculate bit timing\n&quot;);
++		else
++			sja1000_set_bittime(dev, &amp;bt);
++	}
++	priv-&gt;write_reg(dev, REG_OCR, priv-&gt;ocr | OCR_MODE_NORMAL);
++}
++
++static void chipset_init(struct net_device *dev, int wake)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	chipset_init_trx(dev);
++
++	if ((wake) &amp;&amp; netif_queue_stopped(dev)) {
++		if (priv-&gt;echo_skb) {	/* pending echo? */
++			kfree_skb(priv-&gt;echo_skb);
++			priv-&gt;echo_skb = NULL;
++		}
++		netif_wake_queue(dev);
++	}
++}
++
++static void chipset_init_trx(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	iDBG(KERN_INFO &quot;%s: %s()\n&quot;, dev-&gt;name, __FUNCTION__);
++
++	/* set chip into reset mode */
++	if (priv-&gt;can.state != CAN_STATE_STOPPED)
++		set_reset_mode(dev);
++
++	/* Clear error counters and error code capture */
++	priv-&gt;write_reg(dev, REG_TXERR, 0x0);
++	priv-&gt;write_reg(dev, REG_RXERR, 0x0);
++	priv-&gt;read_reg(dev, REG_ECC);
++
++	/* leave reset mode */
++	set_normal_mode(dev);
++}
++
++/*
++ * transmit a CAN message
++ * message layout in the sk_buff should be like this:
++ * xx xx xx xx	 ff	 ll   00 11 22 33 44 55 66 77
++ * [  can-id ] [flags] [len] [can data (up to 8 bytes]
++ */
++static int sja1000_start_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++	struct can_frame *cf = (struct can_frame *)skb-&gt;data;
++	uint8_t fi;
++	uint8_t dlc;
++	canid_t id;
++	uint8_t dreg;
++	int loop;
++	int i;
++
++	netif_stop_queue(dev);
++
++	fi = dlc = cf-&gt;can_dlc;
++	id = cf-&gt;can_id;
++
++	if (id &amp; CAN_RTR_FLAG)
++		fi |= FI_RTR;
++
++	if (id &amp; CAN_EFF_FLAG) {
++		fi |= FI_FF;
++		dreg = EFF_BUF;
++		priv-&gt;write_reg(dev, REG_FI, fi);
++		priv-&gt;write_reg(dev, REG_ID1, (id &amp; 0x1fe00000) &gt;&gt; (5 + 16));
++		priv-&gt;write_reg(dev, REG_ID2, (id &amp; 0x001fe000) &gt;&gt; (5 + 8));
++		priv-&gt;write_reg(dev, REG_ID3, (id &amp; 0x00001fe0) &gt;&gt; 5);
++		priv-&gt;write_reg(dev, REG_ID4, (id &amp; 0x0000001f) &lt;&lt; 3);
++	} else {
++		dreg = SFF_BUF;
++		priv-&gt;write_reg(dev, REG_FI, fi);
++		priv-&gt;write_reg(dev, REG_ID1, (id &amp; 0x000007f8) &gt;&gt; 3);
++		priv-&gt;write_reg(dev, REG_ID2, (id &amp; 0x00000007) &lt;&lt; 5);
++	}
++
++	for (i = 0; i &lt; dlc; i++) {
++		priv-&gt;write_reg(dev, dreg++, cf-&gt;data[i]);
++	}
++
++	priv-&gt;write_reg(dev, REG_CMR, CMD_TR);
++
++	stats-&gt;tx_bytes += dlc;
++
++	dev-&gt;trans_start = jiffies;
++
++	/* set flag whether this packet has to be looped back */
++	loop = skb-&gt;pkt_type == PACKET_LOOPBACK;
++
++	if (!echo || !loop) {
++		kfree_skb(skb);
++		return 0;
++	}
++
++	if (!priv-&gt;echo_skb) {
++		struct sock *srcsk = skb-&gt;sk;
++
++		if (atomic_read(&amp;skb-&gt;users) != 1) {
++			struct sk_buff *old_skb = skb;
++
++			skb = skb_clone(old_skb, GFP_ATOMIC);
++			DBG(KERN_INFO &quot;%s: %s: freeing old skbuff %p, &quot;
++			    &quot;using new skbuff %p\n&quot;,
++			    dev-&gt;name, __FUNCTION__, old_skb, skb);
++			kfree_skb(old_skb);
++			if (!skb) {
++				return 0;
++			}
++		} else
++			skb_orphan(skb);
++
++		skb-&gt;sk = srcsk;
++
++		/* make settings for echo to reduce code in irq context */
++		skb-&gt;protocol = htons(ETH_P_CAN);
++		skb-&gt;pkt_type = PACKET_BROADCAST;
++		skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++		skb-&gt;dev = dev;
++
++		/* save this skb for tx interrupt echo handling */
++		priv-&gt;echo_skb = skb;
++
++	} else {
++		/* locking problem with netif_stop_queue() ?? */
++		printk(KERN_ERR &quot;%s: %s: occupied echo_skb!\n&quot;,
++		       dev-&gt;name, __FUNCTION__);
++		kfree_skb(skb);
++	}
++
++	return 0;
++}
++
++static void sja1000_tx_timeout(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++
++	stats-&gt;tx_errors++;
++
++	/* do not conflict with e.g. bus error handling */
++	if (!(priv-&gt;timer.expires)) {	/* no restart on the run */
++		chipset_init_trx(dev);	/* no tx queue wakeup */
++		priv-&gt;can.can_stats.restarts++;
++		if (priv-&gt;echo_skb) {	/* pending echo? */
++			kfree_skb(priv-&gt;echo_skb);
++			priv-&gt;echo_skb = NULL;
++		}
++		netif_wake_queue(dev);	/* wakeup here */
++	} else
++		DBG(KERN_INFO &quot;%s: %s: can_restart_dev already active.\n&quot;,
++		    dev-&gt;name, __FUNCTION__);
++
++}
++
++static void can_restart_on(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	if (!(priv-&gt;timer.expires)) {	/* no restart on the run */
++
++		set_reset_mode(dev);
++
++		priv-&gt;timer.function = can_restart_dev;
++		priv-&gt;timer.data = (unsigned long)dev;
++
++		/* restart chip on persistent error in &lt;xxx&gt; ms */
++		priv-&gt;timer.expires =
++			jiffies + (priv-&gt;can.restart_ms * HZ) / 1000;
++		add_timer(&amp;priv-&gt;timer);
++
++		iDBG(KERN_INFO &quot;%s: %s start (%ld)\n&quot;,
++		     dev-&gt;name, __FUNCTION__, jiffies);
++	} else
++		iDBG(KERN_INFO &quot;%s: %s already (%ld)\n&quot;,
++		     dev-&gt;name, __FUNCTION__, jiffies);
++}
++
++static void can_restart_dev(unsigned long data)
++{
++	struct net_device *dev = (struct net_device *)data;
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	DBG(KERN_INFO &quot;%s: can_restart_dev (%ld)\n&quot;, dev-&gt;name, jiffies);
++
++	/* mark inactive timer */
++	priv-&gt;timer.expires = 0;
++
++	can_restart_now(dev);
++}
++
++static void sja1000_rx(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++	struct can_frame *cf;
++	struct sk_buff *skb;
++	uint8_t fi;
++	uint8_t dreg;
++	canid_t id;
++	uint8_t dlc;
++	int i;
++
++	skb = dev_alloc_skb(sizeof(struct can_frame));
++	if (skb == NULL)
++		return;
++	skb-&gt;dev = dev;
++	skb-&gt;protocol = htons(ETH_P_CAN);
++
++	fi = priv-&gt;read_reg(dev, REG_FI);
++	dlc = fi &amp; 0x0F;
++
++	if (fi &amp; FI_FF) {
++		/* extended frame format (EFF) */
++		dreg = EFF_BUF;
++		id = (priv-&gt;read_reg(dev, REG_ID1) &lt;&lt; (5 + 16))
++		    | (priv-&gt;read_reg(dev, REG_ID2) &lt;&lt; (5 + 8))
++		    | (priv-&gt;read_reg(dev, REG_ID3) &lt;&lt; 5)
++		    | (priv-&gt;read_reg(dev, REG_ID4) &gt;&gt; 3);
++		id |= CAN_EFF_FLAG;
++	} else {
++		/* standard frame format (SFF) */
++		dreg = SFF_BUF;
++		id = (priv-&gt;read_reg(dev, REG_ID1) &lt;&lt; 3)
++		    | (priv-&gt;read_reg(dev, REG_ID2) &gt;&gt; 5);
++	}
++
++	if (fi &amp; FI_RTR)
++		id |= CAN_RTR_FLAG;
++
++	cf = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
++	memset(cf, 0, sizeof(struct can_frame));
++	cf-&gt;can_id = id;
++	cf-&gt;can_dlc = dlc;
++	for (i = 0; i &lt; dlc; i++) {
++		cf-&gt;data[i] = priv-&gt;read_reg(dev, dreg++);
++	}
++	while (i &lt; 8)
++		cf-&gt;data[i++] = 0;
++
++	/* release receive buffer */
++	priv-&gt;write_reg(dev, REG_CMR, CMD_RRB);
++
++	netif_rx(skb);
++
++	dev-&gt;last_rx = jiffies;
++	stats-&gt;rx_packets++;
++	stats-&gt;rx_bytes += dlc;
++}
++
++static int sja1000_err(struct net_device *dev,
++		       uint8_t isrc, uint8_t status, int n)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++	struct can_frame *cf;
++	struct sk_buff *skb;
++	can_state_t state = priv-&gt;can.state;
++	uint8_t ecc, alc;
++	int restart = 0;
++
++	skb = dev_alloc_skb(sizeof(struct can_frame));
++	if (skb == NULL)
++		return -ENOMEM;
++	skb-&gt;dev = dev;
++	skb-&gt;protocol = htons(ETH_P_CAN);
++	cf = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
++	memset(cf, 0, sizeof(struct can_frame));
++	cf-&gt;can_id = CAN_ERR_FLAG;
++	cf-&gt;can_dlc = CAN_ERR_DLC;
++
++	if (isrc &amp; IRQ_DOI) {
++		/* data overrun interrupt */
++		iiDBG(KERN_INFO &quot;%s: data overrun isrc=0x%02X &quot;
++		      &quot;status=0x%02X\n&quot;, dev-&gt;name, isrc, status);
++		iDBG(KERN_INFO &quot;%s: DOI #%d#\n&quot;, dev-&gt;name, n);
++		cf-&gt;can_id |= CAN_ERR_CRTL;
++		cf-&gt;data[1] = CAN_ERR_CRTL_RX_OVERFLOW;
++		priv-&gt;can.can_stats.data_overrun++;
++		priv-&gt;write_reg(dev, REG_CMR, CMD_CDO);	/* clear bit */
++	}
++
++	if (isrc &amp; IRQ_EI) {
++		/* error warning interrupt */
++		iiDBG(KERN_INFO &quot;%s: error warning isrc=0x%02X &quot;
++		      &quot;status=0x%02X\n&quot;, dev-&gt;name, isrc, status);
++		iDBG(KERN_INFO &quot;%s: EI #%d#\n&quot;, dev-&gt;name, n);
++		priv-&gt;can.can_stats.error_warning++;
++
++		if (status &amp; SR_BS) {
++			state = CAN_STATE_BUS_OFF;
++			cf-&gt;can_id |= CAN_ERR_BUSOFF;
++			iDBG(KERN_INFO &quot;%s: BUS OFF\n&quot;, dev-&gt;name);
++			restart++;
++		} else if (status &amp; SR_ES) {
++			state = CAN_STATE_BUS_WARNING;
++			cf-&gt;can_id |= CAN_ERR_BUSOFF;
++			iDBG(KERN_INFO &quot;%s: error\n&quot;, dev-&gt;name);
++		} else
++			state = CAN_STATE_ACTIVE;
++	}
++	if (isrc &amp; IRQ_BEI) {
++		/* bus error interrupt */
++		iiDBG(KERN_INFO &quot;%s: bus error isrc=0x%02X &quot;
++		      &quot;status=0x%02X\n&quot;, dev-&gt;name, isrc, status);
++		iDBG(KERN_INFO &quot;%s: BEI #%d# [%d]\n&quot;, dev-&gt;name, n,
++		     priv-&gt;can.can_stats.bus_error -
++		     priv-&gt;can.can_stats.bus_error_at_init);
++		priv-&gt;can.can_stats.bus_error++;
++		ecc = priv-&gt;read_reg(dev, REG_ECC);
++		iDBG(KERN_INFO &quot;%s: ECC = 0x%02X (%s, %s, %s)\n&quot;,
++		     dev-&gt;name, ecc,
++		     (ecc &amp; ECC_DIR) ? &quot;RX&quot; : &quot;TX&quot;,
++		     ecc_types[ecc &gt;&gt; ECC_ERR],
++		     ecc_errors[ecc &amp; ECC_SEG]);
++
++		cf-&gt;can_id |= CAN_ERR_PROT | CAN_ERR_BUSERROR;
++
++		switch (ecc &amp; ECC_MASK) {
++		case ECC_BIT:
++			cf-&gt;data[2] |= CAN_ERR_PROT_BIT;
++			break;
++		case ECC_FORM:
++			cf-&gt;data[2] |= CAN_ERR_PROT_FORM;
++			break;
++		case ECC_STUFF:
++			cf-&gt;data[2] |= CAN_ERR_PROT_STUFF;
++			break;
++		default:
++			cf-&gt;data[2] |= CAN_ERR_PROT_UNSPEC;
++			cf-&gt;data[3] = ecc &amp; ECC_SEG;
++			break;
++		}
++		/* Error occured during transmission? */
++		if ((ecc &amp; ECC_DIR) == 0)
++			cf-&gt;data[2] |= CAN_ERR_PROT_TX;
++
++		/* when the bus errors flood the system, */
++		/* restart the controller                */
++		if ((priv-&gt;can.can_stats.bus_error_at_init +
++		     MAX_BUS_ERRORS &lt; priv-&gt;can.can_stats.bus_error)) {
++			iDBG(KERN_INFO &quot;%s: heavy bus errors\n&quot;, dev-&gt;name);
++			restart++;
++		}
++#if 1
++		/* don't know, if this is a good idea, */
++		/* but it works fine ...               */
++		if (priv-&gt;read_reg(dev, REG_RXERR) &gt; 128) {
++			iDBG(KERN_INFO &quot;%s: RX_ERR &gt; 128\n&quot;, dev-&gt;name);
++			state = CAN_STATE_BUS_PASSIVE;
++			restart++;
++		}
++#endif
++	}
++	if (isrc &amp; IRQ_EPI) {
++		/* error passive interrupt */
++		iiDBG(KERN_INFO &quot;%s: error passive isrc=0x%02X&quot;
++		      &quot; status=0x%02X\n&quot;, dev-&gt;name, isrc, status);
++		iDBG(KERN_INFO &quot;%s: EPI #%d#\n&quot;, dev-&gt;name, n);
++		priv-&gt;can.can_stats.error_passive++;
++		if (status &amp; SR_ES) {
++			iDBG(KERN_INFO &quot;%s: ERROR PASSIVE\n&quot;, dev-&gt;name);
++			state = CAN_STATE_BUS_PASSIVE;
++			restart++;
++		} else {
++			iDBG(KERN_INFO &quot;%s: ERROR ACTIVE\n&quot;, dev-&gt;name);
++			state = CAN_STATE_BUS_WARNING;
++		}
++	}
++	if (isrc &amp; IRQ_ALI) {
++		/* arbitration lost interrupt */
++		iiDBG(KERN_INFO &quot;%s: error arbitration lost &quot;
++		      &quot;isrc=0x%02X status=0x%02X\n&quot;,
++		      dev-&gt;name, isrc, status);
++		iDBG(KERN_INFO &quot;%s: ALI #%d#\n&quot;, dev-&gt;name, n);
++		alc = priv-&gt;read_reg(dev, REG_ALC);
++		iDBG(KERN_INFO &quot;%s: ALC = 0x%02X\n&quot;, dev-&gt;name, alc);
++		priv-&gt;can.can_stats.arbitration_lost++;
++		cf-&gt;can_id |= CAN_ERR_LOSTARB;
++		cf-&gt;data[0] = alc &amp; 0x1f;
++	}
++
++	if (state != priv-&gt;can.state &amp;&amp; (state == CAN_STATE_BUS_WARNING ||
++					 state == CAN_STATE_BUS_PASSIVE)) {
++		uint8_t rxerr = priv-&gt;read_reg(dev, REG_RXERR);
++		uint8_t txerr = priv-&gt;read_reg(dev, REG_TXERR);
++		cf-&gt;can_id |= CAN_ERR_PROT;
++		if (state == CAN_STATE_BUS_WARNING)
++			cf-&gt;data[1] = (txerr &gt; rxerr) ?
++				CAN_ERR_CRTL_TX_WARNING :
++				CAN_ERR_CRTL_RX_WARNING;
++		else
++			cf-&gt;data[1] = (txerr &gt; rxerr) ?
++				CAN_ERR_CRTL_TX_PASSIVE :
++				CAN_ERR_CRTL_RX_PASSIVE;
++	}
++
++	priv-&gt;can.state = state;
++
++	netif_rx(skb);
++
++	dev-&gt;last_rx = jiffies;
++	stats-&gt;rx_packets++;
++	stats-&gt;rx_bytes += cf-&gt;can_dlc;
++
++	if (priv-&gt;can.restart_ms &gt; 0 &amp;&amp; restart) {
++		iDBG(KERN_INFO &quot;%s: restarting device\n&quot;, dev-&gt;name);
++		can_restart_on(dev);
++		return restart;
++	}
++
++	return 0;
++}
++
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,19)
++static irqreturn_t sja1000_interrupt(int irq, void *dev_id,
++				     struct pt_regs *regs)
++#else
++static irqreturn_t sja1000_interrupt(int irq, void *dev_id)
++#endif
++{
++	struct net_device *dev = (struct net_device *)dev_id;
++	struct sja1000_priv *priv = netdev_priv(dev);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++	uint8_t isrc, status;
++	int n = 0;
++
++	if (priv-&gt;pre_irq)
++		priv-&gt;pre_irq(dev);
++
++	iiDBG(KERN_INFO &quot;%s: interrupt\n&quot;, dev-&gt;name);
++
++	if (priv-&gt;can.state == CAN_STATE_STOPPED) {
++		iiDBG(KERN_ERR &quot;%s: %s: controller is in reset mode! &quot;
++		      &quot;MOD=0x%02X IER=0x%02X IR=0x%02X SR=0x%02X!\n&quot;,
++		      dev-&gt;name, __FUNCTION__, priv-&gt;read_reg(dev, REG_MOD),
++		      priv-&gt;read_reg(dev, REG_IER), priv-&gt;read_reg(dev, REG_IR),
++		      priv-&gt;read_reg(dev, REG_SR));
++		goto out;
++	}
++
++	while ((isrc = priv-&gt;read_reg(dev, REG_IR)) &amp;&amp; (n &lt; 20)) {
++		n++;
++		status = priv-&gt;read_reg(dev, REG_SR);
++
++		if (isrc &amp; IRQ_WUI) {
++			/* wake-up interrupt */
++			priv-&gt;can.can_stats.wakeup++;
++		}
++		if (isrc &amp; IRQ_TI) {
++			/* transmission complete interrupt */
++			stats-&gt;tx_packets++;
++
++			if (echo &amp;&amp; priv-&gt;echo_skb) {
++				netif_rx(priv-&gt;echo_skb);
++				priv-&gt;echo_skb = NULL;
++			}
++
++			netif_wake_queue(dev);
++		}
++		if (isrc &amp; IRQ_RI) {
++			/* receive interrupt */
++
++			while (status &amp; SR_RBS) {
++				sja1000_rx(dev);
++				status = priv-&gt;read_reg(dev, REG_SR);
++			}
++		}
++
++		if (isrc &amp; (IRQ_DOI | IRQ_EI | IRQ_BEI | IRQ_EPI | IRQ_ALI)) {
++			/* error interrupt */
++			if (sja1000_err(dev, isrc, status, n))
++  				break;
++		}
++	}
++	if (n &gt; 1) {
++		iDBG(KERN_INFO &quot;%s: handled %d IRQs\n&quot;, dev-&gt;name, n);
++	}
++
++out:
++	if (priv-&gt;post_irq)
++		priv-&gt;post_irq(dev);
++
++	return n == 0 ? IRQ_NONE : IRQ_HANDLED;
++}
++
++static int sja1000_open(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	int err;
++
++	/* set chip into reset mode */
++	set_reset_mode(dev);
++
++	/* register interrupt handler */
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,18)
++	err = request_irq(dev-&gt;irq, &amp;sja1000_interrupt, SA_SHIRQ,
++			  dev-&gt;name, (void *)dev);
++#else
++	err = request_irq(dev-&gt;irq, &amp;sja1000_interrupt, IRQF_SHARED,
++			  dev-&gt;name, (void *)dev);
++#endif
++	if (err)
++		return -EAGAIN;
++
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
++	/* clear statistics */
++	memset(&amp;priv-&gt;can.net_stats, 0, sizeof(priv-&gt;can.net_stats));
++#endif
++
++	/* init chip */
++	chipset_init(dev, 0);
++	priv-&gt;open_time = jiffies;
++
++	netif_start_queue(dev);
++
++	return 0;
++}
++
++static int sja1000_close(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	/* set chip into reset mode */
++	set_reset_mode(dev);
++
++	priv-&gt;open_time = 0;
++
++	if (priv-&gt;timer.expires) {
++		del_timer(&amp;priv-&gt;timer);
++		priv-&gt;timer.expires = 0;
++	}
++
++	free_irq(dev-&gt;irq, (void *)dev);
++
++	netif_stop_queue(dev);
++
++	return 0;
++}
++
++struct net_device *alloc_sja1000dev(int sizeof_priv)
++{
++	struct net_device *dev;
++	struct sja1000_priv *priv;
++
++	dev = alloc_candev(sizeof(struct sja1000_priv) + sizeof_priv);
++	if (!dev)
++		return NULL;
++
++	priv = netdev_priv(dev);
++	priv-&gt;dev = dev;
++
++	if (sizeof_priv)
++		priv-&gt;priv = (void *)priv + sizeof(struct sja1000_priv);
++
++	priv-&gt;can.bitrate = 500000;
++	priv-&gt;can.restart_ms = restart_ms;
++	priv-&gt;debug = debug;
++
++	return dev;
++}
++
++EXPORT_SYMBOL_GPL(alloc_sja1000dev);
++
++void free_sja1000dev(struct net_device *dev)
++{
++	free_candev(dev);
++}
++EXPORT_SYMBOL(free_sja1000dev);
++
++int register_sja1000dev(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++	int err;
++
++	if (!sja1000_probe_chip(dev))
++		return -ENODEV;
++
++	init_timer(&amp;priv-&gt;timer);
++	priv-&gt;timer.expires = 0;
++
++	dev-&gt;open = sja1000_open;
++	dev-&gt;stop = sja1000_close;
++	dev-&gt;hard_start_xmit = sja1000_start_xmit;
++	dev-&gt;tx_timeout = sja1000_tx_timeout;
++	dev-&gt;watchdog_timeo = TX_TIMEOUT;
++
++	priv-&gt;can.do_set_bittime = sja1000_set_bittime;
++	priv-&gt;can.do_get_state = sja1000_get_state;
++	priv-&gt;can.do_set_mode = sja1000_set_mode;
++	priv-&gt;dev = dev;
++
++	err = register_netdev(dev);
++	if (err) {
++		printk(KERN_INFO
++		       &quot;%s: registering netdev failed\n&quot;, CHIP_NAME);
++		free_netdev(dev);
++		return err;
++	}
++
++	set_reset_mode(dev);
++	chipset_init_regs(dev);
++	return 0;
++}
++EXPORT_SYMBOL(register_sja1000dev);
++
++void unregister_sja1000dev(struct net_device *dev)
++{
++	set_reset_mode(dev);
++	unregister_netdev(dev);
++}
++EXPORT_SYMBOL(unregister_sja1000dev);
++
++static __init int sja1000_init(void)
++{
++	printk(KERN_INFO &quot;%s driver v%s (%s)\n&quot;,
++	       drv_name, drv_version, drv_reldate);
++	printk(KERN_INFO &quot;%s - options [echo %d] &quot;
++	       &quot;[debug %d]\n&quot;, drv_name, echo, debug);
++
++	printk(&quot;%s driver %s %s loaded\n&quot;, drv_name, drv_version, drv_reldate);
++	return 0;
++}
++
++module_init(sja1000_init);
++
++static __exit void sja1000_exit(void)
++{
++	printk(&quot;%s driver %s %s unloaded\n&quot;,
++	       drv_name, drv_version, drv_reldate);
++}
++
++module_exit(sja1000_exit);
+
+Added: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h	2008-01-09 11:31:04 UTC (rev 649)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h	2008-01-09 11:33:22 UTC (rev 650)
+@@ -0,0 +1,199 @@
++/*
++ * $Id: sja1000.h 505 2007-09-30 13:32:41Z hartkopp $
++ *
++ * sja1000.h -  Philips SJA1000 network device driver
++ *
++ * Copyright (c) 2003 Matthias Brukner, Trajet Gmbh, Rebenring 33,
++ * 38106 Braunschweig, GERMANY
++ *
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
++ * GPL apply INSTEAD OF those given above.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#ifndef SJA1000DEV_H
++#define SJA1000DEV_H
++
++#include &lt;linux/can/dev.h&gt;
++
++#define CHIP_NAME	&quot;SJA1000&quot;
++
++#define TX_TIMEOUT      (50*HZ/1000)	/* 50ms */
++#define RESTART_MS      100	/* restart chip on persistent errors in 100ms */
++#define MAX_BUS_ERRORS  200	/* prevent from flooding bus error interrupts */
++
++/* SJA1000 registers - manual section 6.4 (Pelican Mode) */
++#define REG_MOD		0x00
++#define REG_CMR		0x01
++#define REG_SR		0x02
++#define REG_IR		0x03
++#define REG_IER		0x04
++#define REG_ALC		0x0B
++#define REG_ECC		0x0C
++#define REG_EWL		0x0D
++#define REG_RXERR	0x0E
++#define REG_TXERR	0x0F
++#define REG_ACCC0	0x10
++#define REG_ACCC1	0x11
++#define REG_ACCC2	0x12
++#define REG_ACCC3	0x13
++#define REG_ACCM0	0x14
++#define REG_ACCM1	0x15
++#define REG_ACCM2	0x16
++#define REG_ACCM3	0x17
++#define REG_RMC		0x1D
++#define REG_RBSA	0x1E
++
++/* Common registers - manual section 6.5 */
++#define REG_BTR0	0x06
++#define REG_BTR1	0x07
++#define REG_OCR		0x08
++#define REG_CDR		0x1F
++
++#define REG_FI		0x10
++#define SFF_BUF		0x13
++#define EFF_BUF		0x15
++
++#define FI_FF		0x80
++#define FI_RTR		0x40
++
++#define REG_ID1		0x11
++#define REG_ID2		0x12
++#define REG_ID3		0x13
++#define REG_ID4		0x14
++
++#define CAN_RAM		0x20
++
++/* mode register */
++#define MOD_RM		0x01
++#define MOD_LOM		0x02
++#define MOD_STM		0x04
++#define MOD_AFM		0x08
++#define MOD_SM		0x10
++
++/* commands */
++#define CMD_SRR		0x10
++#define CMD_CDO		0x08
++#define CMD_RRB		0x04
++#define CMD_AT		0x02
++#define CMD_TR		0x01
++
++/* interrupt sources */
++#define IRQ_BEI		0x80
++#define IRQ_ALI		0x40
++#define IRQ_EPI		0x20
++#define IRQ_WUI		0x10
++#define IRQ_DOI		0x08
++#define IRQ_EI		0x04
++#define IRQ_TI		0x02
++#define IRQ_RI		0x01
++#define IRQ_ALL		0xFF
++#define IRQ_OFF		0x00
++
++/* status register content */
++#define SR_BS		0x80
++#define SR_ES		0x40
++#define SR_TS		0x20
++#define SR_RS		0x10
++#define SR_TCS		0x08
++#define SR_TBS		0x04
++#define SR_DOS		0x02
++#define SR_RBS		0x01
++
++#define SR_CRIT (SR_BS|SR_ES)
++
++/* ECC register */
++#define ECC_SEG		0x1F
++#define ECC_DIR		0x20
++#define ECC_ERR		6
++#define ECC_BIT		0x00
++#define ECC_FORM	0x40
++#define ECC_STUFF	0x80
++#define ECC_MASK	0xc0
++
++/* clock divider register */
++#define CDR_CLKOUT_MASK 0x07
++#define CDR_CLK_OFF	0x08 /* Clock off (CLKOUT pin) */
++#define CDR_RXINPEN	0x20 /* TX1 output is RX irq output */
++#define CDR_CBP		0x40 /* CAN input comparator bypass */
++#define CDR_PELICAN	0x80 /* PeliCAN mode */
++
++/* output control register */
++#define OCR_MODE_BIPHASE  0x00
++#define OCR_MODE_TEST     0x01
++#define OCR_MODE_NORMAL   0x02
++#define OCR_MODE_CLOCK    0x03
++#define OCR_TX0_INVERT    0x04
++#define OCR_TX0_PULLDOWN  0x08
++#define OCR_TX0_PULLUP    0x10
++#define OCR_TX0_PUSHPULL  0x18
++#define OCR_TX1_INVERT    0x20
++#define OCR_TX1_PULLDOWN  0x40
++#define OCR_TX1_PULLUP    0x80
++#define OCR_TX1_PUSHPULL  0xc0
++
++/*
++ * SJA1000 private data structure
++ */
++struct sja1000_priv {
++	struct can_priv can;	/* must be the first member! */
++	long open_time;
++	int debug;
++	struct timer_list timer;
++	struct sk_buff *echo_skb;
++	u8 (*read_reg) (struct net_device * dev, int reg);
++	void (*write_reg) (struct net_device * dev, int reg, u8 val);
++	void (*pre_irq) (struct net_device * dev);
++	void (*post_irq) (struct net_device * dev);
++	void *priv;		/* for board-specific data */
++	struct net_device *dev;
++	u8 ocr;
++	u8 cdr;
++};
++
++struct net_device *alloc_sja1000dev(int sizeof_priv);
++void free_sja1000dev(struct net_device *dev);
++int register_sja1000dev(struct net_device *dev);
++void unregister_sja1000dev(struct net_device *dev);
++
++#if 0
++void can_proc_create(const char *drv_name);
++void can_proc_remove(const char *drv_name);
++#endif
++
++#endif /* SJA1000_DEV_H */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000631.html">r649 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000633.html">r651 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#632">[ date ]</a>
+              <a href="thread.html#632">[ thread ]</a>
+              <a href="subject.html#632">[ subject ]</a>
+              <a href="author.html#632">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

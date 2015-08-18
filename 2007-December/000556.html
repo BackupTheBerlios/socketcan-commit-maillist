@@ -1,0 +1,291 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r574 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r574%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082222.lB8MMoRB009745%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000555.html">
+   <LINK REL="Next"  HREF="000557.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r574 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r574%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082222.lB8MMoRB009745%40sheep.berlios.de%3E"
+       TITLE="r574 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  8 23:22:50 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000555.html">r573 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000557.html">r575 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#556">[ date ]</a>
+              <a href="thread.html#556">[ thread ]</a>
+              <a href="subject.html#556">[ subject ]</a>
+              <a href="author.html#556">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-12-08 23:22:46 +0100 (Sat, 08 Dec 2007)
+New Revision: 574
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.4/can/vcan.c
+Log:
+White-space changes only.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-08 22:21:52 UTC (rev 573)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-08 22:22:46 UTC (rev 574)
+@@ -68,7 +68,7 @@
+ 
+ #define IDENT &quot;af_can&quot;
+ static __initdata const char banner[] = KERN_INFO &quot;CAN: Controller Area &quot;
+-					&quot;Network PF_CAN core &quot; VERSION &quot;\n&quot;; 
++					&quot;Network PF_CAN core &quot; VERSION &quot;\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;Controller Area Network PF_CAN core&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -115,7 +115,6 @@
+ extern struct s_stats  stats;       /* packet statistics */
+ extern struct s_pstats pstats;      /* receive list statistics */
+ 
+-
+ /**************************************************/
+ /* af_can socket functions                        */
+ /**************************************************/
+@@ -214,15 +213,15 @@
+ 	if (loop) { /* local loopback (default) */
+ 		*(struct sock **)skb-&gt;cb = skb-&gt;sk; /* tx sock reference */
+ 
+-                /* interface not capabable to do the loopback itself? */
+-                if (!(skb-&gt;dev-&gt;flags &amp; IFF_LOOPBACK)) {
++		/* interface not capabable to do the loopback itself? */
++		if (!(skb-&gt;dev-&gt;flags &amp; IFF_LOOPBACK)) {
+ 			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+ 			newskb-&gt;protocol  = htons(ETH_P_CAN);
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 			netif_rx(newskb); /* perform local loopback here */
+ 		}
+ 	} else
+-                *(struct sock **)skb-&gt;cb = NULL; /* no loopback required */
++		*(struct sock **)skb-&gt;cb = NULL; /* no loopback required */
+ 
+ 	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
+ 		err = -ENETDOWN;
+@@ -790,7 +789,7 @@
+ 		return -ENOMEM;
+ 
+ 	/* Insert struct dev_rcv_lists for reception on all devices.
+-	   This struct is zero initialized which is correct for the 
++	   This struct is zero initialized which is correct for the
+ 	   embedded receiver list head pointer, the dev pointer,
+ 	   and the entries counter.
+ 	*/
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2007-12-08 22:21:52 UTC (rev 573)
++++ trunk/kernel/2.4/can/bcm.c	2007-12-08 22:22:46 UTC (rev 574)
+@@ -81,7 +81,7 @@
+ 
+ #define IDENT &quot;bcm&quot;
+ static __initdata const char banner[] = KERN_INFO
+-	&quot;CAN: broadcast manager (bcm) socket protocol &quot; VERSION &quot;\n&quot;; 
++	&quot;CAN: broadcast manager (bcm) socket protocol &quot; VERSION &quot;\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;PF_CAN bcm sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -306,7 +306,7 @@
+ 	/* restore originator for recvfrom() */
+ 	addr-&gt;can_ifindex = op-&gt;rx_ifindex;
+ 
+-	if (head-&gt;nframes){
++	if (head-&gt;nframes) {
+ 		memcpy(skb_put(skb, datalen), frames, datalen);
+ 
+ 		/* the BCM uses the can_dlc-element of the can_frame */
+@@ -538,14 +538,14 @@
+ 
+ 	op-&gt;thrtimer.expires = 0; /* mark disabled / consumed timer */
+ 
+-	if (op-&gt;nframes &gt; 1){
++	if (op-&gt;nframes &gt; 1) {
+ 
+ 		DBG(&quot;sending MUX RX_CHANGED for can_id %03X. op is %p\n&quot;,
+ 		    op-&gt;can_id, op);
+ 		/* for MUX filter we start at index 1 */
+-		for (i=1; i&lt;op-&gt;nframes; i++){
++		for (i=1; i&lt;op-&gt;nframes; i++) {
+ 			if ((op-&gt;last_frames) &amp;&amp;
+-			    (op-&gt;last_frames[i].can_dlc &amp; RX_THR)){
++			    (op-&gt;last_frames[i].can_dlc &amp; RX_THR)) {
+ 				op-&gt;last_frames[i].can_dlc &amp;= ~RX_THR;
+ 				bcm_rx_changed(op, &amp;op-&gt;last_frames[i]);
+ 			}
+@@ -555,7 +555,7 @@
+ 		DBG(&quot;sending simple RX_CHANGED for can_id %03X. op is %p\n&quot;,
+ 		    op-&gt;can_id, op);
+ 		/* for RX_FILTER_ID and simple filter */
+-		if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames[0].can_dlc &amp; RX_THR)){
++		if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames[0].can_dlc &amp; RX_THR)) {
+ 			op-&gt;last_frames[0].can_dlc &amp;= ~RX_THR;
+ 			bcm_rx_changed(op, &amp;op-&gt;last_frames[0]);
+ 		}
+@@ -864,7 +864,7 @@
+ 
+ 	if (op-&gt;flags &amp; TX_RESET_MULTI_IDX) {
+ 		/* start multiple frame transmission with index 0 */
+-		op-&gt;currframe = 0; 
++		op-&gt;currframe = 0;
+ 	}
+ 
+ 	if (op-&gt;flags &amp; SETTIMER) {
+@@ -895,7 +895,7 @@
+ 		/* spec: send can_frame when starting timer */
+ 		op-&gt;flags |= TX_ANNOUNCE;
+ 
+-		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)){
++		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
+ 			DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=%p &quot;
+@@ -903,7 +903,7 @@
+ 			    op-&gt;timer.function,
+ 			    (char*) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+-		} else{
++		} else {
+ 			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+ 			DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=%p &quot;
+ 			    &quot;exp=0x%08X\n&quot;,
+@@ -1037,7 +1037,7 @@
+ 		op-&gt;ifindex = ifindex;
+ 
+ 		/* initialize uninitialized (kmalloc) structure */
+-		init_timer(&amp;op-&gt;timer); 
++		init_timer(&amp;op-&gt;timer);
+ 
+ 		/* init throttle timer for RX_CHANGED */
+ 		init_timer(&amp;op-&gt;thrtimer);
+@@ -1143,7 +1143,7 @@
+ 						bcm_rx_handler, op, IDENT);
+ 				dev_put(dev);
+ 			}
+-		} else 
++		} else
+ 			can_rx_register(NULL, op-&gt;can_id, REGMASK(op-&gt;can_id),
+ 					bcm_rx_handler, op, IDENT);
+ 	}
+@@ -1207,7 +1207,7 @@
+ 	/* check for alternative ifindex for this bcm_op */
+ 
+ 	if (!ifindex &amp;&amp; msg-&gt;msg_name) { /* no bound device as default */
+-		struct sockaddr_can *addr = 
++		struct sockaddr_can *addr =
+ 			(struct sockaddr_can *)msg-&gt;msg_name;
+ 		if (addr-&gt;can_family != AF_CAN)
+ 			return -EINVAL;
+@@ -1246,7 +1246,7 @@
+ 		else
+ 			ret = -EINVAL;
+ 		break;
+-		    
++
+ 	case RX_DELETE:
+ 
+ 		if (bcm_delete_rx_op(&amp;bo-&gt;rx_ops, msg_head.can_id, ifindex))
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-12-08 22:21:52 UTC (rev 573)
++++ trunk/kernel/2.4/can/proc.c	2007-12-08 22:22:46 UTC (rev 574)
+@@ -89,7 +89,7 @@
+ static void can_init_stats(int caller)
+ {
+ 	memset(&amp;stats, 0, sizeof(stats));
+-	stats.jiffies_init  = jiffies;
++	stats.jiffies_init = jiffies;
+ 	pstats.stats_reset++;
+ }
+ 
+@@ -134,7 +134,7 @@
+ 
+ 	/* calc total values */
+ 	if (stats.rx_frames)
+-		stats.total_rx_match_ratio = (stats.matches * 100) / 
++		stats.total_rx_match_ratio = (stats.matches * 100) /
+ 						stats.rx_frames;
+ 
+ 	stats.total_tx_rate = calc_rate(stats.jiffies_init, j,
+@@ -190,6 +190,7 @@
+ 				r-&gt;matches, r-&gt;ident);
+ 
+ 		/* does a typical line fit into the current buffer? */
++
+ 		/* 100 Bytes before end of buffer */
+ 		if (len &gt; PAGE_SIZE - 100) {
+ 			/* mark output cut off */
+@@ -547,7 +548,7 @@
+ 
+ static struct proc_dir_entry *can_create_proc_readentry(const char *name,
+ 							mode_t mode,
+-							read_proc_t* read_proc,
++							read_proc_t *read_proc,
+ 							void *data)
+ {
+ 	if (can_dir)
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2007-12-08 22:21:52 UTC (rev 573)
++++ trunk/kernel/2.4/can/vcan.c	2007-12-08 22:22:46 UTC (rev 574)
+@@ -52,7 +52,7 @@
+ RCSID(&quot;$Id$&quot;);
+ 
+ static __initdata const char banner[] = KERN_INFO &quot;CAN: virtual CAN &quot;
+-					&quot;interface &quot; VERSION &quot;\n&quot;; 
++					&quot;interface &quot; VERSION &quot;\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;virtual CAN interface&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000555.html">r573 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000557.html">r575 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#556">[ date ]</a>
+              <a href="thread.html#556">[ thread ]</a>
+              <a href="subject.html#556">[ subject ]</a>
+              <a href="author.html#556">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

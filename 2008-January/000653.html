@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r671 - branches/cannetdriver26/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r671%20-%20branches/cannetdriver26/drivers/net/can&In-Reply-To=%3C200801290952.m0T9qGoj014534%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000652.html">
+   <LINK REL="Next"  HREF="000654.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r671 - branches/cannetdriver26/drivers/net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r671%20-%20branches/cannetdriver26/drivers/net/can&In-Reply-To=%3C200801290952.m0T9qGoj014534%40sheep.berlios.de%3E"
+       TITLE="r671 - branches/cannetdriver26/drivers/net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 29 10:52:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000652.html">r670 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000654.html">r672 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#653">[ date ]</a>
+              <a href="thread.html#653">[ thread ]</a>
+              <a href="subject.html#653">[ subject ]</a>
+              <a href="author.html#653">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-29 10:52:15 +0100 (Tue, 29 Jan 2008)
+New Revision: 671
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/Kconfig
+Log:
+Avoid UTF-8 characters (german Umlaute)
+
+Modified: branches/cannetdriver26/drivers/net/can/Kconfig
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/Kconfig	2008-01-29 09:48:53 UTC (rev 670)
++++ branches/cannetdriver26/drivers/net/can/Kconfig	2008-01-29 09:52:15 UTC (rev 671)
+@@ -118,7 +118,7 @@
+ 	help
+ 
+ 	This driver is for the two channel CPC PCI card from EMS Dr. Thomas
+-	W&#252;nsche (<A HREF="http://www.ems-wuensche.de">http://www.ems-wuensche.de</A>).
++	Wuensche (<A HREF="http://www.ems-wuensche.de">http://www.ems-wuensche.de</A>).
+ 
+ config CAN_IXXAT_PCI
+ 	tristate &quot;IXXAT PCI Card&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000652.html">r670 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000654.html">r672 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#653">[ date ]</a>
+              <a href="thread.html#653">[ thread ]</a>
+              <a href="subject.html#653">[ subject ]</a>
+              <a href="author.html#653">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

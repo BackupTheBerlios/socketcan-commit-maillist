@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r266 - in trunk/kernel/2.6/include/linux: . can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r266%20-%20in%20trunk/kernel/2.6/include/linux%3A%20.%20can&In-Reply-To=%3C200705021405.l42E5YO0021283%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000249.html">
+   <LINK REL="Next"  HREF="000251.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r266 - in trunk/kernel/2.6/include/linux: . can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r266%20-%20in%20trunk/kernel/2.6/include/linux%3A%20.%20can&In-Reply-To=%3C200705021405.l42E5YO0021283%40sheep.berlios.de%3E"
+       TITLE="r266 - in trunk/kernel/2.6/include/linux: . can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May  2 16:05:34 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000249.html">r265 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000251.html">r267 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#250">[ date ]</a>
+              <a href="thread.html#250">[ thread ]</a>
+              <a href="subject.html#250">[ subject ]</a>
+              <a href="author.html#250">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-02 16:05:23 +0200 (Wed, 02 May 2007)
+New Revision: 266
+
+Modified:
+   trunk/kernel/2.6/include/linux/can.h
+   trunk/kernel/2.6/include/linux/can/raw.h
+Log:
+Using enum instead if multiple defines. Cosmetics.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/raw.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/raw.h	2007-05-02 13:51:38 UTC (rev 265)
++++ trunk/kernel/2.6/include/linux/can/raw.h	2007-05-02 14:05:23 UTC (rev 266)
+@@ -23,9 +23,11 @@
+ 
+ /* for socket options affecting the socket (not the global system) */
+ 
+-#define CAN_RAW_FILTER		1	/* set 0 .. n can_filter(s)          */
+-#define CAN_RAW_ERR_FILTER	2	/* set filter for error frames       */
+-#define CAN_RAW_LOOPBACK	3	/* local loopback (default:on)       */
+-#define CAN_RAW_RECV_OWN_MSGS	4	/* receive my own msgs (default:off) */
++enum {
++	CAN_RAW_FILTER = 1,	/* set 0 .. n can_filter(s)          */
++	CAN_RAW_ERR_FILTER,	/* set filter for error frames       */
++	CAN_RAW_LOOPBACK,	/* local loopback (default:on)       */
++	CAN_RAW_RECV_OWN_MSGS	/* receive my own msgs (default:off) */
++};
+ 
+ #endif
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2007-05-02 13:51:38 UTC (rev 265)
++++ trunk/kernel/2.6/include/linux/can.h	2007-05-02 14:05:23 UTC (rev 266)
+@@ -34,6 +34,7 @@
+ #define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
+ 
+ typedef __u32 canid_t;
++typedef __u32 can_err_mask_t;
+ 
+ /**
+  * struct can_frame - basic CAN frame structure
+@@ -77,8 +78,6 @@
+ 	} can_addr;
+ };
+ 
+-typedef canid_t can_err_mask_t;
+-
+ /**
+  * struct can_filter - CAN ID based filter in can_register().
+  * @can_id:   relevant bits of CAN ID which are not masked out.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000249.html">r265 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000251.html">r267 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#250">[ date ]</a>
+              <a href="thread.html#250">[ thread ]</a>
+              <a href="subject.html#250">[ subject ]</a>
+              <a href="author.html#250">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

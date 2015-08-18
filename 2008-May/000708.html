@@ -1,0 +1,931 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r726 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r726%20-%20trunk/can-utils&In-Reply-To=%3C200805051220.m45CKa4U030335%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000707.html">
+   <LINK REL="Next"  HREF="000709.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r726 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r726%20-%20trunk/can-utils&In-Reply-To=%3C200805051220.m45CKa4U030335%40sheep.berlios.de%3E"
+       TITLE="r726 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon May  5 14:20:36 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000707.html">r725 - branches/ha/hrtimer/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000709.html">r727 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#708">[ date ]</a>
+              <a href="thread.html#708">[ thread ]</a>
+              <a href="subject.html#708">[ subject ]</a>
+              <a href="author.html#708">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-05 14:20:34 +0200 (Mon, 05 May 2008)
+New Revision: 726
+
+Added:
+   trunk/can-utils/candump.c
+   trunk/can-utils/cangen.c
+Removed:
+   trunk/can-utils/candump.c
+   trunk/can-utils/cangen.c
+Log:
+Updated new 'cangen' and 'candump' in the trunk.
+
+
+Deleted: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2008-05-05 12:12:32 UTC (rev 725)
++++ trunk/can-utils/candump.c	2008-05-05 12:20:34 UTC (rev 726)
+@@ -1,563 +0,0 @@
+-/*
+- *  $Id$
+- */
+-
+-/*
+- * candump.c
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#include &lt;stdio.h&gt;
+-#include &lt;stdlib.h&gt;
+-#include &lt;unistd.h&gt;
+-#include &lt;string.h&gt;
+-#include &lt;signal.h&gt;
+-#include &lt;ctype.h&gt;
+-#include &lt;libgen.h&gt;
+-#include &lt;time.h&gt;
+-
+-#include &lt;sys/time.h&gt;
+-#include &lt;sys/types.h&gt;
+-#include &lt;sys/socket.h&gt;
+-#include &lt;sys/ioctl.h&gt;
+-#include &lt;sys/uio.h&gt;
+-#include &lt;net/if.h&gt;
+-
+-#include &lt;linux/can.h&gt;
+-#include &lt;linux/can/raw.h&gt;
+-
+-#include &quot;terminal.h&quot;
+-#include &quot;lib.h&quot;
+-
+-#define MAXDEV 6 /* change sscanf()'s manually if changed here */
+-#define ANYDEV &quot;any&quot;
+-#define ANL &quot;\r\n&quot; /* newline in ASC mode */
+-
+-#define BOLD    ATTBOLD
+-#define RED     ATTBOLD FGRED
+-#define GREEN   ATTBOLD FGGREEN
+-#define YELLOW  ATTBOLD FGYELLOW
+-#define BLUE    ATTBOLD FGBLUE
+-#define MAGENTA ATTBOLD FGMAGENTA
+-#define CYAN    ATTBOLD FGCYAN
+-
+-const char col_on [MAXDEV][19] = {BLUE, RED, GREEN, BOLD, MAGENTA, CYAN};
+-const char col_off [] = ATTRESET;
+-
+-static char devname[MAXDEV][IFNAMSIZ+1];
+-static int  dindex[MAXDEV];
+-static int  max_devname_len;
+-
+-#define MAXANI 8
+-const char anichar[MAXANI] = {'|', '/', '-', '\\', '|', '/', '-', '\\'};
+-
+-extern int optind, opterr, optopt;
+-
+-static volatile int running = 1;
+-
+-void print_usage(char *prg)
+-{
+-    fprintf(stderr, &quot;\nUsage: %s [options] &lt;CAN interface&gt;+\n&quot;, prg);
+-    fprintf(stderr, &quot;  (use CTRL-C to terminate %s)\n\n&quot;, prg);
+-    fprintf(stderr, &quot;Options: -m &lt;mask&gt;   (ID filter mask.  Default 0x00000000) *\n&quot;);
+-    fprintf(stderr, &quot;         -v &lt;value&gt;  (ID filter value. Default 0x00000000) *\n&quot;);
+-    fprintf(stderr, &quot;         -i &lt;0|1&gt;    (invert the specified ID filter) *\n&quot;);
+-    fprintf(stderr, &quot;         -e &lt;emask&gt;  (mask for error frames)\n&quot;);
+-    fprintf(stderr, &quot;         -t &lt;type&gt;   (timestamp: Absolute/Delta/Zero)\n&quot;);
+-    fprintf(stderr, &quot;         -c          (color mode)\n&quot;);
+-    fprintf(stderr, &quot;         -a          (enable additional ASCII output)\n&quot;);
+-    fprintf(stderr, &quot;         -s &lt;level&gt;  (silent mode - 1: animation 2: nothing)\n&quot;);
+-    fprintf(stderr, &quot;         -b &lt;can&gt;    (bridge mode - send received frames to &lt;can&gt;)\n&quot;);
+-    fprintf(stderr, &quot;         -B &lt;can&gt;    (bridge mode - like '-b' with disabled loopback)\n&quot;);
+-    fprintf(stderr, &quot;         -l          (log CAN-frames into file)\n&quot;);
+-    fprintf(stderr, &quot;         -L          (use log file format on stdout)\n&quot;);
+-    fprintf(stderr, &quot;\n&quot;);
+-    fprintf(stderr, &quot;* The CAN ID filter matches, when ...\n&quot;);
+-    fprintf(stderr, &quot;       &lt;received_can_id&gt; &amp; mask == value &amp; mask\n&quot;);
+-    fprintf(stderr, &quot;\n&quot;);
+-    fprintf(stderr, &quot;When using more than one CAN interface the options\n&quot;);
+-    fprintf(stderr, &quot;m/v/i/e have comma seperated values e.g. '-m 0,7FF,0'\n&quot;);
+-    fprintf(stderr, &quot;\nUse interface name '%s' to receive from all CAN interfaces.\n\n&quot;, ANYDEV);
+-}
+-
+-void sigterm(int signo)
+-{
+-    running = 0;
+-}
+-
+-int idx2dindex(int ifidx, int socket) {
+-
+-    int i;
+-    struct ifreq ifr;
+-
+-    for (i=0; i&lt;MAXDEV; i++) {
+-	if (dindex[i] == ifidx)
+-	    return i;
+-    }
+-
+-    /* create new interface index cache entry */
+-
+-    /* remove index cache zombies first */
+-    for (i=0; i &lt; MAXDEV; i++) {
+-	if (dindex[i]) {
+-	    ifr.ifr_ifindex = dindex[i];
+-	    if (ioctl(socket, SIOCGIFNAME, &amp;ifr) &lt; 0)
+-		dindex[i] = 0;
+-	}
+-    }
+-
+-    for (i=0; i &lt; MAXDEV; i++)
+-	if (!dindex[i]) /* free entry */
+-	    break;
+-
+-    if (i == MAXDEV) {
+-	printf(&quot;Interface index cache only supports %d interfaces.\n&quot;, MAXDEV);
+-	exit(1);
+-    }
+-
+-    dindex[i] = ifidx;
+-
+-    ifr.ifr_ifindex = ifidx;
+-    if (ioctl(socket, SIOCGIFNAME, &amp;ifr) &lt; 0)
+-	perror(&quot;SIOCGIFNAME&quot;);
+-
+-    if (max_devname_len &lt; strlen(ifr.ifr_name))
+-	max_devname_len = strlen(ifr.ifr_name);
+-
+-    strcpy(devname[i], ifr.ifr_name);
+-
+-#ifdef DEBUG
+-    printf(&quot;new index %d (%s)\n&quot;, i, devname[i]);
+-#endif
+-
+-    return i;
+-}
+-
+-int main(int argc, char **argv)
+-{
+-    fd_set rdfs;
+-    int s[MAXDEV];
+-    int bridge = 0;
+-    canid_t mask[MAXDEV] = {0};
+-    canid_t value[MAXDEV] = {0};
+-    int inv_filter[MAXDEV] = {0};
+-    can_err_mask_t err_mask[MAXDEV] = {0};
+-    unsigned char timestamp = 0;
+-    unsigned char silent = 0;
+-    unsigned char silentani = 0;
+-    unsigned char color = 0;
+-    unsigned char ascii = 0;
+-    unsigned char log = 0;
+-    unsigned char logfrmt = 0;
+-    int opt, ret;
+-    int currmax = 1; /* we assume at least one can bus ;-) */
+-    struct sockaddr_can addr;
+-    struct can_filter rfilter;
+-    struct can_frame frame;
+-    int nbytes, i, j;
+-    struct ifreq ifr;
+-    struct timeval tv, last_tv;
+-    FILE *logfile = NULL;
+-
+-    signal(SIGTERM, sigterm);
+-    signal(SIGHUP, sigterm);
+-    signal(SIGINT, sigterm);
+-
+-    last_tv.tv_sec  = 0;
+-    last_tv.tv_usec = 0;
+-
+-    while ((opt = getopt(argc, argv, &quot;m:v:i:e:t:cas:b:B:lL?&quot;)) != -1) {
+-	switch (opt) {
+-	case 'm':
+-	    i = sscanf(optarg, &quot;%x,%x,%x,%x,%x,%x&quot;,
+-		       &amp;mask[0], &amp;mask[1], &amp;mask[2],
+-		       &amp;mask[3], &amp;mask[4], &amp;mask[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+-	case 'v':
+-	    i = sscanf(optarg, &quot;%x,%x,%x,%x,%x,%x&quot;,
+-		       &amp;value[0], &amp;value[1], &amp;value[2],
+-		       &amp;value[3], &amp;value[4], &amp;value[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+-	case 'i':
+-	    i = sscanf(optarg, &quot;%d,%d,%d,%d,%d,%d&quot;,
+-		       &amp;inv_filter[0], &amp;inv_filter[1], &amp;inv_filter[2],
+-		       &amp;inv_filter[3], &amp;inv_filter[4], &amp;inv_filter[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+-	case 'e':
+-	    i = sscanf(optarg, &quot;%x,%x,%x,%x,%x,%x&quot;,
+-		       &amp;err_mask[0], &amp;err_mask[1], &amp;err_mask[2],
+-		       &amp;err_mask[3], &amp;err_mask[4], &amp;err_mask[5]);
+-	    if (i &gt; currmax)
+-		currmax = i;
+-	    break;
+-
+-	case 't':
+-	    timestamp = optarg[0];
+-	    if ((timestamp != 'a') &amp;&amp; (timestamp != 'A') &amp;&amp;
+-		(timestamp != 'd') &amp;&amp; (timestamp != 'z')) {
+-		printf(&quot;%s: unknown timestamp mode '%c' - ignored\n&quot;,
+-		       basename(argv[0]), optarg[0]);
+-		timestamp = 0;
+-	    }
+-	    break;
+-
+-	case 'c':
+-	    color++;
+-	    break;
+-
+-	case 'a':
+-	    ascii = 1;
+-	    break;
+-
+-	case 's':
+-	    silent = atoi(optarg);
+-	    break;
+-
+-	case 'b':
+-	case 'B':
+-	    if (strlen(optarg) &gt;= IFNAMSIZ) {
+-		printf(&quot;Name of CAN device '%s' is too long!\n\n&quot;, optarg);
+-		return 1;
+-	    }
+-	    else {
+-		if ((bridge = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
+-		    perror(&quot;bridge socket&quot;);
+-		    return 1;
+-		}
+-		addr.can_family = AF_CAN;
+-		strcpy(ifr.ifr_name, optarg);
+-		if (ioctl(bridge, SIOCGIFINDEX, &amp;ifr) &lt; 0)
+-		    perror(&quot;SIOCGIFINDEX&quot;);
+-		addr.can_ifindex = ifr.ifr_ifindex;
+-		
+-		if (!addr.can_ifindex) {
+-		    perror(&quot;invalid bridge interface&quot;);
+-		    return 1;
+-		}
+-
+-		if (opt == 'B') {
+-		    int loopback = 0;
+-
+-		    setsockopt(bridge, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &amp;loopback, sizeof(loopback));
+-		}
+-
+-		if (bind(bridge, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+-		    perror(&quot;bridge bind&quot;);
+-		    return 1;
+-		}
+-	    }
+-	    break;
+-	    
+-	case 'l':
+-	    log = 1;
+-	    break;
+-
+-	case 'L':
+-	    logfrmt = 1;
+-	    break;
+-
+-	default:
+-	    print_usage(basename(argv[0]));
+-	    exit(1);
+-	    break;
+-	}
+-    }
+-
+-    if (optind == argc) {
+-	print_usage(basename(argv[0]));
+-	exit(0);
+-    }
+-	
+-    /* count in options higher than device count ? */
+-    if (optind + currmax &gt; argc) {
+-	printf(&quot;low count of CAN devices!\n&quot;);
+-	return 1;
+-    }
+-
+-    currmax = argc - optind; /* find real number of CAN devices */
+-
+-    if (currmax &gt; MAXDEV) {
+-	printf(&quot;More than %d CAN devices!\n&quot;, MAXDEV);
+-	return 1;
+-    }
+-
+-    for (i=0; i&lt;currmax; i++) {
+-
+-#ifdef DEBUG
+-	printf(&quot;open %d '%s' m%08X v%08X i%d e%d.\n&quot;,
+-	       i, argv[optind+i], mask[i], value[i],
+-	       inv_filter[i], err_mask[i]);
+-#endif
+-
+-	if ((s[i] = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
+-	    perror(&quot;socket&quot;);
+-	    return 1;
+-	}
+-
+-	if (mask[i] || value[i]) {
+-
+-	    printf(&quot;CAN ID filter[%d] for %s set to &quot;
+-		   &quot;mask = %08X, value = %08X %s\n&quot;,
+-		   i, argv[optind+i], mask[i], value[i],
+-		   (inv_filter[i]) ? &quot;(inv_filter)&quot; : &quot;&quot;);
+-
+-	    rfilter.can_id   = value[i];
+-	    rfilter.can_mask = mask[i];
+-	    if (inv_filter[i])
+-		rfilter.can_id |= CAN_INV_FILTER;
+-
+-	    setsockopt(s[i], SOL_CAN_RAW, CAN_RAW_FILTER,
+-		       &amp;rfilter, sizeof(rfilter));
+-	}
+-
+-	if (err_mask[i])
+-	    setsockopt(s[i], SOL_CAN_RAW, CAN_RAW_ERR_FILTER,
+-		       &amp;err_mask[i], sizeof(err_mask[i]));
+-
+-	j = strlen(argv[optind+i]);
+-
+-	if (!(j &lt; IFNAMSIZ)) {
+-	    printf(&quot;name of CAN device '%s' is too long!\n&quot;, argv[optind+i]);
+-	    return 1;
+-	}
+-
+-	if (j &gt; max_devname_len)
+-	    max_devname_len = j; /* for nice printing */
+-
+-	addr.can_family = AF_CAN;
+-
+-	if (strcmp(ANYDEV, argv[optind+i])) {
+-	    strcpy(ifr.ifr_name, argv[optind+i]);
+-	    if (ioctl(s[i], SIOCGIFINDEX, &amp;ifr) &lt; 0) {
+-		perror(&quot;SIOCGIFINDEX&quot;);
+-		exit(1);
+-	    }
+-	    addr.can_ifindex = ifr.ifr_ifindex;
+-	}
+-	else
+-	    addr.can_ifindex = 0; /* any can interface */
+-
+-	if (bind(s[i], (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+-	    perror(&quot;bind&quot;);
+-	    return 1;
+-	}
+-    }
+-
+-    if (log) {
+-	time_t currtime;
+-	struct tm now;
+-	char fname[sizeof(&quot;candump-2006-11-20_202026.log&quot;)+1];
+-
+-	if (time(&amp;currtime) == (time_t)-1) {
+-	    perror(&quot;time&quot;);
+-	    return 1;
+-	}
+-
+-	localtime_r(&amp;currtime, &amp;now);
+-
+-	sprintf(fname, &quot;candump-%04d-%02d-%02d_%02d%02d%02d.log&quot;,
+-	       now.tm_year + 1900,
+-	       now.tm_mon + 1,
+-	       now.tm_mday,
+-	       now.tm_hour,
+-	       now.tm_min,
+-	       now.tm_sec);
+-
+-	printf(&quot;\nEnabling Logfile '%s'\n\n&quot;, fname);
+-
+-	logfile = fopen(fname, &quot;w&quot;);
+-	if (!logfile) {
+-	    perror(&quot;logfile&quot;);
+-	    return 1;
+-	}
+-    }
+-
+-    while (running) {
+-
+-	FD_ZERO(&amp;rdfs);
+-	for (i=0; i&lt;currmax; i++)
+-	    FD_SET(s[i], &amp;rdfs);
+-
+-	if ((ret = select(s[currmax-1]+1, &amp;rdfs, NULL, NULL, NULL)) &lt; 0) {
+-	    //perror(&quot;select&quot;);
+-	    running = 0;
+-	    continue;
+-	}
+-
+-	for (i=0; i&lt;currmax; i++) {  /* check all CAN RAW sockets */
+-
+-	    if (FD_ISSET(s[i], &amp;rdfs)) {
+-
+-		socklen_t len = sizeof(addr);
+-		int idx;
+-
+-		if ((nbytes = recvfrom(s[i], &amp;frame,
+-				       sizeof(struct can_frame), 0,
+-				       (struct sockaddr*)&amp;addr, &amp;len)) &lt; 0) {
+-		    perror(&quot;read&quot;);
+-		    return 1;
+-		}
+-
+-		if (nbytes &lt; sizeof(struct can_frame)) {
+-		    fprintf(stderr, &quot;read: incomplete CAN frame\n&quot;);
+-		    return 1;
+-		}
+-
+-		if (bridge) {
+-		    if ((nbytes = write(bridge, &amp;frame,
+-					sizeof(struct can_frame))) &lt; 0) {
+-			perror(&quot;bridge write&quot;);
+-			return 1;
+-		    } else if (nbytes &lt; sizeof(struct can_frame)) {
+-			fprintf(stderr,&quot;bridge write: incomplete CAN frame\n&quot;);
+-			return 1;
+-		    }
+-		}
+-		    
+-		if (timestamp || log || logfrmt)
+-		    if (ioctl(s[i], SIOCGSTAMP, &amp;tv) &lt; 0)
+-			perror(&quot;SIOCGSTAMP&quot;);
+-
+-
+-		idx = idx2dindex(addr.can_ifindex, s[i]);
+-
+-		if (log) {
+-		    /* log CAN frame with absolute timestamp &amp; device */
+-		    fprintf(logfile, &quot;(%ld.%06ld) &quot;, tv.tv_sec, tv.tv_usec);
+-		    fprintf(logfile, &quot;%*s &quot;, max_devname_len, devname[idx]);
+-		    /* without seperator as logfile use-case is parsing */
+-		    fprint_canframe(logfile, &amp;frame, &quot;\n&quot;, 0);
+-		}
+-
+-		if (logfrmt) {
+-		    /* print CAN frame in log file style to stdout */
+-		    printf(&quot;(%ld.%06ld) &quot;, tv.tv_sec, tv.tv_usec);
+-		    printf(&quot;%*s &quot;, max_devname_len, devname[idx]);
+-		    fprint_canframe(stdout, &amp;frame, &quot;\n&quot;, 0);
+-		    goto out_fflush; /* no other output to stdout */
+-		}
+-
+-		if (silent){
+-		    if (silent == 1) {
+-			printf(&quot;%c\b&quot;, anichar[silentani%=MAXANI]);
+-			silentani++;
+-		    }
+-		    goto out_fflush; /* no other output to stdout */
+-		}
+-		      
+-		printf(&quot; %s&quot;, (color&gt;2)?col_on[idx]:&quot;&quot;);
+-
+-		switch (timestamp) {
+-
+-		case 'a': /* absolute with timestamp */
+-		    printf(&quot;(%ld.%06ld) &quot;, tv.tv_sec, tv.tv_usec);
+-		    break;
+-
+-		case 'A': /* absolute with date */
+-		    {
+-			struct tm tm;
+-			char timestring[25];
+-
+-			tm = *localtime(&amp;tv.tv_sec);
+-			strftime(timestring, 24, &quot;%Y-%m-%d %H:%M:%S&quot;, &amp;tm);
+-			printf(&quot;(%s.%06ld) &quot;, timestring, tv.tv_usec);
+-		    }
+-		    break;
+-
+-		case 'd': /* delta */
+-		case 'z': /* starting with zero */
+-		    {
+-			struct timeval diff;
+-
+-			if (last_tv.tv_sec == 0)   /* first init */
+-			    last_tv = tv;
+-			diff.tv_sec  = tv.tv_sec  - last_tv.tv_sec;
+-			diff.tv_usec = tv.tv_usec - last_tv.tv_usec;
+-			if (diff.tv_usec &lt; 0)
+-			    diff.tv_sec--, diff.tv_usec += 1000000;
+-			if (diff.tv_sec &lt; 0)
+-			    diff.tv_sec = diff.tv_usec = 0;
+-			printf(&quot;(%ld.%06ld) &quot;, diff.tv_sec, diff.tv_usec);
+-				
+-			if (timestamp == 'd')
+-			    last_tv = tv; /* update for delta calculation */
+-		    }
+-		    break;
+-
+-		default: /* no timestamp output */
+-		    break;
+-		}
+-
+-		printf(&quot; %s&quot;, (color &amp;&amp; (color&lt;3))?col_on[idx]:&quot;&quot;);
+-		printf(&quot;%*s&quot;, max_devname_len, devname[idx]);
+-		printf(&quot;%s  &quot;, (color==1)?col_off:&quot;&quot;);
+-
+-		fprint_long_canframe(stdout, &amp;frame, NULL, ascii);
+-
+-		printf(&quot;%s&quot;, (color&gt;1)?col_off:&quot;&quot;);
+-		printf(&quot;\n&quot;);
+-	    }
+-
+-out_fflush:
+-	    fflush(stdout);
+-	}
+-    }
+-
+-    for (i=0; i&lt;currmax; i++)
+-	close(s[i]);
+-
+-    if (bridge)
+-      close(bridge);
+-
+-    if (log)
+-	fclose(logfile);
+-
+-    return 0;
+-}
+
+Copied: trunk/can-utils/candump.c (from rev 724, branches/ha/hrtimer/can-utils/candump.c)
+
+Deleted: trunk/can-utils/cangen.c
+===================================================================
+--- trunk/can-utils/cangen.c	2008-05-05 12:12:32 UTC (rev 725)
++++ trunk/can-utils/cangen.c	2008-05-05 12:20:34 UTC (rev 726)
+@@ -1,277 +0,0 @@
+-/*
+- *  $Id$
+- */
+-
+-/*
+- * cangen.c - CAN frames generator for testing purposes
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#include &lt;stdio.h&gt;
+-#include &lt;stdlib.h&gt;
+-#include &lt;unistd.h&gt;
+-#include &lt;string.h&gt;
+-#include &lt;signal.h&gt;
+-#include &lt;ctype.h&gt;
+-#include &lt;libgen.h&gt;
+-#include &lt;time.h&gt;
+-#include &lt;errno.h&gt;
+-
+-#include &lt;sys/time.h&gt;
+-#include &lt;sys/types.h&gt;
+-#include &lt;sys/socket.h&gt;
+-#include &lt;sys/ioctl.h&gt;
+-#include &lt;sys/uio.h&gt;
+-#include &lt;net/if.h&gt;
+-
+-#include &lt;linux/can.h&gt;
+-#include &lt;linux/can/raw.h&gt;
+-#include &quot;lib.h&quot;
+-
+-#define DEFAULT_GAP 200 /* ms */
+-
+-extern int optind, opterr, optopt;
+-
+-static volatile int running = 1;
+-
+-void print_usage(char *prg)
+-{
+-    fprintf(stderr, &quot;\n%s: generate random CAN frames\n\n&quot;, prg);
+-    fprintf(stderr, &quot;Usage: %s [can-interface]\n&quot;, prg);
+-    fprintf(stderr, &quot;Options: -g &lt;ms&gt;       (gap in milli seconds)  &quot;
+-	    &quot;default: %d\n&quot;, DEFAULT_GAP);
+-    fprintf(stderr, &quot;         -e            (extended frame mode)   &quot;
+-	    &quot;default: standard frame format \n&quot;);
+-    fprintf(stderr, &quot;         -I            (fixed CAN ID)          &quot;
+-	    &quot;default: 0x123\n&quot;);
+-    fprintf(stderr, &quot;         -D            (fixed CAN Data)        &quot;
+-	    &quot;default: 01 23 45 67 89 AB CD EF\n&quot;);
+-    fprintf(stderr, &quot;         -L            (fixed CAN DLC)         &quot;
+-	    &quot;default: 8\n&quot;);
+-    fprintf(stderr, &quot;         -f &lt;canframe&gt; (other fixed CAN frame) &quot;
+-	    &quot;default: 123#0123456789ABCDEF\n&quot;);
+-    fprintf(stderr, &quot;         -x            (disable loopback)      &quot;
+-	    &quot;default: standard loopback\n&quot;);
+-    fprintf(stderr, &quot;         -v            (verbose)               &quot;
+-	    &quot;default: don't print sent frames\n&quot;);
+-}
+-
+-void sigterm(int signo)
+-{
+-    running = 0;
+-}
+-
+-int main(int argc, char **argv)
+-{
+-    unsigned long gap = DEFAULT_GAP; 
+-    unsigned char extended = 0;
+-    unsigned char fix_id = 0;
+-    unsigned char fix_data = 0;
+-    unsigned char fix_dlc = 0;
+-    unsigned char default_frame = 1;
+-    unsigned char loopback_disable = 0;
+-    unsigned char verbose = 0;
+-
+-    int opt;
+-    int s; /* socket */
+-
+-    struct sockaddr_can addr;
+-    static struct can_frame frame;
+-    int nbytes;
+-    struct ifreq ifr;
+-
+-    struct timespec ts;
+-
+-    signal(SIGTERM, sigterm);
+-    signal(SIGHUP, sigterm);
+-    signal(SIGINT, sigterm);
+-
+-    while ((opt = getopt(argc, argv, &quot;g:eIDLf:xv&quot;)) != -1) {
+-	switch (opt) {
+-	case 'g':
+-	    gap = strtoul(optarg, NULL, 10);
+-	    break;
+-
+-	case 'e':
+-	    extended = 1;
+-	    break;
+-
+-	case 'I':
+-	    fix_id = 1;
+-	    break;
+-
+-	case 'D':
+-	    fix_data = 1;
+-	    break;
+-
+-	case 'L':
+-	    fix_dlc = 1;
+-	    break;
+-
+-	case 'f':
+-	    default_frame = 0;
+-	    if (parse_canframe(optarg, &amp;frame)) {
+-		fprintf(stderr, &quot;'%s' is a wrong CAN frame format.\n&quot;, optarg);
+-		exit(1);
+-	    }
+-	    break;
+-
+-	case 'v':
+-	    verbose = 1;
+-	    break;
+-
+-	case 'x':
+-	    loopback_disable = 1;
+-	    break;
+-
+-	default:
+-	    print_usage(basename(argv[0]));
+-	    exit(1);
+-	    break;
+-	}
+-    }
+-
+-    if (optind == argc) {
+-	print_usage(basename(argv[0]));
+-	exit(0);
+-    }
+-
+-    ts.tv_sec = gap / 1000;
+-    ts.tv_nsec = (gap % 1000) * 1000000;
+-
+-
+-    if (default_frame) {
+-	if (extended)
+-	    frame.can_id = 0x12345678 | CAN_EFF_FLAG;
+-	else
+-	    frame.can_id = 0x123;
+-
+-	frame.can_dlc = 8;
+-
+-	frame.data[0] = 0x01;
+-	frame.data[1] = 0x23;
+-	frame.data[2] = 0x45;
+-	frame.data[3] = 0x67;
+-	frame.data[4] = 0x89;
+-	frame.data[5] = 0xAB;
+-	frame.data[6] = 0xCD;
+-	frame.data[7] = 0xEF;
+-    }
+-
+-    if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
+-	perror(&quot;socket&quot;);
+-	return 1;
+-    }
+-
+-    addr.can_family = AF_CAN;
+-
+-    strcpy(ifr.ifr_name, argv[optind]);
+-    if (ioctl(s, SIOCGIFINDEX, &amp;ifr) &lt; 0) {
+-	perror(&quot;SIOCGIFINDEX&quot;);
+-	return 1;
+-    }
+-    addr.can_ifindex = ifr.ifr_ifindex;
+-
+-    /* disable default receive filter on this RAW socket */
+-    /* This is obsolete as we do not read from the socket at all, but for */
+-    /* this reason we can remove the receive list in the Kernel to save a */
+-    /* little (really a very little!) CPU usage.                          */
+-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+-
+-    if (loopback_disable) {
+-	int loopback = 0;
+-
+-	setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK,
+-		   &amp;loopback, sizeof(loopback));
+-    }
+-
+-    if (bind(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+-	perror(&quot;bind&quot;);
+-	return 1;
+-    }
+-
+-    while (running) {
+-
+-	if (!fix_id) {
+-	    frame.can_id = random();
+-	    if (extended) {
+-		frame.can_id &amp;= CAN_EFF_MASK;
+-		frame.can_id |= CAN_EFF_FLAG;
+-	    } else
+-		frame.can_id &amp;= CAN_SFF_MASK;
+-	}
+-
+-	if (!fix_dlc) {
+-	    frame.can_dlc = random() &amp; 0xF;
+-	    if (frame.can_dlc &amp; 8)
+-		frame.can_dlc = 8; /* for about 50% of the frames */
+-	}
+-
+-	if (!fix_data) {
+-	    /* that's what the 64 bit alignment of data[] is for ... :) */
+-	    *(unsigned long*)(&amp;frame.data[0]) = random();
+-	    *(unsigned long*)(&amp;frame.data[4]) = random();
+-	}
+-
+-	if ((nbytes = write(s, &amp;frame, sizeof(struct can_frame))) &lt; 0) {
+-	    perror(&quot;write&quot;);
+-	    return 1;
+-	} else if (nbytes &lt; sizeof(struct can_frame)) {
+-	    fprintf(stderr, &quot;write: incomplete CAN frame\n&quot;);
+-	    return 1;
+-	}
+-
+-	if (gap) /* gap == 0 =&gt; performance test :-] */
+-	    if (nanosleep(&amp;ts, NULL))
+-		return 1;
+-		    
+-	if (verbose)
+-#if 0
+-	    fprint_long_canframe(stdout, &amp;frame, &quot;\n&quot;, 1);
+-#else
+-	    fprint_canframe(stdout, &amp;frame, &quot;\n&quot;, 1);
+-#endif
+-    }
+-
+-    close(s);
+-
+-    return 0;
+-}
+
+Copied: trunk/can-utils/cangen.c (from rev 725, branches/ha/hrtimer/can-utils/cangen.c)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000707.html">r725 - branches/ha/hrtimer/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000709.html">r727 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#708">[ date ]</a>
+              <a href="thread.html#708">[ thread ]</a>
+              <a href="subject.html#708">[ subject ]</a>
+              <a href="author.html#708">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

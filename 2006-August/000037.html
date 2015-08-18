@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r58 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r58%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200608291152.k7TBqBJV020393%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000036.html">
+   <LINK REL="Next"  HREF="000038.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r58 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r58%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200608291152.k7TBqBJV020393%40sheep.berlios.de%3E"
+       TITLE="r58 - in trunk/kernel/2.6: include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 29 13:52:11 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000036.html">r57 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000038.html">r59 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#37">[ date ]</a>
+              <a href="thread.html#37">[ thread ]</a>
+              <a href="subject.html#37">[ subject ]</a>
+              <a href="author.html#37">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-08-29 13:49:49 +0200 (Tue, 29 Aug 2006)
+New Revision: 58
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/af_can.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+support calling init functions when creating a new socket.
+rename raw_{init,exit} functions to raw_module_{init,exit}.
+add raw_init() function to initialize the raw_opt structure
+of newly created CAN_RAW sockets.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/af_can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/af_can.h	2006-08-29 08:57:05 UTC (rev 57)
++++ trunk/kernel/2.6/include/linux/can/af_can.h	2006-08-29 11:49:49 UTC (rev 58)
+@@ -106,6 +106,7 @@
+ struct can_proto {
+ 	struct proto_ops *ops;
+ 	struct module    *owner;
++	int              (*init)(struct sock *sk);
+ 	size_t           obj_size;
+ };
+ #endif
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-08-29 08:57:05 UTC (rev 57)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-08-29 11:49:49 UTC (rev 58)
+@@ -273,6 +273,7 @@
+ {
+ 	struct sock *sk;
+ 	struct can_proto *cp;
++	int ret;
+ 
+ 	DBG(&quot;socket %p, type %d, proto %d\n&quot;, sock, sock-&gt;type, protocol);
+ 
+@@ -361,6 +362,21 @@
+ 
+ 	DBG(&quot;created sock: %p\n&quot;, sk);
+ 
++	ret = 0;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++	if (sk-&gt;sk_prot-&gt;init)
++		ret = sk-&gt;sk_prot-&gt;init(sk);
++#else
++	if (cp-&gt;init)
++		ret = cp-&gt;init(sk);
++#endif
++	if (ret) {
++		/* we must release sk */
++		sock_orphan(sk);
++		sock_put(sk);
++		return ret;
++	}
++
+ 	return 0;
+ 
+  oom:
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-08-29 08:57:05 UTC (rev 57)
++++ trunk/kernel/2.6/net/can/raw.c	2006-08-29 11:49:49 UTC (rev 58)
+@@ -80,6 +80,7 @@
+ #define DBG_SKB(skb)
+ #endif
+ 
++static int raw_init(struct sock *sk);
+ static int raw_release(struct socket *sock);
+ static int raw_bind   (struct socket *sock, struct sockaddr *uaddr, int len);
+ static int raw_getname(struct socket *sock, struct sockaddr *uaddr,
+@@ -145,6 +146,7 @@
+ 	.name     = &quot;CAN_RAW&quot;,
+ 	.owner    = THIS_MODULE,
+ 	.obj_size = sizeof(struct raw_sock),
++	.init     = raw_init,
+ };
+ 
+ static struct can_proto raw_can_proto = {
+@@ -160,13 +162,14 @@
+ 	.ops      = &amp;raw_ops,
+ 	.owner    = THIS_MODULE,
+ 	.obj_size = sizeof(struct raw_opt),
++	.init     = raw_init,
+ };
+ 
+ #endif
+ 
+ #define MASK_ALL 0
+ 
+-static __init int raw_init(void)
++static __init int raw_module_init(void)
+ {
+ 	printk(banner);
+ 
+@@ -174,11 +177,19 @@
+ 	return 0;
+ }
+ 
+-static __exit void raw_exit(void)
++static __exit void raw_module_exit(void)
+ {
+ 	can_proto_unregister(CAN_RAW);
+ }
+ 
++static int raw_init(struct sock *sk)
++{
++	canraw_sk(sk)-&gt;loopback      = 1;
++	canraw_sk(sk)-&gt;recv_own_msgs = 0;
++
++	return 0;
++}
++
+ static int raw_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+@@ -670,5 +681,5 @@
+ }
+ 
+ 
+-module_init(raw_init);
+-module_exit(raw_exit);
++module_init(raw_module_init);
++module_exit(raw_module_exit);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000036.html">r57 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000038.html">r59 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#37">[ date ]</a>
+              <a href="thread.html#37">[ thread ]</a>
+              <a href="subject.html#37">[ subject ]</a>
+              <a href="author.html#37">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

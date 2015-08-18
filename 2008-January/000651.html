@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r669 - branches/cannetdriver26/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r669%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801272050.m0RKo9Wc016464%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000650.html">
+   <LINK REL="Next"  HREF="000652.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r669 - branches/cannetdriver26/drivers/net/can/sja1000</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r669%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801272050.m0RKo9Wc016464%40sheep.berlios.de%3E"
+       TITLE="r669 - branches/cannetdriver26/drivers/net/can/sja1000">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 21:50:09 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000650.html">r668 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000652.html">r670 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#651">[ date ]</a>
+              <a href="thread.html#651">[ thread ]</a>
+              <a href="subject.html#651">[ subject ]</a>
+              <a href="author.html#651">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 21:50:08 +0100 (Sun, 27 Jan 2008)
+New Revision: 669
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+Log:
+Fix build problem with invalid CAN state
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 17:49:39 UTC (rev 668)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 20:50:08 UTC (rev 669)
+@@ -567,7 +567,7 @@
+ 			state = CAN_STATE_BUS_PASSIVE;
+ 		} else {
+ 			iDBG(KERN_INFO &quot;%s: ERROR ACTIVE\n&quot;, dev-&gt;name);
+-			state = CAN_STATE_BUS_ACTIVE;
++			state = CAN_STATE_ACTIVE;
+ 		}
+ 	}
+ 	if (isrc &amp; IRQ_ALI) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000650.html">r668 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000652.html">r670 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#651">[ date ]</a>
+              <a href="thread.html#651">[ thread ]</a>
+              <a href="subject.html#651">[ subject ]</a>
+              <a href="author.html#651">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

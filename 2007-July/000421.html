@@ -1,0 +1,1310 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r439 - trunk/kernel/2.6/drivers/net/can/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r439%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200707250922.l6P9MsAO004887%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000420.html">
+   <LINK REL="Next"  HREF="000422.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r439 - trunk/kernel/2.6/drivers/net/can/mscan</H1>
+    <B>wolf at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r439%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200707250922.l6P9MsAO004887%40sheep.berlios.de%3E"
+       TITLE="r439 - trunk/kernel/2.6/drivers/net/can/mscan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 25 11:22:54 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000420.html">r438 - in trunk/kernel/2.6: . drivers/net/can drivers/net/can/i82527	drivers/net/can/sja1000 net/can
+</A></li>
+        <LI>Next message: <A HREF="000422.html">r440 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#421">[ date ]</a>
+              <a href="thread.html#421">[ thread ]</a>
+              <a href="subject.html#421">[ subject ]</a>
+              <a href="author.html#421">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2007-07-25 11:22:53 +0200 (Wed, 25 Jul 2007)
+New Revision: 439
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.h
+Log:
+MSCAN: improve coding style and further beautification
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2007-07-21 17:53:09 UTC (rev 438)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2007-07-25 09:22:53 UTC (rev 439)
+@@ -40,10 +40,12 @@
+ 
+ #include &quot;mscan.h&quot;
+ 
+-#include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
++#include &lt;linux/can/version.h&gt;	/* for RCSID. Removed by mkpatch script */
++
+ RCSID(&quot;$Id$&quot;);
+ 
+ #define PDEV_MAX 2
++
+ struct platform_device *pdev[PDEV_MAX];
+ 
+ static int __devinit mpc52xx_can_probe(struct platform_device *pdev)
+@@ -55,7 +57,7 @@
+ 	u32 mem_size;
+ 	int ret = -ENODEV;
+ 
+-	if(!pdata)
++	if (!pdata)
+ 		return ret;
+ 
+ 	can = alloc_mscandev();
+@@ -92,14 +94,15 @@
+ 
+ 	ret = mscan_register(can, pdata-&gt;clock_src);
+ 	if (ret &gt;= 0) {
+-		dev_info(&amp;pdev-&gt;dev, &quot;probe for a port 0x%lX done\n&quot;, ndev-&gt;base_addr);
++		dev_info(&amp;pdev-&gt;dev, &quot;probe for a port 0x%lX done\n&quot;,
++			 ndev-&gt;base_addr);
+ 		return ret;
+ 	}
+ 
+ 	iounmap((unsigned long *)ndev-&gt;base_addr);
+-fail_map:
++      fail_map:
+ 	release_mem_region(mem-&gt;start, mem_size);
+-req_error:
++      req_error:
+ 	free_candev(can);
+ 	dev_err(&amp;pdev-&gt;dev, &quot;probe failed\n&quot;);
+ 	return ret;
+@@ -147,8 +150,8 @@
+ 	regs-&gt;canidac = saved_regs.canidac;
+ 
+ 	/* restore masks, buffers etc. */
+-	_memcpy_toio(&amp;regs-&gt;canidar1_0, (void*)&amp;saved_regs.canidar1_0,
+-			sizeof(*regs) - offsetof(struct mscan_regs, canidar1_0));
++	_memcpy_toio(&amp;regs-&gt;canidar1_0, (void *)&amp;saved_regs.canidar1_0,
++		     sizeof(*regs) - offsetof(struct mscan_regs, canidar1_0));
+ 
+ 	regs-&gt;canctl0 &amp;= ~MSCAN_INITRQ;
+ 	regs-&gt;cantbsel = saved_regs.cantbsel;
+@@ -161,14 +164,14 @@
+ #endif
+ 
+ static struct platform_driver mpc52xx_can_driver = {
+-	.driver		= {
+-	.name		= &quot;mpc52xx-mscan&quot;,
+-	},
+-	.probe		= mpc52xx_can_probe,
+-	.remove		= __devexit_p(mpc52xx_can_remove),
++	.driver = {
++		   .name = &quot;mpc52xx-mscan&quot;,
++		   },
++	.probe = mpc52xx_can_probe,
++	.remove = __devexit_p(mpc52xx_can_remove),
+ #ifdef CONFIG_PM
+-	.suspend	= mpc52xx_can_suspend,
+-	.resume		= mpc52xx_can_resume,
++	.suspend = mpc52xx_can_suspend,
++	.resume = mpc52xx_can_resume,
+ #endif
+ };
+ 
+@@ -179,8 +182,10 @@
+ 	unsigned int i;
+ 	int ret;
+ 
+-	for (i=0; (np = of_find_compatible_node(np, &quot;mscan&quot;, &quot;mpc5200-mscan&quot;)) != NULL; i++) {
+-		struct resource r[2] = {};
++	for (i = 0;
++	     (np = of_find_compatible_node(np, &quot;mscan&quot;, &quot;mpc5200-mscan&quot;));
++	     i++) {
++		struct resource r[2] = { };
+ 		struct mscan_platform_data pdata;
+ 
+ 		if (i &gt;= PDEV_MAX) {
+@@ -195,7 +200,8 @@
+ 
+ 		of_irq_to_resource(np, 0, &amp;r[1]);
+ 
+-		pdev[i] = platform_device_register_simple(&quot;mpc52xx-mscan&quot;, i, r, 2);
++		pdev[i] =
++		    platform_device_register_simple(&quot;mpc52xx-mscan&quot;, i, r, 2);
+ 		if (IS_ERR(pdev[i])) {
+ 			ret = PTR_ERR(pdev[i]);
+ 			goto err;
+@@ -208,7 +214,7 @@
+ 			goto err;
+ 	}
+ 	return 0;
+- err:
++      err:
+ 	return ret;
+ }
+ #else
+@@ -226,12 +232,11 @@
+ {
+ 	int i;
+ 	platform_driver_unregister(&amp;mpc52xx_can_driver);
+-	for (i=0; i&lt;PDEV_MAX; i++)
++	for (i = 0; i &lt; PDEV_MAX; i++)
+ 		platform_device_unregister(pdev[i]);
+ 	printk(KERN_INFO &quot;%s unloaded\n&quot;, mpc52xx_can_driver.driver.name);
+ }
+ 
+-
+ module_init(mpc52xx_can_init);
+ module_exit(mpc52xx_can_exit);
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2007-07-21 17:53:09 UTC (rev 438)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2007-07-25 09:22:53 UTC (rev 439)
+@@ -42,29 +42,31 @@
+ #include &lt;linux/can/error.h&gt;
+ #include &quot;mscan.h&quot;
+ 
+-#include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
++#include &lt;linux/can/version.h&gt;	/* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+ #define MSCAN_NORMAL_MODE	0
+-#define MSCAN_SLEEP_MODE	 MSCAN_SLPRQ
++#define MSCAN_SLEEP_MODE	MSCAN_SLPRQ
+ #define MSCAN_INIT_MODE		(MSCAN_INITRQ | MSCAN_SLPRQ)
+ #define MSCAN_POWEROFF_MODE	(MSCAN_CSWAI | MSCAN_SLPRQ)
+ 
+-#define BTR0_BRP_MASK	0x3f
+-#define BTR0_SJW_SHIFT	6
+-#define BTR0_SJW_MASK	(0x3 &lt;&lt; BTR0_SJW_SHIFT)
++#define BTR0_BRP_MASK		0x3f
++#define BTR0_SJW_SHIFT		6
++#define BTR0_SJW_MASK		(0x3 &lt;&lt; BTR0_SJW_SHIFT)
+ 
+-#define BTR1_TSEG1_MASK  0xf
+-#define BTR1_TSEG2_SHIFT 4
+-#define BTR1_TSEG2_MASK  (0x7 &lt;&lt; BTR1_TSEG2_SHIFT)
+-#define BTR1_SAM_SHIFT   7
++#define BTR1_TSEG1_MASK 	0xf
++#define BTR1_TSEG2_SHIFT	4
++#define BTR1_TSEG2_MASK 	(0x7 &lt;&lt; BTR1_TSEG2_SHIFT)
++#define BTR1_SAM_SHIFT  	7
+ 
+-#define BTR0_SET_BRP(brp)	(((brp)-1)&amp;BTR0_BRP_MASK)
+-#define BTR0_SET_SJW(sjw)	((((sjw)-1)&lt;&lt;BTR0_SJW_SHIFT)&amp;BTR0_SJW_MASK)
++#define BTR0_SET_BRP(brp)	(((brp) - 1) &amp; BTR0_BRP_MASK)
++#define BTR0_SET_SJW(sjw)	((((sjw) - 1) &lt;&lt; BTR0_SJW_SHIFT) &amp; \
++				 BTR0_SJW_MASK)
+ 
+-#define BTR1_SET_TSEG1(tseg1) (((tseg1)-1)&amp;BTR1_TSEG1_MASK)
+-#define BTR1_SET_TSEG2(tseg2) ((((tseg2)-1)&lt;&lt;BTR1_TSEG2_SHIFT)&amp;BTR1_TSEG2_MASK)
+-#define BTR1_SET_SAM(sam)	  (((sam)&amp;1)&lt;&lt;BTR1_SAM_SHIFT)
++#define BTR1_SET_TSEG1(tseg1)	(((tseg1) - 1) &amp;  BTR1_TSEG1_MASK)
++#define BTR1_SET_TSEG2(tseg2)	((((tseg2) - 1) &lt;&lt; BTR1_TSEG2_SHIFT) &amp; \
++				 BTR1_TSEG2_MASK)
++#define BTR1_SET_SAM(sam)	(((sam) &amp; 1) &lt;&lt; BTR1_SAM_SHIFT)
+ 
+ struct mscan_state {
+ 	u8 mode;
+@@ -101,44 +103,48 @@
+ 	int i;
+ 	u8 canctl1;
+ 
+-	if( mode != MSCAN_NORMAL_MODE ) {
++	if (mode != MSCAN_NORMAL_MODE) {
+ 		canctl1 = in_8(&amp;regs-&gt;canctl1);
+ 		if ((mode &amp; MSCAN_SLPRQ) &amp;&amp; (canctl1 &amp; MSCAN_SLPAK) == 0) {
+-			out_8( &amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) | MSCAN_SLPRQ );
+-			for (i = 0; i &lt; 255; i++ ) {
+-				if ( in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_SLPAK )
++			out_8(&amp;regs-&gt;canctl0,
++			      in_8(&amp;regs-&gt;canctl0) | MSCAN_SLPRQ);
++			for (i = 0; i &lt; 255; i++) {
++				if (in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_SLPAK)
+ 					break;
+ 				udelay(100);
+ 			}
+-			if(i&gt;255)
+-			   ret=-ENODEV;
++			if (i &gt; 255)
++				ret = -ENODEV;
+ 		}
+ 
+-		if ( !ret &amp;&amp; (mode &amp; MSCAN_INITRQ) &amp;&amp; (canctl1 &amp; MSCAN_INITAK) == 0) {
+-			out_8( &amp;regs-&gt;canctl0, in_8( &amp;regs-&gt;canctl0 ) | MSCAN_INITRQ);
+-			for (i = 0; i &lt; 255; i++ ) {
+-				if ( in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_INITAK )
++		if (!ret &amp;&amp; (mode &amp; MSCAN_INITRQ)
++		    &amp;&amp; (canctl1 &amp; MSCAN_INITAK) == 0) {
++			out_8(&amp;regs-&gt;canctl0,
++			      in_8(&amp;regs-&gt;canctl0) | MSCAN_INITRQ);
++			for (i = 0; i &lt; 255; i++) {
++				if (in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_INITAK)
+ 					break;
+ 			}
+-			if(i&gt;255)
+-				ret=-ENODEV;
++			if (i &gt; 255)
++				ret = -ENODEV;
+ 		}
+ 
+-		if ( !ret &amp;&amp; (mode &amp; MSCAN_CSWAI) )
+-			out_8( &amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) | MSCAN_CSWAI);
++		if (!ret &amp;&amp; (mode &amp; MSCAN_CSWAI))
++			out_8(&amp;regs-&gt;canctl0,
++			      in_8(&amp;regs-&gt;canctl0) | MSCAN_CSWAI);
+ 
+-	} else  {
++	} else {
+ 		canctl1 = in_8(&amp;regs-&gt;canctl1);
+-		if ( canctl1 &amp; (MSCAN_SLPAK | MSCAN_INITAK) ) {
++		if (canctl1 &amp; (MSCAN_SLPAK | MSCAN_INITAK)) {
+ 			out_8(&amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) &amp;
+ 			      ~(MSCAN_SLPRQ | MSCAN_INITRQ));
+-			for (i = 0; i &lt; 255; i++ ) {
++			for (i = 0; i &lt; 255; i++) {
+ 				canctl1 = in_8(&amp;regs-&gt;canctl1);
+-				if ( (canctl1 &amp; (MSCAN_INITAK | MSCAN_SLPAK)) ==0 )
++				if (!(canctl1 &amp; (MSCAN_INITAK | MSCAN_SLPAK)))
+ 					break;
+ 			}
+-			if(i&gt;255)
+-				ret=-ENODEV;
++			if (i &gt; 255)
++				ret = -ENODEV;
+ 		}
+ 	}
+ 	return ret;
+@@ -148,8 +154,8 @@
+ {
+ 	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
+ 
+-	state-&gt;mode = in_8(&amp;regs-&gt;canctl0) &amp;
+-					(MSCAN_SLPRQ | MSCAN_INITRQ | MSCAN_CSWAI);
++	state-&gt;mode = in_8(&amp;regs-&gt;canctl0) &amp; (MSCAN_SLPRQ | MSCAN_INITRQ |
++					      MSCAN_CSWAI);
+ 	state-&gt;canrier = in_8(&amp;regs-&gt;canrier);
+ 	state-&gt;cantier = in_8(&amp;regs-&gt;cantier);
+ }
+@@ -160,8 +166,8 @@
+ 	int ret;
+ 	ret = mscan_set_mode(can, state-&gt;mode);
+ 	if (!ret) {
+-		out_8( &amp;regs-&gt;canrier, state-&gt;canrier);
+-		out_8( &amp;regs-&gt;cantier, state-&gt;cantier);
++		out_8(&amp;regs-&gt;canrier, state-&gt;canrier);
++		out_8(&amp;regs-&gt;cantier, state-&gt;cantier);
+ 	}
+ 	return ret;
+ }
+@@ -175,29 +181,29 @@
+ 	int i, rtr, buf_id;
+ 	u32 can_id;
+ 
+-	if ( frame-&gt;can_dlc &gt; 8 )
++	if (frame-&gt;can_dlc &gt; 8)
+ 		return -EINVAL;
+ 
+-	dev_dbg( ND2D(ndev), &quot;%s\n&quot;, __FUNCTION__);
++	dev_dbg(ND2D(ndev), &quot;%s\n&quot;, __FUNCTION__);
+ 	out_8(&amp;regs-&gt;cantier, 0);
+ 
+ 	i = ~priv-&gt;tx_active &amp; MSCAN_TXE;
+ 	buf_id = ffs(i) - 1;
+-	switch ( hweight8(i) ) {
+-		case 0:
+-			netif_stop_queue(ndev);
+-			dev_err( ND2D(ndev), &quot;BUG! Tx Ring full when queue awake!\n&quot; );
+-			return NETDEV_TX_BUSY;
+-		case 1:
+-			/* if buf_id &lt; 3, then current frame will be send out of order,
+-			   since  buffer with lower id have higher priority (hell..) */
+-			if(buf_id &lt; 3 )
+-				priv-&gt;cur_pri++;
+-			if(priv-&gt;cur_pri==0xff)
+-				set_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags);
+-			netif_stop_queue(ndev);
+-		case 2:
+-			set_bit(F_TX_PROGRESS, &amp;priv-&gt;flags);
++	switch (hweight8(i)) {
++	case 0:
++		netif_stop_queue(ndev);
++		dev_err(ND2D(ndev), &quot;BUG! Tx Ring full when queue awake!\n&quot;);
++		return NETDEV_TX_BUSY;
++	case 1:
++		/* if buf_id &lt; 3, then current frame will be send out of order,
++		   since  buffer with lower id have higher priority (hell..) */
++		if (buf_id &lt; 3)
++			priv-&gt;cur_pri++;
++		if (priv-&gt;cur_pri == 0xff)
++			set_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags);
++		netif_stop_queue(ndev);
++	case 2:
++		set_bit(F_TX_PROGRESS, &amp;priv-&gt;flags);
+ 	}
+ 	out_8(&amp;regs-&gt;cantbsel, i);
+ 
+@@ -207,27 +213,27 @@
+ 		dev_dbg(ND2D(ndev), &quot;sending extended frame\n&quot;);
+ 
+ 		can_id = (frame-&gt;can_id &amp; CAN_EFF_MASK) &lt;&lt; 1;
+-		if( rtr )
++		if (rtr)
+ 			can_id |= 1;
+ 		out_be16(&amp;regs-&gt;tx.idr3_2, can_id);
+ 
+-		can_id&gt;&gt;=16;
+-		can_id = (can_id &amp; 0x7) | ((can_id&lt;&lt;2) &amp; 0xffe0) | (3&lt;&lt;3);
++		can_id &gt;&gt;= 16;
++		can_id = (can_id &amp; 0x7) | ((can_id &lt;&lt; 2) &amp; 0xffe0) | (3 &lt;&lt; 3);
+ 	} else {
+ 		dev_dbg(ND2D(ndev), &quot;sending standard frame\n&quot;);
+ 		can_id = (frame-&gt;can_id &amp; CAN_SFF_MASK) &lt;&lt; 5;
+-		if( rtr )
+-			can_id |= 1&lt;&lt;4;
++		if (rtr)
++			can_id |= 1 &lt;&lt; 4;
+ 	}
+ 	out_be16(&amp;regs-&gt;tx.idr1_0, can_id);
+ 
+-	if ( !rtr ) {
++	if (!rtr) {
+ 		volatile void __iomem *data = &amp;regs-&gt;tx.dsr1_0;
+-		u16 *payload = (u16 *)frame-&gt;data;
+-		/*Its safe to write into dsr[dlc+1]*/
+-		for (i=0; i&lt;(frame-&gt;can_dlc+1)/2; i++) {
++		u16 *payload = (u16 *) frame-&gt;data;
++		/*Its safe to write into dsr[dlc+1] */
++		for (i = 0; i &lt; (frame-&gt;can_dlc + 1) / 2; i++) {
+ 			out_be16(data, *payload++);
+-		    data += 2+_MSCAN_RESERVED_DSR_SIZE;
++			data += 2 + _MSCAN_RESERVED_DSR_SIZE;
+ 		}
+ 	}
+ 
+@@ -235,23 +241,22 @@
+ 	out_8(&amp;regs-&gt;tx.tbpr, priv-&gt;cur_pri);
+ 
+ 	/* Start transmission. */
+-	out_8(&amp;regs-&gt;cantflg, 1&lt;&lt;buf_id);
++	out_8(&amp;regs-&gt;cantflg, 1 &lt;&lt; buf_id);
+ 
+-	if ( ! test_bit(F_TX_PROGRESS, &amp;priv-&gt;flags) )
++	if (!test_bit(F_TX_PROGRESS, &amp;priv-&gt;flags))
+ 		ndev-&gt;trans_start = jiffies;
+ 
+-	list_add_tail( &amp;priv-&gt;tx_queue[buf_id].list, &amp;priv-&gt;tx_head);
++	list_add_tail(&amp;priv-&gt;tx_queue[buf_id].list, &amp;priv-&gt;tx_head);
+ 
+ 	kfree_skb(skb);
+ 
+ 	/* Enable interrupt. */
+-	priv-&gt;tx_active |= 1&lt;&lt;buf_id;
+-	out_8( &amp;regs-&gt;cantier, priv-&gt;tx_active);
++	priv-&gt;tx_active |= 1 &lt;&lt; buf_id;
++	out_8(&amp;regs-&gt;cantier, priv-&gt;tx_active);
+ 
+ 	return NETDEV_TX_OK;
+ }
+ 
+-
+ static void mscan_tx_timeout(struct net_device *ndev)
+ {
+ 	struct sk_buff *skb;
+@@ -261,22 +266,22 @@
+ 	struct can_frame *frame;
+ 	u8 mask;
+ 
+-	printk (&quot;%s\n&quot;, __FUNCTION__);
++	printk(&quot;%s\n&quot;, __FUNCTION__);
+ 
+ 	out_8(&amp;regs-&gt;cantier, 0);
+ 
+-	mask = list_entry( priv-&gt;tx_head.next, tx_queue_entry_t, list)-&gt;mask;
++	mask = list_entry(priv-&gt;tx_head.next, tx_queue_entry_t, list)-&gt;mask;
+ 	ndev-&gt;trans_start = jiffies;
+ 	out_8(&amp;regs-&gt;cantarq, mask);
+ 	out_8(&amp;regs-&gt;cantier, priv-&gt;tx_active);
+ 
+ 	skb = dev_alloc_skb(sizeof(struct can_frame));
+ 	if (!skb) {
+-		if(printk_ratelimit())
++		if (printk_ratelimit())
+ 			dev_notice(ND2D(ndev), &quot;TIMEOUT packet dropped\n&quot;);
+ 		return;
+ 	}
+-	frame = (struct can_frame *)skb_put(skb,sizeof(struct can_frame));
++	frame = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
+ 
+ 	frame-&gt;can_id = CAN_ERR_FLAG | CAN_ERR_TX_TIMEOUT;
+ 	frame-&gt;can_dlc = CAN_ERR_DLC;
+@@ -299,21 +304,22 @@
+ 
+ static inline int check_set_state(struct can_device *can, u8 canrflg)
+ {
+- can_state_t state;
+- int ret = 0;
++	can_state_t state;
++	int ret = 0;
+ 
+- if ( !(canrflg &amp; MSCAN_CSCIF) || can-&gt;state &gt; CAN_STATE_BUS_OFF)
+-	return 0;
++	if (!(canrflg &amp; MSCAN_CSCIF) || can-&gt;state &gt; CAN_STATE_BUS_OFF)
++		return 0;
+ 
+- state = state_map[max( MSCAN_STATE_RX(canrflg), MSCAN_STATE_TX(canrflg))];
+- if(can-&gt;state &lt; state)
+-	ret = 1;
+- if(state == CAN_STATE_BUS_OFF)
+-	netif_carrier_off(CAN2ND(can));
+- else if(can-&gt;state == CAN_STATE_BUS_OFF &amp;&amp; state != CAN_STATE_BUS_OFF)
+-	netif_carrier_on(CAN2ND(can));
+- can-&gt;state = state;
+- return ret;
++	state =
++	    state_map[max(MSCAN_STATE_RX(canrflg), MSCAN_STATE_TX(canrflg))];
++	if (can-&gt;state &lt; state)
++		ret = 1;
++	if (state == CAN_STATE_BUS_OFF)
++		netif_carrier_off(CAN2ND(can));
++	else if (can-&gt;state == CAN_STATE_BUS_OFF &amp;&amp; state != CAN_STATE_BUS_OFF)
++		netif_carrier_on(CAN2ND(can));
++	can-&gt;state = state;
++	return ret;
+ }
+ 
+ static int mscan_rx_poll(struct net_device *ndev, int *budget)
+@@ -326,54 +332,59 @@
+ 	struct sk_buff *skb;
+ 	struct can_frame *frame;
+ 	u32 can_id;
+-	u8  canrflg;
++	u8 canrflg;
+ 	int i;
+ 
+-	while ( npackets &lt; quota &amp;&amp;
+-	( (canrflg = in_8(&amp;regs-&gt;canrflg)) &amp; (MSCAN_RXF | MSCAN_ERR_IF) )) {
++	while (npackets &lt; quota &amp;&amp; ((canrflg = in_8(&amp;regs-&gt;canrflg)) &amp;
++				    (MSCAN_RXF | MSCAN_ERR_IF))) {
+ 
+ 		skb = dev_alloc_skb(sizeof(struct can_frame));
+ 		if (!skb) {
+-			if(printk_ratelimit())
++			if (printk_ratelimit())
+ 				dev_notice(ND2D(ndev), &quot;packet dropped\n&quot;);
+ 			can-&gt;net_stats.rx_dropped++;
+ 			out_8(&amp;regs-&gt;canrflg, canrflg);
+ 			continue;
+ 		}
+ 
+-		frame = (struct can_frame *)skb_put(skb,sizeof(struct can_frame));
++		frame = (struct can_frame *)skb_put(skb,
++						    sizeof(struct can_frame));
+ 
+ 		if (canrflg &amp; MSCAN_RXF) {
+-			can_id = in_be16( &amp;regs-&gt;rx.idr1_0 );
+-			if (can_id &amp; (1&lt;&lt;3) ) {
+-			   frame-&gt;can_id = CAN_EFF_FLAG;
+-			   can_id = (can_id &lt;&lt; 16) | in_be16(&amp;regs-&gt;rx.idr3_2);
+-			   can_id = ((can_id &amp; 0xffe00000) | ((can_id &amp; 0x7ffff) &lt;&lt; 2 ))&gt;&gt;2;
+-			}
+-			else  {
++			can_id = in_be16(&amp;regs-&gt;rx.idr1_0);
++			if (can_id &amp; (1 &lt;&lt; 3)) {
++				frame-&gt;can_id = CAN_EFF_FLAG;
++				can_id = ((can_id &lt;&lt; 16) |
++					  in_be16(&amp;regs-&gt;rx.idr3_2));
++				can_id = ((can_id &amp; 0xffe00000) |
++					  ((can_id &amp; 0x7ffff) &lt;&lt; 2)) &gt;&gt; 2;
++			} else {
+ 				can_id &gt;&gt;= 4;
+ 				frame-&gt;can_id = 0;
+ 			}
+ 
+-			frame-&gt;can_id |= can_id&gt;&gt;1;
+-			if(can_id &amp; 1)
++			frame-&gt;can_id |= can_id &gt;&gt; 1;
++			if (can_id &amp; 1)
+ 				frame-&gt;can_id |= CAN_RTR_FLAG;
+ 			frame-&gt;can_dlc = in_8(&amp;regs-&gt;rx.dlr) &amp; 0xf;
+ 
+-			if( !(frame-&gt;can_id &amp; CAN_RTR_FLAG ) ) {
+-				volatile void __iomem * data = &amp;regs-&gt;rx.dsr1_0;
+-				u16 *payload = (u16 *)frame-&gt;data;
+-				for (i=0; i&lt;(frame-&gt;can_dlc+1)/2; i++) {
++			if (!(frame-&gt;can_id &amp; CAN_RTR_FLAG)) {
++				volatile void __iomem *data = &amp;regs-&gt;rx.dsr1_0;
++				u16 *payload = (u16 *) frame-&gt;data;
++				for (i = 0; i &lt; (frame-&gt;can_dlc + 1) / 2; i++) {
+ 					*payload++ = in_be16(data);
+-				    data += 2+_MSCAN_RESERVED_DSR_SIZE;
++					data += 2 + _MSCAN_RESERVED_DSR_SIZE;
+ 				}
+ 			}
+ 
+-			dev_dbg(ND2D(ndev), &quot;received pkt: id: %u dlc: %u data: &quot;,
+-				frame-&gt;can_id,frame-&gt;can_dlc);
++			dev_dbg(ND2D(ndev),
++				&quot;received pkt: id: %u dlc: %u data: &quot;,
++				frame-&gt;can_id, frame-&gt;can_dlc);
+ #ifdef DEBUG
+-			for(i=0; i&lt;frame-&gt;can_dlc &amp;&amp; !(frame-&gt;can_id &amp; CAN_FLAG_RTR ); i++)
+-				printk( &quot;%2x &quot;,frame-&gt;data[i]);
++			for (i = 0;
++			     i &lt; frame-&gt;can_dlc &amp;&amp; !(frame-&gt;can_id &amp;
++						     CAN_FLAG_RTR); i++)
++				printk(&quot;%2x &quot;, frame-&gt;data[i]);
+ 			printk(&quot;\n&quot;);
+ #endif
+ 
+@@ -381,38 +392,41 @@
+ 			ndev-&gt;last_rx = jiffies;
+ 			can-&gt;net_stats.rx_packets++;
+ 			can-&gt;net_stats.rx_bytes += frame-&gt;can_dlc;
+-		}
+-		else if (canrflg &amp; MSCAN_ERR_IF ) {
++		} else if (canrflg &amp; MSCAN_ERR_IF) {
+ 			frame-&gt;can_id = CAN_ERR_FLAG;
+ 
+ 			if (canrflg &amp; MSCAN_OVRIF) {
+ 				frame-&gt;can_id |= CAN_ERR_CRTL;
+ 				frame-&gt;data[1] = CAN_ERR_CRTL_RX_OVERFLOW;
+ 				can-&gt;net_stats.rx_over_errors++;
+-			}
+-			else
++			} else
+ 				frame-&gt;data[1] = 0;
+ 
+-			if ( check_set_state(can, canrflg)) {
+-			  frame-&gt;can_id |= CAN_ERR_CRTL;
+-			  switch( can-&gt;state )  {
+-				  case CAN_STATE_BUS_WARNING:
+-					if( (priv-&gt;shadow_statflg &amp; MSCAN_RSTAT_MSK) &lt;
++			if (check_set_state(can, canrflg)) {
++				frame-&gt;can_id |= CAN_ERR_CRTL;
++				switch (can-&gt;state) {
++				case CAN_STATE_BUS_WARNING:
++					if ((priv-&gt;shadow_statflg &amp;
++					     MSCAN_RSTAT_MSK) &lt;
+ 					    (canrflg &amp; MSCAN_RSTAT_MSK))
+-						frame-&gt;data[1] |= CAN_ERR_CRTL_RX_WARNING;
++						frame-&gt;data[1] |=
++						    CAN_ERR_CRTL_RX_WARNING;
+ 
+-					if( (priv-&gt;shadow_statflg &amp; MSCAN_TSTAT_MSK) &lt;
++					if ((priv-&gt;shadow_statflg &amp;
++					     MSCAN_TSTAT_MSK) &lt;
+ 					    (canrflg &amp; MSCAN_TSTAT_MSK))
+-						frame-&gt;data[1] |= CAN_ERR_CRTL_TX_WARNING;
++						frame-&gt;data[1] |=
++							CAN_ERR_CRTL_TX_WARNING;
+ 					break;
+-				  case CAN_STATE_BUS_PASSIVE:
+-					frame-&gt;data[1] |= CAN_ERR_CRTL_RX_PASSIVE;
++				case CAN_STATE_BUS_PASSIVE:
++					frame-&gt;data[1] |=
++					    CAN_ERR_CRTL_RX_PASSIVE;
+ 					break;
+-				  case CAN_STATE_BUS_OFF:
++				case CAN_STATE_BUS_OFF:
+ 					frame-&gt;can_id |= CAN_ERR_BUSOFF;
+ 					frame-&gt;can_id &amp;= ~CAN_ERR_CRTL;
+ 					break;
+-			  }
++				}
+ 			}
+ 			priv-&gt;shadow_statflg = canrflg &amp; MSCAN_STAT_MSK;
+ 			frame-&gt;can_dlc = CAN_ERR_DLC;
+@@ -426,16 +440,17 @@
+ 		netif_receive_skb(skb);
+ 	}
+ 
+-  *budget -= npackets;
+-  ndev-&gt;quota -= npackets;
++	*budget -= npackets;
++	ndev-&gt;quota -= npackets;
+ 
+-  if ( !(in_8(&amp;regs-&gt;canrflg) &amp; (MSCAN_RXF | MSCAN_ERR_IF))) {
+-	netif_rx_complete(ndev);
+-	clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
+-	out_8(&amp;regs-&gt;canrier, in_8(&amp;regs-&gt;canrier) | MSCAN_ERR_IF | MSCAN_RXFIE);
+-	ret = 0;
+-  }
+-  return ret;
++	if (!(in_8(&amp;regs-&gt;canrflg) &amp; (MSCAN_RXF | MSCAN_ERR_IF))) {
++		netif_rx_complete(ndev);
++		clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
++		out_8(&amp;regs-&gt;canrier,
++		      in_8(&amp;regs-&gt;canrier) | MSCAN_ERR_IF | MSCAN_RXFIE);
++		ret = 0;
++	}
++	return ret;
+ }
+ 
+ static irqreturn_t
+@@ -445,31 +460,30 @@
+ mscan_isr(int irq, void *dev_id)
+ #endif
+ {
+-	struct net_device *ndev = (struct net_device *) dev_id;
++	struct net_device *ndev = (struct net_device *)dev_id;
+ 	struct can_device *can = ND2CAN(ndev);
+ 	struct mscan_regs *regs = (struct mscan_regs *)(ndev-&gt;base_addr);
+ 	struct mscan_priv *priv = can-&gt;priv;
+ 	u8 cantflg, canrflg;
+ 	irqreturn_t ret = IRQ_NONE;
+ 
+-	if ( in_8(&amp;regs-&gt;cantier) &amp; MSCAN_TXE )
+-	{
++	if (in_8(&amp;regs-&gt;cantier) &amp; MSCAN_TXE) {
+ 		struct list_head *tmp, *pos;
+ 
+ 		cantflg = in_8(&amp;regs-&gt;cantflg) &amp; MSCAN_TXE;
+ 
+-		list_for_each_safe(pos, tmp, &amp;priv-&gt;tx_head)  {
+-			tx_queue_entry_t *entry = list_entry(pos, tx_queue_entry_t, list);
++		list_for_each_safe(pos, tmp, &amp;priv-&gt;tx_head) {
++			tx_queue_entry_t *entry =
++			    list_entry(pos, tx_queue_entry_t, list);
+ 			u8 mask = entry-&gt;mask;
+ 
+-			if( !(cantflg &amp; mask) )
++			if (!(cantflg &amp; mask))
+ 				continue;
+ 
+-			if ( in_8(&amp;regs-&gt;cantaak) &amp; mask ) {
++			if (in_8(&amp;regs-&gt;cantaak) &amp; mask) {
+ 				can-&gt;net_stats.tx_dropped++;
+ 				can-&gt;net_stats.tx_aborted_errors++;
+-			}
+-			else {
++			} else {
+ 				out_8(&amp;regs-&gt;cantbsel, mask);
+ 				can-&gt;net_stats.tx_bytes += in_8(&amp;regs-&gt;tx.dlr);
+ 				can-&gt;net_stats.tx_packets++;
+@@ -478,24 +492,23 @@
+ 			list_del(pos);
+ 		}
+ 
+-		if ( list_empty(&amp;priv-&gt;tx_head) ) {
++		if (list_empty(&amp;priv-&gt;tx_head)) {
+ 			clear_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags);
+ 			clear_bit(F_TX_PROGRESS, &amp;priv-&gt;flags);
+ 			priv-&gt;cur_pri = 0;
+-		}
+-		else
++		} else
+ 			ndev-&gt;trans_start = jiffies;
+ 
+-		if( !test_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags) )
++		if (!test_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags))
+ 			netif_wake_queue(ndev);
+ 
+-		out_8( &amp;regs-&gt;cantier, priv-&gt;tx_active );
++		out_8(&amp;regs-&gt;cantier, priv-&gt;tx_active);
+ 		ret = IRQ_HANDLED;
+ 	}
+ 
+ 	if ((((canrflg = in_8(&amp;regs-&gt;canrflg)) &amp; ~MSCAN_STAT_MSK)) &amp;&amp;
+ 	    !test_and_set_bit(F_RX_PROGRESS, &amp;priv-&gt;flags)) {
+-		if ( check_set_state(can, canrflg) ) {
++		if (check_set_state(can, canrflg)) {
+ 			out_8(&amp;regs-&gt;canrflg, MSCAN_CSCIF);
+ 			ret = IRQ_HANDLED;
+ 		}
+@@ -504,8 +517,7 @@
+ 			out_8(&amp;regs-&gt;canrier, 0);
+ 			netif_rx_schedule(ndev);
+ 			ret = IRQ_HANDLED;
+-		}
+-		else
++		} else
+ 			clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
+ 	}
+ 	return ret;
+@@ -518,10 +530,12 @@
+ 	case CAN_MODE_STOP:
+ 		netif_stop_queue(CAN2ND(can));
+ 		mscan_set_mode(can,
+-					(mode==CAN_MODE_STOP)? MSCAN_INIT_MODE: MSCAN_SLEEP_MODE);
++			       (mode ==
++				CAN_MODE_STOP) ? MSCAN_INIT_MODE :
++			       MSCAN_SLEEP_MODE);
+ 		break;
+ 	case CAN_MODE_START:
+-		printk(&quot;%s: CAN_MODE_START requested\n&quot;,__FUNCTION__);
++		printk(&quot;%s: CAN_MODE_START requested\n&quot;, __FUNCTION__);
+ 		mscan_set_mode(can, MSCAN_NORMAL_MODE);
+ 		netif_wake_queue(CAN2ND(can));
+ 		break;
+@@ -540,23 +554,24 @@
+ 	struct mscan_state state;
+ 	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
+ 
+-	if(bt-&gt;type != CAN_BITTIME_STD)
++	if (bt-&gt;type != CAN_BITTIME_STD)
+ 		return -EINVAL;
+ 
+ 	spin_lock_irq(&amp;can-&gt;irq_lock);
+ 
+ 	mscan_push_state(can, &amp;state);
+-    ret = mscan_set_mode(can, MSCAN_INIT_MODE);
+-    if (! ret) {
++	ret = mscan_set_mode(can, MSCAN_INIT_MODE);
++	if (!ret) {
+ 		reg = BTR0_SET_BRP(bt-&gt;std.brp) | BTR0_SET_SJW(bt-&gt;std.sjw);
+ 		out_8(&amp;regs-&gt;canbtr0, reg);
+ 
+-		reg = BTR1_SET_TSEG1(bt-&gt;std.prop_seg + bt-&gt;std.phase_seg1) |
+-			  BTR1_SET_TSEG2(bt-&gt;std.phase_seg2) | BTR1_SET_SAM(bt-&gt;std.sam);
++		reg = (BTR1_SET_TSEG1(bt-&gt;std.prop_seg + bt-&gt;std.phase_seg1) |
++		       BTR1_SET_TSEG2(bt-&gt;std.phase_seg2) |
++		       BTR1_SET_SAM(bt-&gt;std.sam));
+ 		out_8(&amp;regs-&gt;canbtr1, reg);
+ 
+-	    ret = mscan_pop_state(can, &amp;state);
+-    }
++		ret = mscan_pop_state(can, &amp;state);
++	}
+ 
+ 	spin_unlock_irq(&amp;can-&gt;irq_lock);
+ 	return ret;
+@@ -569,8 +584,11 @@
+ 	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
+ 	struct mscan_priv *priv = can-&gt;priv;
+ 
+-	if((ret = request_irq(ndev-&gt;irq, mscan_isr, SA_SHIRQ, ndev-&gt;name, ndev)) &lt; 0) {
+-		printk(KERN_ERR &quot;%s - failed to attach interrupt\n&quot;, ndev-&gt;name);
++	if ((ret =
++	     request_irq(ndev-&gt;irq, mscan_isr, SA_SHIRQ, ndev-&gt;name,
++			 ndev)) &lt; 0) {
++		printk(KERN_ERR &quot;%s - failed to attach interrupt\n&quot;,
++		       ndev-&gt;name);
+ 		return ret;
+ 	}
+ 
+@@ -589,7 +607,7 @@
+ 	out_8(&amp;regs-&gt;canidac, MSCAN_AF_32BIT);
+ 
+ 	out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_LISTEN);
+-	mscan_set_mode( can, MSCAN_NORMAL_MODE);
++	mscan_set_mode(can, MSCAN_NORMAL_MODE);
+ 
+ 	priv-&gt;shadow_statflg = in_8(&amp;regs-&gt;canrflg) &amp; MSCAN_STAT_MSK;
+ 	priv-&gt;cur_pri = 0;
+@@ -598,8 +616,7 @@
+ 	out_8(&amp;regs-&gt;cantier, 0);
+ 	/* Enable receive interrupts. */
+ 	out_8(&amp;regs-&gt;canrier, MSCAN_OVRIE | MSCAN_RXFIE | MSCAN_CSCIE |
+-	      MSCAN_RSTATE1 | MSCAN_RSTATE0 |
+-	      MSCAN_TSTATE1 | MSCAN_TSTATE0);
++	      MSCAN_RSTATE1 | MSCAN_RSTATE0 | MSCAN_TSTATE1 | MSCAN_TSTATE0);
+ 
+ 	netif_start_queue(ndev);
+ 
+@@ -608,89 +625,90 @@
+ 
+ static int mscan_close(struct net_device *ndev)
+ {
+-  struct can_device *can = ND2CAN(ndev);
+-  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	struct can_device *can = ND2CAN(ndev);
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
+ 
+-  netif_stop_queue(ndev);
++	netif_stop_queue(ndev);
+ 
+-  /* disable interrupts */
+-  out_8(&amp;regs-&gt;cantier, 0);
+-  out_8(&amp;regs-&gt;canrier, 0);
+-  free_irq(ndev-&gt;irq, ndev);
++	/* disable interrupts */
++	out_8(&amp;regs-&gt;cantier, 0);
++	out_8(&amp;regs-&gt;canrier, 0);
++	free_irq(ndev-&gt;irq, ndev);
+ 
+-  mscan_set_mode( can, MSCAN_INIT_MODE);
+-  return 0;
++	mscan_set_mode(can, MSCAN_INIT_MODE);
++	return 0;
+ }
+ 
+ int mscan_register(struct can_device *can, int clock_src)
+ {
+-  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
+-  u8 ctl1;
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	u8 ctl1;
+ 
+-  ctl1 = in_8(&amp;regs-&gt;canctl1);
+-  if(clock_src)
+-	ctl1 |= MSCAN_CLKSRC;
+-  else
+-	ctl1 &amp;= ~MSCAN_CLKSRC;
++	ctl1 = in_8(&amp;regs-&gt;canctl1);
++	if (clock_src)
++		ctl1 |= MSCAN_CLKSRC;
++	else
++		ctl1 &amp;= ~MSCAN_CLKSRC;
+ 
+-  ctl1 |= MSCAN_CANE;
+-  out_8(&amp;regs-&gt;canctl1, ctl1);
+-  udelay(100);
++	ctl1 |= MSCAN_CANE;
++	out_8(&amp;regs-&gt;canctl1, ctl1);
++	udelay(100);
+ 
+-  mscan_set_mode( can, MSCAN_INIT_MODE );
++	mscan_set_mode(can, MSCAN_INIT_MODE);
+ 
+-  return register_netdev(CAN2ND(can));
++	return register_netdev(CAN2ND(can));
+ }
++
+ EXPORT_SYMBOL(mscan_register);
+ 
+ void mscan_unregister(struct can_device *can)
+ {
+-  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
+-  mscan_set_mode( can, MSCAN_INIT_MODE );
+-  out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_CANE);
+-  unregister_netdev(CAN2ND(can));
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	mscan_set_mode(can, MSCAN_INIT_MODE);
++	out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_CANE);
++	unregister_netdev(CAN2ND(can));
+ }
+ 
+ EXPORT_SYMBOL(mscan_unregister);
+ 
+ struct can_device *alloc_mscandev()
+ {
+-  struct can_device *can;
+-  struct net_device *ndev;
+-  struct mscan_priv *priv;
+-  int i;
++	struct can_device *can;
++	struct net_device *ndev;
++	struct mscan_priv *priv;
++	int i;
+ 
+-  can = alloc_candev(sizeof(struct mscan_priv));
+-  if(!can)
++	can = alloc_candev(sizeof(struct mscan_priv));
++	if (!can)
+ 		return NULL;
+-  ndev = CAN2ND(can);
+-  priv = can-&gt;priv;
++	ndev = CAN2ND(can);
++	priv = can-&gt;priv;
+ 
+-  ndev-&gt;watchdog_timeo	= MSCAN_WATCHDOG_TIMEOUT;
+-  ndev-&gt;open		= mscan_open;
+-  ndev-&gt;stop		= mscan_close;
+-  ndev-&gt;hard_start_xmit	= mscan_hard_start_xmit;
+-  ndev-&gt;tx_timeout     	= mscan_tx_timeout;
++	ndev-&gt;watchdog_timeo = MSCAN_WATCHDOG_TIMEOUT;
++	ndev-&gt;open = mscan_open;
++	ndev-&gt;stop = mscan_close;
++	ndev-&gt;hard_start_xmit = mscan_hard_start_xmit;
++	ndev-&gt;tx_timeout = mscan_tx_timeout;
+ 
+-  ndev-&gt;type		= ARPHRD_CAN;
+-  ndev-&gt;hard_header_len	= 0;
+-  ndev-&gt;mtu		= sizeof(struct can_frame);
+-  ndev-&gt;addr_len	= 0;
+-  ndev-&gt;tx_queue_len	= 10;
++	ndev-&gt;type = ARPHRD_CAN;
++	ndev-&gt;hard_header_len = 0;
++	ndev-&gt;mtu = sizeof(struct can_frame);
++	ndev-&gt;addr_len = 0;
++	ndev-&gt;tx_queue_len = 10;
+ 
+-  ndev-&gt;flags		= IFF_NOARP;
+-  ndev-&gt;features	= NETIF_F_NO_CSUM;
++	ndev-&gt;flags = IFF_NOARP;
++	ndev-&gt;features = NETIF_F_NO_CSUM;
+ 
+-  ndev-&gt;poll     		= mscan_rx_poll;
+-  ndev-&gt;weight     		= 8;
++	ndev-&gt;poll = mscan_rx_poll;
++	ndev-&gt;weight = 8;
+ 
+-  can-&gt;do_set_bit_time	= mscan_do_set_bit_time;
+-  can-&gt;do_set_mode		= mscan_do_set_mode;
++	can-&gt;do_set_bit_time = mscan_do_set_bit_time;
++	can-&gt;do_set_mode = mscan_do_set_mode;
+ 
+-  for(i=0; i&lt; TX_QUEUE_SIZE; i++)
+-	priv-&gt;tx_queue[i].mask = 1&lt;&lt;i;
++	for (i = 0; i &lt; TX_QUEUE_SIZE; i++)
++		priv-&gt;tx_queue[i].mask = 1 &lt;&lt; i;
+ 
+-  return can;
++	return can;
+ }
+ 
+ EXPORT_SYMBOL(alloc_mscandev);
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.h	2007-07-21 17:53:09 UTC (rev 438)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.h	2007-07-25 09:22:53 UTC (rev 439)
+@@ -41,16 +41,16 @@
+ #define MSCAN_TIME		0x08
+ #define MSCAN_WUPE		0x04
+ #define MSCAN_SLPRQ		0x02
+-#define MSCAN_INITRQ	0x01
++#define MSCAN_INITRQ		0x01
+ 
+ /* MSCAN control register 1 (CANCTL1) bits */
+ #define MSCAN_CANE		0x80
+-#define MSCAN_CLKSRC	0x40
++#define MSCAN_CLKSRC		0x40
+ #define MSCAN_LOOPB		0x20
+-#define MSCAN_LISTEN	0x10
++#define MSCAN_LISTEN		0x10
+ #define MSCAN_WUPM		0x04
+ #define MSCAN_SLPAK		0x02
+-#define MSCAN_INITAK	0x01
++#define MSCAN_INITAK		0x01
+ 
+ #ifdef	CONFIG_PPC_MPC52xx
+ #define MSCAN_CLKSRC_BUS	0
+@@ -63,34 +63,33 @@
+ /* MSCAN receiver flag register (CANRFLG) bits */
+ #define MSCAN_WUPIF		0x80
+ #define MSCAN_CSCIF		0x40
+-#define MSCAN_RSTAT1	0x20
+-#define MSCAN_RSTAT0	0x10
+-#define MSCAN_TSTAT1	0x08
+-#define MSCAN_TSTAT0	0x04
++#define MSCAN_RSTAT1		0x20
++#define MSCAN_RSTAT0		0x10
++#define MSCAN_TSTAT1		0x08
++#define MSCAN_TSTAT0		0x04
+ #define MSCAN_OVRIF		0x02
+ #define MSCAN_RXF		0x01
+-#define MSCAN_ERR_IF 	(MSCAN_OVRIF | MSCAN_CSCIF)
+-#define MSCAN_RSTAT_MSK	(MSCAN_RSTAT1 | MSCAN_RSTAT0)
+-#define MSCAN_TSTAT_MSK	(MSCAN_TSTAT1 | MSCAN_TSTAT0)
+-#define MSCAN_STAT_MSK	(MSCAN_RSTAT_MSK | MSCAN_TSTAT_MSK)
++#define MSCAN_ERR_IF 		(MSCAN_OVRIF | MSCAN_CSCIF)
++#define MSCAN_RSTAT_MSK		(MSCAN_RSTAT1 | MSCAN_RSTAT0)
++#define MSCAN_TSTAT_MSK		(MSCAN_TSTAT1 | MSCAN_TSTAT0)
++#define MSCAN_STAT_MSK		(MSCAN_RSTAT_MSK | MSCAN_TSTAT_MSK)
+ 
+-#define MSCAN_STATE_BUS_OFF \
+-					(MSCAN_RSTAT1 | MSCAN_RSTAT0 | MSCAN_TSTAT1 | MSCAN_TSTAT0)
+-#define MSCAN_STATE_TX(canrflg)  (((canrflg)&amp;MSCAN_TSTAT_MSK)&gt;&gt;2)
+-#define MSCAN_STATE_RX(canrflg)  (((canrflg)&amp;MSCAN_RSTAT_MSK)&gt;&gt;4)
+-#define MSCAN_STATE_ACTIVE		0
+-#define MSCAN_STATE_WARNING		1
+-#define MSCAN_STATE_PASSIVE		2
+-#define MSCAN_STATE_BUSOFF		3
++#define MSCAN_STATE_BUS_OFF	(MSCAN_RSTAT1 | MSCAN_RSTAT0 | \
++				 MSCAN_TSTAT1 | MSCAN_TSTAT0)
++#define MSCAN_STATE_TX(canrflg)	(((canrflg)&amp;MSCAN_TSTAT_MSK)&gt;&gt;2)
++#define MSCAN_STATE_RX(canrflg)	(((canrflg)&amp;MSCAN_RSTAT_MSK)&gt;&gt;4)
++#define MSCAN_STATE_ACTIVE	0
++#define MSCAN_STATE_WARNING	1
++#define MSCAN_STATE_PASSIVE	2
++#define MSCAN_STATE_BUSOFF	3
+ 
+-
+ /* MSCAN receiver interrupt enable register (CANRIER) bits */
+ #define MSCAN_WUPIE		0x80
+ #define MSCAN_CSCIE		0x40
+-#define MSCAN_RSTATE1	0x20
+-#define MSCAN_RSTATE0	0x10
+-#define MSCAN_TSTATE1	0x08
+-#define MSCAN_TSTATE0	0x04
++#define MSCAN_RSTATE1		0x20
++#define MSCAN_RSTATE0		0x10
++#define MSCAN_TSTATE1		0x08
++#define MSCAN_TSTATE0		0x04
+ #define MSCAN_OVRIE		0x02
+ #define MSCAN_RXFIE		0x01
+ 
+@@ -107,14 +106,14 @@
+ #define MSCAN_TXIE		(MSCAN_TXIE2 | MSCAN_TXIE1 | MSCAN_TXIE0)
+ 
+ /* MSCAN transmitter message abort request (CANTARQ) bits */
+-#define MSCAN_ABTRQ2	0x04
+-#define MSCAN_ABTRQ1	0x02
+-#define MSCAN_ABTRQ0	0x01
++#define MSCAN_ABTRQ2		0x04
++#define MSCAN_ABTRQ1		0x02
++#define MSCAN_ABTRQ0		0x01
+ 
+ /* MSCAN transmitter message abort ack (CANTAAK) bits */
+-#define MSCAN_ABTAK2	0x04
+-#define MSCAN_ABTAK1	0x02
+-#define MSCAN_ABTAK0	0x01
++#define MSCAN_ABTAK2		0x04
++#define MSCAN_ABTAK1		0x02
++#define MSCAN_ABTAK0		0x01
+ 
+ /* MSCAN transmit buffer selection (CANTBSEL) bits */
+ #define MSCAN_TX2		0x04
+@@ -124,113 +123,109 @@
+ /* MSCAN ID acceptance control register (CANIDAC) bits */
+ #define MSCAN_IDAM1		0x20
+ #define MSCAN_IDAM0		0x10
+-#define MSCAN_IDHIT2	0x04
+-#define MSCAN_IDHIT1	0x02
+-#define MSCAN_IDHIT0	0x01
++#define MSCAN_IDHIT2		0x04
++#define MSCAN_IDHIT1		0x02
++#define MSCAN_IDHIT0		0x01
+ 
+-#define MSCAN_AF_32BIT	0x00
+-#define MSCAN_AF_16BIT	MSCAN_IDAM0
+-#define MSCAN_AF_8BIT	MSCAN_IDAM1
+-#define MSCAN_AF_CLOSED	(MSCAN_IDAM0|MSCAN_IDAM1)
+-#define MSCAN_AF_MASK	(~(MSCAN_IDAM0|MSCAN_IDAM1))
++#define MSCAN_AF_32BIT		0x00
++#define MSCAN_AF_16BIT		MSCAN_IDAM0
++#define MSCAN_AF_8BIT		MSCAN_IDAM1
++#define MSCAN_AF_CLOSED		(MSCAN_IDAM0|MSCAN_IDAM1)
++#define MSCAN_AF_MASK		(~(MSCAN_IDAM0|MSCAN_IDAM1))
+ 
+ /* MSCAN Miscellaneous Register (CANMISC) bits */
+-#define MSCAN_BOHOLD	0x01
++#define MSCAN_BOHOLD		0x01
+ 
+ #ifdef	CONFIG_PPC_MPC52xx
+- #define _MSCAN_RESERVED_(n,num)	u8	_res##n[num]
+- #define _MSCAN_RESERVED_DSR_SIZE	2
++#define _MSCAN_RESERVED_(n,num)	u8	_res##n[num]
++#define _MSCAN_RESERVED_DSR_SIZE	2
+ #else
+- #define _MSCAN_RESERVED_(n,num)
+- #define _MSCAN_RESERVED_DSR_SIZE	0
++#define _MSCAN_RESERVED_(n,num)
++#define _MSCAN_RESERVED_DSR_SIZE	0
+ #endif
+ 
+ /* Structure of the hardware registers */
+ struct mscan_regs {
+-/*======================================================
+-	register map for mscan
+-========================================================*/
+-							/*  MPC5200 	   MSCAN block		*/
+-							/*			  see doco S12MSCANV3/D */
+-	u8  canctl0;        	/* + 0x00		   0x00	*/
+-	u8  canctl1;        	/* + 0x01		   0x01	*/
+-	_MSCAN_RESERVED_(1,2);	/* + 0x02		   		*/
+-	u8  canbtr0;        	/* + 0x04		   0x02	*/
+-	u8  canbtr1;        	/* + 0x05		   0x03	*/
+-	_MSCAN_RESERVED_(2,2);	/* + 0x06		   		*/
+-	u8  canrflg;        	/* + 0x08		   0x04	*/
+-	u8  canrier;        	/* + 0x09		   0x05	*/
+-	_MSCAN_RESERVED_(3,2);	/* + 0x0a		   		*/
+-	u8  cantflg;        	/* + 0x0c		   0x06	*/
+-	u8  cantier;        	/* + 0x0d		   0x07	*/
+-	_MSCAN_RESERVED_(4,2);	/* + 0x0e		   		*/
+-	u8  cantarq;        	/* + 0x10		   0x08	*/
+-	u8  cantaak;        	/* + 0x11		   0x09	*/
+-	_MSCAN_RESERVED_(5,2);	/* + 0x12		   		*/
+-	u8  cantbsel;       	/* + 0x14		   0x0a	*/
+-	u8  canidac;        	/* + 0x15		   0x0b	*/
+-	u8  reserved;			/* + 0x16		   0x0c	*/
+-	_MSCAN_RESERVED_(6,5);	/* + 0x17		   		*/
++	/* (see doco S12MSCANV3/D)		  MPC5200    MSCAN */
++	u8 canctl0;				/* + 0x00     0x00 */
++	u8 canctl1;				/* + 0x01     0x01 */
++	_MSCAN_RESERVED_(1, 2);			/* + 0x02          */
++	u8 canbtr0;				/* + 0x04     0x02 */
++	u8 canbtr1;				/* + 0x05     0x03 */
++	_MSCAN_RESERVED_(2, 2);			/* + 0x06          */
++	u8 canrflg;				/* + 0x08     0x04 */
++	u8 canrier;				/* + 0x09     0x05 */
++	_MSCAN_RESERVED_(3, 2);			/* + 0x0a          */
++	u8 cantflg;				/* + 0x0c     0x06 */
++	u8 cantier;				/* + 0x0d     0x07 */
++	_MSCAN_RESERVED_(4, 2);			/* + 0x0e          */
++	u8 cantarq;				/* + 0x10     0x08 */
++	u8 cantaak;				/* + 0x11     0x09 */
++	_MSCAN_RESERVED_(5, 2);			/* + 0x12          */
++	u8 cantbsel;				/* + 0x14     0x0a */
++	u8 canidac;				/* + 0x15     0x0b */
++	u8 reserved;				/* + 0x16     0x0c */
++	_MSCAN_RESERVED_(6, 5);			/* + 0x17          */
+ #ifndef CONFIG_PPC_MPC52xx
+-	u8  canmisc;			/*			   	   0x0d */
++	u8 canmisc;				/*            0x0d */
+ #endif
+-	u8  canrxerr;			/* + 0x1c		   0x0e	*/
+-	u8  cantxerr;			/* + 0x1d		   0x0f	*/
+-	_MSCAN_RESERVED_(7,2);	/* + 0x1e		   		*/
+-	u16	canidar1_0;			/* + 0x20		   0x10	*/
+-	_MSCAN_RESERVED_(8,2);	/* + 0x22		   		*/
+-	u16	canidar3_2;     	/* + 0x24		   0x12	*/
+-	_MSCAN_RESERVED_(9,2);	/* + 0x26		   		*/
+-	u16	canidmr1_0;			/* + 0x28		   0x14	*/
+-	_MSCAN_RESERVED_(10,2);	/* + 0x2a		   		*/
+-	u16	canidmr3_2;			/* + 0x2c		   0x16	*/
+-	_MSCAN_RESERVED_(11,2);	/* + 0x2e		   		*/
+-	u16	canidar5_4;     	/* + 0x30		   0x18	*/
+-	_MSCAN_RESERVED_(12,2);	/* + 0x32		   		*/
+-	u16	canidar7_6;     	/* + 0x34		   0x1a	*/
+-	_MSCAN_RESERVED_(13,2);	/* + 0x36		   		*/
+-	u16	canidmr5_4;     	/* + 0x38		   0x1c	*/
+-	_MSCAN_RESERVED_(14,2);	/* + 0x3a		   		*/
+-	u16	canidmr7_6;     	/* + 0x3c		   0x1e	*/
+-	_MSCAN_RESERVED_(15,2);	/* + 0x3e		   		*/
+-	struct  {
+-		u16 idr1_0;    			/* + 0x40		   0x20	*/
+-		_MSCAN_RESERVED_(16,2);	/* + 0x42		   		*/
+-		u16 idr3_2;     		/* + 0x44		   0x22	*/
+-		_MSCAN_RESERVED_(17,2);	/* + 0x46		   		*/
+-		u16 dsr1_0;    			/* + 0x48		   0x24	*/
+-		_MSCAN_RESERVED_(18,2);	/* + 0x4a		   		*/
+-		u16 dsr3_2;     		/* + 0x4c		   0x26	*/
+-		_MSCAN_RESERVED_(19,2);	/* + 0x4e		   		*/
+-		u16 dsr5_4;     		/* + 0x50		   0x28	*/
+-		_MSCAN_RESERVED_(20,2);	/* + 0x52		   		*/
+-		u16 dsr7_6;     		/* + 0x54		   0x2a	*/
+-		_MSCAN_RESERVED_(21,2);	/* + 0x56		   		*/
+-		u8  dlr;        		/* + 0x58		   0x2c	*/
+-		u8  	:8;				/* + 0x59		   0x2d	*/
+-		_MSCAN_RESERVED_(22,2);	/* + 0x5a		   		*/
+-		u16 time;       		/* + 0x5c		   0x2e	*/
++	u8 canrxerr;				/* + 0x1c     0x0e */
++	u8 cantxerr;				/* + 0x1d     0x0f */
++	_MSCAN_RESERVED_(7, 2);			/* + 0x1e          */
++	u16 canidar1_0;				/* + 0x20     0x10 */
++	_MSCAN_RESERVED_(8, 2);			/* + 0x22          */
++	u16 canidar3_2;				/* + 0x24     0x12 */
++	_MSCAN_RESERVED_(9, 2);			/* + 0x26          */
++	u16 canidmr1_0;				/* + 0x28     0x14 */
++	_MSCAN_RESERVED_(10, 2);		/* + 0x2a          */
++	u16 canidmr3_2;				/* + 0x2c     0x16 */
++	_MSCAN_RESERVED_(11, 2);		/* + 0x2e          */
++	u16 canidar5_4;				/* + 0x30     0x18 */
++	_MSCAN_RESERVED_(12, 2);		/* + 0x32          */
++	u16 canidar7_6;				/* + 0x34     0x1a */
++	_MSCAN_RESERVED_(13, 2);		/* + 0x36          */
++	u16 canidmr5_4;				/* + 0x38     0x1c */
++	_MSCAN_RESERVED_(14, 2);		/* + 0x3a          */
++	u16 canidmr7_6;				/* + 0x3c     0x1e */
++	_MSCAN_RESERVED_(15, 2);		/* + 0x3e          */
++	struct {
++		u16 idr1_0;			/* + 0x40     0x20 */
++		 _MSCAN_RESERVED_(16, 2);	/* + 0x42          */
++		u16 idr3_2;			/* + 0x44     0x22 */
++		 _MSCAN_RESERVED_(17, 2);	/* + 0x46          */
++		u16 dsr1_0;			/* + 0x48     0x24 */
++		 _MSCAN_RESERVED_(18, 2);	/* + 0x4a          */
++		u16 dsr3_2;			/* + 0x4c     0x26 */
++		 _MSCAN_RESERVED_(19, 2);	/* + 0x4e          */
++		u16 dsr5_4;			/* + 0x50     0x28 */
++		 _MSCAN_RESERVED_(20, 2);	/* + 0x52          */
++		u16 dsr7_6;			/* + 0x54     0x2a */
++		 _MSCAN_RESERVED_(21, 2);	/* + 0x56          */
++		u8 dlr;				/* + 0x58     0x2c */
++		 u8:8;				/* + 0x59     0x2d */
++		 _MSCAN_RESERVED_(22, 2);	/* + 0x5a          */
++		u16 time;			/* + 0x5c     0x2e */
+ 	} rx;
+-	_MSCAN_RESERVED_(23,2);		/* + 0x5e		   		*/
+-	struct  {
+-		u16  idr1_0;    		/* + 0x60		   0x30	*/
+-		_MSCAN_RESERVED_(24,2); /* + 0x62		   		*/
+-		u16  idr3_2;    		/* + 0x64		   0x32	*/
+-		_MSCAN_RESERVED_(25,2); /* + 0x66		   		*/
+-		u16  dsr1_0;    		/* + 0x68		   0x34	*/
+-		_MSCAN_RESERVED_(26,2); /* + 0x6a		   		*/
+-		u16  dsr3_2;    		/* + 0x6c		   0x36	*/
+-		_MSCAN_RESERVED_(27,2); /* + 0x6e		   		*/
+-		u16  dsr5_4;    		/* + 0x70		   0x38	*/
+-		_MSCAN_RESERVED_(28,2); /* + 0x72		   		*/
+-		u16  dsr7_6;    		/* + 0x74		   0x3a	*/
+-		_MSCAN_RESERVED_(29,2); /* + 0x76		   		*/
+-		u8  dlr;        		/* + 0x78		   0x3c	*/
+-		u8  tbpr;       		/* + 0x79		   0x3d	*/
+-		_MSCAN_RESERVED_(30,2); /* + 0x7a		   		*/
+-		u16 time;       		/* + 0x7c		   0x3e	*/
++	 _MSCAN_RESERVED_(23, 2);		/* + 0x5e          */
++	struct {
++		u16 idr1_0;			/* + 0x60     0x30 */
++		 _MSCAN_RESERVED_(24, 2);	/* + 0x62          */
++		u16 idr3_2;			/* + 0x64     0x32 */
++		 _MSCAN_RESERVED_(25, 2);	/* + 0x66          */
++		u16 dsr1_0;			/* + 0x68     0x34 */
++		 _MSCAN_RESERVED_(26, 2);	/* + 0x6a          */
++		u16 dsr3_2;			/* + 0x6c     0x36 */
++		 _MSCAN_RESERVED_(27, 2);	/* + 0x6e          */
++		u16 dsr5_4;			/* + 0x70     0x38 */
++		 _MSCAN_RESERVED_(28, 2);	/* + 0x72          */
++		u16 dsr7_6;			/* + 0x74     0x3a */
++		 _MSCAN_RESERVED_(29, 2);	/* + 0x76          */
++		u8 dlr;				/* + 0x78     0x3c */
++		u8 tbpr;			/* + 0x79     0x3d */
++		 _MSCAN_RESERVED_(30, 2);	/* + 0x7a          */
++		u16 time;			/* + 0x7c     0x3e */
+ 	} tx;
+-	_MSCAN_RESERVED_(31,2);	    /* + 0x7e		   		*/
++	 _MSCAN_RESERVED_(31, 2);		/* + 0x7e          */
+ } __attribute__ ((packed));
+ 
+ #undef _MSCAN_RESERVED_
+@@ -239,8 +234,8 @@
+ #define MSCAN_WATCHDOG_TIMEOUT	((500*HZ)/1000)
+ 
+ struct mscan_platform_data {
+-	u8 clock_src;	/* MSCAN_CLKSRC_BUS or MSCAN_CLKSRC_XTAL */
+-	u32 clock_frq;	/* can ref. clock, in Hz */
++	u8 clock_src;		/* MSCAN_CLKSRC_BUS or MSCAN_CLKSRC_XTAL */
++	u32 clock_frq;		/* can ref. clock, in Hz */
+ };
+ 
+ struct can_device *alloc_mscandev(void);
+@@ -251,4 +246,4 @@
+ extern int mscan_register(struct can_device *can, int clock_src);
+ extern void mscan_unregister(struct can_device *can);
+ 
+-#endif /* __MSCAN_H__ */
++#endif				/* __MSCAN_H__ */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000420.html">r438 - in trunk/kernel/2.6: . drivers/net/can drivers/net/can/i82527	drivers/net/can/sja1000 net/can
+</A></li>
+	<LI>Next message: <A HREF="000422.html">r440 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#421">[ date ]</a>
+              <a href="thread.html#421">[ thread ]</a>
+              <a href="subject.html#421">[ subject ]</a>
+              <a href="author.html#421">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

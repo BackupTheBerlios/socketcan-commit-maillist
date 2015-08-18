@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r344 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r344%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706120826.l5C8QcxN000074%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000326.html">
+   <LINK REL="Next"  HREF="000328.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r344 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r344%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706120826.l5C8QcxN000074%40sheep.berlios.de%3E"
+       TITLE="r344 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 12 10:26:38 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000326.html">r343 - branches/ha/locktest/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000328.html">r345 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#327">[ date ]</a>
+              <a href="thread.html#327">[ thread ]</a>
+              <a href="subject.html#327">[ subject ]</a>
+              <a href="author.html#327">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-12 10:26:36 +0200 (Tue, 12 Jun 2007)
+New Revision: 344
+
+Modified:
+   branches/ha/locktest/net/can/af_can.c
+   branches/ha/locktest/net/can/af_can.h
+Log:
+Added handling to remove the dev_rcv_list only if all the CAN protocols have
+unregistered their stuff for this device. This is intended to be done in
+one single NETDEV_UNREGISTER call chain.
+Structures belonging to a specific netdev have to hold the netdev until all
+is cleaned up.
+
+
+Modified: branches/ha/locktest/net/can/af_can.c
+===================================================================
+--- branches/ha/locktest/net/can/af_can.c	2007-06-12 07:48:48 UTC (rev 343)
++++ branches/ha/locktest/net/can/af_can.c	2007-06-12 08:26:36 UTC (rev 344)
+@@ -453,35 +453,13 @@
+ }
+ EXPORT_SYMBOL(can_rx_register);
+ 
+-static void can_rx_delete_list(struct hlist_head *rl)
+-{
+-	struct receiver *r;
+-	struct hlist_node *n;
+-
+-	hlist_for_each_entry_rcu(r, n, rl, list) {
+-		hlist_del_rcu(&amp;r-&gt;list);
+-		kmem_cache_free(rcv_cache, r);
+-	}
+-}
+-
+ /*
+  * can_rx_delete_device - rcu callback for dev_rcv_lists structure removal
+  */
+ static void can_rx_delete_device(struct rcu_head *rp)
+ {
+ 	struct dev_rcv_lists *d = container_of(rp, struct dev_rcv_lists, rcu);
+-	int i;
+ 
+-	/* remove all receivers hooked at this netdevice */
+-	can_rx_delete_list(&amp;d-&gt;rx[RX_ERR]);
+-	can_rx_delete_list(&amp;d-&gt;rx[RX_ALL]);
+-	can_rx_delete_list(&amp;d-&gt;rx[RX_FIL]);
+-	can_rx_delete_list(&amp;d-&gt;rx[RX_INV]);
+-	can_rx_delete_list(&amp;d-&gt;rx[RX_EFF]);
+-
+-	for (i = 0; i &lt; 2048; i++)
+-		can_rx_delete_list(&amp;d-&gt;rx_sff[i]);
+-
+ 	kfree(d);
+ }
+ 
+@@ -574,6 +552,13 @@
+ 	if (r)
+ 		call_rcu(&amp;r-&gt;rcu, can_rx_delete_receiver);
+ 
++	/* remove device structure at NETDEV_UNREGISTER */
++	if (d &amp;&amp; d-&gt;remove_on_zero_entries &amp;&amp; !d-&gt;entries) {
++		hlist_del_rcu(&amp;d-&gt;list);
++		call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
++		dev_put(dev);
++	}
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(can_rx_unregister);
+@@ -960,6 +945,7 @@
+ 			return NOTIFY_DONE;
+ 		}
+ 		d-&gt;dev = dev;
++		dev_hold(dev);
+ 
+ 		spin_lock_bh(&amp;rcv_lists_lock);
+ 		hlist_add_head_rcu(&amp;d-&gt;list, &amp;rx_dev_list);
+@@ -971,16 +957,21 @@
+ 		spin_lock_bh(&amp;rcv_lists_lock);
+ 
+ 		d = find_dev_rcv_lists(dev);
+-		if (d)
+-			hlist_del_rcu(&amp;d-&gt;list);
+-		else
++		if (d) {
++			if (!d-&gt;entries)
++				hlist_del_rcu(&amp;d-&gt;list);
++			else
++				d-&gt;remove_on_zero_entries = 1;
++		} else
+ 			printk(KERN_ERR &quot;can: notifier: receive list not &quot;
+ 			       &quot;found for dev %s\n&quot;, dev-&gt;name);
+ 
+ 		spin_unlock_bh(&amp;rcv_lists_lock);
+ 
+-		if (d)
++		if (d &amp;&amp; !d-&gt;entries) {
+ 			call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
++			dev_put(dev);
++		}
+ 
+ 		break;
+ 	}
+
+Modified: branches/ha/locktest/net/can/af_can.h
+===================================================================
+--- branches/ha/locktest/net/can/af_can.h	2007-06-12 07:48:48 UTC (rev 343)
++++ branches/ha/locktest/net/can/af_can.h	2007-06-12 08:26:36 UTC (rev 344)
+@@ -72,6 +72,7 @@
+ 	struct net_device *dev;
+ 	struct hlist_head rx[RX_MAX];
+ 	struct hlist_head rx_sff[0x800];
++	int remove_on_zero_entries;
+ 	int entries;
+ };
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000326.html">r343 - branches/ha/locktest/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000328.html">r345 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#327">[ date ]</a>
+              <a href="thread.html#327">[ thread ]</a>
+              <a href="subject.html#327">[ subject ]</a>
+              <a href="author.html#327">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

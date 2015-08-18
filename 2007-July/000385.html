@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r402 - branches/ut/vcan-rtnl
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r402%20-%20branches/ut/vcan-rtnl&In-Reply-To=%3C200707041509.l64F9YvQ032085%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000384.html">
+   <LINK REL="Next"  HREF="000386.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r402 - branches/ut/vcan-rtnl</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r402%20-%20branches/ut/vcan-rtnl&In-Reply-To=%3C200707041509.l64F9YvQ032085%40sheep.berlios.de%3E"
+       TITLE="r402 - branches/ut/vcan-rtnl">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul  4 17:09:34 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000384.html">r401 - branches/ut
+</A></li>
+        <LI>Next message: <A HREF="000386.html">r403 - branches/ut/vcan-rtnl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#385">[ date ]</a>
+              <a href="thread.html#385">[ thread ]</a>
+              <a href="subject.html#385">[ subject ]</a>
+              <a href="author.html#385">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-04 17:09:29 +0200 (Wed, 04 Jul 2007)
+New Revision: 402
+
+Modified:
+   branches/ut/vcan-rtnl/vcan.c
+Log:
+Change vcan driver to work with rtnl API.
+
+
+Modified: branches/ut/vcan-rtnl/vcan.c
+===================================================================
+--- branches/ut/vcan-rtnl/vcan.c	2007-07-04 15:07:18 UTC (rev 401)
++++ branches/ut/vcan-rtnl/vcan.c	2007-07-04 15:09:29 UTC (rev 402)
+@@ -49,6 +49,10 @@
+ #include &lt;linux/if_arp.h&gt;
+ #include &lt;linux/if_ether.h&gt;
+ #include &lt;linux/can.h&gt;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
++#include &lt;linux/rtnetlink.h&gt;
++#include &lt;net/rtnetlink.h&gt;
++#endif
+ 
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+@@ -86,8 +90,6 @@
+ }
+ #endif
+ 
+-#define STATSIZE sizeof(struct net_device_stats)
+-
+ static int numdev = 4; /* default number of virtual CAN interfaces */
+ module_param(numdev, int, S_IRUGO);
+ MODULE_PARM_DESC(numdev, &quot;Number of virtual CAN devices&quot;);
+@@ -105,8 +107,20 @@
+ module_param(loopback, int, S_IRUGO);
+ MODULE_PARM_DESC(loopback, &quot;Loop back sent frames. vcan default: 0 (Off)&quot;);
+ 
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
++struct vcan_priv {
++	struct net_device *dev;
++	struct list_head list;
++};
++static LIST_HEAD(vcan_devs);
++
++#define PRIVSIZE sizeof(struct vcan_priv)
++#else
+ static struct net_device **vcan_devs; /* root pointer to netdevice structs */
+ 
++#define PRIVSIZE sizeof(struct net_device_stats)
++#endif
++
+ static int vcan_open(struct net_device *dev)
+ {
+ 	DBG(&quot;%s: interface up\n&quot;, dev-&gt;name);
+@@ -125,7 +139,11 @@
+ 
+ static void vcan_rx(struct sk_buff *skb, struct net_device *dev)
+ {
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
++	struct net_device_stats *stats = &amp;dev-&gt;stats;
++#else
+ 	struct net_device_stats *stats = netdev_priv(dev);
++#endif
+ 
+ 	stats-&gt;rx_packets++;
+ 	stats-&gt;rx_bytes += skb-&gt;len;
+@@ -142,7 +160,11 @@
+ 
+ static int vcan_tx(struct sk_buff *skb, struct net_device *dev)
+ {
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
++	struct net_device_stats *stats = &amp;dev-&gt;stats;
++#else
+ 	struct net_device_stats *stats = netdev_priv(dev);
++#endif
+ 	int loop;
+ 
+ 	DBG(&quot;sending skbuff on interface %s\n&quot;, dev-&gt;name);
+@@ -196,20 +218,22 @@
+ 	return 0;
+ }
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ static struct net_device_stats *vcan_get_stats(struct net_device *dev)
+ {
+ 	struct net_device_stats *stats = netdev_priv(dev);
+ 
+ 	return stats;
+ }
++#endif
+ 
+-static void vcan_init(struct net_device *dev)
++static void vcan_setup(struct net_device *dev)
+ {
+ 	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+ 
+ 	ether_setup(dev);
+ 
+-	memset(dev-&gt;priv, 0, STATSIZE);
++	memset(dev-&gt;priv, 0, PRIVSIZE);
+ 
+ 	dev-&gt;type              = ARPHRD_CAN;
+ 	dev-&gt;mtu               = sizeof(struct can_frame);
+@@ -222,13 +246,106 @@
+ 	dev-&gt;open              = vcan_open;
+ 	dev-&gt;stop              = vcan_stop;
+ 	dev-&gt;hard_start_xmit   = vcan_tx;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
++	dev-&gt;destructor        = free_netdev;
++#else
+ 	dev-&gt;get_stats         = vcan_get_stats;
++#endif
+ 
+ 	SET_MODULE_OWNER(dev);
+ }
+ 
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
++static int vcan_newlink(struct net_device *dev,
++			struct nlattr *tb[], struct nlattr *data[])
++{
++	struct vcan_priv *priv = netdev_priv(dev);
++
++	priv-&gt;dev = dev;
++	list_add_tail(&amp;priv-&gt;list, &amp;vcan_devs);
++	return register_netdev(dev);
++}
++
++static void vcan_dellink(struct net_device *dev)
++{
++	struct vcan_priv *priv = netdev_priv(dev);
++
++	list_del(&amp;priv-&gt;list);
++	unregister_netdev(dev);
++}
++
++static struct rtnl_link_ops vcan_link_ops __read_mostly = {
++       .kind           = &quot;vcan&quot;,
++       .priv_size      = sizeof(struct vcan_priv),
++       .setup          = vcan_setup,
++       .newlink        = vcan_newlink,
++       .dellink        = vcan_dellink,
++};
++
+ static __init int vcan_init_module(void)
+ {
++	int i, err = 0;
++	struct net_device *dev;
++	struct vcan_priv *priv, *n;
++
++	printk(banner);
++
++	rtnl_lock();
++	err = __rtnl_link_register(&amp;vcan_link_ops);
++	if (err &lt; 0)
++		goto out;
++
++	printk(KERN_INFO
++	       &quot;vcan: registering %d virtual CAN interfaces. (loopback %s)\n&quot;,
++	       numdev, loopback ? &quot;enabled&quot; : &quot;disabled&quot;);
++
++	for (i = 0; i &lt; numdev; i++) {
++		dev = alloc_netdev(PRIVSIZE, &quot;vcan%d&quot;, vcan_setup);
++		if (!dev) {
++			printk(KERN_ERR &quot;vcan: error allocating net_device\n&quot;);
++			err = -ENOMEM;
++			break;
++		}
++
++		dev-&gt;rtnl_link_ops = &amp;vcan_link_ops;
++		err = register_netdev(dev);
++		if (err &lt; 0) {
++			printk(KERN_ERR
++			       &quot;vcan: error %d registering interface %s\n&quot;,
++			       err, dev-&gt;name);
++			free_netdev(dev);
++			break;
++
++		} else {
++			priv = netdev_priv(dev);
++			priv-&gt;dev = dev;
++			list_add_tail(&amp;priv-&gt;list, &amp;vcan_devs);
++			DBG(&quot;successfully registered interface %s\n&quot;,
++			    vcan_devs[i]-&gt;name);
++		}
++	}
++
++	if (err &lt; 0)
++		list_for_each_entry_safe(priv, n, &amp;vcan_devs, list)
++			vcan_dellink(priv-&gt;dev);
++ out:
++	rtnl_unlock();
++	return err;
++}
++
++static __exit void vcan_cleanup_module(void)
++{
++	struct vcan_priv *priv, *n;
++
++	rtnl_lock();
++	list_for_each_entry_safe(priv, n, &amp;vcan_devs, list)
++		vcan_dellink(priv-&gt;dev);
++	__rtnl_link_unregister(&amp;vcan_link_ops);
++	rtnl_unlock();
++}
++#else
++static __init int vcan_init_module(void)
++{
+ 	int i, result;
+ 
+ 	printk(banner);
+@@ -248,7 +365,7 @@
+ 	}
+ 
+ 	for (i = 0; i &lt; numdev; i++) {
+-		vcan_devs[i] = alloc_netdev(STATSIZE, &quot;vcan%d&quot;, vcan_init);
++		vcan_devs[i] = alloc_netdev(PRIVSIZE, &quot;vcan%d&quot;, vcan_setup);
+ 		if (!vcan_devs[i]) {
+ 			printk(KERN_ERR &quot;vcan: error allocating net_device\n&quot;);
+ 			result = -ENOMEM;
+@@ -298,6 +415,7 @@
+ 
+ 	kfree(vcan_devs);
+ }
++#endif
+ 
+ module_init(vcan_init_module);
+ module_exit(vcan_cleanup_module);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000384.html">r401 - branches/ut
+</A></li>
+	<LI>Next message: <A HREF="000386.html">r403 - branches/ut/vcan-rtnl
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#385">[ date ]</a>
+              <a href="thread.html#385">[ thread ]</a>
+              <a href="subject.html#385">[ subject ]</a>
+              <a href="author.html#385">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

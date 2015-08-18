@@ -1,0 +1,437 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r84 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r84%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200609290824.k8T8Ouct016687%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000063.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r84 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r84%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200609290824.k8T8Ouct016687%40sheep.berlios.de%3E"
+       TITLE="r84 - in trunk/kernel/2.6: include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 29 10:24:57 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000063.html">r83 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#64">[ date ]</a>
+              <a href="thread.html#64">[ thread ]</a>
+              <a href="subject.html#64">[ subject ]</a>
+              <a href="author.html#64">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-09-29 10:24:54 +0200 (Fri, 29 Sep 2006)
+New Revision: 84
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/af_can.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Move type, proto, and capability information about CAN protocols into
+struct can_proto.  This simplifies can_create() significantly and allows
+future CAN protocols to be loaded without the need to change af_can.c
+Rename CAN_MAX to CAN_NPROTO.
+Check for protocol numbers that are out of range in can_create().
+Use find_dev_rcv_lists() in can_rcv() instead of scanning the list on our own.
+Move comment on scanning the hlist.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/af_can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/af_can.h	2006-09-29 07:11:29 UTC (rev 83)
++++ trunk/kernel/2.6/include/linux/can/af_can.h	2006-09-29 08:24:54 UTC (rev 84)
+@@ -71,7 +71,7 @@
+ #define CAN_MCNET	5 /* Bosch MCNet */
+ #define CAN_ISOTP	6 /* ISO 15765-2 Transport Protocol */
+ #define CAN_BAP		7 /* VAG Bedien- und Anzeigeprotokoll */
+-#define CAN_MAX		8
++#define CAN_NPROTO	8
+ 
+ #define SOL_CAN_BASE 100
+ 
+@@ -98,22 +98,22 @@
+ 
+ #define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ struct can_proto {
++	int              type;
++	int              protocol;
++	int              capability;
+ 	struct proto_ops *ops;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ 	struct proto     *prot;
+-};
+ #else
+-struct can_proto {
+-	struct proto_ops *ops;
+ 	struct module    *owner;
+ 	int              (*init)(struct sock *sk);
+ 	size_t           obj_size;
++#endif
+ };
+-#endif
+ 
+-void can_proto_register(int proto, struct can_proto *cp);
+-void can_proto_unregister(int proto);
++void can_proto_register(struct can_proto *cp);
++void can_proto_unregister(struct can_proto *cp);
+ void can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		     void (*func)(struct sk_buff *, void *), void *data,
+ 		     char *ident);
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-09-29 07:11:29 UTC (rev 83)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-09-29 08:24:54 UTC (rev 84)
+@@ -147,7 +147,7 @@
+ };
+ 
+ /* table of registered CAN protocols */
+-static struct can_proto *proto_tab[CAN_MAX];
++static struct can_proto *proto_tab[CAN_NPROTO];
+ 
+ extern struct timer_list stattimer; /* timer for statistics update */
+ extern struct s_stats  stats;       /* packet statistics */
+@@ -207,9 +207,10 @@
+ /* af_can protocol functions                      */
+ /**************************************************/
+ 
+-void can_proto_register(int proto, struct can_proto *cp)
++void can_proto_register(struct can_proto *cp)
+ {
+-	if (proto &lt; 0 || proto &gt;= CAN_MAX) {
++	int proto = cp-&gt;protocol;
++	if (proto &lt; 0 || proto &gt;= CAN_NPROTO) {
+ 		printk(KERN_ERR &quot;CAN: protocol number %d out of range\n&quot;, proto);
+ 		return;
+ 	}
+@@ -230,11 +231,10 @@
+ 		cp-&gt;ops-&gt;ioctl = can_ioctl;
+ }
+ 
+-void can_proto_unregister(int proto)
++void can_proto_unregister(struct can_proto *cp)
+ {
+-	struct can_proto *cp;
+-
+-	if (!(cp = proto_tab[proto])) {
++	int proto = cp-&gt;protocol;
++	if (!proto_tab[proto]) {
+ 		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
+ 		return;
+ 	}
+@@ -304,51 +304,8 @@
+ 
+ 	sock-&gt;state = SS_UNCONNECTED;
+ 
+-	switch (sock-&gt;type) {
+-	case SOCK_SEQPACKET:
+-		switch (protocol) {
+-		case CAN_TP16:
+-			break;
+-		case CAN_TP20:
+-			break;
+-		case CAN_MCNET:
+-			break;
+-		case CAN_ISOTP:
+-			break;
+-		default:
+-			return -EPROTONOSUPPORT;
+-		}
+-		break;
+-	case SOCK_DGRAM:
+-		switch (protocol) {
+-		case CAN_BCM:
+-#ifndef CONFIG_CAN_BCM_USER
+-			if (!capable(CAP_NET_RAW))
+-				return -EPERM;
+-#endif
+-			break;
+-		case CAN_BAP:
+-			break;
+-		default:
+-			return -EPROTONOSUPPORT;
+-		}
+-		break;
+-	case SOCK_RAW:
+-		switch (protocol) {
+-		case CAN_RAW:
+-#ifndef CONFIG_CAN_RAW_USER
+-			if (!capable(CAP_NET_RAW))
+-				return -EPERM;
+-#endif
+-			break;
+-		default:
+-			return -EPROTONOSUPPORT;
+-		}
+-		break;
+-	default:
+-		return -ESOCKTNOSUPPORT;
+-		break;
+-	}
++	if (protocol &lt; 0 || protocol &gt;= CAN_NPROTO)
++		return -EINVAL;
+ 
+ 	DBG(&quot;looking up proto %d in proto_tab[]\n&quot;, protocol);
+ 
+@@ -361,10 +318,13 @@
+ 			       module_name);
+ 	}
+ 
+-	/* check for success */
+-	if (!(cp = proto_tab[protocol]))
++	/* check for success and correct type */
++	if (!(cp = proto_tab[protocol]) || cp-&gt;type != sock-&gt;type)
+ 		return -EPROTONOSUPPORT;
+ 
++	if (cp-&gt;capability &gt;= 0 &amp;&amp; !capable(cp-&gt;capability))
++		return -EPERM;
++
+ 	sock-&gt;ops = cp-&gt;ops;
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+@@ -679,7 +639,6 @@
+ #endif
+ {
+ 	struct dev_rcv_lists *d;
+-	struct hlist_node *n;
+ 	int matches;
+ 
+ 	DBG(&quot;received skbuff on device %s, ptype %04x\n&quot;,
+@@ -697,23 +656,8 @@
+ 	/* deliver the packet to sockets listening on all devices */
+ 	matches = can_rcv_filter(&amp;rx_alldev_list, skb);
+ 
+-	/*  find receive list for this device
+-	 *
+-	 *  The hlist_for_each_entry*() macros curse through the list
+-	 *  using the pointer variable n and set d to the containing
+-	 *  struct in each list iteration.  Therefore, after list
+-	 *  iteration, d is unmodified when the list is empty, and it
+-	 *  points to last list element, when the list is non-empty
+-	 *  but no match in the loop body is found.  I.e. d is *not*
+-	 *  NULL when no match is found.  We can, however, use the
+-	 *  cursor variable n to decide if a match was found.
+-	 */
+-
+-	hlist_for_each_entry_rcu(d, n, &amp;rx_dev_list, list)
+-		if (d-&gt;dev == dev)
+-			break;
+-
+-	if (n)
++	/* find receive list for this device */
++	if ((d = find_dev_rcv_lists(dev)))
+ 		matches += can_rcv_filter(d, skb);
+ 
+ 	rcu_read_unlock();
+@@ -821,6 +765,16 @@
+ 	if (!dev)
+ 		return &amp;rx_alldev_list;
+ 
++	/*  The hlist_for_each_entry*() macros curse through the list
++	 *  using the pointer variable n and set d to the containing
++	 *  struct in each list iteration.  Therefore, after list
++	 *  iteration, d is unmodified when the list is empty, and it
++	 *  points to last list element, when the list is non-empty
++	 *  but no match in the loop body is found.  I.e. d is *not*
++	 *  NULL when no match is found.  We can, however, use the
++	 *  cursor variable n to decide if a match was found.
++	 */
++
+ 	hlist_for_each_entry(d, n, &amp;rx_dev_list, list)
+ 		if (d-&gt;dev == dev)
+ 			break;
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2006-09-29 07:11:29 UTC (rev 83)
++++ trunk/kernel/2.6/net/can/bcm.c	2006-09-29 08:24:54 UTC (rev 84)
+@@ -166,6 +166,12 @@
+ 	.sendpage      = sock_no_sendpage,
+ };
+ 
++#ifdef CONFIG_CAN_BCM_USER
++#define BCM_CAP CAP_NET_RAW
++#else
++#define BCM_CAP (-1)
++#endif
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ 
+ struct bcm_sock {
+@@ -176,14 +182,17 @@
+ #define bcm_sk(sk) ((struct bcm_user_data *)(sk)-&gt;sk_protinfo)
+ 
+ static struct proto bcm_proto = {
+-	.name     = &quot;CAN_BCM&quot;,
+-	.owner    = THIS_MODULE,
+-	.obj_size = sizeof(struct bcm_sock),
++	.name       = &quot;CAN_BCM&quot;,
++	.owner      = THIS_MODULE,
++	.obj_size   = sizeof(struct bcm_sock),
+ };
+ 
+ static struct can_proto bcm_can_proto = {
+-	.ops  = &amp;bcm_ops,
+-	.prot = &amp;bcm_proto,
++	.type       = SOCK_DGRAM,
++	.protocol   = CAN_BCM,
++	.capability = BCM_CAP,
++	.ops        = &amp;bcm_ops,
++	.prot       = &amp;bcm_proto,
+ };
+ 
+ #else
+@@ -191,9 +200,12 @@
+ #define bcm_sk(sk) ((struct bcm_user_data *)(sk)-&gt;sk_protinfo)
+ 
+ static struct can_proto bcm_can_proto = {
+-	.ops      = &amp;bcm_ops,
+-	.owner    = THIS_MODULE,
+-	.obj_size = 0,
++	.type       = SOCK_DGRAM,
++	.protocol   = CAN_BCM,
++	.capability = BCM_CAP,
++	.ops        = &amp;bcm_ops,
++	.owner      = THIS_MODULE,
++	.obj_size   = 0,
+ };
+ 
+ #endif
+@@ -203,7 +215,7 @@
+ {
+ 	printk(banner);
+ 
+-	can_proto_register(CAN_BCM, &amp;bcm_can_proto);
++	can_proto_register(&amp;bcm_can_proto);
+ 
+ 	/* create /proc/net/can/bcm directory */
+ 	proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
+@@ -216,7 +228,7 @@
+ 
+ static void __exit bcm_exit(void)
+ {
+-	can_proto_unregister(CAN_BCM);
++	can_proto_unregister(&amp;bcm_can_proto);
+ 
+ 	if (proc_dir)
+ 		remove_proc_entry(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-09-29 07:11:29 UTC (rev 83)
++++ trunk/kernel/2.6/net/can/raw.c	2006-09-29 08:24:54 UTC (rev 84)
+@@ -133,6 +133,12 @@
+ 	can_err_mask_t err_mask;
+ };
+ 
++#ifdef CONFIG_CAN_RAW_USER
++#define RAW_CAP CAP_NET_RAW
++#else
++#define RAW_CAP (-1)
++#endif
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ 
+ struct raw_sock {
+@@ -143,15 +149,18 @@
+ #define canraw_sk(sk) (&amp;((struct raw_sock *)(sk))-&gt;opt)
+ 
+ static struct proto raw_proto = {
+-	.name     = &quot;CAN_RAW&quot;,
+-	.owner    = THIS_MODULE,
+-	.obj_size = sizeof(struct raw_sock),
+-	.init     = raw_init,
++	.name       = &quot;CAN_RAW&quot;,
++	.owner      = THIS_MODULE,
++	.obj_size   = sizeof(struct raw_sock),
++	.init       = raw_init,
+ };
+ 
+ static struct can_proto raw_can_proto = {
+-	.ops  = &amp;raw_ops,
+-	.prot = &amp;raw_proto,
++	.type       = SOCK_RAW,
++	.protocol   = CAN_RAW,
++	.capability = RAW_CAP,
++	.ops        = &amp;raw_ops,
++	.prot       = &amp;raw_proto,
+ };
+ 
+ #else
+@@ -159,10 +168,13 @@
+ #define canraw_sk(sk) ((struct raw_opt *)(sk)-&gt;sk_protinfo)
+ 
+ static struct can_proto raw_can_proto = {
+-	.ops      = &amp;raw_ops,
+-	.owner    = THIS_MODULE,
+-	.obj_size = sizeof(struct raw_opt),
+-	.init     = raw_init,
++	.type       = SOCK_RAW,
++	.protocol   = CAN_RAW,
++	.capability = RAW_CAP,
++	.ops        = &amp;raw_ops,
++	.owner      = THIS_MODULE,
++	.obj_size   = sizeof(struct raw_opt),
++	.init       = raw_init,
+ };
+ 
+ #endif
+@@ -173,13 +185,13 @@
+ {
+ 	printk(banner);
+ 
+-	can_proto_register(CAN_RAW, &amp;raw_can_proto);
++	can_proto_register(&amp;raw_can_proto);
+ 	return 0;
+ }
+ 
+ static __exit void raw_module_exit(void)
+ {
+-	can_proto_unregister(CAN_RAW);
++	can_proto_unregister(&amp;raw_can_proto);
+ }
+ 
+ static int raw_init(struct sock *sk)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000063.html">r83 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#64">[ date ]</a>
+              <a href="thread.html#64">[ thread ]</a>
+              <a href="subject.html#64">[ subject ]</a>
+              <a href="author.html#64">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

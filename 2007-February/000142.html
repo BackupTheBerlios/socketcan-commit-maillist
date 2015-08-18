@@ -1,0 +1,807 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r158 - in trunk/kernel: 2.4/can 2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r158%20-%20in%20trunk/kernel%3A%202.4/can%202.6/net/can&In-Reply-To=%3C200702271139.l1RBdJYg024313%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000141.html">
+   <LINK REL="Next"  HREF="000143.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r158 - in trunk/kernel: 2.4/can 2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r158%20-%20in%20trunk/kernel%3A%202.4/can%202.6/net/can&In-Reply-To=%3C200702271139.l1RBdJYg024313%40sheep.berlios.de%3E"
+       TITLE="r158 - in trunk/kernel: 2.4/can 2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb 27 12:39:19 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000141.html">r157 - in trunk/kernel: 2.4/can 2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000143.html">r159 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#142">[ date ]</a>
+              <a href="thread.html#142">[ thread ]</a>
+              <a href="subject.html#142">[ subject ]</a>
+              <a href="author.html#142">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-02-27 12:39:09 +0100 (Tue, 27 Feb 2007)
+New Revision: 158
+
+Modified:
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Some code cleanup:
+- rename the canraw_sk() macro to raw_sk().
+- define pointer ro = raw_sk() instead of using raw_sk() massively.
+
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2007-02-22 12:56:38 UTC (rev 157)
++++ trunk/kernel/2.4/can/raw.c	2007-02-27 11:39:09 UTC (rev 158)
+@@ -129,8 +129,10 @@
+    storing the single filter in dfilter, to avoid using dynamic memory.
+ */
+ 
+-/*  this struct is part of struct sock in the place of union tp_pinfo,
++/*  This struct is part of struct sock in the place of union tp_pinfo,
+  *  which is initialized to zero for each newly allocated struct sock.
++ *  We can't name it struct raw_opt, since that is already defined in
++ *  &lt;net/sock.h&gt;.
+  */
+ 
+ struct canraw_opt {
+@@ -150,7 +152,7 @@
+ #define RAW_CAP CAP_NET_RAW
+ #endif
+ 
+-#define canraw_sk(sk) ((struct canraw_opt *)&amp;(sk)-&gt;tp_pinfo)
++#define raw_sk(sk) ((struct canraw_opt *)&amp;(sk)-&gt;tp_pinfo)
+ 
+ static struct can_proto raw_can_proto = {
+ 	.type       = SOCK_RAW,
+@@ -178,17 +180,19 @@
+ 
+ static int raw_init(struct sock *sk)
+ {
+-	canraw_sk(sk)-&gt;bound            = 0;
++	struct canraw_opt *ro = raw_sk(sk);
+ 
++	ro-&gt;bound            = 0;
++
+ 	/* set default filter to single entry dfilter */
+-	canraw_sk(sk)-&gt;dfilter.can_id   = 0;
+-	canraw_sk(sk)-&gt;dfilter.can_mask = MASK_ALL;
+-	canraw_sk(sk)-&gt;filter           = &amp;canraw_sk(sk)-&gt;dfilter;
+-	canraw_sk(sk)-&gt;count            = 1;
++	ro-&gt;dfilter.can_id   = 0;
++	ro-&gt;dfilter.can_mask = MASK_ALL;
++	ro-&gt;filter           = &amp;ro-&gt;dfilter;
++	ro-&gt;count            = 1;
+ 
+ 	/* set default loopback behaviour */
+-	canraw_sk(sk)-&gt;loopback         = 1;
+-	canraw_sk(sk)-&gt;recv_own_msgs    = 0;
++	ro-&gt;loopback         = 1;
++	ro-&gt;recv_own_msgs    = 0;
+ 
+ 	return 0;
+ }
+@@ -196,23 +200,24 @@
+ static int raw_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
++	struct canraw_opt *ro = raw_sk(sk);
+ 	struct net_device *dev = NULL;
+ 
+ 	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+ 	    atomic_read(&amp;sk-&gt;refcnt));
+ 
+-	if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-		dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++	if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++		dev = dev_get_by_index(ro-&gt;ifindex);
+ 
+ 	/* remove current filters &amp; unregister */
+-	if (canraw_sk(sk)-&gt;bound)
++	if (ro-&gt;bound)
+ 		raw_remove_filters(dev, sk);
+-	if (canraw_sk(sk)-&gt;count &gt; 1)
+-		kfree(canraw_sk(sk)-&gt;filter);
++	if (ro-&gt;count &gt; 1)
++		kfree(ro-&gt;filter);
+ 
+ 	/* remove current error mask */
+-	if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-		can_rx_unregister(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
++	if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
++		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
+ 
+ 	if (dev) {
+ 		can_dev_unregister(dev, raw_notifier, sk);
+@@ -228,6 +233,7 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
++	struct canraw_opt *ro = raw_sk(sk);
+ 	struct net_device *dev;
+ 
+ 	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+@@ -235,13 +241,13 @@
+ 	if (len &lt; sizeof(*addr))
+ 		return -EINVAL;
+ 
+-	if (canraw_sk(sk)-&gt;bound) {
++	if (ro-&gt;bound) {
+ #if 1
+ 		return -EINVAL;
+ #else
+ 		/* remove current bindings / notifier */
+-		if (canraw_sk(sk)-&gt;ifindex) {
+-			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++		if (ro-&gt;ifindex) {
++			dev = dev_get_by_index(ro-&gt;ifindex);
+ 			if (!dev) {
+ 				DBG(&quot;could not find device %d\n&quot;,
+ 				    addr-&gt;can_ifindex);
+@@ -263,7 +269,7 @@
+ 		if (dev)
+ 			dev_put(dev);
+ 
+-		canraw_sk(sk)-&gt;bound = 0;
++		ro-&gt;bound = 0;
+ #endif
+ 	}
+ 
+@@ -283,14 +289,14 @@
+ 	} else
+ 		dev = NULL;
+ 
+-	canraw_sk(sk)-&gt;ifindex = addr-&gt;can_ifindex;
++	ro-&gt;ifindex = addr-&gt;can_ifindex;
+ 
+ 	raw_add_filters(dev, sk); /* filters set by default/setsockopt */
+ 
+-	if (canraw_sk(sk)-&gt;err_mask) /* error frame filter set by setsockopt */
+-		can_rx_register(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
++	if (ro-&gt;err_mask) /* error frame filter set by setsockopt */
++		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
+ 
+-	canraw_sk(sk)-&gt;bound = 1;
++	ro-&gt;bound = 1;
+ 
+  out:
+ 	if (dev)
+@@ -304,12 +310,13 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
++	struct canraw_opt *ro = raw_sk(sk);
+ 
+ 	if (peer)
+ 		return -EOPNOTSUPP;
+ 
+ 	addr-&gt;can_family  = AF_CAN;
+-	addr-&gt;can_ifindex = canraw_sk(sk)-&gt;ifindex;
++	addr-&gt;can_ifindex = ro-&gt;ifindex;
+ 	*len = sizeof(*addr);
+ 
+ 	return 0;
+@@ -330,6 +337,7 @@
+ 			  char *optval, int optlen)
+ {
+ 	struct sock *sk = sock-&gt;sk;
++	struct canraw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
+ 	struct can_filter sfilter;         /* single filter */
+ 	struct net_device *dev = NULL;
+@@ -359,24 +367,24 @@
+ 				return err;
+ 		}
+ 
+-		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++			dev = dev_get_by_index(ro-&gt;ifindex);
+ 
+ 		/* remove current filters &amp; unregister */
+-		if (canraw_sk(sk)-&gt;bound)
++		if (ro-&gt;bound)
+ 			raw_remove_filters(dev, sk);
+-		if (canraw_sk(sk)-&gt;count &gt; 1)
+-			kfree(canraw_sk(sk)-&gt;filter);
++		if (ro-&gt;count &gt; 1)
++			kfree(ro-&gt;filter);
+ 
+ 		if (count == 1) { /* copy data for single filter */
+-			canraw_sk(sk)-&gt;dfilter = sfilter;
+-			filter = &amp;canraw_sk(sk)-&gt;dfilter;
++			ro-&gt;dfilter = sfilter;
++			filter = &amp;ro-&gt;dfilter;
+ 		}
+ 
+ 		/* add new filters &amp; register */
+-		canraw_sk(sk)-&gt;filter = filter;
+-		canraw_sk(sk)-&gt;count  = count;
+-		if (canraw_sk(sk)-&gt;bound)
++		ro-&gt;filter = filter;
++		ro-&gt;count  = count;
++		if (ro-&gt;bound)
+ 			raw_add_filters(dev, sk);
+ 
+ 		if (dev)
+@@ -392,17 +400,17 @@
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+ 
+-		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++			dev = dev_get_by_index(ro-&gt;ifindex);
+ 
+ 		/* remove current error mask */
+-		if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-			can_rx_unregister(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
++		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
++			can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
+ 
+ 		/* add new error mask */
+-		canraw_sk(sk)-&gt;err_mask = err_mask;
+-		if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-			can_rx_register(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
++		ro-&gt;err_mask = err_mask;
++		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
++			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
+ 
+ 		if (dev)
+ 			dev_put(dev);
+@@ -410,16 +418,16 @@
+ 		break;
+ 
+ 	case CAN_RAW_LOOPBACK:
+-		if (optlen != sizeof(canraw_sk(sk)-&gt;loopback))
++		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+-		if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;loopback, optval, optlen)))
++		if ((err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen)))
+ 			return err;
+ 		break;
+ 
+ 	case CAN_RAW_RECV_OWN_MSGS:
+-		if (optlen != sizeof(canraw_sk(sk)-&gt;recv_own_msgs))
++		if (optlen != sizeof(ro-&gt;recv_own_msgs))
+ 			return -EINVAL;
+-		if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;recv_own_msgs, optval, optlen)))
++		if ((err = copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen)))
+ 			return err;
+ 		break;
+ 
+@@ -433,8 +441,9 @@
+ 			  char *optval, int *optlen)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
+-	int count = canraw_sk(sk)-&gt;count;
++	struct canraw_opt *ro = raw_sk(sk);
++	struct can_filter *filter = ro-&gt;filter;
++	int count = ro-&gt;count;
+ 	int len;
+ 
+ 	if (level != SOL_CAN_RAW)
+@@ -471,7 +480,7 @@
+ 		if (len &gt; sizeof(can_err_mask_t))
+ 			len = sizeof(can_err_mask_t);
+ 
+-		if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;err_mask, len))
++		if (copy_to_user(optval, &amp;ro-&gt;err_mask, len))
+ 			return -EFAULT;
+ 
+ 		if (put_user(len, optlen))
+@@ -489,7 +498,7 @@
+ 		if (len &gt; sizeof(int))
+ 			len = sizeof(int);
+ 
+-		if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;loopback, len))
++		if (copy_to_user(optval, &amp;ro-&gt;loopback, len))
+ 			return -EFAULT;
+ 
+ 		if (put_user(len, optlen))
+@@ -507,7 +516,7 @@
+ 		if (len &gt; sizeof(int))
+ 			len = sizeof(int);
+ 
+-		if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;recv_own_msgs, len))
++		if (copy_to_user(optval, &amp;ro-&gt;recv_own_msgs, len))
+ 			return -EFAULT;
+ 
+ 		if (put_user(len, optlen))
+@@ -523,10 +532,11 @@
+ 
+ static void raw_add_filters(struct net_device *dev, struct sock *sk)
+ {
+-	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	struct canraw_opt *ro = raw_sk(sk);
++	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+-	for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
++	for (i = 0; i &lt; ro-&gt;count; i++) {
+ 		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
+ 				raw_rcv, sk, IDENT);
+ 		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+@@ -537,10 +547,11 @@
+ 
+ static void raw_remove_filters(struct net_device *dev, struct sock *sk)
+ {
+-	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	struct canraw_opt *ro = raw_sk(sk);
++	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+-	for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
++	for (i = 0; i &lt; ro-&gt;count; i++) {
+ 		can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
+ 				  raw_rcv, sk);
+ 		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+@@ -553,6 +564,7 @@
+ 		       struct scm_cookie *scm)
+ {
+ 	struct sock *sk = sock-&gt;sk;
++	struct canraw_opt *ro = raw_sk(sk);
+ 	struct sk_buff *skb;
+ 	struct net_device *dev;
+ 	int ifindex;
+@@ -566,7 +578,7 @@
+ 			return -EINVAL;
+ 		ifindex = addr-&gt;can_ifindex;
+ 	} else
+-		ifindex = canraw_sk(sk)-&gt;ifindex;
++		ifindex = ro-&gt;ifindex;
+ 
+ 	if (!(dev = dev_get_by_index(ifindex))) {
+ 		DBG(&quot;device %d not found\n&quot;, ifindex);
+@@ -589,7 +601,7 @@
+ 	DBG(&quot;sending skbuff to interface %d\n&quot;, ifindex);
+ 	DBG_SKB(skb);
+ 
+-	err = can_send(skb, canraw_sk(sk)-&gt;loopback);
++	err = can_send(skb, ro-&gt;loopback);
+ 
+ 	dev_put(dev);
+ 
+@@ -644,13 +656,14 @@
+ static void raw_rcv(struct sk_buff *skb, void *data)
+ {
+ 	struct sock *sk = (struct sock*)data;
++	struct canraw_opt *ro = raw_sk(sk);
+ 	struct sockaddr_can *addr;
+ 	int error;
+ 
+ 	DBG(&quot;received skbuff %p, sk %p\n&quot;, skb, sk);
+ 	DBG_SKB(skb);
+ 
+-	if (!canraw_sk(sk)-&gt;recv_own_msgs) {
++	if (!ro-&gt;recv_own_msgs) {
+ 		if (*(struct sock **)skb-&gt;cb == sk) { /* tx sock reference */
+ 			DBG(&quot;trashed own tx msg\n&quot;);
+ 			kfree_skb(skb);
+@@ -673,13 +686,14 @@
+ static void raw_notifier(unsigned long msg, void *data)
+ {
+ 	struct sock *sk = (struct sock *)data;
++	struct canraw_opt *ro = raw_sk(sk);
+ 
+ 	DBG(&quot;called for sock %p\n&quot;, sk);
+ 
+ 	switch (msg) {
+ 	case NETDEV_UNREGISTER:
+-		canraw_sk(sk)-&gt;ifindex = 0;
+-		canraw_sk(sk)-&gt;bound   = 0;
++		ro-&gt;ifindex = 0;
++		ro-&gt;bound   = 0;
+ 		/* fallthrough */
+ 	case NETDEV_DOWN:
+ 		sk-&gt;err = ENETDOWN;
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-02-22 12:56:38 UTC (rev 157)
++++ trunk/kernel/2.6/net/can/raw.c	2007-02-27 11:39:09 UTC (rev 158)
+@@ -157,7 +157,7 @@
+ 	struct raw_opt opt;
+ };
+ 
+-#define canraw_sk(sk) (&amp;((struct raw_sock *)(sk))-&gt;opt)
++#define raw_sk(sk) (&amp;((struct raw_sock *)(sk))-&gt;opt)
+ 
+ static struct proto raw_proto = {
+ 	.name       = &quot;CAN_RAW&quot;,
+@@ -176,7 +176,7 @@
+ 
+ #else
+ 
+-#define canraw_sk(sk) ((struct raw_opt *)(sk)-&gt;sk_protinfo)
++#define raw_sk(sk) ((struct raw_opt *)(sk)-&gt;sk_protinfo)
+ 
+ static struct can_proto raw_can_proto = {
+ 	.type       = SOCK_RAW,
+@@ -207,17 +207,19 @@
+ 
+ static int raw_init(struct sock *sk)
+ {
+-	canraw_sk(sk)-&gt;bound            = 0;
++	struct raw_opt *ro = raw_sk(sk);
+ 
++	ro-&gt;bound            = 0;
++
+ 	/* set default filter to single entry dfilter */
+-	canraw_sk(sk)-&gt;dfilter.can_id   = 0;
+-	canraw_sk(sk)-&gt;dfilter.can_mask = MASK_ALL;
+-	canraw_sk(sk)-&gt;filter           = &amp;canraw_sk(sk)-&gt;dfilter;
+-	canraw_sk(sk)-&gt;count            = 1;
++	ro-&gt;dfilter.can_id   = 0;
++	ro-&gt;dfilter.can_mask = MASK_ALL;
++	ro-&gt;filter           = &amp;ro-&gt;dfilter;
++	ro-&gt;count            = 1;
+ 
+ 	/* set default loopback behaviour */
+-	canraw_sk(sk)-&gt;loopback         = 1;
+-	canraw_sk(sk)-&gt;recv_own_msgs    = 0;
++	ro-&gt;loopback         = 1;
++	ro-&gt;recv_own_msgs    = 0;
+ 
+ 	return 0;
+ }
+@@ -225,23 +227,24 @@
+ static int raw_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
++	struct raw_opt *ro = raw_sk(sk);
+ 	struct net_device *dev = NULL;
+ 
+ 	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+ 	    atomic_read(&amp;sk-&gt;sk_refcnt));
+ 
+-	if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-		dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++	if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++		dev = dev_get_by_index(ro-&gt;ifindex);
+ 
+ 	/* remove current filters &amp; unregister */
+-	if (canraw_sk(sk)-&gt;bound)
++	if (ro-&gt;bound)
+ 		raw_remove_filters(dev, sk);
+-	if (canraw_sk(sk)-&gt;count &gt; 1)
+-		kfree(canraw_sk(sk)-&gt;filter);
++	if (ro-&gt;count &gt; 1)
++		kfree(ro-&gt;filter);
+ 
+ 	/* remove current error mask */
+-	if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-		can_rx_unregister(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
++	if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
++		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
+ 
+ 	if (dev) {
+ 		can_dev_unregister(dev, raw_notifier, sk);
+@@ -257,6 +260,7 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
++	struct raw_opt *ro = raw_sk(sk);
+ 	struct net_device *dev;
+ 
+ 	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+@@ -264,13 +268,13 @@
+ 	if (len &lt; sizeof(*addr))
+ 		return -EINVAL;
+ 
+-	if (canraw_sk(sk)-&gt;bound) {
++	if (ro-&gt;bound) {
+ #if 1
+ 		return -EINVAL;
+ #else
+ 		/* remove current bindings / notifier */
+-		if (canraw_sk(sk)-&gt;ifindex) {
+-			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++		if (ro-&gt;ifindex) {
++			dev = dev_get_by_index(ro-&gt;ifindex);
+ 			if (!dev) {
+ 				DBG(&quot;could not find device %d\n&quot;,
+ 				    addr-&gt;can_ifindex);
+@@ -292,7 +296,7 @@
+ 		if (dev)
+ 			dev_put(dev);
+ 
+-		canraw_sk(sk)-&gt;bound = 0;
++		ro-&gt;bound = 0;
+ #endif
+ 	}
+ 
+@@ -312,14 +316,14 @@
+ 	} else
+ 		dev = NULL;
+ 
+-	canraw_sk(sk)-&gt;ifindex = addr-&gt;can_ifindex;
++	ro-&gt;ifindex = addr-&gt;can_ifindex;
+ 
+ 	raw_add_filters(dev, sk); /* filters set by default/setsockopt */
+ 
+-	if (canraw_sk(sk)-&gt;err_mask) /* error frame filter set by setsockopt */
+-		can_rx_register(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
++	if (ro-&gt;err_mask) /* error frame filter set by setsockopt */
++		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
+ 
+-	canraw_sk(sk)-&gt;bound = 1;
++	ro-&gt;bound = 1;
+ 
+  out:
+ 	if (dev)
+@@ -333,12 +337,13 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
++	struct raw_opt *ro = raw_sk(sk);
+ 
+ 	if (peer)
+ 		return -EOPNOTSUPP;
+ 
+ 	addr-&gt;can_family  = AF_CAN;
+-	addr-&gt;can_ifindex = canraw_sk(sk)-&gt;ifindex;
++	addr-&gt;can_ifindex = ro-&gt;ifindex;
+ 	*len = sizeof(*addr);
+ 
+ 	return 0;
+@@ -359,6 +364,7 @@
+ 			  char __user *optval, int optlen)
+ {
+ 	struct sock *sk = sock-&gt;sk;
++	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
+ 	struct can_filter sfilter;         /* single filter */
+ 	struct net_device *dev = NULL;
+@@ -388,24 +394,24 @@
+ 				return err;
+ 		}
+ 
+-		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++			dev = dev_get_by_index(ro-&gt;ifindex);
+ 
+ 		/* remove current filters &amp; unregister */
+-		if (canraw_sk(sk)-&gt;bound)
++		if (ro-&gt;bound)
+ 			raw_remove_filters(dev, sk);
+-		if (canraw_sk(sk)-&gt;count &gt; 1)
+-			kfree(canraw_sk(sk)-&gt;filter);
++		if (ro-&gt;count &gt; 1)
++			kfree(ro-&gt;filter);
+ 
+ 		if (count == 1) { /* copy data for single filter */
+-			canraw_sk(sk)-&gt;dfilter = sfilter;
+-			filter = &amp;canraw_sk(sk)-&gt;dfilter;
++			ro-&gt;dfilter = sfilter;
++			filter = &amp;ro-&gt;dfilter;
+ 		}
+ 
+ 		/* add new filters &amp; register */
+-		canraw_sk(sk)-&gt;filter = filter;
+-		canraw_sk(sk)-&gt;count  = count;
+-		if (canraw_sk(sk)-&gt;bound)
++		ro-&gt;filter = filter;
++		ro-&gt;count  = count;
++		if (ro-&gt;bound)
+ 			raw_add_filters(dev, sk);
+ 
+ 		if (dev)
+@@ -421,17 +427,17 @@
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+ 
+-		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+-			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
++		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++			dev = dev_get_by_index(ro-&gt;ifindex);
+ 
+ 		/* remove current error mask */
+-		if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-			can_rx_unregister(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
++		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
++			can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk);
+ 
+ 		/* add new error mask */
+-		canraw_sk(sk)-&gt;err_mask = err_mask;
+-		if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+-			can_rx_register(dev, 0, canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
++		ro-&gt;err_mask = err_mask;
++		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
++			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG, raw_rcv, sk, IDENT);
+ 
+ 		if (dev)
+ 			dev_put(dev);
+@@ -439,16 +445,16 @@
+ 		break;
+ 
+ 	case CAN_RAW_LOOPBACK:
+-		if (optlen != sizeof(canraw_sk(sk)-&gt;loopback))
++		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+-		if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;loopback, optval, optlen)))
++		if ((err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen)))
+ 			return err;
+ 		break;
+ 
+ 	case CAN_RAW_RECV_OWN_MSGS:
+-		if (optlen != sizeof(canraw_sk(sk)-&gt;recv_own_msgs))
++		if (optlen != sizeof(ro-&gt;recv_own_msgs))
+ 			return -EINVAL;
+-		if ((err = copy_from_user(&amp;canraw_sk(sk)-&gt;recv_own_msgs, optval, optlen)))
++		if ((err = copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen)))
+ 			return err;
+ 		break;
+ 
+@@ -462,8 +468,9 @@
+ 			  char __user *optval, int __user *optlen)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
+-	int count = canraw_sk(sk)-&gt;count;
++	struct raw_opt *ro = raw_sk(sk);
++	struct can_filter *filter = ro-&gt;filter;
++	int count = ro-&gt;count;
+ 	int len;
+ 
+ 	if (level != SOL_CAN_RAW)
+@@ -500,7 +507,7 @@
+ 		if (len &gt; sizeof(can_err_mask_t))
+ 			len = sizeof(can_err_mask_t);
+ 
+-		if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;err_mask, len))
++		if (copy_to_user(optval, &amp;ro-&gt;err_mask, len))
+ 			return -EFAULT;
+ 
+ 		if (put_user(len, optlen))
+@@ -518,7 +525,7 @@
+ 		if (len &gt; sizeof(int))
+ 			len = sizeof(int);
+ 
+-		if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;loopback, len))
++		if (copy_to_user(optval, &amp;ro-&gt;loopback, len))
+ 			return -EFAULT;
+ 
+ 		if (put_user(len, optlen))
+@@ -536,7 +543,7 @@
+ 		if (len &gt; sizeof(int))
+ 			len = sizeof(int);
+ 
+-		if (copy_to_user(optval, &amp;canraw_sk(sk)-&gt;recv_own_msgs, len))
++		if (copy_to_user(optval, &amp;ro-&gt;recv_own_msgs, len))
+ 			return -EFAULT;
+ 
+ 		if (put_user(len, optlen))
+@@ -552,10 +559,11 @@
+ 
+ static void raw_add_filters(struct net_device *dev, struct sock *sk)
+ {
+-	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	struct raw_opt *ro = raw_sk(sk);
++	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+-	for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
++	for (i = 0; i &lt; ro-&gt;count; i++) {
+ 		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
+ 				raw_rcv, sk, IDENT);
+ 		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+@@ -566,10 +574,11 @@
+ 
+ static void raw_remove_filters(struct net_device *dev, struct sock *sk)
+ {
+-	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	struct raw_opt *ro = raw_sk(sk);
++	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+-	for (i = 0; i &lt; canraw_sk(sk)-&gt;count; i++) {
++	for (i = 0; i &lt; ro-&gt;count; i++) {
+ 		can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
+ 				  raw_rcv, sk);
+ 		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+@@ -582,6 +591,7 @@
+ 		       struct msghdr *msg, size_t size)
+ {
+ 	struct sock *sk = sock-&gt;sk;
++	struct raw_opt *ro = raw_sk(sk);
+ 	struct sk_buff *skb;
+ 	struct net_device *dev;
+ 	int ifindex;
+@@ -595,7 +605,7 @@
+ 			return -EINVAL;
+ 		ifindex = addr-&gt;can_ifindex;
+ 	} else
+-		ifindex = canraw_sk(sk)-&gt;ifindex;
++		ifindex = ro-&gt;ifindex;
+ 
+ 	if (!(dev = dev_get_by_index(ifindex))) {
+ 		DBG(&quot;device %d not found\n&quot;, ifindex);
+@@ -618,7 +628,7 @@
+ 	DBG(&quot;sending skbuff to interface %d\n&quot;, ifindex);
+ 	DBG_SKB(skb);
+ 
+-	err = can_send(skb, canraw_sk(sk)-&gt;loopback);
++	err = can_send(skb, ro-&gt;loopback);
+ 
+ 	dev_put(dev);
+ 
+@@ -673,13 +683,14 @@
+ static void raw_rcv(struct sk_buff *skb, void *data)
+ {
+ 	struct sock *sk = (struct sock*)data;
++	struct raw_opt *ro = raw_sk(sk);
+ 	struct sockaddr_can *addr;
+ 	int error;
+ 
+ 	DBG(&quot;received skbuff %p, sk %p\n&quot;, skb, sk);
+ 	DBG_SKB(skb);
+ 
+-	if (!canraw_sk(sk)-&gt;recv_own_msgs) {
++	if (!ro-&gt;recv_own_msgs) {
+ 		if (*(struct sock **)skb-&gt;cb == sk) { /* tx sock reference */
+ 			DBG(&quot;trashed own tx msg\n&quot;);
+ 			kfree_skb(skb);
+@@ -702,13 +713,14 @@
+ static void raw_notifier(unsigned long msg, void *data)
+ {
+ 	struct sock *sk = (struct sock *)data;
++	struct raw_opt *ro = raw_sk(sk);
+ 
+ 	DBG(&quot;called for sock %p\n&quot;, sk);
+ 
+ 	switch (msg) {
+ 	case NETDEV_UNREGISTER:
+-		canraw_sk(sk)-&gt;ifindex = 0;
+-		canraw_sk(sk)-&gt;bound   = 0;
++		ro-&gt;ifindex = 0;
++		ro-&gt;bound   = 0;
+ 		/* fallthrough */
+ 	case NETDEV_DOWN:
+ 		sk-&gt;sk_err = ENETDOWN;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000141.html">r157 - in trunk/kernel: 2.4/can 2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000143.html">r159 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#142">[ date ]</a>
+              <a href="thread.html#142">[ thread ]</a>
+              <a href="subject.html#142">[ subject ]</a>
+              <a href="author.html#142">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

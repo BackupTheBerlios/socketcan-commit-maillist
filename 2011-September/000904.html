@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1273 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1273%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110901095535.D108C4811C2%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000903.html">
+   <LINK REL="Next"  HREF="000905.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1273 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1273%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110901095535.D108C4811C2%40sheep.berlios.de%3E"
+       TITLE="r1273 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep  1 11:55:35 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000903.html">r1272 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000905.html">r1274 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#904">[ date ]</a>
+              <a href="thread.html#904">[ thread ]</a>
+              <a href="subject.html#904">[ subject ]</a>
+              <a href="author.html#904">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-09-01 11:55:35 +0200 (Thu, 01 Sep 2011)
+New Revision: 1273
+
+Modified:
+   trunk/kernel/2.6/net/can/gw.c
+Log:
+grr - fix whitespace issue to make strip-src work again.
+
+
+Modified: trunk/kernel/2.6/net/can/gw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/gw.c	2011-09-01 09:49:42 UTC (rev 1272)
++++ trunk/kernel/2.6/net/can/gw.c	2011-09-01 09:55:35 UTC (rev 1273)
+@@ -936,7 +936,7 @@
+ 	notifier.notifier_call = cgw_notifier;
+ 	register_netdevice_notifier(&amp;notifier);
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(3, 1, 0)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(3,1,0)
+ 	if (__rtnl_register(PF_CAN, RTM_GETROUTE, NULL, cgw_dump_jobs, NULL)) {
+ #else
+ 	if (__rtnl_register(PF_CAN, RTM_GETROUTE, NULL, cgw_dump_jobs)) {
+@@ -947,7 +947,7 @@
+ 	}
+ 
+ 	/* Only the first call to __rtnl_register can fail */
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(3, 1, 0)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(3,1,0)
+ 	__rtnl_register(PF_CAN, RTM_NEWROUTE, cgw_create_job, NULL, NULL);
+ 	__rtnl_register(PF_CAN, RTM_DELROUTE, cgw_remove_job, NULL, NULL);
+ #else
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000903.html">r1272 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000905.html">r1274 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#904">[ date ]</a>
+              <a href="thread.html#904">[ thread ]</a>
+              <a href="subject.html#904">[ subject ]</a>
+              <a href="author.html#904">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

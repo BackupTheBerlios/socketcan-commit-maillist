@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r96 - trunk/kernel/2.6/include/linux
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r96%20-%20trunk/kernel/2.6/include/linux&In-Reply-To=%3C200610301836.k9UIa9Yp022662%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000076.html">
+   <LINK REL="Next"  HREF="000078.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r96 - trunk/kernel/2.6/include/linux</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r96%20-%20trunk/kernel/2.6/include/linux&In-Reply-To=%3C200610301836.k9UIa9Yp022662%40sheep.berlios.de%3E"
+       TITLE="r96 - trunk/kernel/2.6/include/linux">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Oct 30 19:36:09 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000076.html">r95 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000078.html">r96 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#77">[ date ]</a>
+              <a href="thread.html#77">[ thread ]</a>
+              <a href="subject.html#77">[ subject ]</a>
+              <a href="author.html#77">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-10-30 19:36:08 +0100 (Mon, 30 Oct 2006)
+New Revision: 96
+
+Modified:
+   trunk/kernel/2.6/include/linux/can.h
+Log:
+never try to include from /usr/include in kernel code:
+changed sys/socket.h to linux/socket.h.
+
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2006-10-30 13:14:36 UTC (rev 95)
++++ trunk/kernel/2.6/include/linux/can.h	2006-10-30 18:36:08 UTC (rev 96)
+@@ -47,7 +47,7 @@
+ 
+ #include &lt;linux/version.h&gt;
+ #include &lt;linux/types.h&gt;
+-#include &lt;sys/socket.h&gt;
++#include &lt;linux/socket.h&gt;
+ 
+ #include &lt;linux/can/error.h&gt;
+ #include &lt;linux/can/ioctl.h&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000076.html">r95 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000078.html">r96 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#77">[ date ]</a>
+              <a href="thread.html#77">[ thread ]</a>
+              <a href="subject.html#77">[ subject ]</a>
+              <a href="author.html#77">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

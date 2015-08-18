@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r524 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r524%20-%20trunk/can-utils&In-Reply-To=%3C200710071439.l97Edr8I006236%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000505.html">
+   <LINK REL="Next"  HREF="000507.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r524 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r524%20-%20trunk/can-utils&In-Reply-To=%3C200710071439.l97Edr8I006236%40sheep.berlios.de%3E"
+       TITLE="r524 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct  7 16:39:53 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000505.html">r523 - trunk/patch-series/net-2.6.24
+</A></li>
+        <LI>Next message: <A HREF="000507.html">r525 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#506">[ date ]</a>
+              <a href="thread.html#506">[ thread ]</a>
+              <a href="subject.html#506">[ subject ]</a>
+              <a href="author.html#506">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-10-07 16:39:52 +0200 (Sun, 07 Oct 2007)
+New Revision: 524
+
+Modified:
+   trunk/can-utils/cansniffer.c
+Log:
+Fixed checking of CAN interface name commandline parameter.
+Cosmetics.
+
+
+Modified: trunk/can-utils/cansniffer.c
+===================================================================
+--- trunk/can-utils/cansniffer.c	2007-10-05 10:57:41 UTC (rev 523)
++++ trunk/can-utils/cansniffer.c	2007-10-07 14:39:52 UTC (rev 524)
+@@ -71,6 +71,7 @@
+ #define U64_DATA(p) (*(unsigned long long*)(p)-&gt;data)
+ 
+ #define SETFNAME &quot;sniffset.&quot;
++#define ANYDEV   &quot;any&quot;
+ 
+ /* flags */
+ 
+@@ -175,6 +176,7 @@
+     fprintf(stderr, &quot;         -t &lt;time&gt;  (timeout for ID display [x100ms] default: %d)\n&quot;, TIMEOUT);
+     fprintf(stderr, &quot;         -h &lt;time&gt;  (hold marker on changes [x100ms] default: %d)\n&quot;, HOLD);
+     fprintf(stderr, &quot;         -l &lt;time&gt;  (loop time (display) [x100ms] default: %d)\n&quot;, LOOP);
++    fprintf(stderr, &quot;Use interface name '%s' to receive from all can-interfaces\n&quot;, ANYDEV);
+     fprintf(stderr, &quot;\n&quot;);
+     fprintf(stderr, &quot;%s&quot;, manual);
+ }
+@@ -290,12 +292,20 @@
+     }
+ 
+     addr.can_family = AF_CAN;
+-    strcpy(ifr.ifr_name, argv[optind]);
+-    ioctl(s, SIOCGIFINDEX, &amp;ifr);
+-    addr.can_ifindex = ifr.ifr_ifindex;
+ 
++    if (strcmp(ANYDEV, argv[optind])) {
++	strcpy(ifr.ifr_name, argv[optind]);
++	if (ioctl(s, SIOCGIFINDEX, &amp;ifr) &lt; 0) {
++	    perror(&quot;SIOCGIFINDEX&quot;);
++	    exit(1);
++	}
++	addr.can_ifindex = ifr.ifr_ifindex;
++    }
++    else
++	addr.can_ifindex = 0; /* any can interface */
++
+     if (connect(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+-	perror(&quot;bind&quot;);
++	perror(&quot;connect&quot;);
+ 	return 1;
+     }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000505.html">r523 - trunk/patch-series/net-2.6.24
+</A></li>
+	<LI>Next message: <A HREF="000507.html">r525 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#506">[ date ]</a>
+              <a href="thread.html#506">[ thread ]</a>
+              <a href="subject.html#506">[ subject ]</a>
+              <a href="author.html#506">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

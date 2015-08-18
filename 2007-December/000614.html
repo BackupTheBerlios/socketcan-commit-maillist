@@ -1,0 +1,421 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r632 - in trunk/kernel/2.4: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r632%20-%20in%20trunk/kernel/2.4%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200712170912.lBH9CB5Y011764%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000613.html">
+   <LINK REL="Next"  HREF="000615.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r632 - in trunk/kernel/2.4: drivers/net/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r632%20-%20in%20trunk/kernel/2.4%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200712170912.lBH9CB5Y011764%40sheep.berlios.de%3E"
+       TITLE="r632 - in trunk/kernel/2.4: drivers/net/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 17 10:12:11 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000613.html">r631 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000615.html">r633 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#614">[ date ]</a>
+              <a href="thread.html#614">[ thread ]</a>
+              <a href="subject.html#614">[ subject ]</a>
+              <a href="author.html#614">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-17 10:12:06 +0100 (Mon, 17 Dec 2007)
+New Revision: 632
+
+Modified:
+   trunk/kernel/2.4/drivers/net/can/vcan.c
+   trunk/kernel/2.4/net/can/af_can.c
+   trunk/kernel/2.4/net/can/compat.h
+Log:
+Backport of 2.6 loopback handling.
+Cleanup can_create() and can_ioctl().
+Cosmetics to reduce 2.4 &lt;-&gt; 2.6 differences.
+
+
+Modified: trunk/kernel/2.4/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/vcan.c	2007-12-17 07:49:05 UTC (rev 631)
++++ trunk/kernel/2.4/drivers/net/can/vcan.c	2007-12-17 09:12:06 UTC (rev 632)
+@@ -94,6 +94,7 @@
+ 	stats-&gt;rx_bytes += skb-&gt;len;
+ 
+ 	skb-&gt;protocol  = htons(ETH_P_CAN);
++	skb-&gt;pkt_type  = PACKET_BROADCAST;
+ 	skb-&gt;dev       = dev;
+ 	skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 
+@@ -110,19 +111,21 @@
+ 	stats-&gt;tx_packets++;
+ 	stats-&gt;tx_bytes += skb-&gt;len;
+ 
+-	loop = *(struct sock **)skb-&gt;cb != NULL;   /* loopback required */
++	loop = skb-&gt;pkt_type == PACKET_LOOPBACK;
+ 
+ #ifdef DO_LOOPBACK
+ 	if (loop) {
+ 		if (atomic_read(&amp;skb-&gt;users) != 1) {
+ 			struct sk_buff *old_skb = skb;
++			struct sock *srcsk = skb-&gt;sk;
++
+ 			skb = skb_clone(old_skb, GFP_ATOMIC);
+ 			DBG(&quot;  freeing old skbuff %p, using new skbuff %p\n&quot;,
+ 			    old_skb, skb);
+ 			kfree_skb(old_skb);
+-			if (!skb) {
++			if (!skb)
+ 				return 0;
+-			}
++			skb-&gt;sk = srcsk;
+ 		} else
+ 			skb_orphan(skb);
+ 
+@@ -178,8 +181,11 @@
+ 	dev-&gt;type              = ARPHRD_CAN;
+ 	dev-&gt;mtu               = sizeof(struct can_frame);
+ 	dev-&gt;flags             = IFF_NOARP;
++
++#define IFF_ECHO IFF_LOOPBACK
++
+ #ifdef DO_LOOPBACK
+-	dev-&gt;flags            |= IFF_LOOPBACK;
++	dev-&gt;flags            |= IFF_ECHO;
+ #endif
+ 
+ 	dev-&gt;open              = vcan_open;
+
+Modified: trunk/kernel/2.4/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/net/can/af_can.c	2007-12-17 07:49:05 UTC (rev 631)
++++ trunk/kernel/2.4/net/can/af_can.c	2007-12-17 09:12:06 UTC (rev 632)
+@@ -73,17 +73,17 @@
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;, &quot;
+ 	      &quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+-int stats_timer = 1; /* default: on */
++static int stats_timer __read_mostly = 1;
+ MODULE_PARM(stats_timer, &quot;1i&quot;);
+ 
++struct dev_rcv_lists *can_rx_dev_list;
+ static struct dev_rcv_lists can_rx_alldev_list;
+-struct dev_rcv_lists *can_rx_dev_list;
+ rwlock_t can_rcvlists_lock = RW_LOCK_UNLOCKED;
+ 
+ static kmem_cache_t *rcv_cache;
+ 
+ /* table of registered CAN protocols */
+-static struct can_proto *proto_tab[CAN_NPROTO];
++static struct can_proto *proto_tab[CAN_NPROTO] __read_mostly;
+ 
+ struct timer_list can_stattimer;   /* timer for statistics update */
+ struct s_stats    can_stats;       /* packet statistics */
+@@ -95,33 +95,33 @@
+ 
+ static int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ {
+-	int err;
+ 	struct sock *sk = sock-&gt;sk;
+ 
+ 	switch (cmd) {
++
+ 	case SIOCGSTAMP:
+ 		if (sk-&gt;stamp.tv_sec == 0)
+ 			return -ENOENT;
+-		if (err = copy_to_user((void *)arg, &amp;sk-&gt;stamp,
+-				       sizeof(sk-&gt;stamp)))
+-			return err;
++
++		return copy_to_user((void *)arg, &amp;sk-&gt;stamp,
++				    sizeof(sk-&gt;stamp)) ? -EFAULT : 0;
+ 		break;
+ 	default:
+ 		return dev_ioctl(cmd, (void *)arg);
+ 	}
+-	return 0;
+ }
+ 
+ static void can_sock_destruct(struct sock *sk)
+ {
+-	skb_queue_purge(&amp;sk-&gt;receive_queue);
++	skb_queue_purge(&amp;sk-&gt;sk_receive_queue);
+ }
+ 
+ static int can_create(struct socket *sock, int protocol)
+ {
+ 	struct sock *sk;
+ 	struct can_proto *cp;
+-	int err;
++	char module_name[sizeof(&quot;can-proto-000&quot;)];
++	int err = 0;
+ 
+ 	sock-&gt;state = SS_UNCONNECTED;
+ 
+@@ -130,18 +130,32 @@
+ 
+ 	/* try to load protocol module, when CONFIG_KMOD is defined */
+ 	if (!proto_tab[protocol]) {
+-		char module_name[30];
+ 		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+-		if (request_module(module_name) == -ENOSYS)
+-			printk(KERN_INFO &quot;CAN: request_module(%s) not&quot;
+-			       &quot; implemented.\n&quot;, module_name);
++		err = request_module(module_name);
++
++		/*
++		 * In case of error we only print a message but don't
++		 * return the error code immediately.  Below we will
++		 * return -EPROTONOSUPPORT
++		 */
++		if (err == -ENOSYS)
++			printk(KERN_INFO &quot;can: request_module(%s)&quot;
++			       &quot; not implemented.\n&quot;, module_name);
++		else if (err)
++			printk(KERN_ERR &quot;can: request_module(%s)&quot;
++			       &quot; failed.\n&quot;, module_name);
+ 	}
+ 
+-	/* check for success and correct type */
+ 	cp = proto_tab[protocol];
+-	if (!cp || cp-&gt;type != sock-&gt;type)
++
++	/* check for available protocol and correct usage */
++
++	if (!cp)
+ 		return -EPROTONOSUPPORT;
+ 
++	if (cp-&gt;type != sock-&gt;type)
++		return -EPROTONOSUPPORT;
++
+ 	if (cp-&gt;capability &gt;= 0 &amp;&amp; !capable(cp-&gt;capability))
+ 		return -EPERM;
+ 
+@@ -152,19 +166,18 @@
+ 		return -ENOMEM;
+ 
+ 	sock_init_data(sock, sk);
+-	sk-&gt;destruct = can_sock_destruct;
++	sk-&gt;sk_destruct = can_sock_destruct;
+ 
+-	err = 0;
+ 	if (cp-&gt;init)
+ 		err = cp-&gt;init(sk);
++
+ 	if (err) {
+ 		/* release sk on errors */
+ 		sock_orphan(sk);
+ 		sock_put(sk);
+-		return err;
+ 	}
+ 
+-	return 0;
++	return err;
+ }
+ 
+ /*
+@@ -180,32 +193,66 @@
+  *  0 on success
+  *  -ENETDOWN when the selected interface is down
+  *  -ENOBUFS on full driver queue (see net_xmit_errno())
++ *  -ENOMEM when local loopback failed at calling skb_clone()
++ *  -EPERM when trying to send on a non-CAN interface
+  */
+ int can_send(struct sk_buff *skb, int loop)
+ {
+ 	int err;
+ 
++	if (skb-&gt;dev-&gt;type != ARPHRD_CAN) {
++		kfree_skb(skb);
++		return -EPERM;
++	}
++
++	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP)) {
++		kfree_skb(skb);
++		return -ENETDOWN;
++	}
++
++	skb-&gt;protocol = htons(ETH_P_CAN);
++	skb-&gt;nh.raw = skb-&gt;data;
++	skb-&gt;h.raw  = skb-&gt;data;
++
+ 	if (loop) {
+ 		/* local loopback of sent CAN frames */
+ 
+ 		/* indication for the CAN driver: do loopback */
+-		*(struct sock **)skb-&gt;cb = skb-&gt;sk;
++		skb-&gt;pkt_type = PACKET_LOOPBACK;
+ 
+-		/* interface not capabable to do the loopback itself? */
+-		if (!(skb-&gt;dev-&gt;flags &amp; IFF_LOOPBACK)) {
++		/*
++		 * The reference to the originating sock may be required
++		 * by the receiving socket to check whether the frame is
++		 * its own. Example: can_raw sockopt CAN_RAW_RECV_OWN_MSGS
++		 * Therefore we have to ensure that skb-&gt;sk remains the
++		 * reference to the originating sock by restoring skb-&gt;sk
++		 * after each skb_clone() or skb_orphan() usage.
++		 */
++
++#define IFF_ECHO IFF_LOOPBACK
++
++		if (!(skb-&gt;dev-&gt;flags &amp; IFF_ECHO)) {
++			/*
++			 * If the interface is not capable to do loopback
++			 * itself, we do it here.
++			 */
+ 			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+-			newskb-&gt;protocol  = htons(ETH_P_CAN);
++
++			if (!newskb) {
++				kfree_skb(skb);
++				return -ENOMEM;
++			}
++
++			newskb-&gt;sk = skb-&gt;sk;
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++			newskb-&gt;pkt_type = PACKET_BROADCAST;
+ 			netif_rx(newskb);
+ 		}
+ 	} else {
+ 		/* indication for the CAN driver: no loopback required */
+-		*(struct sock **)skb-&gt;cb = NULL;
++		skb-&gt;pkt_type = PACKET_HOST;
+ 	}
+ 
+-	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
+-		return -ENETDOWN;
+-
+ 	/* send to netdevice */
+ 	err = dev_queue_xmit(skb);
+ 	if (err &gt; 0)
+@@ -432,6 +479,7 @@
+ 	struct sk_buff *clone = skb_clone(skb, GFP_ATOMIC);
+ 
+ 	if (clone) {
++		clone-&gt;sk = skb-&gt;sk;
+ 		r-&gt;func(clone, r-&gt;data);
+ 		r-&gt;matches++;
+ 	}
+@@ -489,7 +537,8 @@
+ 			}
+ 		}
+ 	} else {
+-		for (r = d-&gt;rx_sff[can_id &amp; CAN_SFF_MASK]; r; r = r-&gt;next) {
++		can_id &amp;= CAN_SFF_MASK;
++		for (r = d-&gt;rx_sff[can_id]; r; r = r-&gt;next) {
+ 			deliver(skb, r);
+ 			matches++;
+ 		}
+@@ -504,6 +553,11 @@
+ 	struct dev_rcv_lists *d;
+ 	int matches;
+ 
++	if (dev-&gt;type != ARPHRD_CAN) {
++		kfree_skb(skb);
++		return 0;
++	}
++
+ 	/* update statistics */
+ 	can_stats.rx_frames++;
+ 	can_stats.rx_frames_delta++;
+@@ -531,7 +585,6 @@
+ 	return 0;
+ }
+ 
+-
+ /*
+  * af_can protocol functions
+  */
+@@ -586,6 +639,9 @@
+ }
+ EXPORT_SYMBOL(can_proto_unregister);
+ 
++/*
++ * af_can notifier to create/remove CAN netdevice specific structs
++ */
+ static int can_notifier(struct notifier_block *nb,
+ 			unsigned long msg, void *data)
+ {
+@@ -660,19 +716,19 @@
+  * af_can module init/exit functions
+  */
+ 
+-static struct packet_type can_packet = {
++static struct packet_type can_packet __read_mostly = {
+ 	.type = __constant_htons(ETH_P_CAN),
+ 	.dev  = NULL,
+ 	.func = can_rcv,
+ };
+ 
+-static struct net_proto_family can_family_ops = {
++static struct net_proto_family can_family_ops __read_mostly = {
+ 	.family = PF_CAN,
+ 	.create = can_create,
+ };
+ 
+ /* notifier block for netdevice event */
+-static struct notifier_block can_netdev_notifier = {
++static struct notifier_block can_netdev_notifier __read_mostly = {
+ 	.notifier_call = can_notifier,
+ };
+ 
+
+Modified: trunk/kernel/2.4/net/can/compat.h
+===================================================================
+--- trunk/kernel/2.4/net/can/compat.h	2007-12-17 07:49:05 UTC (rev 631)
++++ trunk/kernel/2.4/net/can/compat.h	2007-12-17 09:12:06 UTC (rev 632)
+@@ -30,9 +30,11 @@
+ #define   dev_get_by_index(ns, ifindex)   dev_get_by_index(ifindex)
+ #define __dev_get_by_index(ns, ifindex) __dev_get_by_index(ifindex)
+ 
+-#define sk_socket	socket
+-#define sk_err		err
+-#define sk_error_report	error_report
++#define sk_socket		socket
++#define sk_err			err
++#define sk_error_report		error_report
++#define sk_receive_queue	receive_queue
++#define sk_destruct		destruct
+ 
+ /* Force a compilation error if condition is true */
+ #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000613.html">r631 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000615.html">r633 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#614">[ date ]</a>
+              <a href="thread.html#614">[ thread ]</a>
+              <a href="subject.html#614">[ subject ]</a>
+              <a href="author.html#614">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

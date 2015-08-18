@@ -1,0 +1,564 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r204 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r204%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20hal%20i82527&In-Reply-To=%3C200704111607.l3BG76uc005058%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000188.html">
+   <LINK REL="Next"  HREF="000190.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r204 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r204%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20hal%20i82527&In-Reply-To=%3C200704111607.l3BG76uc005058%40sheep.berlios.de%3E"
+       TITLE="r204 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 11 18:07:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000188.html">r203 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+</A></li>
+        <LI>Next message: <A HREF="000190.html">r205 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#189">[ date ]</a>
+              <a href="thread.html#189">[ thread ]</a>
+              <a href="subject.html#189">[ subject ]</a>
+              <a href="author.html#189">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-11 18:07:01 +0200 (Wed, 11 Apr 2007)
+New Revision: 204
+
+Modified:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h
+Log:
+Implemented receiption via 4 message objects to receive
+SFF / EFF / RTR frames. Unfortunately the i82527 is quite broken by
+design and therefore it is not possible to get CAN-IDs from received RTR-
+frames. The usage of message object 15 (the only one with shadow buffer)
+for the receiption of EFF/SFF frames can be defined on the command line.
+Per default the message object 15 is used for SFF frame receiption now. 
+
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-04-10 13:29:36 UTC (rev 203)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-04-11 16:07:01 UTC (rev 204)
+@@ -65,11 +65,9 @@
+ {
+ 	extern unsigned long base[];
+ 	extern unsigned int  irq[];
+-	extern unsigned int  speed[];
+ 
+ 	base[0]		= 0x1000UL;
+ 	irq[0]		= 9;
+-	speed[0]	= 500;
+ }
+ 
+ /* request controller register access space */
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-04-10 13:29:36 UTC (rev 203)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-04-11 16:07:01 UTC (rev 204)
+@@ -85,9 +85,14 @@
+ char drv_name[DRV_NAME_LEN] = &quot;undefined&quot;;
+ 
+ /* driver and version information */
+-static const char *drv_version	= &quot;0.0.2&quot;;
+-static const char *drv_reldate	= &quot;2007-05-10&quot;;
++static const char *drv_version	= &quot;0.0.3&quot;;
++static const char *drv_reldate	= &quot;2007-04-11&quot;;
+ 
++static const canid_t rxobjflags[] = {0, CAN_EFF_FLAG,
++				     CAN_RTR_FLAG, CAN_RTR_FLAG | CAN_EFF_FLAG,
++				     0, CAN_EFF_FLAG}; 
++#define RXOBJBASE 10
++
+ /* array of all can chips */
+ struct net_device *can_dev[MAXDEV];
+ 
+@@ -100,6 +105,7 @@
+ unsigned int btr[MAXDEV]	= { 0 };
+ unsigned int bcr[MAXDEV]	= { 0 }; /* bus configuration register */
+ unsigned int cdv[MAXDEV]	= { 0 }; /* CLKOUT clock divider */
++unsigned int mo15[MAXDEV]	= { MO15_DEFLT, MO15_DEFLT }; /* msg obj 15 */
+ 
+ static int rx_probe[MAXDEV]	= { 0 };
+ static int clk			= DEFAULT_HW_CLK;
+@@ -113,6 +119,7 @@
+ static int btr_n;
+ static int bcr_n;
+ static int cdv_n;
++static int mo15_n;
+ static int rx_probe_n;
+ 
+ static u8 dsc = 0; /* devide system clock */
+@@ -124,6 +131,7 @@
+ module_param_array(btr, int, &amp;btr_n, 0);
+ module_param_array(bcr, int, &amp;bcr_n, 0);
+ module_param_array(cdv, int, &amp;cdv_n, 0);
++module_param_array(mo15, int, &amp;mo15_n, 0);
+ module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
+ 
+ module_param(clk, int, 0);
+@@ -390,72 +398,48 @@
+ //	set_btr(dev, best_brp | JUMPWIDTH, (SAM &lt;&lt; 7) | (tseg2 &lt;&lt; 4) | tseg1);
+ }
+ 
+-/*
+- * This is currently an attempt to support acceptance code and mask
+- * for i82527. However the interpretation of mask and code is currently
+- * different to the SJA1000 function.
+- *
+- * This MUST change in the future to have a common exchangable API for
+- * both chips.
+- *
+- * Currently if code and mask are both 0 OR both 0xFFFFFFFF the
+- * acceptance filtering is disabled.
+- *
+- * If the highest bit of mask or code is set OR the value is bigger than
+- * 0x7FF (11 bit), an extended mask is assumed.
+- */
+-int i82527_set_mask(struct net_device *dev,
+-		    unsigned int code, unsigned int mask)
++static inline int obj2rxo(int obj)
+ {
+-	struct can_priv *priv = netdev_priv(dev);
+-	unsigned long base = dev-&gt;base_addr;
++	/* obj4 = obj15 SFF, obj5 = obj15 EFF */ 
++	if (obj &lt; 4)
++		return RXOBJBASE + obj;
++	else
++		return 15;
++}
+ 
+-	// 0xfffff is a magic value and means no mask set.
+-	// We have to change this to 0 to make this work with i82527, here 0
+-	// means don't care.
+-	if (code == 0xffffffff)
+-		code = 0;
+-	if (mask == 0xffffffff)
+-		mask = 0;
++void enable_rx_obj(unsigned long base, int obj)
++{
++	u8 mcfg = 0;
++	int rxo = obj2rxo(obj);
+ 
+-	// Extended (29-bit) or basic (11-bit) mask?
+-	if (((code &amp; 0x8000000) == 0x8000000) ||
+-	    ((mask &amp; 0x8000000) == 0x8000000) ||
+-	    (code &gt; 0x7FF) ||
+-	    (mask &gt; 0x7FF))
+-	{
+-		CANout(base, globalMaskExtendedReg[0], (mask &gt;&gt; 21) &amp; 0xFFU);
+-		CANout(base, globalMaskExtendedReg[1], (mask &gt;&gt; 13) &amp; 0xFFU);
+-		CANout(base, globalMaskExtendedReg[2], (mask &gt;&gt; 5) &amp; 0xFFU);
+-		CANout(base, globalMaskExtendedReg[3], (mask &lt;&lt; 3) &amp; 0xFFU);
+-		CANout(base, message15Reg.idReg[0], (code &gt;&gt; 21) &amp; 0xFFU);
+-		CANout(base, message15Reg.idReg[1], (code &gt;&gt; 13) &amp; 0xFFU);
+-		CANout(base, message15Reg.idReg[2], (code &gt;&gt; 5) &amp; 0xFFU);
+-		CANout(base, message15Reg.idReg[3], (code &lt;&lt; 3) &amp; 0xFFU);
+-		CANout(base, message15Reg.messageConfigReg, MCFG_XTD);
++	// Configure message object for receiption
++	if (rxobjflags[obj] &amp; CAN_EFF_FLAG)
++		mcfg = MCFG_XTD;
+ 
+-		DBG(KERN_INFO &quot;%s: %s: EFF mask %X\n&quot;,
+-		    dev-&gt;name, __FUNCTION__, mask);
+-
+-		DBG(KERN_INFO &quot;%s: %s: EFF code %X\n&quot;,
+-		    dev-&gt;name, __FUNCTION__, code);
++	if (rxobjflags[obj] &amp; CAN_RTR_FLAG) {
++		CANout(base, msgArr[rxo].messageReg.messageConfigReg,
++		       mcfg | MCFG_DIR);
++		CANout(base, msgArr[rxo].messageReg.msgCtrl0Reg,
++		       MVAL_SET | TXIE_RES | RXIE_SET | INTPD_RES);
++		CANout(base, msgArr[rxo].messageReg.msgCtrl1Reg,
++		       NEWD_RES | CPUU_SET | TXRQ_RES | RMPD_RES);
++	} else {
++		CANout(base, msgArr[rxo].messageReg.messageConfigReg, mcfg);
++		CANout(base, msgArr[rxo].messageReg.msgCtrl0Reg,
++		       MVAL_SET | TXIE_RES | RXIE_SET | INTPD_RES);
++		CANout(base, msgArr[rxo].messageReg.msgCtrl1Reg,
++		       NEWD_RES | MLST_RES | TXRQ_RES | RMPD_RES);
+ 	}
+-	else
+-	{
+-		CANout(base, globalMaskStandardReg[0], (mask &gt;&gt; 3) &amp; 0xFFU);
+-		CANout(base, globalMaskStandardReg[1], (mask &lt;&lt; 5) &amp; 0xFFU);
+-		CANout(base, message15Reg.idReg[0], (code &gt;&gt; 3) &amp; 0xFFU);
+-		CANout(base, message15Reg.idReg[1], (code &lt;&lt; 5) &amp; 0xFFU);
+-		CANout(base, message15Reg.messageConfigReg, 0x00);
++}
+ 
+-		DBG(KERN_INFO &quot;%s: %s: SFF mask %X\n&quot;,
+-		    dev-&gt;name, __FUNCTION__, mask);
++void disable_rx_obj(unsigned long base, int obj)
++{
++	int rxo = obj2rxo(obj);
+ 
+-		DBG(KERN_INFO &quot;%s: %s: SFF code %X\n&quot;,
+-		    dev-&gt;name, __FUNCTION__, code);
+-	}
+-
+-	return 0;
++	CANout(base, msgArr[rxo].messageReg.msgCtrl1Reg,
++	       NEWD_RES | MLST_RES | TXRQ_RES | RMPD_RES);
++	CANout(base, msgArr[rxo].messageReg.msgCtrl0Reg,
++	       MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES);
+ }
+ 
+ int set_reset_mode(struct net_device *dev)
+@@ -475,19 +459,27 @@
+ 	// Clear status register
+ 	CANout(base, statusReg, 0);
+ 
+-	// Clear message object for receiption
+-	CANout(base, message15Reg.msgCtrl1Reg,
+-	       NEWD_RES | MLST_RES | TXRQ_RES | RMPD_RES);
+-	CANout(base, message15Reg.msgCtrl0Reg,
+-	       MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES);
++	// Clear message objects for receiption
++	if (priv-&gt;mo15 == MO15_SFF)
++		disable_rx_obj(base, 4); /* rx via obj15 SFF */
++	else
++		disable_rx_obj(base, 0); /* rx via obj10 SFF */
+ 
++	if (priv-&gt;mo15 == MO15_EFF)
++		disable_rx_obj(base, 5); /* rx via obj15 EFF */
++	else
++		disable_rx_obj(base, 1); /* rx via obj11 EFF */
++
++	disable_rx_obj(base, 2);
++	disable_rx_obj(base, 3);
++
+ 	// Clear message object for send
+ 	CANout(base, message1Reg.msgCtrl1Reg,
+ 	       RMPD_RES | TXRQ_RES | CPUU_RES | NEWD_RES);
+ 	CANout(base, message1Reg.msgCtrl0Reg,
+ 	       MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES);
+ 
+-	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	DBG(KERN_INFO &quot;%s: %s: CtrlReg 0x%x CPU_ireg 0x%x\n&quot;,
+ 	    dev-&gt;name, __FUNCTION__,
+ 	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
+ 
+@@ -496,6 +488,7 @@
+ 
+ static int set_normal_mode(struct net_device *dev)
+ {
++	struct can_priv *priv = netdev_priv(dev);
+ 	unsigned long base = dev-&gt;base_addr;
+ 
+ 	// Clear interrupts
+@@ -504,14 +497,20 @@
+ 	// Clear status register
+ 	CANout(base, statusReg, 0);
+ 
+-	// Configure message object for receiption
+-	CANout(base, message15Reg.msgCtrl1Reg,
+-	       NEWD_RES | MLST_RES | TXRQ_RES | RMPD_RES);
+-	CANout(base, message15Reg.msgCtrl0Reg,
+-	       MVAL_SET | TXIE_RES | RXIE_SET | INTPD_RES);
++	// Configure message objects for receiption
++	if (priv-&gt;mo15 == MO15_SFF)
++		enable_rx_obj(base, 4); /* rx via obj15 SFF */
++	else
++		enable_rx_obj(base, 0); /* rx via obj10 SFF */
+ 
+-	i82527_set_mask(dev, 0, 0); /* no filter */
++	if (priv-&gt;mo15 == MO15_EFF)
++		enable_rx_obj(base, 5); /* rx via obj15 EFF */
++	else
++		enable_rx_obj(base, 1); /* rx via obj11 EFF */
+ 
++	enable_rx_obj(base, 2);
++	enable_rx_obj(base, 3);
++
+ 	// Clear message object for send
+ 	CANout(base, message1Reg.msgCtrl1Reg,
+ 	       RMPD_RES | TXRQ_RES | CPUU_RES | NEWD_RES);
+@@ -580,20 +579,15 @@
+ 
+ 	i82527_clear_msg_objects(base);
+ 
++	// Set all global ID masks to &quot;don't care&quot;
+ 	CANout(base, globalMaskStandardReg[0], 0);	
+ 	CANout(base, globalMaskStandardReg[1], 0);
+ 	CANout(base, globalMaskExtendedReg[0], 0);
+ 	CANout(base, globalMaskExtendedReg[1], 0);
+ 	CANout(base, globalMaskExtendedReg[2], 0);
+ 	CANout(base, globalMaskExtendedReg[3], 0);
+-	// Set message 15 mask, we are not using it, only standard mask is used
+-	// We set all bits to one because this mask is anded w. the global mask
+-	CANout(base, message15MaskReg[0], 0xFF);
+-	CANout(base, message15MaskReg[1], 0xFF);
+-	CANout(base, message15MaskReg[2], 0xFF);
+-	CANout(base, message15MaskReg[3], 0xFF);
+ 
+-	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	DBG(KERN_INFO &quot;%s: %s: CtrlReg 0x%x CPU_ireg 0x%x\n&quot;,
+ 	    dev-&gt;name, __FUNCTION__,
+ 	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
+ 
+@@ -646,7 +640,7 @@
+ 	// Clear bus-off, Interrupts only for errors, not for status change
+ 	CANout(base, controlReg, iCTL_IE | iCTL_EIE);
+ 
+-	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	DBG(KERN_INFO &quot;%s: %s: CtrlReg 0x%x CPU_ireg 0x%x\n&quot;,
+ 	    dev-&gt;name, __FUNCTION__,
+ 	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
+ }
+@@ -672,7 +666,7 @@
+ 	// Clear bus-off, Interrupts only for errors, not for status change
+ 	CANout(base, controlReg, iCTL_IE | iCTL_EIE);
+ 
+-	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	DBG(KERN_INFO &quot;%s: %s: CtrlReg 0x%x CPU_ireg 0x%x\n&quot;,
+ 	    dev-&gt;name, __FUNCTION__,
+ 	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
+ }
+@@ -836,11 +830,8 @@
+ /*
+  * Subroutine of ISR for RX interrupts.
+  *
+- * Note: This code depends on using message object 15 for receiving.
+- * Object 15 has a double buffer and using this routine would not work
+- * reliably on other message objects!
+  */
+-static void can_rx(struct net_device *dev)
++static void can_rx(struct net_device *dev, int obj)
+ {
+ 	struct can_priv *priv	= netdev_priv(dev);
+ 	unsigned long base	= dev-&gt;base_addr;
+@@ -851,6 +842,7 @@
+ 	canid_t	id;
+ 	uint8_t	dlc;
+ 	int	i;
++	int	rxo = obj2rxo(obj);
+ 
+ 	skb = dev_alloc_skb(sizeof(struct can_frame));
+ 	if (skb == NULL) {
+@@ -859,19 +851,19 @@
+ 	skb-&gt;dev = dev;
+ 	skb-&gt;protocol = htons(ETH_P_CAN);
+ 
+-	ctl1reg = CANin(base, message15Reg.msgCtrl1Reg);
+-	msgctlreg = CANin(base, message15Reg.messageConfigReg);
++	ctl1reg = CANin(base, msgArr[rxo].messageReg.msgCtrl1Reg);
++	msgctlreg = CANin(base, msgArr[rxo].messageReg.messageConfigReg);
+ 
+ 	if( msgctlreg &amp; MCFG_XTD ) {
+-		id = CANin(base, message15Reg.idReg[3])
+-			| (CANin(base, message15Reg.idReg[2]) &lt;&lt; 8)
+-			| (CANin(base, message15Reg.idReg[1]) &lt;&lt; 16)
+-			| (CANin(base, message15Reg.idReg[0]) &lt;&lt; 24);
++		id = CANin(base, msgArr[rxo].messageReg.idReg[3])
++			| (CANin(base, msgArr[rxo].messageReg.idReg[2]) &lt;&lt; 8)
++			| (CANin(base, msgArr[rxo].messageReg.idReg[1]) &lt;&lt; 16)
++			| (CANin(base, msgArr[rxo].messageReg.idReg[0]) &lt;&lt; 24);
+ 		id &gt;&gt;= 3;
+ 		id |= CAN_EFF_FLAG;
+ 	} else {
+-		id = CANin(base, message15Reg.idReg[1])
+-			|(CANin(base, message15Reg.idReg[0]) &lt;&lt; 8);
++		id = CANin(base, msgArr[rxo].messageReg.idReg[1])
++			|(CANin(base, msgArr[rxo].messageReg.idReg[0]) &lt;&lt; 8);
+ 		id &gt;&gt;= 5;
+ 	}
+ 
+@@ -888,14 +880,11 @@
+ 	cf-&gt;can_id    = id;
+ 	cf-&gt;can_dlc   = dlc;
+ 	for (i = 0; i &lt; dlc; i++) {
+-		cf-&gt;data[i] = CANin(base, message15Reg.dataReg[i]);
++		cf-&gt;data[i] = CANin(base, msgArr[rxo].messageReg.dataReg[i]);
+ 	}
+ 
+ 	// Make the chip ready to receive the next message
+-	CANout(base, message15Reg.msgCtrl0Reg,
+-	       MVAL_SET | TXIE_RES | RXIE_SET | INTPD_RES);
+-	CANout(base, message15Reg.msgCtrl1Reg,
+-	       RMPD_RES | TXRQ_RES | MLST_RES | NEWD_RES);
++	enable_rx_obj(base, obj);
+ 
+ 	netif_rx(skb);
+ 
+@@ -1008,17 +997,46 @@
+ 		}
+ 		break;
+ 
+-		case 2: // Receiption, message object 15
++		case 0x2: // Receiption, message object 15
+ 		{
+ 			uint8_t ctl1reg;
++
+ 			ctl1reg = CANin(base, message15Reg.msgCtrl1Reg);
+ 			while (ctl1reg &amp; NEWD_SET) {
+ 				if (ctl1reg &amp; MLST_SET)
+ 					priv-&gt;can_stats.data_overrun++;
+ 
+-				can_rx(dev);
++				if (priv-&gt;mo15 == MO15_SFF)
++					can_rx(dev, 4); /* rx via obj15 SFF */
++				else
++					can_rx(dev, 5); /* rx via obj15 EFF */
++
++				ctl1reg = CANin(base, message15Reg.msgCtrl1Reg);
++			}
++
++			if (priv-&gt;state == STATE_PROBE) {
++				/* valid RX -&gt; switch to trx-mode */
++				chipset_init_trx(dev); /* no tx queue wakeup */
++				break; /* check again after init controller */
++			}
++		}
++		break;
++
++		case 0xC: // Receiption, message object 10
++		case 0xD: // Receiption, message object 11
++		{
++			int obj = irqreg - 0xC;
++			int rxo = obj2rxo(obj);
++			uint8_t ctl1reg;
++			ctl1reg = CANin(base, msgArr[rxo].messageReg.msgCtrl1Reg);
++			while (ctl1reg &amp; NEWD_SET) {
++				if (ctl1reg &amp; MLST_SET)
++					priv-&gt;can_stats.data_overrun++;
++				CANout(base, msgArr[rxo].messageReg.msgCtrl1Reg,
++				       NEWD_RES | MLST_RES | TXRQ_UNC | RMPD_UNC);
++				can_rx(dev, obj);
+ 				ctl1reg = CANin(base,
+-						message15Reg.msgCtrl1Reg);
++						msgArr[rxo].messageReg.msgCtrl1Reg);
+ 			}
+ 
+ 			if (priv-&gt;state == STATE_PROBE) {
+@@ -1029,6 +1047,26 @@
+ 		}
+ 		break;
+ 
++		case 0xE: // Receiption, message object 12 (RTR)
++		case 0xF: // Receiption, message object 13 (RTR)
++		{
++			int obj = irqreg - 0xC;
++			int rxo = obj2rxo(obj);
++			uint8_t ctl0reg;
++			ctl0reg = CANin(base, msgArr[rxo].messageReg.msgCtrl0Reg);
++			while (ctl0reg &amp; INTPD_SET) {
++				can_rx(dev, obj);
++				ctl0reg = CANin(base, msgArr[rxo].messageReg.msgCtrl0Reg);
++			}
++
++			if (priv-&gt;state == STATE_PROBE) {
++				/* valid RX -&gt; switch to trx-mode */
++				chipset_init_trx(dev); /* no tx queue wakeup */
++				break; /* check again after init controller */
++			}
++		}
++		break;
++
+ 		case 3: // Message object 1 (our write object)
+ 			/* transmission complete interrupt */
+ 
+@@ -1167,6 +1205,8 @@
+ 	struct net_device	*dev;
+ 	struct can_priv		*priv;
+ 
++	const char mo15mode [3][6] = {&quot;none&quot;, &quot;sff&quot;, &quot;eff&quot;};
++
+ 	if (!(dev = alloc_netdev(sizeof(struct can_priv), CAN_NETDEV_NAME,
+ 				 can_netdev_setup))) {
+ 		printk(KERN_ERR &quot;%s: out of memory\n&quot;, CHIP_NAME);
+@@ -1174,9 +1214,10 @@
+ 	}
+ 
+ 	printk(KERN_INFO &quot;%s: base 0x%lX / irq %d / speed %d / &quot;
+-	       &quot;btr 0x%X / rx_probe %d\n&quot;,
++	       &quot;btr 0x%X / rx_probe %d / mo15 %s\n&quot;,
+ 	       drv_name, rbase[dev_num], irq[dev_num],
+-	       speed[dev_num], btr[dev_num], rx_probe[dev_num]);
++	       speed[dev_num], btr[dev_num], rx_probe[dev_num],
++	       mo15mode[mo15[dev_num]]);
+ 
+ 	/* fill net_device structure */
+ 
+@@ -1188,6 +1229,7 @@
+ 	priv-&gt;speed      = speed[dev_num];
+ 	priv-&gt;btr        = btr[dev_num];
+ 	priv-&gt;rx_probe   = rx_probe[dev_num];
++	priv-&gt;mo15       = mo15[dev_num];
+ 	priv-&gt;clock      = clk;
+ 	priv-&gt;hw_regs    = hw_regs;
+ 	priv-&gt;restart_ms = restart_ms;
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-04-10 13:29:36 UTC (rev 203)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-04-11 16:07:01 UTC (rev 204)
+@@ -65,6 +65,18 @@
+ #define DEFAULT_SPEED	500 /* kBit/s */
+ #define DEFAULT_FORCE_DMC 0 /* for critical register access, e.g. ser1274 */
+ 
++
++/* The message object 15 has a shadow register for reliable data receiption  */
++/* under heavy bus load. Therefore it makes sense to use this message object */
++/* (mo15) for the needed use case. The frame type (EFF/SFF) for the mo15 can */
++/* be defined on the module command line. The default is 11 bit SFF format.  */
++
++#define MO15_NONE 0
++#define MO15_SFF  1
++#define MO15_EFF  2
++
++#define MO15_DEFLT MO15_SFF /* the default */
++
+ #define CAN_NETDEV_NAME	&quot;can%d&quot;
+ 
+ #define TX_TIMEOUT      (50*HZ/1000) /* 50ms */ 
+@@ -267,6 +279,7 @@
+ 	int			speed;
+ 	int			btr;
+ 	int			rx_probe;
++	int			mo15;
+ 	struct timer_list       timer;
+ 	int			state;
+ };
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000188.html">r203 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+</A></li>
+	<LI>Next message: <A HREF="000190.html">r205 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#189">[ date ]</a>
+              <a href="thread.html#189">[ thread ]</a>
+              <a href="subject.html#189">[ subject ]</a>
+              <a href="author.html#189">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

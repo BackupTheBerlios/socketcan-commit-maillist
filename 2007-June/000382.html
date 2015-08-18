@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r399 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r399%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706291613.l5TGD5ls009786%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000381.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r399 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r399%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706291613.l5TGD5ls009786%40sheep.berlios.de%3E"
+       TITLE="r399 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 29 18:13:06 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000381.html">r398 - trunk/kernel/2.6/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#382">[ date ]</a>
+              <a href="thread.html#382">[ thread ]</a>
+              <a href="subject.html#382">[ subject ]</a>
+              <a href="author.html#382">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-29 18:13:03 +0200 (Fri, 29 Jun 2007)
+New Revision: 399
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Reverted the use of skb-&gt;iif in the rx path that has been introduced in 
+rev 385 and rev 386 after some discussions with Patrick McHardy and 
+Jamal Hadi. Indeed the use of skb-&gt;cb is the correct way to transport 
+the interface index inside the socket queue to the userspace. This is 
+also made like this in the packet socket. So the use of skb-&gt;dev is save 
+and it was the right way to do it, like we had done it for a long time :-)
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-06-27 17:53:59 UTC (rev 398)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-06-29 16:13:03 UTC (rev 399)
+@@ -290,11 +290,6 @@
+ 			}
+ 
+ 			newskb-&gt;sk = skb-&gt;sk;
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+-			newskb-&gt;iif = 0;
+-#else
+-			newskb-&gt;input_dev = NULL;
+-#endif
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 			newskb-&gt;pkt_type = PACKET_BROADCAST;
+ 			netif_rx(newskb);
+@@ -588,12 +583,7 @@
+ 
+ 	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ 	if (clone) {
+-		clone-&gt;sk  = skb-&gt;sk;
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+-		clone-&gt;iif = skb-&gt;iif;
+-#else
+-		clone-&gt;input_dev = skb-&gt;input_dev;
+-#endif
++		clone-&gt;sk = skb-&gt;sk;
+ 		r-&gt;func(clone, r-&gt;data);
+ 		r-&gt;matches++;
+ 	}
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-06-27 17:53:59 UTC (rev 398)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-06-29 16:13:03 UTC (rev 399)
+@@ -373,6 +373,7 @@
+ {
+ 	struct sk_buff *skb;
+ 	struct can_frame *firstframe;
++	struct sockaddr_can *addr;
+ 	struct sock *sk = op-&gt;sk;
+ 	int datalen = head-&gt;nframes * CFSIZ;
+ 	int err;
+@@ -398,13 +399,10 @@
+ 	}
+ 
+ 	/* restore originator for recvfrom() */
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+-	skb-&gt;iif = op-&gt;rx_ifindex;
+-#else
+-	skb-&gt;input_dev = dev_get_by_index(op-&gt;rx_ifindex);
+-	if (skb-&gt;input_dev)
+-		dev_put(skb-&gt;input_dev);
+-#endif
++	addr = (struct sockaddr_can *)skb-&gt;cb;
++	memset(addr, 0, sizeof(*addr));
++	addr-&gt;can_family  = AF_CAN;
++	addr-&gt;can_ifindex = op-&gt;rx_ifindex;
+ 
+ 	if (head-&gt;nframes) {
+ 		memcpy(skb_put(skb, datalen), frames, datalen);
+@@ -1732,22 +1730,8 @@
+ 	sock_recv_timestamp(msg, sk, skb);
+ 
+ 	if (msg-&gt;msg_name) {
+-		struct sockaddr_can *addr = msg-&gt;msg_name;
+-		msg-&gt;msg_namelen = sizeof(*addr);
+-		memset(addr, 0, sizeof(*addr));
+-		addr-&gt;can_family  = AF_CAN;
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+-		addr-&gt;can_ifindex = skb-&gt;iif;
+-#else
+-		/*
+-		 * FIXME: Race condition, skb-&gt;input_dev might disappear
+-		 *        while skb is waiting on the queue.
+-		 */
+-		if (skb-&gt;input_dev)
+-			addr-&gt;can_ifindex = skb-&gt;input_dev-&gt;ifindex;
+-		else
+-			addr-&gt;can_ifindex = 0;
+-#endif
++		msg-&gt;msg_namelen = sizeof(struct sockaddr_can);
++		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+ 	}
+ 
+ 	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-06-27 17:53:59 UTC (rev 398)
++++ trunk/kernel/2.6/net/can/raw.c	2007-06-29 16:13:03 UTC (rev 399)
+@@ -123,6 +123,7 @@
+ {
+ 	struct sock *sk = (struct sock*)data;
+ 	struct raw_sock *ro = raw_sk(sk);
++	struct sockaddr_can *addr;
+ 	int error;
+ 
+ 	DBG(&quot;received skbuff %p, sk %p\n&quot;, skb, sk);
+@@ -137,6 +138,11 @@
+ 		}
+ 	}
+ 
++	addr = (struct sockaddr_can *)skb-&gt;cb;
++	memset(addr, 0, sizeof(*addr));
++	addr-&gt;can_family  = AF_CAN;
++	addr-&gt;can_ifindex = skb-&gt;dev-&gt;ifindex;
++
+ 	error = sock_queue_rcv_skb(sk, skb);
+ 	if (error &lt; 0) {
+ 		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, error);
+@@ -708,19 +714,8 @@
+ 	sock_recv_timestamp(msg, sk, skb);
+ 
+ 	if (msg-&gt;msg_name) {
+-		struct sockaddr_can *addr = msg-&gt;msg_name;
+-		msg-&gt;msg_namelen = sizeof(*addr);
+-		memset(addr, 0, sizeof(*addr));
+-		addr-&gt;can_family  = AF_CAN;
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+-		addr-&gt;can_ifindex = skb-&gt;iif;
+-#else
+-		/*
+-		 * FIXME: Race condition, skb-&gt;input_dev might disappear
+-		 *        while skb is waiting on the queue.
+-		 */
+-		addr-&gt;can_ifindex = skb-&gt;input_dev-&gt;ifindex;
+-#endif
++		msg-&gt;msg_namelen = sizeof(struct sockaddr_can);
++		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+ 	}
+ 
+ 	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000381.html">r398 - trunk/kernel/2.6/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#382">[ date ]</a>
+              <a href="thread.html#382">[ thread ]</a>
+              <a href="subject.html#382">[ subject ]</a>
+              <a href="author.html#382">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

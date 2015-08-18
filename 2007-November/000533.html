@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r551 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r551%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711160824.lAG8OSBW028914%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000532.html">
+   <LINK REL="Next"  HREF="000534.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r551 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r551%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711160824.lAG8OSBW028914%40sheep.berlios.de%3E"
+       TITLE="r551 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 16 09:24:28 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000532.html">r550 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000534.html">r552 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#533">[ date ]</a>
+              <a href="thread.html#533">[ thread ]</a>
+              <a href="subject.html#533">[ subject ]</a>
+              <a href="author.html#533">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-16 09:24:23 +0100 (Fri, 16 Nov 2007)
+New Revision: 551
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+Moved init_timer() and add_timer() for timer setup to
+setup_timer() and mod_timer() to prevent comments from Stephen Hemminger 
+on netdev ML ...
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-11-15 14:41:33 UTC (rev 550)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-11-16 08:24:23 UTC (rev 551)
+@@ -913,19 +913,13 @@
+ 
+ 	if (stats_timer) {
+ 		/* the statistics are updated every second (timer triggered) */
+-		init_timer(&amp;stattimer);
+-		stattimer.function = can_stat_update;
+-		stattimer.data = 0;
+-		/* update every second */
++		setup_timer(&amp;stattimer, can_stat_update, 0);
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+-		stattimer.expires = round_jiffies(jiffies + HZ);
++		mod_timer(&amp;stattimer, round_jiffies(jiffies + HZ));
+ #else
+-		stattimer.expires = jiffies + HZ;
++		mod_timer(&amp;stattimer, jiffies + HZ);
+ #endif
+-		/* start statistics timer */
+-		add_timer(&amp;stattimer);
+-	} else
+-		stattimer.function = NULL;
++	}
+ 
+ 	can_init_proc();
+ 
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-11-15 14:41:33 UTC (rev 550)
++++ trunk/kernel/2.6/net/can/proc.c	2007-11-16 08:24:23 UTC (rev 551)
+@@ -188,11 +188,10 @@
+ 
+ 	/* restart timer (one second) */
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+-	stattimer.expires = round_jiffies(jiffies + HZ);
++	mod_timer(&amp;stattimer, round_jiffies(jiffies + HZ));
+ #else
+-	stattimer.expires = jiffies + HZ;
++	mod_timer(&amp;stattimer, jiffies + HZ);
+ #endif
+-	add_timer(&amp;stattimer);
+ }
+ 
+ /*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000532.html">r550 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000534.html">r552 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#533">[ date ]</a>
+              <a href="thread.html#533">[ thread ]</a>
+              <a href="subject.html#533">[ subject ]</a>
+              <a href="author.html#533">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

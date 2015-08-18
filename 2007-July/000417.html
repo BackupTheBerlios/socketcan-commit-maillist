@@ -1,0 +1,1404 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r435 - in trunk/patch-series: 2.6.22 net-2.6.23
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r435%20-%20in%20trunk/patch-series%3A%202.6.22%20net-2.6.23&In-Reply-To=%3C200707162025.l6GKPkaB018631%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000416.html">
+   <LINK REL="Next"  HREF="000418.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r435 - in trunk/patch-series: 2.6.22 net-2.6.23</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r435%20-%20in%20trunk/patch-series%3A%202.6.22%20net-2.6.23&In-Reply-To=%3C200707162025.l6GKPkaB018631%40sheep.berlios.de%3E"
+       TITLE="r435 - in trunk/patch-series: 2.6.22 net-2.6.23">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul 16 22:25:46 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000416.html">r434 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000418.html">r436 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#417">[ date ]</a>
+              <a href="thread.html#417">[ thread ]</a>
+              <a href="subject.html#417">[ subject ]</a>
+              <a href="author.html#417">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-16 22:25:39 +0200 (Mon, 16 Jul 2007)
+New Revision: 435
+
+Modified:
+   trunk/patch-series/2.6.22/01-can-proto-numbers.diff
+   trunk/patch-series/2.6.22/02-can-core.diff
+   trunk/patch-series/2.6.22/03-can-raw-proto.diff
+   trunk/patch-series/2.6.22/04-can-bcm-proto.diff
+   trunk/patch-series/2.6.22/05-can-vcan-driver.diff
+   trunk/patch-series/2.6.22/06-can-maintainers.diff
+   trunk/patch-series/2.6.22/07-can-doc.diff
+   trunk/patch-series/2.6.22/intro
+   trunk/patch-series/net-2.6.23/01-can-proto-numbers.diff
+   trunk/patch-series/net-2.6.23/02-can-core.diff
+   trunk/patch-series/net-2.6.23/03-can-raw-proto.diff
+   trunk/patch-series/net-2.6.23/04-can-bcm-proto.diff
+   trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff
+   trunk/patch-series/net-2.6.23/06-can-maintainers.diff
+   trunk/patch-series/net-2.6.23/07-can-doc.diff
+   trunk/patch-series/net-2.6.23/intro
+Log:
+Update patch-series to r434.
+
+
+Modified: trunk/patch-series/2.6.22/01-can-proto-numbers.diff
+===================================================================
+--- trunk/patch-series/2.6.22/01-can-proto-numbers.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/01-can-proto-numbers.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -5,8 +5,8 @@
+ ethernet packet type, and a line discipline number for the SocketCAN
+ implementation.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/if_arp.h   |    1 +
+
+Modified: trunk/patch-series/2.6.22/02-can-core.diff
+===================================================================
+--- trunk/patch-series/2.6.22/02-can-core.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/02-can-core.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -5,8 +5,8 @@
+ No protocol implementations are included here.  They come as separate
+ patches.  Protocol numbers are already in include/linux/can.h.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/can.h       |   98 ++++
+@@ -24,7 +24,7 @@
+ Index: linux-2.6.22/include/linux/can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can.h	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/include/linux/can.h	2007-07-09 13:23:54.000000000 +0200
+ @@ -0,0 +1,98 @@
+ +/*
+ + * linux/can.h
+@@ -127,7 +127,7 @@
+ Index: linux-2.6.22/include/linux/can/core.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/core.h	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/include/linux/can/core.h	2007-07-09 13:23:54.000000000 +0200
+ @@ -0,0 +1,80 @@
+ +/*
+ + * linux/can/core.h
+@@ -211,8 +211,8 @@
+ +#endif /* CAN_CORE_H */
+ Index: linux-2.6.22/net/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/Kconfig	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/net/Kconfig	2007-07-09 10:42:51.000000000 +0200
++--- linux-2.6.22.orig/net/Kconfig	2007-07-09 13:23:50.000000000 +0200
+++++ linux-2.6.22/net/Kconfig	2007-07-09 13:23:54.000000000 +0200
+ @@ -210,6 +210,7 @@
+  endmenu
+  
+@@ -223,8 +223,8 @@
+  source &quot;net/rxrpc/Kconfig&quot;
+ Index: linux-2.6.22/net/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/net/Makefile	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/net/Makefile	2007-07-09 10:42:51.000000000 +0200
++--- linux-2.6.22.orig/net/Makefile	2007-07-09 13:23:50.000000000 +0200
+++++ linux-2.6.22/net/Makefile	2007-07-09 13:23:54.000000000 +0200
+ @@ -34,6 +34,7 @@
+  obj-$(CONFIG_NETROM)		+= netrom/
+  obj-$(CONFIG_ROSE)		+= rose/
+@@ -236,7 +236,7 @@
+ Index: linux-2.6.22/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/net/can/Kconfig	2007-07-16 21:42:28.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +#
+ +# Controller Area Network (CAN) network layer core configuration
+@@ -266,7 +266,7 @@
+ Index: linux-2.6.22/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/Makefile	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/net/can/Makefile	2007-07-16 21:42:28.000000000 +0200
+ @@ -0,0 +1,6 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network core.
+@@ -277,7 +277,7 @@
+ Index: linux-2.6.22/net/can/af_can.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/af_can.c	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/net/can/af_can.c	2007-07-16 21:46:13.000000000 +0200
+ @@ -0,0 +1,995 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+@@ -331,6 +331,7 @@
+ +#include &lt;linux/list.h&gt;
+ +#include &lt;linux/spinlock.h&gt;
+ +#include &lt;linux/rcupdate.h&gt;
+++#include &lt;linux/uaccess.h&gt;
+ +#include &lt;linux/net.h&gt;
+ +#include &lt;linux/netdevice.h&gt;
+ +#include &lt;linux/socket.h&gt;
+@@ -340,7 +341,6 @@
+ +#include &lt;linux/can.h&gt;
+ +#include &lt;linux/can/core.h&gt;
+ +#include &lt;net/sock.h&gt;
+-+#include &lt;asm/uaccess.h&gt;
+ +
+ +#include &quot;af_can.h&quot;
+ +
+@@ -360,7 +360,7 @@
+ +MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+@@ -833,7 +833,7 @@
+ +	struct receiver *r;
+ +	struct hlist_node *n;
+ +	int matches = 0;
+-+	struct can_frame *cf = (struct can_frame*)skb-&gt;data;
+++	struct can_frame *cf = (struct can_frame *)skb-&gt;data;
+ +	canid_t can_id = cf-&gt;can_id;
+ +
+ +	if (d-&gt;entries == 0)
+@@ -1277,7 +1277,7 @@
+ Index: linux-2.6.22/net/can/af_can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/af_can.h	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/net/can/af_can.h	2007-07-09 13:23:54.000000000 +0200
+ @@ -0,0 +1,121 @@
+ +/*
+ + * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+@@ -1403,7 +1403,7 @@
+ Index: linux-2.6.22/net/can/proc.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/proc.c	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/net/can/proc.c	2007-07-16 21:46:13.000000000 +0200
+ @@ -0,0 +1,531 @@
+ +/*
+ + * proc.c - procfs support for Protocol family CAN core module
+@@ -1471,18 +1471,18 @@
+ +#define CAN_PROC_RCVLIST_EFF &quot;rcvlist_eff&quot;
+ +#define CAN_PROC_RCVLIST_ERR &quot;rcvlist_err&quot;
+ +
+-+static struct proc_dir_entry *can_dir         = NULL;
+-+static struct proc_dir_entry *pde_version     = NULL;
+-+static struct proc_dir_entry *pde_stats       = NULL;
+-+static struct proc_dir_entry *pde_reset_stats = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_all = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_fil = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_inv = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_sff = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_eff = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_err = NULL;
+++static struct proc_dir_entry *can_dir;
+++static struct proc_dir_entry *pde_version;
+++static struct proc_dir_entry *pde_stats;
+++static struct proc_dir_entry *pde_reset_stats;
+++static struct proc_dir_entry *pde_rcvlist_all;
+++static struct proc_dir_entry *pde_rcvlist_fil;
+++static struct proc_dir_entry *pde_rcvlist_inv;
+++static struct proc_dir_entry *pde_rcvlist_sff;
+++static struct proc_dir_entry *pde_rcvlist_eff;
+++static struct proc_dir_entry *pde_rcvlist_err;
+ +
+-+static int user_reset = 0;
+++static int user_reset;
+ +
+ +static const char *rx_list_name[] = {
+ +	[RX_ERR] = &quot;rx_err&quot;,
+@@ -1848,7 +1848,7 @@
+ +
+ +static struct proc_dir_entry *can_create_proc_readentry(const char *name,
+ +							mode_t mode,
+-+							read_proc_t* read_proc,
+++							read_proc_t *read_proc,
+ +							void *data)
+ +{
+ +	if (can_dir)
+@@ -1888,15 +1888,15 @@
+ +	pde_reset_stats = can_create_proc_readentry(CAN_PROC_RESET_STATS, 0644,
+ +					can_proc_read_reset_stats, NULL);
+ +	pde_rcvlist_err = can_create_proc_readentry(CAN_PROC_RCVLIST_ERR, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_ERR);
+++					can_proc_read_rcvlist, (void *)RX_ERR);
+ +	pde_rcvlist_all = can_create_proc_readentry(CAN_PROC_RCVLIST_ALL, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_ALL);
+++					can_proc_read_rcvlist, (void *)RX_ALL);
+ +	pde_rcvlist_fil = can_create_proc_readentry(CAN_PROC_RCVLIST_FIL, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_FIL);
+++					can_proc_read_rcvlist, (void *)RX_FIL);
+ +	pde_rcvlist_inv = can_create_proc_readentry(CAN_PROC_RCVLIST_INV, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_INV);
+++					can_proc_read_rcvlist, (void *)RX_INV);
+ +	pde_rcvlist_eff = can_create_proc_readentry(CAN_PROC_RCVLIST_EFF, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_EFF);
+++					can_proc_read_rcvlist, (void *)RX_EFF);
+ +	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF, 0644,
+ +					can_proc_read_rcvlist_sff, NULL);
+ +}
+@@ -1939,7 +1939,7 @@
+ Index: linux-2.6.22/include/linux/can/error.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/error.h	2007-07-09 10:42:51.000000000 +0200
+++++ linux-2.6.22/include/linux/can/error.h	2007-07-09 13:23:54.000000000 +0200
+ @@ -0,0 +1,93 @@
+ +/*
+ + * linux/can/error.h
+
+Modified: trunk/patch-series/2.6.22/03-can-raw-proto.diff
+===================================================================
+--- trunk/patch-series/2.6.22/03-can-raw-proto.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/03-can-raw-proto.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds the CAN raw protocol.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/can/raw.h |   31 +
+@@ -16,7 +16,7 @@
+ Index: linux-2.6.22/include/linux/can/raw.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/raw.h	2007-07-09 10:42:54.000000000 +0200
+++++ linux-2.6.22/include/linux/can/raw.h	2007-07-16 21:48:14.000000000 +0200
+ @@ -0,0 +1,31 @@
+ +/*
+ + * linux/can/raw.h
+@@ -51,8 +51,8 @@
+ +#endif
+ Index: linux-2.6.22/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Kconfig	2007-07-09 10:42:51.000000000 +0200
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:42:54.000000000 +0200
++--- linux-2.6.22.orig/net/can/Kconfig	2007-07-16 21:42:28.000000000 +0200
+++++ linux-2.6.22/net/can/Kconfig	2007-07-16 21:48:14.000000000 +0200
+ @@ -16,6 +16,32 @@
+  	  If you want CAN support, you should say Y here and also to the
+  	  specific driver for your controller(s) below.
+@@ -88,8 +88,8 @@
+  	depends on CAN
+ Index: linux-2.6.22/net/can/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Makefile	2007-07-09 10:42:51.000000000 +0200
+-+++ linux-2.6.22/net/can/Makefile	2007-07-09 10:42:54.000000000 +0200
++--- linux-2.6.22.orig/net/can/Makefile	2007-07-16 21:42:28.000000000 +0200
+++++ linux-2.6.22/net/can/Makefile	2007-07-16 21:48:14.000000000 +0200
+ @@ -4,3 +4,6 @@
+  
+  obj-$(CONFIG_CAN)	+= can.o
+@@ -100,7 +100,7 @@
+ Index: linux-2.6.22/net/can/raw.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/raw.c	2007-07-09 10:42:54.000000000 +0200
+++++ linux-2.6.22/net/can/raw.c	2007-07-16 21:49:00.000000000 +0200
+ @@ -0,0 +1,757 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+@@ -170,7 +170,7 @@
+ +MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+@@ -213,7 +213,7 @@
+ +
+ +static void raw_rcv(struct sk_buff *skb, void *data)
+ +{
+-+	struct sock *sk = (struct sock*)data;
+++	struct sock *sk = (struct sock *)data;
+ +	struct raw_sock *ro = raw_sk(sk);
+ +	struct sockaddr_can *addr;
+ +	int error;
+
+Modified: trunk/patch-series/2.6.22/04-can-bcm-proto.diff
+===================================================================
+--- trunk/patch-series/2.6.22/04-can-bcm-proto.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/04-can-bcm-proto.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds the CAN broadcast manager (bcm) protocol.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/can/bcm.h |   65 +
+@@ -16,7 +16,7 @@
+ Index: linux-2.6.22/include/linux/can/bcm.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/bcm.h	2007-07-09 10:42:57.000000000 +0200
+++++ linux-2.6.22/include/linux/can/bcm.h	2007-07-16 21:50:19.000000000 +0200
+ @@ -0,0 +1,65 @@
+ +/*
+ + * linux/can/bcm.h
+@@ -85,8 +85,8 @@
+ +#endif /* CAN_BCM_H */
+ Index: linux-2.6.22/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Kconfig	2007-07-09 10:42:54.000000000 +0200
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:42:57.000000000 +0200
++--- linux-2.6.22.orig/net/can/Kconfig	2007-07-16 21:48:14.000000000 +0200
+++++ linux-2.6.22/net/can/Kconfig	2007-07-16 21:50:19.000000000 +0200
+ @@ -42,6 +42,34 @@
+  	  Say Y here if you want non-root users to be able to access CAN_RAW
+  	  sockets.
+@@ -124,8 +124,8 @@
+  	depends on CAN
+ Index: linux-2.6.22/net/can/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Makefile	2007-07-09 10:42:54.000000000 +0200
+-+++ linux-2.6.22/net/can/Makefile	2007-07-09 10:42:57.000000000 +0200
++--- linux-2.6.22.orig/net/can/Makefile	2007-07-16 21:48:14.000000000 +0200
+++++ linux-2.6.22/net/can/Makefile	2007-07-16 21:50:19.000000000 +0200
+ @@ -7,3 +7,6 @@
+  
+  obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+@@ -136,7 +136,7 @@
+ Index: linux-2.6.22/net/can/bcm.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/bcm.c	2007-07-09 10:42:57.000000000 +0200
+++++ linux-2.6.22/net/can/bcm.c	2007-07-16 21:51:13.000000000 +0200
+ @@ -0,0 +1,1755 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+@@ -217,7 +217,7 @@
+ +MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+@@ -225,7 +225,7 @@
+ +/* easy access to can_frame payload */
+ +static inline u64 GET_U64(const struct can_frame *cp)
+ +{
+-+	return *(u64*)cp-&gt;data;
+++	return *(u64 *)cp-&gt;data;
+ +}
+ +
+ +struct bcm_op {
+@@ -250,7 +250,7 @@
+ +	struct net_device *rx_reg_dev;
+ +};
+ +
+-+static struct proc_dir_entry *proc_dir = NULL;
+++static struct proc_dir_entry *proc_dir;
+ +
+ +#ifdef CONFIG_CAN_BCM_USER
+ +#define BCM_CAP (-1)
+@@ -526,7 +526,7 @@
+ + */
+ +static void bcm_tx_timeout_handler(unsigned long data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +
+ +	DBG(&quot;Called with bcm_op %p\n&quot;, op);
+ +
+@@ -562,7 +562,7 @@
+ +
+ +		DBG(&quot;adding timer ival1. func=%p data=%p exp=0x%08X\n&quot;,
+ +		    op-&gt;timer.function,
+-+		    (char*) op-&gt;timer.data,
+++		    (char *) op-&gt;timer.data,
+ +		    (unsigned int) op-&gt;timer.expires);
+ +
+ +		/* send (next) frame */
+@@ -575,7 +575,7 @@
+ +
+ +			DBG(&quot;adding timer ival2. func=%p data=%p exp=0x%08X\n&quot;,
+ +			    op-&gt;timer.function,
+-+			    (char*) op-&gt;timer.data,
+++			    (char *) op-&gt;timer.data,
+ +			    (unsigned int) op-&gt;timer.expires);
+ +
+ +			/* send (next) frame */
+@@ -650,7 +650,7 @@
+ +
+ +			DBG(&quot;adding thrtimer. func=%p data=%p exp=0x%08X\n&quot;,
+ +			    op-&gt;thrtimer.function,
+-+			    (char*) op-&gt;thrtimer.data,
+++			    (char *) op-&gt;thrtimer.data,
+ +			    (unsigned int) op-&gt;thrtimer.expires);
+ +		}
+ +
+@@ -721,7 +721,7 @@
+ +		DBG(&quot;adding rx timeout timer ival1. func=%p data=%p &quot;
+ +		    &quot;exp=0x%08X\n&quot;,
+ +		    op-&gt;timer.function,
+-+		    (char*) op-&gt;timer.data,
+++		    (char *) op-&gt;timer.data,
+ +		    (unsigned int) op-&gt;timer.expires);
+ +
+ +		add_timer(&amp;op-&gt;timer);
+@@ -733,7 +733,7 @@
+ + */
+ +static void bcm_rx_timeout_handler(unsigned long data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +	struct bcm_msg_head msg_head;
+ +
+ +	DBG(&quot;sending RX_TIMEOUT for can_id %03X. op is %p\n&quot;, op-&gt;can_id, op);
+@@ -764,7 +764,7 @@
+ + */
+ +static void bcm_rx_thr_handler(unsigned long data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +	int i = 0;
+ +
+ +	/* mark disabled / consumed timer */
+@@ -774,7 +774,7 @@
+ +		DBG(&quot;sending MUX RX_CHANGED for can_id %03X. op is %p\n&quot;,
+ +		    op-&gt;can_id, op);
+ +		/* for MUX filter we start at index 1 */
+-+		for (i=1; i&lt;op-&gt;nframes; i++) {
+++		for (i = 1; i &lt; op-&gt;nframes; i++) {
+ +			if ((op-&gt;last_frames) &amp;&amp;
+ +			    (op-&gt;last_frames[i].can_dlc &amp; RX_THR)) {
+ +				op-&gt;last_frames[i].can_dlc &amp;= ~RX_THR;
+@@ -798,7 +798,7 @@
+ + */
+ +static void bcm_rx_handler(struct sk_buff *skb, void *data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +	struct can_frame rxframe;
+ +	int i;
+ +
+@@ -868,7 +868,7 @@
+ +		 * Remark: The MUX-mask is stored in index 0
+ +		 */
+ +
+-+		for (i=1; i &lt; op-&gt;nframes; i++) {
+++		for (i = 1; i &lt; op-&gt;nframes; i++) {
+ +			if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
+ +			    (GET_U64(&amp;op-&gt;frames[0]) &amp;
+ +			     GET_U64(&amp;op-&gt;frames[i]))) {
+@@ -1057,7 +1057,7 @@
+ +
+ +		/* update can_frames content */
+ +		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-+			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
+++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ +					       msg-&gt;msg_iov, CFSIZ);
+ +			if (err &lt; 0)
+ +				return err;
+@@ -1092,7 +1092,7 @@
+ +			op-&gt;frames = &amp;op-&gt;sframe;
+ +
+ +		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-+			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
+++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ +					       msg-&gt;msg_iov, CFSIZ);
+ +			if (err &lt; 0) {
+ +				if (op-&gt;frames != &amp;op-&gt;sframe)
+@@ -1180,7 +1180,7 @@
+ +			DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=%p &quot;
+ +			    &quot;exp=0x%08X\n&quot;,
+ +			    op-&gt;timer.function,
+-+			    (char*) op-&gt;timer.data,
+++			    (char *) op-&gt;timer.data,
+ +			    (unsigned int) op-&gt;timer.expires);
+ +
+ +		} else {
+@@ -1188,7 +1188,7 @@
+ +			DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=%p &quot;
+ +			    &quot;exp=0x%08X\n&quot;,
+ +			    op-&gt;timer.function,
+-+			    (char*) op-&gt;timer.data,
+++			    (char *) op-&gt;timer.data,
+ +			    (unsigned int) op-&gt;timer.expires);
+ +		}
+ +
+@@ -1244,7 +1244,7 @@
+ +
+ +		if (msg_head-&gt;nframes) {
+ +			/* update can_frames content */
+-+			err = memcpy_fromiovec((u8*)op-&gt;frames,
+++			err = memcpy_fromiovec((u8 *)op-&gt;frames,
+ +					       msg-&gt;msg_iov,
+ +					       msg_head-&gt;nframes * CFSIZ);
+ +			if (err &lt; 0)
+@@ -1296,7 +1296,7 @@
+ +		}
+ +
+ +		if (msg_head-&gt;nframes) {
+-+			err = memcpy_fromiovec((u8*)op-&gt;frames, msg-&gt;msg_iov,
+++			err = memcpy_fromiovec((u8 *)op-&gt;frames, msg-&gt;msg_iov,
+ +					       msg_head-&gt;nframes * CFSIZ);
+ +			if (err &lt; 0) {
+ +				if (op-&gt;frames != &amp;op-&gt;sframe)
+@@ -1521,7 +1521,7 @@
+ +
+ +	/* read message head information */
+ +
+-+	ret = memcpy_fromiovec((u8*)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
+++	ret = memcpy_fromiovec((u8 *)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
+ +	if (ret &lt; 0)
+ +		return ret;
+ +
+
+Modified: trunk/patch-series/2.6.22/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/2.6.22/05-can-vcan-driver.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/05-can-vcan-driver.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -5,8 +5,8 @@
+ The vcan device is just a loopback device for CAN frames, no
+ real CAN hardware is involved.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  drivers/net/Makefile     |    1 
+@@ -18,8 +18,8 @@
+ 
+ Index: linux-2.6.22/drivers/net/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/drivers/net/Makefile	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/drivers/net/Makefile	2007-07-09 10:43:00.000000000 +0200
++--- linux-2.6.22.orig/drivers/net/Makefile	2007-07-16 21:42:28.000000000 +0200
+++++ linux-2.6.22/drivers/net/Makefile	2007-07-16 21:52:34.000000000 +0200
+ @@ -8,6 +8,7 @@
+  obj-$(CONFIG_CHELSIO_T1) += chelsio/
+  obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+@@ -31,7 +31,7 @@
+ Index: linux-2.6.22/drivers/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/drivers/net/can/Kconfig	2007-07-09 10:43:00.000000000 +0200
+++++ linux-2.6.22/drivers/net/can/Kconfig	2007-07-16 21:52:34.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +menu &quot;CAN Device Drivers&quot;
+ +	depends on CAN
+@@ -61,7 +61,7 @@
+ Index: linux-2.6.22/drivers/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/drivers/net/can/Makefile	2007-07-09 10:43:00.000000000 +0200
+++++ linux-2.6.22/drivers/net/can/Makefile	2007-07-16 21:52:34.000000000 +0200
+ @@ -0,0 +1,5 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network drivers.
+@@ -71,7 +71,7 @@
+ Index: linux-2.6.22/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/drivers/net/can/vcan.c	2007-07-09 13:22:58.000000000 +0200
+++++ linux-2.6.22/drivers/net/can/vcan.c	2007-07-16 21:53:10.000000000 +0200
+ @@ -0,0 +1,286 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+@@ -132,7 +132,7 @@
+ +MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_DEVICES
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +#endif
+ +
+@@ -158,7 +158,7 @@
+ + * This causes the PF_CAN core to perform the loopback as a fallback solution.
+ + */
+ +
+-+static int loopback = 0; /* vcan default: no loopback, just free the skb */
+++static int loopback; /* vcan default: no loopback, just free the skb */
+ +module_param(loopback, int, S_IRUGO);
+ +MODULE_PARM_DESC(loopback, &quot;Loop back sent frames. vcan default: 0 (Off)&quot;);
+ +
+@@ -361,8 +361,8 @@
+ +module_exit(vcan_cleanup_module);
+ Index: linux-2.6.22/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Kconfig	2007-07-09 10:42:57.000000000 +0200
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:43:00.000000000 +0200
++--- linux-2.6.22.orig/net/can/Kconfig	2007-07-16 21:50:19.000000000 +0200
+++++ linux-2.6.22/net/can/Kconfig	2007-07-16 21:52:34.000000000 +0200
+ @@ -77,3 +77,6 @@
+  	  Say Y here if you want the CAN core to produce a bunch of debug
+  	  messages to the system log.  Select this if you are having a
+
+Modified: trunk/patch-series/2.6.22/06-can-maintainers.diff
+===================================================================
+--- trunk/patch-series/2.6.22/06-can-maintainers.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/06-can-maintainers.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds entries in the CREDITS and MAINTAINERS file for CAN.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  CREDITS     |   16 ++++++++++++++++
+
+Modified: trunk/patch-series/2.6.22/07-can-doc.diff
+===================================================================
+--- trunk/patch-series/2.6.22/07-can-doc.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/07-can-doc.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds documentation for the PF_CAN protocol family.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  Documentation/networking/00-INDEX |    2 
+
+Modified: trunk/patch-series/2.6.22/intro
+===================================================================
+--- trunk/patch-series/2.6.22/intro	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/2.6.22/intro	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,7 +3,7 @@
+ ESUBJECT
+ 
+ This patch series applies against linux-2.6.22 and is derived from
+-Subversion revision r426 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++Subversion revision r434 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+ It can be found in the directory
+ <A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
+ 
+
+Modified: trunk/patch-series/net-2.6.23/01-can-proto-numbers.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/01-can-proto-numbers.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/01-can-proto-numbers.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -5,8 +5,8 @@
+ ethernet packet type, and a line discipline number for the SocketCAN
+ implementation.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/if_arp.h   |    1 +
+
+Modified: trunk/patch-series/net-2.6.23/02-can-core.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/02-can-core.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/02-can-core.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -5,8 +5,8 @@
+ No protocol implementations are included here.  They come as separate
+ patches.  Protocol numbers are already in include/linux/can.h.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/can.h       |   98 ++++
+@@ -24,7 +24,7 @@
+ Index: net-2.6.23/include/linux/can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/include/linux/can.h	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/include/linux/can.h	2007-07-09 13:23:28.000000000 +0200
+ @@ -0,0 +1,98 @@
+ +/*
+ + * linux/can.h
+@@ -127,7 +127,7 @@
+ Index: net-2.6.23/include/linux/can/core.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/include/linux/can/core.h	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/include/linux/can/core.h	2007-07-09 13:23:28.000000000 +0200
+ @@ -0,0 +1,80 @@
+ +/*
+ + * linux/can/core.h
+@@ -211,8 +211,8 @@
+ +#endif /* CAN_CORE_H */
+ Index: net-2.6.23/net/Kconfig
+ ===================================================================
+---- net-2.6.23.orig/net/Kconfig	2007-07-09 10:41:39.000000000 +0200
+-+++ net-2.6.23/net/Kconfig	2007-07-09 10:41:50.000000000 +0200
++--- net-2.6.23.orig/net/Kconfig	2007-07-09 13:23:24.000000000 +0200
+++++ net-2.6.23/net/Kconfig	2007-07-09 13:23:28.000000000 +0200
+ @@ -210,6 +210,7 @@
+  endmenu
+  
+@@ -223,8 +223,8 @@
+  source &quot;net/rxrpc/Kconfig&quot;
+ Index: net-2.6.23/net/Makefile
+ ===================================================================
+---- net-2.6.23.orig/net/Makefile	2007-07-09 10:41:39.000000000 +0200
+-+++ net-2.6.23/net/Makefile	2007-07-09 10:41:50.000000000 +0200
++--- net-2.6.23.orig/net/Makefile	2007-07-09 13:23:24.000000000 +0200
+++++ net-2.6.23/net/Makefile	2007-07-09 13:23:28.000000000 +0200
+ @@ -34,6 +34,7 @@
+  obj-$(CONFIG_NETROM)		+= netrom/
+  obj-$(CONFIG_ROSE)		+= rose/
+@@ -236,7 +236,7 @@
+ Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/net/can/Kconfig	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-16 21:42:33.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +#
+ +# Controller Area Network (CAN) network layer core configuration
+@@ -266,7 +266,7 @@
+ Index: net-2.6.23/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/net/can/Makefile	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/net/can/Makefile	2007-07-16 21:42:33.000000000 +0200
+ @@ -0,0 +1,6 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network core.
+@@ -277,7 +277,7 @@
+ Index: net-2.6.23/net/can/af_can.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/net/can/af_can.c	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/net/can/af_can.c	2007-07-16 21:45:37.000000000 +0200
+ @@ -0,0 +1,995 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+@@ -331,6 +331,7 @@
+ +#include &lt;linux/list.h&gt;
+ +#include &lt;linux/spinlock.h&gt;
+ +#include &lt;linux/rcupdate.h&gt;
+++#include &lt;linux/uaccess.h&gt;
+ +#include &lt;linux/net.h&gt;
+ +#include &lt;linux/netdevice.h&gt;
+ +#include &lt;linux/socket.h&gt;
+@@ -340,7 +341,6 @@
+ +#include &lt;linux/can.h&gt;
+ +#include &lt;linux/can/core.h&gt;
+ +#include &lt;net/sock.h&gt;
+-+#include &lt;asm/uaccess.h&gt;
+ +
+ +#include &quot;af_can.h&quot;
+ +
+@@ -360,7 +360,7 @@
+ +MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+@@ -833,7 +833,7 @@
+ +	struct receiver *r;
+ +	struct hlist_node *n;
+ +	int matches = 0;
+-+	struct can_frame *cf = (struct can_frame*)skb-&gt;data;
+++	struct can_frame *cf = (struct can_frame *)skb-&gt;data;
+ +	canid_t can_id = cf-&gt;can_id;
+ +
+ +	if (d-&gt;entries == 0)
+@@ -1277,7 +1277,7 @@
+ Index: net-2.6.23/net/can/af_can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/net/can/af_can.h	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/net/can/af_can.h	2007-07-09 13:23:28.000000000 +0200
+ @@ -0,0 +1,121 @@
+ +/*
+ + * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+@@ -1403,7 +1403,7 @@
+ Index: net-2.6.23/net/can/proc.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/net/can/proc.c	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/net/can/proc.c	2007-07-16 21:45:37.000000000 +0200
+ @@ -0,0 +1,531 @@
+ +/*
+ + * proc.c - procfs support for Protocol family CAN core module
+@@ -1471,18 +1471,18 @@
+ +#define CAN_PROC_RCVLIST_EFF &quot;rcvlist_eff&quot;
+ +#define CAN_PROC_RCVLIST_ERR &quot;rcvlist_err&quot;
+ +
+-+static struct proc_dir_entry *can_dir         = NULL;
+-+static struct proc_dir_entry *pde_version     = NULL;
+-+static struct proc_dir_entry *pde_stats       = NULL;
+-+static struct proc_dir_entry *pde_reset_stats = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_all = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_fil = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_inv = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_sff = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_eff = NULL;
+-+static struct proc_dir_entry *pde_rcvlist_err = NULL;
+++static struct proc_dir_entry *can_dir;
+++static struct proc_dir_entry *pde_version;
+++static struct proc_dir_entry *pde_stats;
+++static struct proc_dir_entry *pde_reset_stats;
+++static struct proc_dir_entry *pde_rcvlist_all;
+++static struct proc_dir_entry *pde_rcvlist_fil;
+++static struct proc_dir_entry *pde_rcvlist_inv;
+++static struct proc_dir_entry *pde_rcvlist_sff;
+++static struct proc_dir_entry *pde_rcvlist_eff;
+++static struct proc_dir_entry *pde_rcvlist_err;
+ +
+-+static int user_reset = 0;
+++static int user_reset;
+ +
+ +static const char *rx_list_name[] = {
+ +	[RX_ERR] = &quot;rx_err&quot;,
+@@ -1848,7 +1848,7 @@
+ +
+ +static struct proc_dir_entry *can_create_proc_readentry(const char *name,
+ +							mode_t mode,
+-+							read_proc_t* read_proc,
+++							read_proc_t *read_proc,
+ +							void *data)
+ +{
+ +	if (can_dir)
+@@ -1888,15 +1888,15 @@
+ +	pde_reset_stats = can_create_proc_readentry(CAN_PROC_RESET_STATS, 0644,
+ +					can_proc_read_reset_stats, NULL);
+ +	pde_rcvlist_err = can_create_proc_readentry(CAN_PROC_RCVLIST_ERR, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_ERR);
+++					can_proc_read_rcvlist, (void *)RX_ERR);
+ +	pde_rcvlist_all = can_create_proc_readentry(CAN_PROC_RCVLIST_ALL, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_ALL);
+++					can_proc_read_rcvlist, (void *)RX_ALL);
+ +	pde_rcvlist_fil = can_create_proc_readentry(CAN_PROC_RCVLIST_FIL, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_FIL);
+++					can_proc_read_rcvlist, (void *)RX_FIL);
+ +	pde_rcvlist_inv = can_create_proc_readentry(CAN_PROC_RCVLIST_INV, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_INV);
+++					can_proc_read_rcvlist, (void *)RX_INV);
+ +	pde_rcvlist_eff = can_create_proc_readentry(CAN_PROC_RCVLIST_EFF, 0644,
+-+					can_proc_read_rcvlist, (void*)RX_EFF);
+++					can_proc_read_rcvlist, (void *)RX_EFF);
+ +	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF, 0644,
+ +					can_proc_read_rcvlist_sff, NULL);
+ +}
+@@ -1939,7 +1939,7 @@
+ Index: net-2.6.23/include/linux/can/error.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/include/linux/can/error.h	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/include/linux/can/error.h	2007-07-09 13:23:28.000000000 +0200
+ @@ -0,0 +1,93 @@
+ +/*
+ + * linux/can/error.h
+
+Modified: trunk/patch-series/net-2.6.23/03-can-raw-proto.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/03-can-raw-proto.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/03-can-raw-proto.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds the CAN raw protocol.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/can/raw.h |   31 +
+@@ -16,7 +16,7 @@
+ Index: net-2.6.23/include/linux/can/raw.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/include/linux/can/raw.h	2007-07-09 10:41:55.000000000 +0200
+++++ net-2.6.23/include/linux/can/raw.h	2007-07-16 21:48:09.000000000 +0200
+ @@ -0,0 +1,31 @@
+ +/*
+ + * linux/can/raw.h
+@@ -51,8 +51,8 @@
+ +#endif
+ Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+---- net-2.6.23.orig/net/can/Kconfig	2007-07-09 10:41:50.000000000 +0200
+-+++ net-2.6.23/net/can/Kconfig	2007-07-09 10:41:55.000000000 +0200
++--- net-2.6.23.orig/net/can/Kconfig	2007-07-16 21:42:33.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-16 21:48:09.000000000 +0200
+ @@ -16,6 +16,32 @@
+  	  If you want CAN support, you should say Y here and also to the
+  	  specific driver for your controller(s) below.
+@@ -88,8 +88,8 @@
+  	depends on CAN
+ Index: net-2.6.23/net/can/Makefile
+ ===================================================================
+---- net-2.6.23.orig/net/can/Makefile	2007-07-09 10:41:50.000000000 +0200
+-+++ net-2.6.23/net/can/Makefile	2007-07-09 10:41:55.000000000 +0200
++--- net-2.6.23.orig/net/can/Makefile	2007-07-16 21:42:33.000000000 +0200
+++++ net-2.6.23/net/can/Makefile	2007-07-16 21:48:09.000000000 +0200
+ @@ -4,3 +4,6 @@
+  
+  obj-$(CONFIG_CAN)	+= can.o
+@@ -100,7 +100,7 @@
+ Index: net-2.6.23/net/can/raw.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/net/can/raw.c	2007-07-09 10:41:55.000000000 +0200
+++++ net-2.6.23/net/can/raw.c	2007-07-16 21:49:35.000000000 +0200
+ @@ -0,0 +1,757 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+@@ -170,7 +170,7 @@
+ +MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+@@ -213,7 +213,7 @@
+ +
+ +static void raw_rcv(struct sk_buff *skb, void *data)
+ +{
+-+	struct sock *sk = (struct sock*)data;
+++	struct sock *sk = (struct sock *)data;
+ +	struct raw_sock *ro = raw_sk(sk);
+ +	struct sockaddr_can *addr;
+ +	int error;
+
+Modified: trunk/patch-series/net-2.6.23/04-can-bcm-proto.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/04-can-bcm-proto.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/04-can-bcm-proto.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds the CAN broadcast manager (bcm) protocol.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  include/linux/can/bcm.h |   65 +
+@@ -16,7 +16,7 @@
+ Index: net-2.6.23/include/linux/can/bcm.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/include/linux/can/bcm.h	2007-07-09 10:41:58.000000000 +0200
+++++ net-2.6.23/include/linux/can/bcm.h	2007-07-16 21:50:22.000000000 +0200
+ @@ -0,0 +1,65 @@
+ +/*
+ + * linux/can/bcm.h
+@@ -85,8 +85,8 @@
+ +#endif /* CAN_BCM_H */
+ Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+---- net-2.6.23.orig/net/can/Kconfig	2007-07-09 10:41:55.000000000 +0200
+-+++ net-2.6.23/net/can/Kconfig	2007-07-09 10:41:58.000000000 +0200
++--- net-2.6.23.orig/net/can/Kconfig	2007-07-16 21:48:09.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-16 21:50:22.000000000 +0200
+ @@ -42,6 +42,34 @@
+  	  Say Y here if you want non-root users to be able to access CAN_RAW
+  	  sockets.
+@@ -124,8 +124,8 @@
+  	depends on CAN
+ Index: net-2.6.23/net/can/Makefile
+ ===================================================================
+---- net-2.6.23.orig/net/can/Makefile	2007-07-09 10:41:55.000000000 +0200
+-+++ net-2.6.23/net/can/Makefile	2007-07-09 10:41:58.000000000 +0200
++--- net-2.6.23.orig/net/can/Makefile	2007-07-16 21:48:09.000000000 +0200
+++++ net-2.6.23/net/can/Makefile	2007-07-16 21:50:22.000000000 +0200
+ @@ -7,3 +7,6 @@
+  
+  obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+@@ -136,7 +136,7 @@
+ Index: net-2.6.23/net/can/bcm.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/net/can/bcm.c	2007-07-09 10:41:58.000000000 +0200
+++++ net-2.6.23/net/can/bcm.c	2007-07-16 21:51:28.000000000 +0200
+ @@ -0,0 +1,1755 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+@@ -217,7 +217,7 @@
+ +MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+@@ -225,7 +225,7 @@
+ +/* easy access to can_frame payload */
+ +static inline u64 GET_U64(const struct can_frame *cp)
+ +{
+-+	return *(u64*)cp-&gt;data;
+++	return *(u64 *)cp-&gt;data;
+ +}
+ +
+ +struct bcm_op {
+@@ -250,7 +250,7 @@
+ +	struct net_device *rx_reg_dev;
+ +};
+ +
+-+static struct proc_dir_entry *proc_dir = NULL;
+++static struct proc_dir_entry *proc_dir;
+ +
+ +#ifdef CONFIG_CAN_BCM_USER
+ +#define BCM_CAP (-1)
+@@ -526,7 +526,7 @@
+ + */
+ +static void bcm_tx_timeout_handler(unsigned long data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +
+ +	DBG(&quot;Called with bcm_op %p\n&quot;, op);
+ +
+@@ -562,7 +562,7 @@
+ +
+ +		DBG(&quot;adding timer ival1. func=%p data=%p exp=0x%08X\n&quot;,
+ +		    op-&gt;timer.function,
+-+		    (char*) op-&gt;timer.data,
+++		    (char *) op-&gt;timer.data,
+ +		    (unsigned int) op-&gt;timer.expires);
+ +
+ +		/* send (next) frame */
+@@ -575,7 +575,7 @@
+ +
+ +			DBG(&quot;adding timer ival2. func=%p data=%p exp=0x%08X\n&quot;,
+ +			    op-&gt;timer.function,
+-+			    (char*) op-&gt;timer.data,
+++			    (char *) op-&gt;timer.data,
+ +			    (unsigned int) op-&gt;timer.expires);
+ +
+ +			/* send (next) frame */
+@@ -650,7 +650,7 @@
+ +
+ +			DBG(&quot;adding thrtimer. func=%p data=%p exp=0x%08X\n&quot;,
+ +			    op-&gt;thrtimer.function,
+-+			    (char*) op-&gt;thrtimer.data,
+++			    (char *) op-&gt;thrtimer.data,
+ +			    (unsigned int) op-&gt;thrtimer.expires);
+ +		}
+ +
+@@ -721,7 +721,7 @@
+ +		DBG(&quot;adding rx timeout timer ival1. func=%p data=%p &quot;
+ +		    &quot;exp=0x%08X\n&quot;,
+ +		    op-&gt;timer.function,
+-+		    (char*) op-&gt;timer.data,
+++		    (char *) op-&gt;timer.data,
+ +		    (unsigned int) op-&gt;timer.expires);
+ +
+ +		add_timer(&amp;op-&gt;timer);
+@@ -733,7 +733,7 @@
+ + */
+ +static void bcm_rx_timeout_handler(unsigned long data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +	struct bcm_msg_head msg_head;
+ +
+ +	DBG(&quot;sending RX_TIMEOUT for can_id %03X. op is %p\n&quot;, op-&gt;can_id, op);
+@@ -764,7 +764,7 @@
+ + */
+ +static void bcm_rx_thr_handler(unsigned long data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +	int i = 0;
+ +
+ +	/* mark disabled / consumed timer */
+@@ -774,7 +774,7 @@
+ +		DBG(&quot;sending MUX RX_CHANGED for can_id %03X. op is %p\n&quot;,
+ +		    op-&gt;can_id, op);
+ +		/* for MUX filter we start at index 1 */
+-+		for (i=1; i&lt;op-&gt;nframes; i++) {
+++		for (i = 1; i &lt; op-&gt;nframes; i++) {
+ +			if ((op-&gt;last_frames) &amp;&amp;
+ +			    (op-&gt;last_frames[i].can_dlc &amp; RX_THR)) {
+ +				op-&gt;last_frames[i].can_dlc &amp;= ~RX_THR;
+@@ -798,7 +798,7 @@
+ + */
+ +static void bcm_rx_handler(struct sk_buff *skb, void *data)
+ +{
+-+	struct bcm_op *op = (struct bcm_op*)data;
+++	struct bcm_op *op = (struct bcm_op *)data;
+ +	struct can_frame rxframe;
+ +	int i;
+ +
+@@ -868,7 +868,7 @@
+ +		 * Remark: The MUX-mask is stored in index 0
+ +		 */
+ +
+-+		for (i=1; i &lt; op-&gt;nframes; i++) {
+++		for (i = 1; i &lt; op-&gt;nframes; i++) {
+ +			if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
+ +			    (GET_U64(&amp;op-&gt;frames[0]) &amp;
+ +			     GET_U64(&amp;op-&gt;frames[i]))) {
+@@ -1057,7 +1057,7 @@
+ +
+ +		/* update can_frames content */
+ +		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-+			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
+++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ +					       msg-&gt;msg_iov, CFSIZ);
+ +			if (err &lt; 0)
+ +				return err;
+@@ -1092,7 +1092,7 @@
+ +			op-&gt;frames = &amp;op-&gt;sframe;
+ +
+ +		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-+			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
+++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ +					       msg-&gt;msg_iov, CFSIZ);
+ +			if (err &lt; 0) {
+ +				if (op-&gt;frames != &amp;op-&gt;sframe)
+@@ -1180,7 +1180,7 @@
+ +			DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=%p &quot;
+ +			    &quot;exp=0x%08X\n&quot;,
+ +			    op-&gt;timer.function,
+-+			    (char*) op-&gt;timer.data,
+++			    (char *) op-&gt;timer.data,
+ +			    (unsigned int) op-&gt;timer.expires);
+ +
+ +		} else {
+@@ -1188,7 +1188,7 @@
+ +			DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=%p &quot;
+ +			    &quot;exp=0x%08X\n&quot;,
+ +			    op-&gt;timer.function,
+-+			    (char*) op-&gt;timer.data,
+++			    (char *) op-&gt;timer.data,
+ +			    (unsigned int) op-&gt;timer.expires);
+ +		}
+ +
+@@ -1244,7 +1244,7 @@
+ +
+ +		if (msg_head-&gt;nframes) {
+ +			/* update can_frames content */
+-+			err = memcpy_fromiovec((u8*)op-&gt;frames,
+++			err = memcpy_fromiovec((u8 *)op-&gt;frames,
+ +					       msg-&gt;msg_iov,
+ +					       msg_head-&gt;nframes * CFSIZ);
+ +			if (err &lt; 0)
+@@ -1296,7 +1296,7 @@
+ +		}
+ +
+ +		if (msg_head-&gt;nframes) {
+-+			err = memcpy_fromiovec((u8*)op-&gt;frames, msg-&gt;msg_iov,
+++			err = memcpy_fromiovec((u8 *)op-&gt;frames, msg-&gt;msg_iov,
+ +					       msg_head-&gt;nframes * CFSIZ);
+ +			if (err &lt; 0) {
+ +				if (op-&gt;frames != &amp;op-&gt;sframe)
+@@ -1521,7 +1521,7 @@
+ +
+ +	/* read message head information */
+ +
+-+	ret = memcpy_fromiovec((u8*)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
+++	ret = memcpy_fromiovec((u8 *)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
+ +	if (ret &lt; 0)
+ +		return ret;
+ +
+
+Modified: trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -5,8 +5,8 @@
+ The vcan device is just a loopback device for CAN frames, no
+ real CAN hardware is involved.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  drivers/net/Makefile     |    1 
+@@ -18,8 +18,8 @@
+ 
+ Index: net-2.6.23/drivers/net/Makefile
+ ===================================================================
+---- net-2.6.23.orig/drivers/net/Makefile	2007-07-09 10:41:38.000000000 +0200
+-+++ net-2.6.23/drivers/net/Makefile	2007-07-09 10:42:01.000000000 +0200
++--- net-2.6.23.orig/drivers/net/Makefile	2007-07-16 21:42:32.000000000 +0200
+++++ net-2.6.23/drivers/net/Makefile	2007-07-16 21:52:38.000000000 +0200
+ @@ -8,6 +8,7 @@
+  obj-$(CONFIG_CHELSIO_T1) += chelsio/
+  obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+@@ -31,7 +31,7 @@
+ Index: net-2.6.23/drivers/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/drivers/net/can/Kconfig	2007-07-09 10:42:01.000000000 +0200
+++++ net-2.6.23/drivers/net/can/Kconfig	2007-07-16 21:52:38.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +menu &quot;CAN Device Drivers&quot;
+ +	depends on CAN
+@@ -61,7 +61,7 @@
+ Index: net-2.6.23/drivers/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/drivers/net/can/Makefile	2007-07-09 10:42:01.000000000 +0200
+++++ net-2.6.23/drivers/net/can/Makefile	2007-07-16 21:52:38.000000000 +0200
+ @@ -0,0 +1,5 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network drivers.
+@@ -71,7 +71,7 @@
+ Index: net-2.6.23/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/drivers/net/can/vcan.c	2007-07-09 13:22:44.000000000 +0200
+++++ net-2.6.23/drivers/net/can/vcan.c	2007-07-16 21:53:31.000000000 +0200
+ @@ -0,0 +1,264 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+@@ -133,7 +133,7 @@
+ +MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_DEVICES
+-+static int debug = 0;
+++static int debug;
+ +module_param(debug, int, S_IRUGO);
+ +#endif
+ +
+@@ -156,7 +156,7 @@
+ + * This causes the PF_CAN core to perform the loopback as a fallback solution.
+ + */
+ +
+-+static int loopback = 0; /* vcan default: no loopback, just free the skb */
+++static int loopback; /* vcan default: no loopback, just free the skb */
+ +module_param(loopback, int, S_IRUGO);
+ +MODULE_PARM_DESC(loopback, &quot;Loop back sent frames. vcan default: 0 (Off)&quot;);
+ +
+@@ -339,8 +339,8 @@
+ +module_exit(vcan_cleanup_module);
+ Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+---- net-2.6.23.orig/net/can/Kconfig	2007-07-09 10:41:58.000000000 +0200
+-+++ net-2.6.23/net/can/Kconfig	2007-07-09 10:42:01.000000000 +0200
++--- net-2.6.23.orig/net/can/Kconfig	2007-07-16 21:50:22.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-16 21:52:38.000000000 +0200
+ @@ -77,3 +77,6 @@
+  	  Say Y here if you want the CAN core to produce a bunch of debug
+  	  messages to the system log.  Select this if you are having a
+
+Modified: trunk/patch-series/net-2.6.23/06-can-maintainers.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/06-can-maintainers.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/06-can-maintainers.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds entries in the CREDITS and MAINTAINERS file for CAN.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  CREDITS     |   16 ++++++++++++++++
+
+Modified: trunk/patch-series/net-2.6.23/07-can-doc.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/07-can-doc.diff	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/07-can-doc.diff	2007-07-16 20:25:39 UTC (rev 435)
+@@ -3,8 +3,8 @@
+ EDESC
+ This patch adds documentation for the PF_CAN protocol family.
+ 
+-Signed-Off-By: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+-Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
++Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
++Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+  Documentation/networking/00-INDEX |    2 
+
+Modified: trunk/patch-series/net-2.6.23/intro
+===================================================================
+--- trunk/patch-series/net-2.6.23/intro	2007-07-16 17:27:48 UTC (rev 434)
++++ trunk/patch-series/net-2.6.23/intro	2007-07-16 20:25:39 UTC (rev 435)
+@@ -22,7 +22,7 @@
+ * Minor cleanup of #include's
+ 
+ This patch series applies against net-2.6.23 and is derived from Subversion
+-revision r426 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++revision r434 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+ It can be found in the directory
+ <A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000416.html">r434 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000418.html">r436 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#417">[ date ]</a>
+              <a href="thread.html#417">[ thread ]</a>
+              <a href="subject.html#417">[ subject ]</a>
+              <a href="author.html#417">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,208 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r185 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r185%20-%20trunk&In-Reply-To=%3C200703191303.l2JD3fk2001664%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000168.html">
+   <LINK REL="Next"  HREF="000171.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r185 - trunk</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r185%20-%20trunk&In-Reply-To=%3C200703191303.l2JD3fk2001664%40sheep.berlios.de%3E"
+       TITLE="r185 - trunk">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar 19 14:03:41 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000168.html">r177 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000171.html">r186 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#170">[ date ]</a>
+              <a href="thread.html#170">[ thread ]</a>
+              <a href="subject.html#170">[ subject ]</a>
+              <a href="author.html#170">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-03-19 14:03:37 +0100 (Mon, 19 Mar 2007)
+New Revision: 185
+
+Added:
+   trunk/FILES-2.6
+   trunk/Makefile
+   trunk/mkpatch
+Log:
+Add a quick'n'dirty script to generate a kernel patch file.
+Needs a list of files to be added on stdin and currently also a diff file
+for the kernel version the patch is to be generated for.
+
+
+Added: trunk/FILES-2.6
+===================================================================
+--- trunk/FILES-2.6	2007-03-13 21:31:59 UTC (rev 184)
++++ trunk/FILES-2.6	2007-03-19 13:03:37 UTC (rev 185)
+@@ -0,0 +1,30 @@
++kernel/2.6/net/can/Kconfig
++kernel/2.6/net/can/Makefile.kernel Makefile
++kernel/2.6/net/can/af_can.c
++kernel/2.6/net/can/af_can.h
++kernel/2.6/net/can/proc.c
++kernel/2.6/net/can/raw.c
++kernel/2.6/net/can/bcm.c
++kernel/2.6/include/linux/can.h
++kernel/2.6/include/linux/can/core.h
++kernel/2.6/include/linux/can/version.h
++kernel/2.6/include/linux/can/error.h
++kernel/2.6/include/linux/can/raw.h
++kernel/2.6/include/linux/can/bcm.h
++#kernel/2.6/include/linux/can/ioctl.h
++#kernel/2.6/include/linux/can/dev.h
++kernel/2.6/drivers/net/can/Kconfig.kernel Kconfig
++kernel/2.6/drivers/net/can/Makefile.kernel Makefile
++kernel/2.6/drivers/net/can/vcan.c
++#kernel/2.6/drivers/net/can/slcan.c
++#kernel/2.6/drivers/net/can/mscan/Makefile
++#kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
++#kernel/2.6/drivers/net/can/mscan/mscan.c
++#kernel/2.6/drivers/net/can/mscan/mscan.h
++#kernel/2.6/drivers/net/can/sja1000/Makefile
++#kernel/2.6/drivers/net/can/sja1000/isa.c
++#kernel/2.6/drivers/net/can/sja1000/mem.c
++#kernel/2.6/drivers/net/can/sja1000/proc.c
++#kernel/2.6/drivers/net/can/sja1000/sja1000.c
++#kernel/2.6/drivers/net/can/sja1000/sja1000.h
++#kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+
+Added: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2007-03-13 21:31:59 UTC (rev 184)
++++ trunk/Makefile	2007-03-19 13:03:37 UTC (rev 185)
+@@ -0,0 +1,12 @@
++#
++#  $Id$
++#
++
++VERSION       = $(shell awk '/^VERSION/     {print $$3}' $(KERNELDIR)/Makefile)
++PATCHLEVEL    = $(shell awk '/^PATCHLEVEL/  {print $$3}' $(KERNELDIR)/Makefile)
++SUBLEVEL      = $(shell awk '/^SUBLEVEL/    {print $$3}' $(KERNELDIR)/Makefile)
++EXTRAVERSION  = $(shell awk '/^EXTRAVERSION/{print $$3}' $(KERNELDIR)/Makefile)
++KERNELRELEASE = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
++
++patch26:
++	./mkpatch $(KERNELRELEASE) &gt;patch-$(KERNELRELEASE)-socketcan &lt; FILES-2.6
+
+
+Property changes on: trunk/Makefile
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/mkpatch
+===================================================================
+--- trunk/mkpatch	2007-03-13 21:31:59 UTC (rev 184)
++++ trunk/mkpatch	2007-03-19 13:03:37 UTC (rev 185)
+@@ -0,0 +1,59 @@
++#!/usr/bin/perl
++#
++# $Id$
++#
++# Generate a kernel patch to add socketcan to a kernel src tree.
++# The list of files to be added is read from stdin.
++
++$version = shift;
++
++if (-r &quot;patches/$version.diff&quot;) {
++    copy_file(&quot;patches/$version.diff&quot;);
++}
++
++while (&lt;&gt;) {
++    next if (/^#/);
++    my ($file, $n) = split;
++    my ($name);
++    if ($n eq &quot;&quot;) {
++	$name = $file;
++    } else {
++	$name = $file;
++	$name =~ s/[^\/]*$/$n/;
++    }
++    $name =~ s/[^\/]*\/[^\/]*\///;
++    
++    add_file($file, $name);
++}
++
++close FILES;
++
++sub copy_file {
++    my ($file) = @_;
++
++    open file, &quot;$file&quot; || die &quot;open $file\n&quot;;
++    while (&lt;file&gt;) {
++	print;
++    }
++    close file;
++}
++
++sub add_file {
++    my ($file, $name) = @_;
++    my (@lines, $count, $ts, $mtime);
++
++    open file, &quot;./kv $version $file |&quot; || die &quot;open $file\n&quot;;
++    @lines = &lt;file&gt;;
++    $count = $#lines + 1;
++    use POSIX qw(strftime);
++    $mtime = (stat($file))[9];
++    $ts = strftime &quot;%F %T&quot;, gmtime((stat($file))[9]);
++
++    print &quot;--- a/$name 1970-01-01 00:00:00\n&quot;;
++    print &quot;+++ b/$name $ts\n&quot;;
++    print &quot;@@ -0,0 +1,$count @@\n&quot;;
++    for (@lines) {
++	print &quot;+$_&quot;;
++    }
++    close file;
++}
+
+
+Property changes on: trunk/mkpatch
+___________________________________________________________________
+Name: svn:executable
+   + *
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000168.html">r177 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000171.html">r186 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#170">[ date ]</a>
+              <a href="thread.html#170">[ thread ]</a>
+              <a href="subject.html#170">[ subject ]</a>
+              <a href="author.html#170">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

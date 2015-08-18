@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1187 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1187%20-%20trunk/can-utils&In-Reply-To=%3C20100720134312.822F8480CBA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000818.html">
+   <LINK REL="Next"  HREF="000820.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1187 - trunk/can-utils</H1>
+    <B>bet-frogger at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1187%20-%20trunk/can-utils&In-Reply-To=%3C20100720134312.822F8480CBA%40sheep.berlios.de%3E"
+       TITLE="r1187 - trunk/can-utils">bet-frogger at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul 20 15:43:12 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000818.html">r1186 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000820.html">r1188 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#819">[ date ]</a>
+              <a href="thread.html#819">[ thread ]</a>
+              <a href="subject.html#819">[ subject ]</a>
+              <a href="author.html#819">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bet-frogger
+Date: 2010-07-20 15:43:12 +0200 (Tue, 20 Jul 2010)
+New Revision: 1187
+
+Modified:
+   trunk/can-utils/can-calc-bit-timing.c
+Log:
+can-calc-bit-timing: improve printing of bit timing parameters
+
+This patch adds additional fields when printing the bit timing
+parameters. Now the real bitrate the nominal and the real sample point
+as well as the error of the sample point is displayed.
+
+The output now looks like this:
+
+Bit timing parameters for at91 with 100.000000 MHz ref clock
+nominal                                 real Bitrt   nom  real SampP
+Bitrate TQ[ns] PrS PhS1 PhS2 SJW BRP Bitrate Error SampP SampP Error     CAN_BR
+1000000     50   7    7    5   1   5 1000000  0.0% 75.0% 75.0%  0.0% 0x00040664
+ 800000     50   8    8    8   1   5  800000  0.0% 80.0% 68.0% 15.0% 0x00040777
+ 500000    100   8    8    3   1  10  500000  0.0% 87.5% 85.0%  2.9% 0x00090772
+ 250000    250   6    7    2   1  25  250000  0.0% 87.5% 87.5%  0.0% 0x00180561
+ 125000    500   6    7    2   1  50  125000  0.0% 87.5% 87.5%  0.0% 0x00310561
+ 100000    500   8    8    3   1  50  100000  0.0% 87.5% 85.0%  2.9% 0x00310772
+  50000   1250   6    7    2   1 125   50000  0.0% 87.5% 87.5%  0.0% 0x007c0561
+  20000 ***bitrate not possible***
+  10000 ***bitrate not possible***
+
+Signed-off-by: Marc Kleine-Budde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">mkl at pengutronix.de</A>&gt;
+
+Modified: trunk/can-utils/can-calc-bit-timing.c
+===================================================================
+--- trunk/can-utils/can-calc-bit-timing.c	2010-07-20 13:43:08 UTC (rev 1186)
++++ trunk/can-utils/can-calc-bit-timing.c	2010-07-20 13:43:12 UTC (rev 1187)
+@@ -158,7 +158,7 @@
+ static void printf_btr_at91(struct can_bittiming *bt, int hdr)
+ {
+ 	if (hdr) {
+-		printf(&quot;CAN_BR&quot;);
++		printf(&quot;%10s&quot;, &quot;CAN_BR&quot;);
+ 	} else {
+ 		uint32_t br = ((bt-&gt;phase_seg2 - 1) |
+ 			       ((bt-&gt;phase_seg1 - 1) &lt;&lt; 4) |
+@@ -390,6 +390,20 @@
+ 	return 0;
+ }
+ 
++static __u32 get_cia_sample_point(__u32 bitrate)
++{
++	__u32 sampl_pt;
++
++	if (bitrate &gt; 800000)
++		sampl_pt = 750;
++	else if (bitrate &gt; 500000)
++		sampl_pt = 800;
++	else
++		sampl_pt = 875;
++
++	return sampl_pt;
++}
++
+ static void print_bit_timing(const struct can_bittiming_const *btc,
+ 			     __u32 bitrate, __u32 sample_point, __u32 ref_clk,
+ 			     int quiet)
+@@ -402,12 +416,15 @@
+ 		.bitrate = bitrate,
+ 		.sample_point = sample_point,
+ 	};
+-	long rate_error;
++	long rate_error, spt_error;
+ 
+ 	if (!quiet) {
+-		printf(&quot;Bit timing parameters for %s using %dHz\n&quot;,
+-		       btc-&gt;name, ref_clk);
+-		printf(&quot;Bitrate TQ[ns] PrS PhS1 PhS2 SJW BRP SampP Error &quot;);
++		printf(&quot;Bit timing parameters for %s with %.6f MHz ref clock\n&quot;
++		       &quot;nominal                                 real Bitrt   nom  real SampP\n&quot;
++		       &quot;Bitrate TQ[ns] PrS PhS1 PhS2 SJW BRP Bitrate Error SampP SampP Error &quot;,
++		       btc-&gt;name,
++		       ref_clk / 1000000.0);
++
+ 		btc-&gt;printf_btr(&amp;bt, 1);
+ 		printf(&quot;\n&quot;);
+ 	}
+@@ -417,13 +434,29 @@
+ 		return;
+ 	}
+ 
++	/* get nominal sample point */
++	if (!sample_point)
++		sample_point = get_cia_sample_point(bitrate);
++
+ 	rate_error = abs((__s32)(bitrate - bt.bitrate));
++	spt_error = abs((__s32)(sample_point - bt.sample_point));
+ 
+-	printf(&quot;%7d %6d %3d %4d %4d %3d %3d %2d.%d%% %4.1f%% &quot;,
+-	       bitrate, bt.tq, bt.prop_seg, bt.phase_seg1,
+-	       bt.phase_seg2, bt.sjw, bt.brp,
+-	       bt.sample_point / 10, bt.sample_point % 10,
+-	       100.0 * rate_error / bitrate);
++	printf(&quot;%7d &quot;
++	       &quot;%6d %3d %4d %4d &quot;
++	       &quot;%3d %3d &quot;
++	       &quot;%7d %4.1f%% &quot;
++	       &quot;%4.1f%% %4.1f%% %4.1f%% &quot;,
++	       bitrate,
++	       bt.tq, bt.prop_seg, bt.phase_seg1, bt.phase_seg2,
++	       bt.sjw, bt.brp,
++
++	       bt.bitrate,
++	       100.0 * rate_error / bitrate,
++
++	       sample_point / 10.0,
++	       bt.sample_point / 10.0,
++	       100.0 * spt_error / sample_point);
++
+ 	btc-&gt;printf_btr(&amp;bt, 0);
+ 	printf(&quot;\n&quot;);
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000818.html">r1186 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000820.html">r1188 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#819">[ date ]</a>
+              <a href="thread.html#819">[ thread ]</a>
+              <a href="subject.html#819">[ subject ]</a>
+              <a href="author.html#819">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

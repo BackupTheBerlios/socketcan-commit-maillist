@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r330 - in trunk/kernel/2.6: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r330%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200706061452.l56Eqsac024307%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000312.html">
+   <LINK REL="Next"  HREF="000314.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r330 - in trunk/kernel/2.6: drivers/net/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r330%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200706061452.l56Eqsac024307%40sheep.berlios.de%3E"
+       TITLE="r330 - in trunk/kernel/2.6: drivers/net/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun  6 16:52:54 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000312.html">r329 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000314.html">r331 - in trunk/kernel/2.6/drivers/net/can: . i82527 mscan sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#313">[ date ]</a>
+              <a href="thread.html#313">[ thread ]</a>
+              <a href="subject.html#313">[ subject ]</a>
+              <a href="author.html#313">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-06 16:52:51 +0200 (Wed, 06 Jun 2007)
+New Revision: 330
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Fixed missing sk reference in af_can.c / deliver().
+Cosmetics.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-06-06 13:55:23 UTC (rev 329)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-06-06 14:52:51 UTC (rev 330)
+@@ -171,7 +171,8 @@
+ 	/* perform standard loopback handling for CAN network interfaces */
+ 
+ 	if (loop) {
+-		struct sock *sk = skb-&gt;sk;
++		struct sock *srcsk = skb-&gt;sk;
++
+ 		if (atomic_read(&amp;skb-&gt;users) != 1) {
+ 			struct sk_buff *old_skb = skb;
+ 
+@@ -186,7 +187,7 @@
+ 			skb_orphan(skb);
+ 
+ 		/* receive with packet counting */
+-		skb-&gt;sk = sk;
++		skb-&gt;sk = srcsk;
+ 		vcan_rx(skb, dev);
+ 	} else {
+ 		/* no looped packets =&gt; no counting */
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-06-06 13:55:23 UTC (rev 329)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-06-06 14:52:51 UTC (rev 330)
+@@ -273,9 +273,13 @@
+ 		skb-&gt;pkt_type = PACKET_LOOPBACK;
+ 
+ 		/*
+-		 * The reference to the originating sock may be also required
++		 * The reference to the originating sock may be required
+ 		 * by the receiving socket to indicate (and ignore) his own
+ 		 * sent data. Example: can_raw sockopt CAN_RAW_RECV_OWN_MSGS
++		 * Therefore we have to ensure that skb-&gt;sk remains the
++		 * reference to the originating sock by restoring skb-&gt;sk
++		 * after each skb_clone() or skb_orphan() usage.
++		 * skb-&gt;sk is usually unused and unset in the rx path.
+ 		 */
+ 
+ 		/* interface not capabable to do the loopback itself? */
+@@ -587,6 +591,7 @@
+ 
+ 	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ 	if (clone) {
++		clone-&gt;sk = skb-&gt;sk;
+ 		r-&gt;func(clone, r-&gt;data);
+ 		r-&gt;matches++;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000312.html">r329 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000314.html">r331 - in trunk/kernel/2.6/drivers/net/can: . i82527 mscan sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#313">[ date ]</a>
+              <a href="thread.html#313">[ thread ]</a>
+              <a href="subject.html#313">[ subject ]</a>
+              <a href="author.html#313">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

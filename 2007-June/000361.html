@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r378 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r378%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706191848.l5JImfit025086%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000360.html">
+   <LINK REL="Next"  HREF="000362.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r378 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r378%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706191848.l5JImfit025086%40sheep.berlios.de%3E"
+       TITLE="r378 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 19 20:48:41 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000360.html">r377 - branches/ha trunk/kernel
+</A></li>
+        <LI>Next message: <A HREF="000362.html">r379 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#361">[ date ]</a>
+              <a href="thread.html#361">[ thread ]</a>
+              <a href="subject.html#361">[ subject ]</a>
+              <a href="author.html#361">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-19 20:48:40 +0200 (Tue, 19 Jun 2007)
+New Revision: 378
+
+Modified:
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Moved sk_error_report() call outside lock_sock(sk) analogue to notifier 
+code in bcm.c and other kernel source.
+
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-06-19 18:26:21 UTC (rev 377)
++++ trunk/kernel/2.6/net/can/raw.c	2007-06-19 18:48:40 UTC (rev 378)
+@@ -326,6 +326,7 @@
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	int err = 0;
++	int notify_enetdown = 0;
+ 
+ 	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+ 
+@@ -366,11 +367,9 @@
+ 			err = -ENODEV;
+ 			goto out;
+ 		}
+-		if (!(dev-&gt;flags &amp; IFF_UP)) {
+-			sk-&gt;sk_err = ENETDOWN;
+-			if (!sock_flag(sk, SOCK_DEAD))
+-				sk-&gt;sk_error_report(sk);
+-		}
++		if (!(dev-&gt;flags &amp; IFF_UP))
++			notify_enetdown = 1;
++
+ 		ro-&gt;ifindex = dev-&gt;ifindex;
+ 
+ 		/* filters set by default/setsockopt */
+@@ -391,6 +390,12 @@
+  out:
+ 	release_sock(sk);
+ 
++	if (notify_enetdown) {
++		sk-&gt;sk_err = ENETDOWN;
++		if (!sock_flag(sk, SOCK_DEAD))
++			sk-&gt;sk_error_report(sk);
++	}
++
+ 	return err;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000360.html">r377 - branches/ha trunk/kernel
+</A></li>
+	<LI>Next message: <A HREF="000362.html">r379 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#361">[ date ]</a>
+              <a href="thread.html#361">[ thread ]</a>
+              <a href="subject.html#361">[ subject ]</a>
+              <a href="author.html#361">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1238 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1238%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110419133121.55AD0481482%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000869.html">
+   <LINK REL="Next"  HREF="000871.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1238 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1238%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110419133121.55AD0481482%40sheep.berlios.de%3E"
+       TITLE="r1238 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 19 15:31:21 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000869.html">r1237 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000871.html">r1239 - in trunk/kernel/2.6: Documentation/networking	Documentation/networking/can drivers/net/can/mscan	drivers/net/can/sja1000 drivers/net/can/softing	drivers/net/can/usb include/socketcan/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#870">[ date ]</a>
+              <a href="thread.html#870">[ thread ]</a>
+              <a href="subject.html#870">[ subject ]</a>
+              <a href="author.html#870">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-04-19 15:31:20 +0200 (Tue, 19 Apr 2011)
+New Revision: 1238
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+can: convert protocol handling to RCU
+
+This patch removes spin_locks at CAN socket creation time by using RCU.
+
+Inspired by the discussion with Kurt van Dijck and Eric Dumazet the RCU code
+was partly derived from af_phonet.c
+
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+Reviewed-by: Eric Dumazet &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">eric.dumazet at gmail.com</A>&gt;
+Acked-by: Kurt Van Dijck &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kurt.van.dijck at eia.be</A>&gt;
+Signed-off-by: David S. Miller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">davem at davemloft.net</A>&gt;
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2011-04-19 13:03:41 UTC (rev 1237)
++++ trunk/kernel/2.6/net/can/af_can.c	2011-04-19 13:31:20 UTC (rev 1238)
+@@ -102,7 +102,7 @@
+ 
+ /* table of registered CAN protocols */
+ static struct can_proto *proto_tab[CAN_NPROTO] __read_mostly;
+-static DEFINE_SPINLOCK(proto_tab_lock);
++static DEFINE_MUTEX(proto_tab_lock);
+ 
+ struct timer_list can_stattimer;   /* timer for statistics update */
+ struct s_stats    can_stats;       /* packet statistics */
+@@ -140,6 +140,24 @@
+ #endif
+ }
+ 
++static struct can_proto *can_try_module_get(int protocol)
++{
++	struct can_proto *cp;
++
++	rcu_read_lock();
++	cp = rcu_dereference(proto_tab[protocol]);
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	if (cp &amp;&amp; !try_module_get(cp-&gt;prot-&gt;owner))
++		cp = NULL;
++#else
++	if (cp &amp;&amp; !try_module_get(cp-&gt;owner))
++		cp = NULL;
++#endif
++	rcu_read_unlock();
++
++	return cp;
++}
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,33)
+ static int can_create(struct net *net, struct socket *sock, int protocol, int kern)
+ #elif LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+@@ -162,9 +180,12 @@
+ 		return -EAFNOSUPPORT;
+ #endif
+ 
++	cp = can_try_module_get(protocol);
++
+ #ifdef CONFIG_MODULES
+-	/* try to load protocol module kernel is modular */
+-	if (!proto_tab[protocol]) {
++	if (!cp) {
++		/* try to load protocol module if kernel is modular */
++
+ 		err = request_module(&quot;can-proto-%d&quot;, protocol);
+ 
+ 		/*
+@@ -175,27 +196,18 @@
+ 		if (err &amp;&amp; printk_ratelimit())
+ 			printk(KERN_ERR &quot;can: request_module &quot;
+ 			       &quot;(can-proto-%d) failed.\n&quot;, protocol);
++
++		cp = can_try_module_get(protocol);
+ 	}
+ #endif
+ 
+-	spin_lock(&amp;proto_tab_lock);
+-	cp = proto_tab[protocol];
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	if (cp &amp;&amp; !try_module_get(cp-&gt;prot-&gt;owner))
+-		cp = NULL;
+-#else
+-	if (cp &amp;&amp; !try_module_get(cp-&gt;owner))
+-		cp = NULL;
+-#endif
+-	spin_unlock(&amp;proto_tab_lock);
+-
+ 	/* check for available protocol and correct usage */
+ 
+ 	if (!cp)
+ 		return -EPROTONOSUPPORT;
+ 
+ 	if (cp-&gt;type != sock-&gt;type) {
+-		err = -EPROTONOSUPPORT;
++		err = -EPROTOTYPE;
+ 		goto errout;
+ 	}
+ 
+@@ -863,15 +875,16 @@
+ 		return err;
+ #endif
+ 
+-	spin_lock(&amp;proto_tab_lock);
++	mutex_lock(&amp;proto_tab_lock);
++
+ 	if (proto_tab[proto]) {
+ 		printk(KERN_ERR &quot;can: protocol %d already registered\n&quot;,
+ 		       proto);
+ 		err = -EBUSY;
+ 	} else
+-		proto_tab[proto] = cp;
++		rcu_assign_pointer(proto_tab[proto], cp);
+ 
+-	spin_unlock(&amp;proto_tab_lock);
++	mutex_unlock(&amp;proto_tab_lock);
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	if (err &lt; 0)
+@@ -890,14 +903,13 @@
+ {
+ 	int proto = cp-&gt;protocol;
+ 
+-	spin_lock(&amp;proto_tab_lock);
+-	if (!proto_tab[proto]) {
+-		printk(KERN_ERR &quot;BUG: can: protocol %d is not registered\n&quot;,
+-		       proto);
+-	}
+-	proto_tab[proto] = NULL;
+-	spin_unlock(&amp;proto_tab_lock);
++	mutex_lock(&amp;proto_tab_lock);
++	BUG_ON(proto_tab[proto] != cp);
++	rcu_assign_pointer(proto_tab[proto], NULL);
++	mutex_unlock(&amp;proto_tab_lock);
+ 
++	synchronize_rcu();
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	proto_unregister(cp-&gt;prot);
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000869.html">r1237 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000871.html">r1239 - in trunk/kernel/2.6: Documentation/networking	Documentation/networking/can drivers/net/can/mscan	drivers/net/can/sja1000 drivers/net/can/softing	drivers/net/can/usb include/socketcan/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#870">[ date ]</a>
+              <a href="thread.html#870">[ thread ]</a>
+              <a href="subject.html#870">[ subject ]</a>
+              <a href="author.html#870">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

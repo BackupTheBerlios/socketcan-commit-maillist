@@ -1,0 +1,233 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r680 - trunk/kernel/2.6/drivers/net/can/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r680%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200802121324.m1CDOQCK029069%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000661.html">
+   <LINK REL="Next"  HREF="000663.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r680 - trunk/kernel/2.6/drivers/net/can/mscan</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r680%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200802121324.m1CDOQCK029069%40sheep.berlios.de%3E"
+       TITLE="r680 - trunk/kernel/2.6/drivers/net/can/mscan">wolf at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb 12 14:24:26 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000661.html">r679 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000663.html">r681 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#662">[ date ]</a>
+              <a href="thread.html#662">[ thread ]</a>
+              <a href="subject.html#662">[ subject ]</a>
+              <a href="author.html#662">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-02-12 14:24:24 +0100 (Tue, 12 Feb 2008)
+New Revision: 680
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+Log:
+Adapt MSCAN drivers to netdev changes introduced with 2.6.24
+
+This patch fixes issues with changes in the netdev layer (NAPI, device stats)
+introduced with kernel version 2.6.24.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2008-02-06 23:19:30 UTC (rev 679)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2008-02-12 13:24:24 UTC (rev 680)
+@@ -93,6 +93,10 @@
+ 
+ 	struct list_head tx_head;
+ 	tx_queue_entry_t tx_queue[TX_QUEUE_SIZE];
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++	struct napi_struct napi;
++	struct net_device *dev;
++#endif
+ };
+ 
+ #define F_RX_PROGRESS	0
+@@ -327,11 +331,22 @@
+ 	return ret;
+ }
+ 
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++static int mscan_rx_poll(struct napi_struct *napi, int quota)
++#else
+ static int mscan_rx_poll(struct net_device *dev, int *budget)
++#endif
+ {
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++	struct mscan_priv *priv = container_of(napi, struct mscan_priv, napi);
++	struct net_device *dev = priv-&gt;dev;
++#else
++	struct mscan_priv *priv = netdev_priv(dev);
++	int quota = min(dev-&gt;quota, *budget);
++#endif
+ 	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
+-	struct mscan_priv *priv = netdev_priv(dev);
+-	int npackets = 0, quota = min(dev-&gt;quota, *budget);
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
++	int npackets = 0;
+ 	int ret = 1;
+ 	struct sk_buff *skb;
+ 	struct can_frame *frame;
+@@ -346,7 +361,7 @@
+ 		if (!skb) {
+ 			if (printk_ratelimit())
+ 				dev_notice(ND2D(dev), &quot;packet dropped\n&quot;);
+-			priv-&gt;can.net_stats.rx_dropped++;
++			stats-&gt;rx_dropped++;
+ 			out_8(&amp;regs-&gt;canrflg, canrflg);
+ 			continue;
+ 		}
+@@ -394,15 +409,15 @@
+ 
+ 			out_8(&amp;regs-&gt;canrflg, MSCAN_RXF);
+ 			dev-&gt;last_rx = jiffies;
+-			priv-&gt;can.net_stats.rx_packets++;
+-			priv-&gt;can.net_stats.rx_bytes += frame-&gt;can_dlc;
++			stats-&gt;rx_packets++;
++			stats-&gt;rx_bytes += frame-&gt;can_dlc;
+ 		} else if (canrflg &amp; MSCAN_ERR_IF) {
+ 			frame-&gt;can_id = CAN_ERR_FLAG;
+ 
+ 			if (canrflg &amp; MSCAN_OVRIF) {
+ 				frame-&gt;can_id |= CAN_ERR_CRTL;
+ 				frame-&gt;data[1] = CAN_ERR_CRTL_RX_OVERFLOW;
+-				priv-&gt;can.net_stats.rx_over_errors++;
++				stats-&gt;rx_over_errors++;
+ 			} else
+ 				frame-&gt;data[1] = 0;
+ 
+@@ -444,11 +459,17 @@
+ 		netif_receive_skb(skb);
+ 	}
+ 
++#if LINUX_VERSION_CODE &lt;= KERNEL_VERSION(2,6,23)
+ 	*budget -= npackets;
+ 	dev-&gt;quota -= npackets;
++#endif
+ 
+ 	if (!(in_8(&amp;regs-&gt;canrflg) &amp; (MSCAN_RXF | MSCAN_ERR_IF))) {
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++		netif_rx_complete(dev, &amp;priv-&gt;napi);
++#else
+ 		netif_rx_complete(dev);
++#endif
+ 		clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
+ 		out_8(&amp;regs-&gt;canrier,
+ 		      in_8(&amp;regs-&gt;canrier) | MSCAN_ERR_IF | MSCAN_RXFIE);
+@@ -467,6 +488,7 @@
+ 	struct net_device *dev = (struct net_device *)dev_id;
+ 	struct mscan_priv *priv = netdev_priv(dev);
+ 	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
++	struct net_device_stats *stats = dev-&gt;get_stats(dev);
+ 	u8 cantflg, canrflg;
+ 	irqreturn_t ret = IRQ_NONE;
+ 
+@@ -484,13 +506,13 @@
+ 				continue;
+ 
+ 			if (in_8(&amp;regs-&gt;cantaak) &amp; mask) {
+-				priv-&gt;can.net_stats.tx_dropped++;
+-				priv-&gt;can.net_stats.tx_aborted_errors++;
++				stats-&gt;tx_dropped++;
++				stats-&gt;tx_aborted_errors++;
+ 			} else {
+ 				out_8(&amp;regs-&gt;cantbsel, mask);
+-				priv-&gt;can.net_stats.tx_bytes +=
++				stats-&gt;tx_bytes +=
+ 				    in_8(&amp;regs-&gt;tx.dlr);
+-				priv-&gt;can.net_stats.tx_packets++;
++				stats-&gt;tx_packets++;
+ 			}
+ 			priv-&gt;tx_active &amp;= ~mask;
+ 			list_del(pos);
+@@ -519,7 +541,11 @@
+ 		if (canrflg &amp; ~MSCAN_STAT_MSK) {
+ 			priv-&gt;shadow_canrier = in_8(&amp;regs-&gt;canrier);
+ 			out_8(&amp;regs-&gt;canrier, 0);
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++			netif_rx_schedule(dev, &amp;priv-&gt;napi);
++#else
+ 			netif_rx_schedule(dev);
++#endif
+ 			ret = IRQ_HANDLED;
+ 		} else
+ 			clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
+@@ -588,6 +614,9 @@
+ 	struct mscan_priv *priv = netdev_priv(dev);
+ 	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
+ 
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++	napi_enable(&amp;priv-&gt;napi);
++#endif
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,18)
+ 	ret = request_irq(dev-&gt;irq, mscan_isr, SA_SHIRQ, dev-&gt;name, dev);
+ #else
+@@ -595,6 +624,9 @@
+ #endif
+ 
+ 	if (ret  &lt; 0) {
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++		napi_disable(&amp;priv-&gt;napi);
++#endif
+ 		printk(KERN_ERR &quot;%s - failed to attach interrupt\n&quot;,
+ 		       dev-&gt;name);
+ 		return ret;
+@@ -695,8 +727,13 @@
+ 	dev-&gt;hard_start_xmit = mscan_hard_start_xmit;
+ 	dev-&gt;tx_timeout = mscan_tx_timeout;
+ 
++#if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,23)
++	priv-&gt;dev = dev;
++	netif_napi_add(dev, &amp;priv-&gt;napi, mscan_rx_poll, 8);
++#else
+ 	dev-&gt;poll = mscan_rx_poll;
+ 	dev-&gt;weight = 8;
++#endif
+ 
+ 	priv-&gt;can.do_set_bit_time = mscan_do_set_bit_time;
+ 	priv-&gt;can.do_set_mode = mscan_do_set_mode;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000661.html">r679 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000663.html">r681 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#662">[ date ]</a>
+              <a href="thread.html#662">[ thread ]</a>
+              <a href="subject.html#662">[ subject ]</a>
+              <a href="author.html#662">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r88 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r88%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200610250753.k9P7rVRS028884%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000068.html">
+   <LINK REL="Next"  HREF="000070.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r88 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r88%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200610250753.k9P7rVRS028884%40sheep.berlios.de%3E"
+       TITLE="r88 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Oct 25 09:53:31 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000068.html">r87 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can
+</A></li>
+        <LI>Next message: <A HREF="000070.html">r89 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-10-25 09:53:31 +0200 (Wed, 25 Oct 2006)
+New Revision: 88
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Added support for interfaces that can perform the loopback inside the driver.
+If so, set the IFF_LOOPBACK flag in your device.
+If not, the loopback is still performed in af_can.c .
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-10-24 18:09:10 UTC (rev 87)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-10-25 07:53:31 UTC (rev 88)
+@@ -474,13 +474,18 @@
+ 	int err;
+ 
+ 	if (loop) { /* local loopback (default) */
+-		struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+-		newskb-&gt;protocol  = htons(ETH_P_CAN);
+-		newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+-		*(struct sock **)newskb-&gt;cb = skb-&gt;sk; /* tx sock reference */
+-		netif_rx(newskb); /* =&gt; local loopback */
+-	}
++		*(struct sock **)skb-&gt;cb = skb-&gt;sk; /* tx sock reference */
+ 
++		/* interface not capabable to do the loopback itself? */
++		if (!(skb-&gt;dev-&gt;flags &amp; IFF_LOOPBACK)) {
++			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
++			newskb-&gt;protocol  = htons(ETH_P_CAN);
++			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++			netif_rx(newskb); /* perform local loopback here */
++		}
++	} else
++		*(struct sock **)skb-&gt;cb = NULL; /* no loopback required */
++
+ 	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
+ 		err = -ENETDOWN;
+ 	else if ((err = dev_queue_xmit(skb)) &gt; 0)  /* send to netdevice */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000068.html">r87 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can
+</A></li>
+	<LI>Next message: <A HREF="000070.html">r89 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

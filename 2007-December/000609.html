@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r627 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r627%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712141107.lBEB7Cej017204%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000608.html">
+   <LINK REL="Next"  HREF="000610.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r627 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r627%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712141107.lBEB7Cej017204%40sheep.berlios.de%3E"
+       TITLE="r627 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 14 12:07:12 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000608.html">r626 - in trunk/kernel/2.4: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000610.html">r628 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#609">[ date ]</a>
+              <a href="thread.html#609">[ thread ]</a>
+              <a href="subject.html#609">[ subject ]</a>
+              <a href="author.html#609">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-14 12:07:09 +0100 (Fri, 14 Dec 2007)
+New Revision: 627
+
+Modified:
+   trunk/kernel/2.4/net/can/af_can.c
+Log:
+Put EXPORT_SYMBOL to appropriat function definition.
+Reorder include file order.
+
+
+Modified: trunk/kernel/2.4/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/net/can/af_can.c	2007-12-14 10:55:10 UTC (rev 626)
++++ trunk/kernel/2.4/net/can/af_can.c	2007-12-14 11:07:09 UTC (rev 627)
+@@ -45,26 +45,26 @@
+ #define EXPORT_SYMTAB
+ 
+ #include &lt;linux/module.h&gt;
+-#include &lt;linux/slab.h&gt;
+-#include &lt;linux/kmod.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/kmod.h&gt;
++#include &lt;linux/slab.h&gt;
+ #include &lt;linux/list.h&gt;
+ #include &lt;linux/spinlock.h&gt;
++#include &lt;linux/net.h&gt;
++#include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/socket.h&gt;
+ #include &lt;linux/if_ether.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+ #include &lt;linux/skbuff.h&gt;
+-#include &lt;linux/net.h&gt;
+-#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/core.h&gt;
+ #include &lt;net/sock.h&gt;
+ #include &lt;asm/uaccess.h&gt;
+ 
+-#include &lt;linux/can.h&gt;
+-#include &lt;linux/can/core.h&gt;
+-#include &lt;linux/can/version.h&gt;
+ #include &quot;af_can.h&quot;
+ #include &quot;compat.h&quot;
+ 
++#include &lt;linux/can/version.h&gt;
+ RCSID(&quot;$Id$&quot;);
+ 
+ static __initdata const char banner[] = KERN_INFO
+@@ -226,6 +226,7 @@
+ 
+ 	return err;
+ }
++EXPORT_SYMBOL(can_send);
+ 
+ /*
+  * af_can rx path
+@@ -357,6 +358,7 @@
+ 
+ 	return err;
+ }
++EXPORT_SYMBOL(can_rx_register);
+ 
+ static void can_rx_delete_all(struct receiver **rl)
+ {
+@@ -432,6 +434,7 @@
+  out:
+ 	write_unlock_bh(&amp;can_rcvlists_lock);
+ }
++EXPORT_SYMBOL(can_rx_unregister);
+ 
+ static inline void deliver(struct sk_buff *skb, struct receiver *r)
+ {
+@@ -573,6 +576,7 @@
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(can_proto_register);
+ 
+ /**
+  * can_proto_unregister - unregister CAN transport protocol
+@@ -589,6 +593,7 @@
+ 	}
+ 	proto_tab[proto] = NULL;
+ }
++EXPORT_SYMBOL(can_proto_unregister);
+ 
+ static int can_notifier(struct notifier_block *nb,
+ 			unsigned long msg, void *data)
+@@ -758,14 +763,3 @@
+ 
+ module_init(can_init);
+ module_exit(can_exit);
+-
+-/*
+- * Exported symbols
+- */
+-#ifdef EXPORT_SYMTAB
+-EXPORT_SYMBOL(can_proto_register);
+-EXPORT_SYMBOL(can_proto_unregister);
+-EXPORT_SYMBOL(can_rx_register);
+-EXPORT_SYMBOL(can_rx_unregister);
+-EXPORT_SYMBOL(can_send);
+-#endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000608.html">r626 - in trunk/kernel/2.4: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000610.html">r628 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#609">[ date ]</a>
+              <a href="thread.html#609">[ thread ]</a>
+              <a href="subject.html#609">[ subject ]</a>
+              <a href="author.html#609">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

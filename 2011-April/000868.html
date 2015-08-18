@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1236 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1236%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110419122759.49369481412%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000869.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1236 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1236%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110419122759.49369481412%40sheep.berlios.de%3E"
+       TITLE="r1236 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 19 14:27:59 CEST 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000869.html">r1237 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#868">[ date ]</a>
+              <a href="thread.html#868">[ thread ]</a>
+              <a href="subject.html#868">[ subject ]</a>
+              <a href="author.html#868">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-04-19 14:27:58 +0200 (Tue, 19 Apr 2011)
+New Revision: 1236
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+can: test size of struct sockaddr in sendmsg
+
+This patch makes the CAN socket code conform to the manpage of sendmsg.
+
+Signed-off-by: Kurt Van Dijck &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kurt.van.dijck at eia.be</A>&gt;
+Acked-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+Signed-off-by: David S. Miller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">davem at davemloft.net</A>&gt;
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2011-02-14 16:10:39 UTC (rev 1235)
++++ trunk/kernel/2.6/net/can/bcm.c	2011-04-19 12:27:58 UTC (rev 1236)
+@@ -1381,6 +1381,9 @@
+ 		struct sockaddr_can *addr =
+ 			(struct sockaddr_can *)msg-&gt;msg_name;
+ 
++		if (msg-&gt;msg_namelen &lt; sizeof(*addr))
++			return -EINVAL;
++
+ 		if (addr-&gt;can_family != AF_CAN)
+ 			return -EINVAL;
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2011-02-14 16:10:39 UTC (rev 1235)
++++ trunk/kernel/2.6/net/can/raw.c	2011-04-19 12:27:58 UTC (rev 1236)
+@@ -688,6 +688,9 @@
+ 		struct sockaddr_can *addr =
+ 			(struct sockaddr_can *)msg-&gt;msg_name;
+ 
++		if (msg-&gt;msg_namelen &lt; sizeof(*addr))
++			return -EINVAL;
++
+ 		if (addr-&gt;can_family != AF_CAN)
+ 			return -EINVAL;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000869.html">r1237 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#868">[ date ]</a>
+              <a href="thread.html#868">[ thread ]</a>
+              <a href="subject.html#868">[ subject ]</a>
+              <a href="author.html#868">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

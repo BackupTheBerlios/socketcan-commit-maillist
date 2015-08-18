@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r173 - in trunk: can-utils test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r173%20-%20in%20trunk%3A%20can-utils%20test&In-Reply-To=%3C200703052158.l25LwUev017688%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000156.html">
+   <LINK REL="Next"  HREF="000158.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r173 - in trunk: can-utils test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r173%20-%20in%20trunk%3A%20can-utils%20test&In-Reply-To=%3C200703052158.l25LwUev017688%40sheep.berlios.de%3E"
+       TITLE="r173 - in trunk: can-utils test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar  5 22:58:30 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000156.html">r172 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000158.html">r174 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#157">[ date ]</a>
+              <a href="thread.html#157">[ thread ]</a>
+              <a href="subject.html#157">[ subject ]</a>
+              <a href="author.html#157">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-05 22:58:28 +0100 (Mon, 05 Mar 2007)
+New Revision: 173
+
+Modified:
+   trunk/can-utils/Makefile
+   trunk/can-utils/slcan_attach.c
+   trunk/test/Makefile
+Log:
+Fixed Makefiles to compile test-apps and can-utils again.
+Added new commandline parameter (linediscipline value) to slcan_attach.
+
+
+Modified: trunk/can-utils/Makefile
+===================================================================
+--- trunk/can-utils/Makefile	2007-03-05 15:36:33 UTC (rev 172)
++++ trunk/can-utils/Makefile	2007-03-05 21:58:28 UTC (rev 173)
+@@ -41,7 +41,9 @@
+ #  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
+-	    -fno-strict-aliasing
++	    -fno-strict-aliasing \
++	    -DPF_CAN=29 \
++	    -DAF_CAN=PF_CAN
+ 
+ PROGRAMS = candump cansniffer cansend canplayer cangen\
+ 	   log2long log2asc asc2log slcan_attach
+
+Modified: trunk/can-utils/slcan_attach.c
+===================================================================
+--- trunk/can-utils/slcan_attach.c	2007-03-05 15:36:33 UTC (rev 172)
++++ trunk/can-utils/slcan_attach.c	2007-03-05 21:58:28 UTC (rev 173)
+@@ -52,25 +52,33 @@
+ #include &lt;unistd.h&gt;
+ #include &lt;getopt.h&gt;
+ #include &lt;sys/ioctl.h&gt;
++#include &lt;linux/tty.h&gt;   /* thanks for cleanup since 2.6.21 */
++//#include &lt;asm/termios.h&gt; /* ldiscs for each arch up to 2.6.20 */
+ 
++#ifndef N_SLCAN
+ #define N_SLCAN 16 /* bad hack until it's not inside the Kernel */
++#endif
+ 
+ void usage(char *name)
+ {
+-	fprintf(stderr, &quot;Usage: %s [-d] tty\n&quot;, name);
++	fprintf(stderr, &quot;Usage: %s [-d] [-l ldisc] tty\n&quot;, name);
+ 	exit(1);
+ }
+ 
+ int main(int argc, char **argv)
+ {
+ 	int fd;
+-	int ldisc;
++	int ldisc = N_SLCAN; /* default */
+ 	int detach = 0;
+ 	char *tty;
+ 	int opt;
+ 
+-	while ((opt = getopt(argc, argv, &quot;d&quot;)) != -1) {
++	while ((opt = getopt(argc, argv, &quot;l:d&quot;)) != -1) {
+ 		switch (opt) {
++		case 'l':
++			ldisc = atoi(optarg);
++			break;
++
+ 		case 'd':
+ 			detach = 1;
+ 			break;
+@@ -90,7 +98,9 @@
+ 		exit(1);
+ 	}
+ 
+-	ldisc = detach ? N_TTY : N_SLCAN;
++	if (detach)
++		ldisc = N_TTY;
++
+ 	if (ioctl (fd, TIOCSETD, &amp;ldisc) &lt; 0) {
+ 		perror(&quot;ioctl&quot;);
+ 		exit(1);
+
+Modified: trunk/test/Makefile
+===================================================================
+--- trunk/test/Makefile	2007-03-05 15:36:33 UTC (rev 172)
++++ trunk/test/Makefile	2007-03-05 21:58:28 UTC (rev 173)
+@@ -41,7 +41,9 @@
+ #  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
+-	    -fno-strict-aliasing
++	    -fno-strict-aliasing \
++	    -DPF_CAN=29 \
++	    -DAF_CAN=PF_CAN
+ 
+ PROGRAMS = 	tst-raw		  \
+ 		tst-raw-filter	  \
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000156.html">r172 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000158.html">r174 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#157">[ date ]</a>
+              <a href="thread.html#157">[ thread ]</a>
+              <a href="subject.html#157">[ subject ]</a>
+              <a href="author.html#157">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r302 - trunk/kernel/2.6/Documentation/networking
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r302%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200705112045.l4BKjxQm000487%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000285.html">
+   <LINK REL="Next"  HREF="000287.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r302 - trunk/kernel/2.6/Documentation/networking</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r302%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200705112045.l4BKjxQm000487%40sheep.berlios.de%3E"
+       TITLE="r302 - trunk/kernel/2.6/Documentation/networking">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri May 11 22:45:59 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000285.html">r301 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+        <LI>Next message: <A HREF="000287.html">r303 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#286">[ date ]</a>
+              <a href="thread.html#286">[ thread ]</a>
+              <a href="subject.html#286">[ subject ]</a>
+              <a href="author.html#286">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-11 22:45:43 +0200 (Fri, 11 May 2007)
+New Revision: 302
+
+Modified:
+   trunk/kernel/2.6/Documentation/networking/can.txt
+Log:
+ongoing documentation.
+
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2007-05-11 15:02:45 UTC (rev 301)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2007-05-11 20:45:43 UTC (rev 302)
+@@ -18,6 +18,10 @@
+ 
+   4 How to use Socket CAN
+     4.1 RAW protocol sockets with can_filters (SOCK_RAW)
++      4.1.1 RAW socket option CAN_RAW_FILTER
++      4.1.2 RAW socket option CAN_RAW_ERR_FILTER
++      4.1.3 RAW socket option CAN_RAW_LOOPBACK
++      4.1.4 RAW socket option CAN_RAW_RECV_OWN_MSGS
+     4.2 Broadcast Manager protocol sockets (SOCK_DGRAM)
+     4.3 connected transport protocols (SOCK_SEQPACKET)
+     4.4 unconnected transport protocols (SOCK_DGRAM)
+@@ -311,6 +315,36 @@
+   specify the outgoing interface.
+ 
+   4.1 RAW protocol sockets with can_filters (SOCK_RAW)
++
++  Reading CAN frames from a bound CAN_RAW socket (see above) consists
++  of reading a struct can_frame:
++
++    struct can_frame frame;
++
++    nbytes = read(s, &amp;frame, sizeof(struct can_frame));
++  
++    if (nbytes &lt; 0) {
++            perror(&quot;can raw socket read&quot;);
++            return 1;
++    }
++
++    /* paraniod check ... */
++    if (nbytes &lt; sizeof(struct can_frame)) {
++            fprintf(stderr, &quot;read: incomplete CAN frame\n&quot;);
++            return 1;
++    }
++
++    /* do something with the received CAN frame */
++
++  Writing CAN frames can be done analogue with the write(2) system call:
++
++    nbytes = write(s, &amp;frame, sizeof(struct can_frame));
++
++  4.1.1 RAW socket option CAN_RAW_FILTER
++  4.1.2 RAW socket option CAN_RAW_ERR_FILTER
++  4.1.3 RAW socket option CAN_RAW_LOOPBACK
++  4.1.4 RAW socket option CAN_RAW_RECV_OWN_MSGS
++
+   4.2 Broadcast Manager protocol sockets (SOCK_DGRAM)
+   4.3 connected transport protocols (SOCK_SEQPACKET)
+   4.4 unconnected transport protocols (SOCK_DGRAM)
+@@ -342,8 +376,55 @@
+     your kernel log - so be careful. 
+ 
+   5.2 procfs content
++
++  As described in chapter 3.1 the Socket CAN core uses several filter
++  lists to deliver received CAN frames to CAN protocol modules. These
++  receive lists, their filters and the count of filter matches can be
++  checked in the appropriate receive list. All entries contain the
++  device and a protocol module identifier:
++
++    <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">foo at bar</A>:~$ cat /proc/net/can/rcvlist_all 
++
++    receive list 'rx_all':
++      (vcan3: no entry)
++      (vcan2: no entry)
++      (vcan1: no entry)
++      device   can_id   can_mask  function  userdata   matches  ident
++       vcan0     000    00000000  f88e6370  f6c6f400         0  raw
++      (any: no entry)
++
++  In this example an application requests any CAN traffic from vcan0.
++
++    rcvlist_all - list for unfiltered entries (no filter operations)
++    rcvlist_eff - list for single extended frame (EFF) entries
++    rcvlist_err - list for error frames masks
++    rcvlist_fil - list for mask/value filters
++    rcvlist_inv - list for mask/value filters (inverse semantic)
++    rcvlist_sff - list for single standard frame (SFF) entries
++
++  Additional procfs files in /proc/net/can
++
++    stats       - Socket CAN core statistics (rx/tx frames, match ratios, ...)
++    reset_stats - manual statistic reset
++    version     - prints the Socket CAN core version and the ABI version 
++
+   5.3 writing own CAN protocol modules
+ 
++  To implement a new protocol in the protocol family PF_CAN a new
++  protocol has to be defined in include/linux/can.h .
++  The prototypes and definitions to use the Socket CAN core can be
++  accessed by including include/linux/can/core.h .
++  Additionally to functions that register the CAN protocol and the
++  CAN device notifier chain there are functions to subscribe CAN
++  frames received by CAN interfaces and to send CAN frames:
++
++    can_rx_register   - subscribe CAN frames from a specific interface
++    can_rx_unregister - unsubscribe CAN frames from a specific interface
++    can_send          - transmit a CAN frame (optional with local loopback)
++
++  For details see the kerneldoc documentation in net/can/af_can.c or
++  the source code of net/can/raw.c or net/can/bcm.c .
++
+ 6. CAN network drivers
+ ----------------------
+ 
+@@ -360,7 +441,7 @@
+   6.1 general settings
+ 
+     dev-&gt;type  = ARPHRD_CAN; /* the netdevice hardware type */
+-    dev-&gt;flags = IFF_NOARP; /* CAN has no arp */
++    dev-&gt;flags = IFF_NOARP;  /* CAN has no arp */
+ 
+     dev-&gt;mtu   = sizeof(struct can_frame);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000285.html">r301 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+	<LI>Next message: <A HREF="000287.html">r303 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#286">[ date ]</a>
+              <a href="thread.html#286">[ thread ]</a>
+              <a href="subject.html#286">[ subject ]</a>
+              <a href="author.html#286">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

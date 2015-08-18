@@ -1,0 +1,871 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r334 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r334%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200706101822.l5AIM1L5003603%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000316.html">
+   <LINK REL="Next"  HREF="000318.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r334 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r334%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200706101822.l5AIM1L5003603%40sheep.berlios.de%3E"
+       TITLE="r334 - in trunk/kernel/2.6: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Jun 10 20:22:01 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000316.html">r333 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000318.html">r335 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#317">[ date ]</a>
+              <a href="thread.html#317">[ thread ]</a>
+              <a href="subject.html#317">[ subject ]</a>
+              <a href="author.html#317">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-10 20:21:58 +0200 (Sun, 10 Jun 2007)
+New Revision: 334
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Changed prototypes for CAN core exported functions to use ifindex
+instead of *dev to hold the dev-pointer only very local and to reduce
+locking issues.
+Removed some handling in the raw/bcm notifiers that caused the system to
+crash, when removing the network driver under heavy load on the fly.
+TODO:
+Put notifier into protocol opt structure to make kmalloc/kfree obsolete.
+Handle the notifiers with RCU lists.
+Put notifier list 'device dependend' into dev_rcv_lists.
+After that check for better notifier handling. 
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-06-08 06:50:54 UTC (rev 333)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-06-10 18:21:58 UTC (rev 334)
+@@ -59,21 +59,19 @@
+ extern int can_proto_register(struct can_proto *cp);
+ extern int can_proto_unregister(struct can_proto *cp);
+ 
+-extern int can_rx_register(struct net_device *dev, canid_t can_id,
+-			   canid_t mask,
+-			   void (*func)(struct sk_buff *, void *),
+-			   void *data, char *ident);
++extern int can_rx_register(int ifindex, canid_t can_id, canid_t mask,
++			   void (*func)(struct sk_buff *, void *), void *data,
++			   char *ident);
+ 
+-extern int can_rx_unregister(struct net_device *dev, canid_t can_id,
+-			     canid_t mask,
++extern int can_rx_unregister(int ifindex, canid_t can_id, canid_t mask,
+ 			     void (*func)(struct sk_buff *, void *),
+ 			     void *data);
+ 
+-extern int can_dev_register(struct net_device *dev,
++extern int can_dev_register(int ifindex,
+ 			    void (*func)(unsigned long msg, void *),
+ 			    void *data);
+ 
+-extern int can_dev_unregister(struct net_device *dev,
++extern int can_dev_unregister(int ifindex,
+ 			      void (*func)(unsigned long msg, void *),
+ 			      void *data);
+ 
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-06-08 06:50:54 UTC (rev 333)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-06-10 18:21:58 UTC (rev 334)
+@@ -389,7 +389,7 @@
+ 
+ /**
+  * can_rx_register - subscribe CAN frames from a specific interface
+- * @dev: pointer to netdevice (NULL =&gt; subcribe from 'all' CAN devices list)
++ * @ifindex: device index (zero =&gt; unsubcribe from 'all' CAN devices list)
+  * @can_id: CAN identifier (see description)
+  * @mask: CAN mask (see description)
+  * @func: callback function on filter match
+@@ -410,13 +410,14 @@
+  *  -ENOMEM on missing cache mem to create subscription entry
+  *  -ENODEV unknown device
+  */
+-int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
++int can_rx_register(int ifindex, canid_t can_id, canid_t mask,
+ 		    void (*func)(struct sk_buff *, void *), void *data,
+ 		    char *ident)
+ {
+ 	struct receiver *r;
+ 	struct hlist_head *rl;
+ 	struct dev_rcv_lists *d;
++	struct net_device *dev = NULL;
+ 	int ret = 0;
+ 
+ 	/* insert new receiver  (dev,canid,mask) -&gt; (func,data) */
+@@ -430,6 +431,9 @@
+ 
+ 	spin_lock_bh(&amp;rcv_lists_lock);
+ 
++	if (ifindex)
++		dev = dev_get_by_index(ifindex);
++
+ 	d = find_dev_rcv_lists(dev);
+ 	if (d) {
+ 		rl = find_rcv_list(&amp;can_id, &amp;mask, d);
+@@ -454,6 +458,9 @@
+ 		ret = -ENODEV;
+ 	}
+ 
++	if (dev)
++		dev_put(dev);
++
+ 	spin_unlock_bh(&amp;rcv_lists_lock);
+ 
+ 	return ret;
+@@ -504,7 +511,7 @@
+ 
+ /**
+  * can_rx_unregister - unsubscribe CAN frames from a specific interface
+- * @dev: pointer to netdevice (NULL =&gt; unsubcribe from 'all' CAN devices list)
++ * @ifindex: device index (zero =&gt; unsubcribe from 'all' CAN devices list)
+  * @can_id: CAN identifier
+  * @mask: CAN mask
+  * @func: callback function on filter match
+@@ -518,13 +525,14 @@
+  *  -EINVAL on missing subscription entry
+  *  -ENODEV unknown device
+  */
+-int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++int can_rx_unregister(int ifindex, canid_t can_id, canid_t mask,
+ 		      void (*func)(struct sk_buff *, void *), void *data)
+ {
+ 	struct receiver *r = NULL;
+ 	struct hlist_head *rl;
+ 	struct hlist_node *next;
+ 	struct dev_rcv_lists *d;
++	struct net_device *dev = NULL;
+ 	int ret = 0;
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+@@ -532,6 +540,9 @@
+ 
+ 	spin_lock_bh(&amp;rcv_lists_lock);
+ 
++	if (ifindex)
++		dev = dev_get_by_index(ifindex);
++
+ 	d = find_dev_rcv_lists(dev);
+ 	if (!d) {
+ 		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
+@@ -575,6 +586,9 @@
+ 		pstats.rcv_entries--;
+ 
+  out:
++	if (dev)
++		dev_put(dev);
++
+ 	spin_unlock_bh(&amp;rcv_lists_lock);
+ 
+ 	/* schedule the receiver item for deletion */
+@@ -888,7 +902,7 @@
+ 
+ /**
+  * can_dev_register - subscribe notifier for CAN device status changes
+- * @dev: pointer to netdevice
++ * @ifindex: device index
+  * @func: callback function on status change
+  * @data: returned parameter for callback function
+  *
+@@ -899,21 +913,45 @@
+  * Return:
+  *  0 on success
+  *  -ENOMEM on missing mem to create subscription entry
+- *  -ENODEV unknown device
++ *  -ENODEV unknown (CAN) device
++ *  -ENETDOWN given CAN interface is down
+  */
+-int can_dev_register(struct net_device *dev,
+-		     void (*func)(unsigned long msg, void *), void *data)
++int can_dev_register(int ifindex, void (*func)(unsigned long msg, void *),
++		     void *data)
+ {
+ 	struct notifier *n;
++	struct net_device *dev = NULL;
++	int ret = 0;
+ 
+ 	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+ 
+-	if (!dev || dev-&gt;type != ARPHRD_CAN)
++	if (!ifindex)
+ 		return -ENODEV;
+ 
++	dev = dev_get_by_index(ifindex);
++
++	/*
++	 * TODO:
++	 * put notifier list 'device dependend' into dev_rcv_lists
++	 * Therefore this code should look more like the code in
++	 * can_rx_register()
++	 */
++
++	if (!dev || dev-&gt;type != ARPHRD_CAN) {
++		ret = -ENODEV;
++		goto out;
++	}
++
++	if (!(dev-&gt;flags &amp; IFF_UP)) {
++		ret = -ENETDOWN;
++		goto out;
++	}
++
+ 	n = kmalloc(sizeof(*n), GFP_KERNEL);
+-	if (!n)
+-		return -ENOMEM;
++	if (!n) {
++		ret = -ENOMEM;
++		goto out;
++	}
+ 
+ 	n-&gt;dev  = dev;
+ 	n-&gt;func = func;
+@@ -923,13 +961,17 @@
+ 	list_add(&amp;n-&gt;list, &amp;notifier_list);
+ 	write_unlock(&amp;notifier_lock);
+ 
+-	return 0;
++out:
++	if (dev)
++		dev_put(dev);
++
++	return ret;
+ }
+ EXPORT_SYMBOL(can_dev_register);
+ 
+ /**
+  * can_dev_unregister - unsubscribe notifier for CAN device status changes
+- * @dev: pointer to netdevice
++ * @ifindex: device index
+  * @func: callback function on filter match
+  * @data: returned parameter for callback function
+  *
+@@ -939,16 +981,23 @@
+  * Return:
+  *  0 on success
+  *  -EINVAL on missing subscription entry
++ *  -ENODEV unknown device
+  */
+-int can_dev_unregister(struct net_device *dev,
+-		       void (*func)(unsigned long msg, void *), void *data)
++int can_dev_unregister(int ifindex, void (*func)(unsigned long msg, void *),
++		       void *data)
+ {
+ 	struct notifier *n, *next;
++	struct net_device *dev;
+ 	int ret = -EINVAL;
+ 
+ 	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+ 
++	if (!ifindex)
++		return -ENODEV;
++
+ 	write_lock(&amp;notifier_lock);
++	dev = dev_get_by_index(ifindex);
++
+ 	list_for_each_entry_safe(n, next, &amp;notifier_list, list) {
+ 		if (n-&gt;dev == dev &amp;&amp; n-&gt;func == func &amp;&amp; n-&gt;data == data) {
+ 			list_del(&amp;n-&gt;list);
+@@ -957,6 +1006,10 @@
+ 			break;
+ 		}
+ 	}
++
++	if (dev)
++		dev_put(dev);
++
+ 	write_unlock(&amp;notifier_lock);
+ 
+ 	return ret;
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-06-08 06:50:54 UTC (rev 333)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-06-10 18:21:58 UTC (rev 334)
+@@ -177,6 +177,8 @@
+ #define OPSIZ sizeof(struct bcm_op)
+ #define MHSIZ sizeof(struct bcm_msg_head)
+ 
++static void bcm_notifier(unsigned long msg, void *data);
++
+ /*
+  * rounded_tv2jif - calculate jiffies from timeval including optional up
+  * @tv: pointer to timeval
+@@ -837,22 +839,10 @@
+ 			 * problems) can_rx_unregister() is always a save
+ 			 * thing to do here.
+ 			 */
+-			if (op-&gt;ifindex) {
+-				struct net_device *dev =
+-					dev_get_by_index(op-&gt;ifindex);
++			can_rx_unregister(op-&gt;ifindex, op-&gt;can_id,
++					  REGMASK(op-&gt;can_id),
++					  bcm_rx_handler, op);
+ 
+-				if (dev) {
+-					can_rx_unregister(dev, op-&gt;can_id,
+-							  REGMASK(op-&gt;can_id),
+-							  bcm_rx_handler, op);
+-					dev_put(dev);
+-				}
+-
+-			} else
+-				can_rx_unregister(NULL, op-&gt;can_id,
+-						  REGMASK(op-&gt;can_id),
+-						  bcm_rx_handler, op);
+-
+ 			list_del(&amp;op-&gt;list);
+ 			bcm_remove_op(op);
+ 			return 1; /* done */
+@@ -1301,19 +1291,8 @@
+ 		DBG(&quot;RX_SETUP: can_rx_register() for can_id %03X. &quot;
+ 		    &quot;rx_op is %p\n&quot;, op-&gt;can_id, op);
+ 
+-		if (ifindex) {
+-			struct net_device *dev = dev_get_by_index(ifindex);
+-
+-			if (dev) {
+-				can_rx_register(dev, op-&gt;can_id,
+-						REGMASK(op-&gt;can_id),
+-						bcm_rx_handler, op, IDENT);
+-				dev_put(dev);
+-			}
+-
+-		} else
+-			can_rx_register(NULL, op-&gt;can_id, REGMASK(op-&gt;can_id),
+-					bcm_rx_handler, op, IDENT);
++		can_rx_register(ifindex, op-&gt;can_id, REGMASK(op-&gt;can_id),
++				bcm_rx_handler, op, IDENT);
+ 	}
+ 
+ 	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+@@ -1479,36 +1458,9 @@
+ 	return 0;
+ }
+ 
+-/*
+- * notification handler for netdevice status changes
+- */
+-static void bcm_notifier(unsigned long msg, void *data)
++static int bcm_unbind(struct sock *sk)
+ {
+-	struct sock *sk = (struct sock *)data;
+ 	struct bcm_opt *bo = bcm_sk(sk);
+-
+-	DBG(&quot;called for sock %p\n&quot;, sk);
+-
+-	switch (msg) {
+-
+-	case NETDEV_UNREGISTER:
+-		bo-&gt;bound   = 0;
+-		bo-&gt;ifindex = 0;
+-		/* fallthrough */
+-	case NETDEV_DOWN:
+-		sk-&gt;sk_err = ENETDOWN;
+-		if (!sock_flag(sk, SOCK_DEAD))
+-			sk-&gt;sk_error_report(sk);
+-	}
+-}
+-
+-/*
+- * standard socket functions
+- */
+-static int bcm_release(struct socket *sock)
+-{
+-	struct sock *sk = sock-&gt;sk;
+-	struct bcm_opt *bo = bcm_sk(sk);
+ 	struct bcm_op *op, *next;
+ 
+ 	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+@@ -1527,21 +1479,10 @@
+ 		 * Don't care if we're bound or not (due to netdev problems)
+ 		 * can_rx_unregister() is always a save thing to do here.
+ 		 */
+-		if (op-&gt;ifindex) {
+-			struct net_device *dev = dev_get_by_index(op-&gt;ifindex);
++		can_rx_unregister(op-&gt;ifindex, op-&gt;can_id,
++				  REGMASK(op-&gt;can_id),
++				  bcm_rx_handler, op);
+ 
+-			if (dev) {
+-				can_rx_unregister(dev, op-&gt;can_id,
+-						  REGMASK(op-&gt;can_id),
+-						  bcm_rx_handler, op);
+-				dev_put(dev);
+-			}
+-
+-		} else
+-			can_rx_unregister(NULL, op-&gt;can_id,
+-					  REGMASK(op-&gt;can_id),
+-					  bcm_rx_handler, op);
+-
+ 		bcm_remove_op(op);
+ 	}
+ 
+@@ -1550,15 +1491,54 @@
+ 		remove_proc_entry(bo-&gt;procname, proc_dir);
+ 
+ 	/* remove device notifier */
+-	if (bo-&gt;ifindex) {
+-		struct net_device *dev = dev_get_by_index(bo-&gt;ifindex);
++	if (bo-&gt;ifindex)
++		can_dev_unregister(bo-&gt;ifindex, bcm_notifier, sk);
+ 
+-		if (dev) {
+-			can_dev_unregister(dev, bcm_notifier, sk);
+-			dev_put(dev);
++	return 0;
++}
++
++/*
++ * notification handler for netdevice status changes
++ */
++static void bcm_notifier(unsigned long msg, void *data)
++{
++	struct sock *sk = (struct sock *)data;
++	//@@@@@@ struct bcm_opt *bo = bcm_sk(sk);
++
++	DBG(&quot;called for sock %p\n&quot;, sk);
++
++	switch (msg) {
++
++	case NETDEV_DOWN:
++#if 0
++		/*
++		 * TODO:
++		 * - put notifier into bcm_opt
++		 * - remove notifier with rcu
++		 * - put notifier list 'device dependend' into dev_rcv_lists
++		 */
++		if (bo-&gt;bound) {
++			bcm_unbind(sk);
++			bcm_init(sk);
+ 		}
++#endif
++		sk-&gt;sk_err = ENETDOWN;
++		if (!sock_flag(sk, SOCK_DEAD))
++			sk-&gt;sk_error_report(sk);
+ 	}
++}
+ 
++/*
++ * standard socket functions
++ */
++static int bcm_release(struct socket *sock)
++{
++	struct sock *sk = sock-&gt;sk;
++	struct bcm_opt *bo = bcm_sk(sk);
++
++	if (bo-&gt;bound)
++		bcm_unbind(sk);
++
+ 	sock_put(sk);
+ 
+ 	return 0;
+@@ -1576,23 +1556,16 @@
+ 
+ 	/* bind a device to this socket */
+ 	if (addr-&gt;can_ifindex) {
+-		struct net_device *dev = dev_get_by_index(addr-&gt;can_ifindex);
++		int ret;
+ 
+-		if (!dev) {
+-			DBG(&quot;could not find device index %d\n&quot;,
+-			    addr-&gt;can_ifindex);
+-			return -ENODEV;
+-		}
+-		bo-&gt;ifindex = dev-&gt;ifindex;
+-		can_dev_register(dev, bcm_notifier, sk); /* register notif. */
+-		dev_put(dev);
++		ret = can_dev_register(addr-&gt;can_ifindex, bcm_notifier, sk);
++		if (ret)
++			return ret;
+ 
+-		DBG(&quot;socket %p bound to device %s (idx %d)\n&quot;,
+-		    sock, dev-&gt;name, dev-&gt;ifindex);
++		bo-&gt;ifindex = addr-&gt;can_ifindex;
+ 
+-	} else {
+-		/* no notifier for ifindex = 0 ('any' CAN device) */
+-		bo-&gt;ifindex = 0;
++		DBG(&quot;socket %p bound to interface index %d\n&quot;,
++		    sock, bo-&gt;ifindex);
+ 	}
+ 
+ 	bo-&gt;bound = 1;
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-06-08 06:50:54 UTC (rev 333)
++++ trunk/kernel/2.6/net/can/raw.c	2007-06-10 18:21:58 UTC (rev 334)
+@@ -99,7 +99,6 @@
+ 	struct can_filter dfilter; /* default/single filter */
+ 	struct can_filter *filter; /* pointer to filter(s) */
+ 	can_err_mask_t err_mask;
+-	spinlock_t lock;
+ };
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+@@ -119,29 +118,8 @@
+ }
+ #endif
+ 
+-static void raw_notifier(unsigned long msg, void *data)
+-{
+-	struct sock *sk = (struct sock *)data;
+-	struct raw_opt *ro = raw_sk(sk);
++static void raw_notifier(unsigned long msg, void *data);
+ 
+-	DBG(&quot;called for sock %p\n&quot;, sk);
+-
+-	switch (msg) {
+-
+-	case NETDEV_UNREGISTER:
+-		spin_lock(&amp;ro-&gt;lock);
+-		ro-&gt;ifindex = 0;
+-		ro-&gt;bound   = 0;
+-		spin_unlock(&amp;ro-&gt;lock);
+-		/* fallthrough */
+-	case NETDEV_DOWN:
+-		sk-&gt;sk_err = ENETDOWN;
+-		if (!sock_flag(sk, SOCK_DEAD))
+-			sk-&gt;sk_error_report(sk);
+-		break;
+-	}
+-}
+-
+ static void raw_rcv(struct sk_buff *skb, void *data)
+ {
+ 	struct sock *sk = (struct sock*)data;
+@@ -174,14 +152,14 @@
+ 	}
+ }
+ 
+-static void raw_add_filters(struct net_device *dev, struct sock *sk)
++static void raw_add_filters(int ifindex, struct sock *sk)
+ {
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+ 	for (i = 0; i &lt; ro-&gt;count; i++) {
+-		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
++		can_rx_register(ifindex, filter[i].can_id, filter[i].can_mask,
+ 				raw_rcv, sk, IDENT);
+ 		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+ 		    filter[i].can_id, filter[i].can_mask,
+@@ -189,15 +167,15 @@
+ 	}
+ }
+ 
+-static void raw_remove_filters(struct net_device *dev, struct sock *sk)
++static void raw_remove_filters(int ifindex, struct sock *sk)
+ {
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+ 	for (i = 0; i &lt; ro-&gt;count; i++) {
+-		can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
+-				  raw_rcv, sk);
++		can_rx_unregister(ifindex, filter[i].can_id,
++				  filter[i].can_mask, raw_rcv, sk);
+ 		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+ 		    filter[i].can_id, filter[i].can_mask,
+ 		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+@@ -220,42 +198,71 @@
+ 	ro-&gt;loopback         = 1;
+ 	ro-&gt;recv_own_msgs    = 0;
+ 
+-	spin_lock_init(&amp;ro-&gt;lock);
+-
+ 	return 0;
+ }
+ 
+-static int raw_release(struct socket *sock)
++static int raw_unbind(struct sock *sk)
+ {
+-	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
+-	struct net_device *dev = NULL;
++	int ifindex = ro-&gt;ifindex;
+ 
+-	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+-	    atomic_read(&amp;sk-&gt;sk_refcnt));
+-
+-	spin_lock(&amp;ro-&gt;lock);
+-	if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+-		dev = dev_get_by_index(ro-&gt;ifindex);
+-	spin_unlock(&amp;ro-&gt;lock);
+-
+ 	/* remove current filters &amp; unregister */
+-	if (ro-&gt;bound)
+-		raw_remove_filters(dev, sk);
++	raw_remove_filters(ifindex, sk);
+ 
+ 	if (ro-&gt;count &gt; 1)
+ 		kfree(ro-&gt;filter);
+ 
+ 	/* remove current error mask */
+-	if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++	if (ro-&gt;err_mask)
++		can_rx_unregister(ifindex, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+ 				  raw_rcv, sk);
+ 
+-	if (dev) {
+-		can_dev_unregister(dev, raw_notifier, sk);
+-		dev_put(dev);
++	if (ifindex)
++		can_dev_unregister(ifindex, raw_notifier, sk);
++
++	return 0;
++}
++
++static void raw_notifier(unsigned long msg, void *data)
++{
++	struct sock *sk = (struct sock *)data;
++	//@@@@@ struct raw_opt *ro = raw_sk(sk);
++
++	DBG(&quot;called for sock %p\n&quot;, sk);
++
++	switch (msg) {
++
++	case NETDEV_DOWN:
++#if 0
++		/*
++		 * TODO:
++		 * - put notifier into raw_opt
++		 * - remove notifier with rcu
++		 * - put notifier list 'device dependend' into dev_rcv_lists
++		 */
++		if (ro-&gt;bound) {
++			raw_unbind(sk);
++			raw_init(sk);
++		}
++#endif
++		sk-&gt;sk_err = ENETDOWN;
++		if (!sock_flag(sk, SOCK_DEAD))
++			sk-&gt;sk_error_report(sk);
++		break;
+ 	}
++}
+ 
++static int raw_release(struct socket *sock)
++{
++	struct sock *sk = sock-&gt;sk;
++	struct raw_opt *ro = raw_sk(sk);
++
++	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
++	    atomic_read(&amp;sk-&gt;sk_refcnt));
++
++	if (ro-&gt;bound)
++		raw_unbind(sk);
++
+ 	sock_put(sk);
+ 
+ 	return 0;
+@@ -266,7 +273,6 @@
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
+-	struct net_device *dev;
+ 	int err = 0;
+ 
+ 	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+@@ -275,73 +281,34 @@
+ 		return -EINVAL;
+ 
+ 	lock_sock(sk);
+-	spin_lock(&amp;ro-&gt;lock);
+ 
+ 	if (ro-&gt;bound) {
+ 		/* remove current bindings / notifier */
+-		if (ro-&gt;ifindex) {
+-			dev = dev_get_by_index(ro-&gt;ifindex);
+-			if (!dev) {
+-				DBG(&quot;could not find device %d\n&quot;,
+-				    addr-&gt;can_ifindex);
+-				err = -ENODEV;
+-				goto out;
+-			}
+-			if (!(dev-&gt;flags &amp; IFF_UP)) {
+-				sk-&gt;sk_err = ENETDOWN;
+-				if (!sock_flag(sk, SOCK_DEAD))
+-					sk-&gt;sk_error_report(sk);
+-				goto out;
+-			}
+-			can_dev_unregister(dev, raw_notifier, sk);
+-		} else
+-			dev = NULL;
+-
+-		/* unregister current filters for this device */
+-		raw_remove_filters(dev, sk);
+-
+-		if (dev)
+-			dev_put(dev);
+-
+-		ro-&gt;bound = 0;
++		raw_unbind(sk);
++		raw_init(sk);
+ 	}
+ 
+ 	if (addr-&gt;can_ifindex) {
+-		dev = dev_get_by_index(addr-&gt;can_ifindex);
+-		if (!dev) {
+-			DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
+-			err = -ENODEV;
++		err = can_dev_register(addr-&gt;can_ifindex, raw_notifier, sk);
++		if (err)
+ 			goto out;
+-		}
+-		if (!(dev-&gt;flags &amp; IFF_UP)) {
+-			sk-&gt;sk_err = ENETDOWN;
+-			if (!sock_flag(sk, SOCK_DEAD))
+-				sk-&gt;sk_error_report(sk);
+-			goto out;
+-		}
+-		can_dev_register(dev, raw_notifier, sk);
+-	} else
+-		dev = NULL;
++	}
+ 
+ 	ro-&gt;ifindex = addr-&gt;can_ifindex;
+ 
+ 	/* filters set by default/setsockopt */
+-	raw_add_filters(dev, sk);
++	raw_add_filters(ro-&gt;ifindex, sk);
+ 
+ 	/* error frame filter set by setsockopt */
+ 	if (ro-&gt;err_mask)
+-		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++		can_rx_register(ro-&gt;ifindex, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+ 				raw_rcv, sk, IDENT);
+ 
+ 	ro-&gt;bound = 1;
+ 
+  out:
+-	spin_unlock(&amp;ro-&gt;lock);
+ 	release_sock(sk);
+ 
+-	if (dev)
+-		dev_put(dev);
+-
+ 	return err;
+ }
+ 
+@@ -380,7 +347,6 @@
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
+ 	struct can_filter sfilter;         /* single filter */
+-	struct net_device *dev = NULL;
+ 	can_err_mask_t err_mask = 0;
+ 	int count = 0;
+ 	int err;
+@@ -417,14 +383,9 @@
+ 
+ 		lock_sock(sk);
+ 
+-		spin_lock(&amp;ro-&gt;lock);
+-		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+-			dev = dev_get_by_index(ro-&gt;ifindex);
+-		spin_unlock(&amp;ro-&gt;lock);
+-
+ 		/* remove current filters &amp; unregister */
+ 		if (ro-&gt;bound)
+-			raw_remove_filters(dev, sk);
++			raw_remove_filters(ro-&gt;ifindex, sk);
+ 
+ 		if (ro-&gt;count &gt; 1)
+ 			kfree(ro-&gt;filter);
+@@ -439,11 +400,8 @@
+ 		ro-&gt;filter = filter;
+ 		ro-&gt;count  = count;
+ 		if (ro-&gt;bound)
+-			raw_add_filters(dev, sk);
++			raw_add_filters(ro-&gt;ifindex, sk);
+ 
+-		if (dev)
+-			dev_put(dev);
+-
+ 		release_sock(sk);
+ 
+ 		break;
+@@ -458,23 +416,18 @@
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+ 
+-		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+-			dev = dev_get_by_index(ro-&gt;ifindex);
+-
+ 		/* remove current error mask */
+ 		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-			can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++			can_rx_unregister(ro-&gt;ifindex, 0, 
++					  ro-&gt;err_mask | CAN_ERR_FLAG,
+ 					  raw_rcv, sk);
+ 
+ 		/* add new error mask */
+ 		ro-&gt;err_mask = err_mask;
+ 		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++			can_rx_register(ro-&gt;ifindex, 0,
++					ro-&gt;err_mask | CAN_ERR_FLAG,
+ 					raw_rcv, sk, IDENT);
+-
+-		if (dev)
+-			dev_put(dev);
+-
+ 		break;
+ 
+ 	case CAN_RAW_LOOPBACK:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000316.html">r333 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000318.html">r335 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#317">[ date ]</a>
+              <a href="thread.html#317">[ thread ]</a>
+              <a href="subject.html#317">[ subject ]</a>
+              <a href="author.html#317">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

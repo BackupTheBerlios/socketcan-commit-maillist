@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r557 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r557%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711160955.lAG9tHGf003573%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000538.html">
+   <LINK REL="Next"  HREF="000540.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r557 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r557%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711160955.lAG9tHGf003573%40sheep.berlios.de%3E"
+       TITLE="r557 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 16 10:55:17 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000538.html">r556 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000540.html">r558 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#539">[ date ]</a>
+              <a href="thread.html#539">[ thread ]</a>
+              <a href="subject.html#539">[ subject ]</a>
+              <a href="author.html#539">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-16 10:55:15 +0100 (Fri, 16 Nov 2007)
+New Revision: 557
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Use of mod_timer() instead of delete_timer() / add_timer()
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-11-16 09:13:58 UTC (rev 556)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-11-16 09:55:15 UTC (rev 557)
+@@ -456,20 +456,16 @@
+ 
+ 	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 
+-		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-		add_timer(&amp;op-&gt;timer);
+-
+ 		/* send (next) frame */
+ 		bcm_can_tx(op);
++		mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ 
+ 	} else {
+ 		if (op-&gt;j_ival2) {
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-			add_timer(&amp;op-&gt;timer);
+ 
+ 			/* send (next) frame */
+ 			bcm_can_tx(op);
+-
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival2);
+ 		}
+ 	}
+ 
+@@ -529,8 +525,7 @@
+ 
+ 		if (!(op-&gt;thrtimer.expires)) {
+ 			/* start the timer only the first time */
+-			op-&gt;thrtimer.expires = nexttx;
+-			add_timer(&amp;op-&gt;thrtimer);
++			mod_timer(&amp;op-&gt;thrtimer, nexttx);
+ 		}
+ 
+ 	} else {
+@@ -584,10 +579,8 @@
+ 	if (op-&gt;flags &amp; RX_NO_AUTOTIMER)
+ 		return;
+ 
+-	if (op-&gt;j_ival1) {
+-		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-		add_timer(&amp;op-&gt;timer);
+-	}
++	if (op-&gt;j_ival1)
++		mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ }
+ 
+ /*
+@@ -993,18 +986,14 @@
+ 	if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp;
+ 	    ((op-&gt;j_ival1 &amp;&amp; op-&gt;count) || op-&gt;j_ival2)) {
+ 
+-		del_timer(&amp;op-&gt;timer);
+-
+ 		/* spec: send can_frame when starting timer */
+ 		op-&gt;flags |= TX_ANNOUNCE;
+ 
+ 		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ 		} else
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-
+-		add_timer(&amp;op-&gt;timer);
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival2);
+ 	}
+ 
+ 	if (op-&gt;flags &amp; TX_ANNOUNCE)
+@@ -1177,10 +1166,8 @@
+ 
+ 			/* free currently blocked msgs ? */
+ 			if (op-&gt;thrtimer.expires) {
+-				del_timer(&amp;op-&gt;thrtimer);
+ 				/* send blocked msgs hereafter */
+-				op-&gt;thrtimer.expires = jiffies + 2;
+-				add_timer(&amp;op-&gt;thrtimer);
++				mod_timer(&amp;op-&gt;thrtimer, jiffies + 2);
+ 			}
+ 
+ 			/*
+@@ -1190,11 +1177,8 @@
+ 			 */
+ 		}
+ 
+-		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1) {
+-			del_timer(&amp;op-&gt;timer);
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-			add_timer(&amp;op-&gt;timer);
+-		}
++		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1)
++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ 	}
+ 
+ 	/* now we can register for can_ids, if we added a new bcm_op */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000538.html">r556 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000540.html">r558 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#539">[ date ]</a>
+              <a href="thread.html#539">[ thread ]</a>
+              <a href="subject.html#539">[ subject ]</a>
+              <a href="author.html#539">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r281 - trunk/kernel/2.6/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r281%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200705071403.l47E3Cas003804%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000264.html">
+   <LINK REL="Next"  HREF="000266.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r281 - trunk/kernel/2.6/drivers/net/can/sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r281%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200705071403.l47E3Cas003804%40sheep.berlios.de%3E"
+       TITLE="r281 - trunk/kernel/2.6/drivers/net/can/sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon May  7 16:03:12 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000264.html">r280 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/i82527	drivers/net/can/mscan drivers/net/can/sja1000 net/can
+</A></li>
+        <LI>Next message: <A HREF="000266.html">r282 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#265">[ date ]</a>
+              <a href="thread.html#265">[ thread ]</a>
+              <a href="subject.html#265">[ subject ]</a>
+              <a href="author.html#265">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-07 16:03:08 +0200 (Mon, 07 May 2007)
+New Revision: 281
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+Log:
+Added loopback functionality in SJA1000 driver. Default On.
+See added comment or Documentation/networking/can.txt .
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-07 11:56:27 UTC (rev 280)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-07 14:03:08 UTC (rev 281)
+@@ -148,6 +148,7 @@
+ static int clk			= DEFAULT_HW_CLK;
+ static int debug		= 0;
+ static int restart_ms		= 100;
++static int loopback		= 1;
+ 
+ static int base_n;
+ static int irq_n;
+@@ -164,6 +165,7 @@
+ module_param(clk, int, 0);
+ module_param(debug, int, 0);
+ module_param(restart_ms, int, 0);
++module_param(loopback, int, S_IRUGO);
+ 
+ MODULE_PARM_DESC(base, &quot;CAN controller base address&quot;);
+ MODULE_PARM_DESC(irq, &quot;CAN controller interrupt&quot;);
+@@ -174,7 +176,17 @@
+ MODULE_PARM_DESC(clk, &quot;CAN controller chip clock (default: 16MHz)&quot;);
+ MODULE_PARM_DESC(debug, &quot;set debug mask (default: 0)&quot;);
+ MODULE_PARM_DESC(restart_ms, &quot;restart chip on heavy bus errors / bus off after x ms (default 100ms)&quot;);
++MODULE_PARM_DESC(loopback, &quot;Loop back sent frames. default: 1 (On)&quot;);
+ 
++/*
++ * CAN network devices *should* support a local loopback functionality
++ * (see Documentation/networking/can.txt). To test the handling of CAN
++ * interfaces that do not support the loopback both driver types are
++ * implemented inside this vcan driver. In the case that the driver does
++ * not support the loopback the IFF_LOOPBACK remains clear in dev-&gt;flags.
++ * This causes the PF_CAN core to perform the loopback as a fallback solution.
++ */
++
+ /* function declarations */
+ 
+ static void can_restart_dev(unsigned long data);
+@@ -606,8 +618,26 @@
+ 
+ 	dev-&gt;trans_start = jiffies;
+ 
+-	dev_kfree_skb(skb);
++	if (!loopback) {
++		dev_kfree_skb(skb);
++		return 0;
++	}
+ 
++	if (!priv-&gt;loop_skb) {
++		/* make settings for loopback to reduce code in irq context */
++		skb-&gt;protocol  = htons(ETH_P_CAN);
++		skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++
++		/* save this skb for tx interrupt loopback handling */
++		priv-&gt;loop_skb = skb;
++
++	} else {
++		/* locking problem with netif_stop_queue() ?? */
++		printk(KERN_ERR &quot;%s: %s: occupied loop_skb!\n&quot;,
++		       dev-&gt;name, __FUNCTION__ );
++		dev_kfree_skb(skb);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -815,6 +845,12 @@
+ 		if (isrc &amp; IRQ_TI) {
+ 			/* transmission complete interrupt */
+ 			priv-&gt;stats.tx_packets++;
++
++			if (loopback &amp;&amp; priv-&gt;loop_skb) {
++				netif_rx(priv-&gt;loop_skb);
++				priv-&gt;loop_skb = NULL;
++			}
++
+ 			netif_wake_queue(dev);
+ 		}
+ 		if (isrc &amp; IRQ_RI) {
+@@ -1034,6 +1070,11 @@
+ 	dev-&gt;tx_queue_len		= 10;
+ 
+ 	dev-&gt;flags			= IFF_NOARP;
++
++	/* set flags according to driver capabilities */
++	if (loopback)
++		dev-&gt;flags |= IFF_LOOPBACK;
++
+ 	dev-&gt;features			= NETIF_F_NO_CSUM;
+ 
+ 	dev-&gt;open			= can_open;
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2007-05-07 11:56:27 UTC (rev 280)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2007-05-07 14:03:08 UTC (rev 281)
+@@ -174,6 +174,7 @@
+ 	int			rx_probe;
+ 	struct timer_list       timer;
+ 	int			state;
++	struct sk_buff		*loop_skb;
+ };
+ 
+ #define STATE_UNINITIALIZED	0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000264.html">r280 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/i82527	drivers/net/can/mscan drivers/net/can/sja1000 net/can
+</A></li>
+	<LI>Next message: <A HREF="000266.html">r282 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#265">[ date ]</a>
+              <a href="thread.html#265">[ thread ]</a>
+              <a href="subject.html#265">[ subject ]</a>
+              <a href="author.html#265">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

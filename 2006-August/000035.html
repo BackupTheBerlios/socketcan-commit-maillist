@@ -1,0 +1,451 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r53 - branches/ut/hlist/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r53%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C44EAFA1A.6060405%40volkswagen.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000034.html">
+   <LINK REL="Next"  HREF="000036.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r53 - branches/ut/hlist/kernel/2.6/net/can</H1>
+    <B>Hartkopp, Oliver (K-GEFE/E)</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r53%20-%20branches/ut/hlist/kernel/2.6/net/can&In-Reply-To=%3C44EAFA1A.6060405%40volkswagen.de%3E"
+       TITLE="[Socketcan-commit] r53 - branches/ut/hlist/kernel/2.6/net/can">oliver.hartkopp at volkswagen.de
+       </A><BR>
+    <I>Tue Aug 22 14:35:38 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000034.html">r56 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000036.html">r57 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>For your information:
+
+I tested the hlist branch from Urs to update to the performant and save RCU
+lists inside af_can.c ... but it didn't behave as it should do (i always got
+CAN-frames from /all/ Interfaces even when saying 'candump' for a specific
+one).
+
+So when Urs is back next week from vacation i will go through this point
+with him immediately.
+
+Regards,
+
+Oliver
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">thuermann at berlios.de</A> wrote:
+&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Author: thuermann
+</I>&gt;<i> Date: 2006-07-06 06:14:33 +0200 (Thu, 06 Jul 2006)
+</I>&gt;<i> New Revision: 53
+</I>&gt;<i> 
+</I>&gt;<i> Modified:
+</I>&gt;<i>    branches/ut/hlist/kernel/2.6/net/can/af_can.c
+</I>&gt;<i>    branches/ut/hlist/kernel/2.6/net/can/proc.c
+</I>&gt;<i> Log:
+</I>&gt;<i> Finally, use RCU locking for receive lists.
+</I>&gt;<i> 
+</I>&gt;<i> 
+</I>&gt;<i> Modified: branches/ut/hlist/kernel/2.6/net/can/af_can.c
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- branches/ut/hlist/kernel/2.6/net/can/af_can.c       2006-07-04 
+</I>&gt;<i> 09:51:36 UTC (rev 52)
+</I>&gt;<i> +++ branches/ut/hlist/kernel/2.6/net/can/af_can.c       2006-07-06 
+</I>&gt;<i> 04:14:33 UTC (rev 53)
+</I>&gt;<i> @@ -46,7 +46,9 @@
+</I>&gt;<i>  #include &lt;linux/version.h&gt;
+</I>&gt;<i>  #include &lt;linux/kmod.h&gt;
+</I>&gt;<i>  #include &lt;linux/init.h&gt;
+</I>&gt;<i> +#include &lt;linux/list.h&gt;
+</I>&gt;<i>  #include &lt;linux/spinlock.h&gt;
+</I>&gt;<i> +#include &lt;linux/rcupdate.h&gt;
+</I>&gt;<i>  #include &lt;linux/socket.h&gt;
+</I>&gt;<i>  #include &lt;linux/skbuff.h&gt;
+</I>&gt;<i>  #include &lt;linux/net.h&gt;
+</I>&gt;<i> @@ -116,8 +118,7 @@
+</I>&gt;<i>  
+</I>&gt;<i>  HLIST_HEAD(rx_dev_list);
+</I>&gt;<i>  struct rcv_dev_list rx_alldev_list;
+</I>&gt;<i> -static rwlock_t rcv_lists_lock  = RW_LOCK_UNLOCKED;
+</I>&gt;<i> -rwlock_t rcv_lock = RW_LOCK_UNLOCKED;
+</I>&gt;<i> +static spinlock_t rcv_lists_lock  = SPIN_LOCK_UNLOCKED;
+</I>&gt;<i>  
+</I>&gt;<i>  static struct packet_type can_packet = {
+</I>&gt;<i>         .type = __constant_htons(ETH_P_CAN),
+</I>&gt;<i> @@ -443,7 +444,7 @@
+</I>&gt;<i>         DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident
+</I>%s\n&quot;,
+&gt;<i>             dev, can_id, mask, func, data, ident);
+</I>&gt;<i>  
+</I>&gt;<i> -       write_lock(&amp;rcv_lists_lock);
+</I>&gt;<i> +       spin_lock(&amp;rcv_lists_lock);
+</I>&gt;<i>  
+</I>&gt;<i>         q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -465,7 +466,7 @@
+</I>&gt;<i>         p-&gt;data    = data;
+</I>&gt;<i>         p-&gt;ident   = ident;
+</I>&gt;<i>  
+</I>&gt;<i> -       hlist_add_head(&amp;p-&gt;list, q);
+</I>&gt;<i> +       hlist_add_head_rcu(&amp;p-&gt;list, q);
+</I>&gt;<i>  
+</I>&gt;<i>         if (!dev)
+</I>&gt;<i>                 d = &amp;rx_alldev_list;
+</I>&gt;<i> @@ -482,7 +483,7 @@
+</I>&gt;<i>                 pstats.rcv_entries_max = pstats.rcv_entries;
+</I>&gt;<i>  
+</I>&gt;<i>   out:
+</I>&gt;<i> -       write_unlock(&amp;rcv_lists_lock);
+</I>&gt;<i> +       spin_unlock(&amp;rcv_lists_lock);
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t 
+</I>&gt;<i> mask,
+</I>&gt;<i> @@ -496,8 +497,10 @@
+</I>&gt;<i>         DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+</I>&gt;<i>             dev, can_id, mask, func, data);
+</I>&gt;<i>  
+</I>&gt;<i> -       write_lock(&amp;rcv_lists_lock);
+</I>&gt;<i> +       p = NULL;
+</I>&gt;<i>  
+</I>&gt;<i> +       spin_lock(&amp;rcv_lists_lock);
+</I>&gt;<i> +
+</I>&gt;<i>         q = find_rcv_list(&amp;can_id, &amp;mask, dev);
+</I>&gt;<i>  
+</I>&gt;<i>         if (!q) {
+</I>&gt;<i> @@ -506,7 +509,6 @@
+</I>&gt;<i>                 goto out;
+</I>&gt;<i>         }
+</I>&gt;<i>  
+</I>&gt;<i> -       p = NULL;
+</I>&gt;<i>         hlist_for_each_entry(p, n, q, list) {
+</I>&gt;<i>                 if (p-&gt;can_id == can_id &amp;&amp; p-&gt;mask == mask
+</I>&gt;<i>                     &amp;&amp; p-&gt;func == func &amp;&amp; p-&gt;data == data)
+</I>&gt;<i> @@ -519,10 +521,7 @@
+</I>&gt;<i>                 goto out;
+</I>&gt;<i>         }
+</I>&gt;<i>  
+</I>&gt;<i> -       write_lock_bh(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_del(&amp;p-&gt;list);
+</I>&gt;<i> -       kfree(p);
+</I>&gt;<i> -       write_unlock_bh(&amp;rcv_lock);
+</I>&gt;<i> +       hlist_del_rcu(&amp;p-&gt;list);
+</I>&gt;<i>  
+</I>&gt;<i>         if (pstats.rcv_entries &gt; 0)
+</I>&gt;<i>                 pstats.rcv_entries--;
+</I>&gt;<i> @@ -541,7 +540,12 @@
+</I>&gt;<i>                 d-&gt;dev = NULL; /* mark unused */
+</I>&gt;<i>  
+</I>&gt;<i>   out:
+</I>&gt;<i> -       write_unlock(&amp;rcv_lists_lock);
+</I>&gt;<i> +       spin_unlock(&amp;rcv_lists_lock);
+</I>&gt;<i> +
+</I>&gt;<i> +       if (p) {
+</I>&gt;<i> +               synchronize_rcu();
+</I>&gt;<i> +               kfree(p);
+</I>&gt;<i> +       }
+</I>&gt;<i>  }
+</I>&gt;<i>  
+</I>&gt;<i>  #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+</I>&gt;<i> @@ -566,20 +570,20 @@
+</I>&gt;<i>         stats.rx_frames++;
+</I>&gt;<i>         stats.rx_frames_delta++;
+</I>&gt;<i>  
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i>  
+</I>&gt;<i>         matches = can_rcv_filter(&amp;rx_alldev_list, skb);
+</I>&gt;<i>  
+</I>&gt;<i>         /* find receive list for this device */
+</I>&gt;<i>         q = NULL;
+</I>&gt;<i> -       hlist_for_each_entry(q, n, &amp;rx_dev_list, list)
+</I>&gt;<i> +       hlist_for_each_entry_rcu(q, n, &amp;rx_dev_list, list)
+</I>&gt;<i>                 if (q-&gt;dev == dev)
+</I>&gt;<i>                         break;
+</I>&gt;<i>  
+</I>&gt;<i>         if (q)
+</I>&gt;<i>                 matches += can_rcv_filter(q, skb);
+</I>&gt;<i>  
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         DBG(&quot;freeing skbuff %p\n&quot;, skb);
+</I>&gt;<i>         kfree_skb(skb);
+</I>&gt;<i> @@ -616,7 +620,7 @@
+</I>&gt;<i>  
+</I>&gt;<i>         if (can_id &amp; CAN_ERR_FLAG) {
+</I>&gt;<i>                 /* check for error frame entries only */
+</I>&gt;<i> -               hlist_for_each_entry(p, n, &amp;q-&gt;rx_err, list) {
+</I>&gt;<i> +               hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_err, list) {
+</I>&gt;<i>                         if (can_id &amp; p-&gt;mask) {
+</I>&gt;<i>                                 DBG(&quot;match on rx_err skbuff %p\n&quot;, skb);
+</I>&gt;<i>                                 deliver(skb, p);
+</I>&gt;<i> @@ -627,14 +631,14 @@
+</I>&gt;<i>         }
+</I>&gt;<i>  
+</I>&gt;<i>         /* check for unfiltered entries */
+</I>&gt;<i> -       hlist_for_each_entry(p, n, &amp;q-&gt;rx_all, list) {
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_all, list) {
+</I>&gt;<i>                 DBG(&quot;match on rx_all skbuff %p\n&quot;, skb);
+</I>&gt;<i>                 deliver(skb, p);
+</I>&gt;<i>                 matches++;
+</I>&gt;<i>         }
+</I>&gt;<i>  
+</I>&gt;<i>         /* check for can_id/mask entries */
+</I>&gt;<i> -       hlist_for_each_entry(p, n, &amp;q-&gt;rx_fil, list) {
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_fil, list) {
+</I>&gt;<i>                 if ((can_id &amp; p-&gt;mask) == p-&gt;can_id) {
+</I>&gt;<i>                         DBG(&quot;match on rx_fil skbuff %p\n&quot;, skb);
+</I>&gt;<i>                         deliver(skb, p);
+</I>&gt;<i> @@ -643,7 +647,7 @@
+</I>&gt;<i>         }
+</I>&gt;<i>  
+</I>&gt;<i>         /* check for inverted can_id/mask entries */
+</I>&gt;<i> -       hlist_for_each_entry(p, n, &amp;q-&gt;rx_inv, list) {
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_inv, list) {
+</I>&gt;<i>                 if ((can_id &amp; p-&gt;mask) != p-&gt;can_id) {
+</I>&gt;<i>                         DBG(&quot;match on rx_inv skbuff %p\n&quot;, skb);
+</I>&gt;<i>                         deliver(skb, p);
+</I>&gt;<i> @@ -653,7 +657,7 @@
+</I>&gt;<i>  
+</I>&gt;<i>         /* check CAN_ID specific entries */
+</I>&gt;<i>         if (can_id &amp; CAN_EFF_FLAG) {
+</I>&gt;<i> -               hlist_for_each_entry(p, n, &amp;q-&gt;rx_eff, list) {
+</I>&gt;<i> +               hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_eff, list) {
+</I>&gt;<i>                         if (p-&gt;can_id == can_id) {
+</I>&gt;<i>                                 DBG(&quot;match on rx_eff skbuff %p\n&quot;, skb);
+</I>&gt;<i>                                 deliver(skb, p);
+</I>&gt;<i> @@ -662,7 +666,7 @@
+</I>&gt;<i>                 }
+</I>&gt;<i>         } else {
+</I>&gt;<i>                 can_id &amp;= CAN_SFF_MASK;
+</I>&gt;<i> -               hlist_for_each_entry(p, n, &amp;q-&gt;rx_sff[can_id], list) {
+</I>&gt;<i> +               hlist_for_each_entry_rcu(p, n, &amp;q-&gt;rx_sff[can_id], list) {
+</I>&gt;<i>                         DBG(&quot;match on rx_sff skbuff %p\n&quot;, skb);
+</I>&gt;<i>                         deliver(skb, p);
+</I>&gt;<i>                         matches++;
+</I>&gt;<i> @@ -867,4 +871,3 @@
+</I>&gt;<i>  EXPORT_SYMBOL(can_dev_unregister);
+</I>&gt;<i>  EXPORT_SYMBOL(can_send);
+</I>&gt;<i>  EXPORT_SYMBOL(timeval2jiffies);
+</I>&gt;<i> -EXPORT_SYMBOL(rcv_lock);
+</I>&gt;<i> 
+</I>&gt;<i> Modified: branches/ut/hlist/kernel/2.6/net/can/proc.c
+</I>&gt;<i> ===================================================================
+</I>&gt;<i> --- branches/ut/hlist/kernel/2.6/net/can/proc.c 2006-07-04 09:51:36 UTC 
+</I>&gt;<i> (rev 52)
+</I>&gt;<i> +++ branches/ut/hlist/kernel/2.6/net/can/proc.c 2006-07-06 04:14:33 UTC 
+</I>&gt;<i> (rev 53)
+</I>&gt;<i> @@ -45,7 +45,7 @@
+</I>&gt;<i>  #include &lt;linux/module.h&gt;
+</I>&gt;<i>  #include &lt;linux/proc_fs.h&gt;
+</I>&gt;<i>  #include &lt;linux/list.h&gt;
+</I>&gt;<i> -#include &lt;linux/spinlock.h&gt;
+</I>&gt;<i> +#include &lt;linux/rcupdate.h&gt;
+</I>&gt;<i>  
+</I>&gt;<i>  #include &lt;linux/can/af_can.h&gt;
+</I>&gt;<i>  
+</I>&gt;<i> @@ -111,7 +111,6 @@
+</I>&gt;<i>  
+</I>&gt;<i>  extern struct hlist_head rx_dev_list;    /* rx dispatcher structures */
+</I>&gt;<i>  extern int stats_timer;                  /* module parameter. default: 
+</I>&gt;<i> on */
+</I>&gt;<i> -extern rwlock_t rcv_lock;
+</I>&gt;<i>  
+</I>&gt;<i>  /**************************************************/
+</I>&gt;<i>  /* procfs init / remove                           */
+</I>&gt;<i> @@ -206,8 +205,8 @@
+</I>&gt;<i>         struct rcv_list *p;
+</I>&gt;<i>         struct hlist_node *n;
+</I>&gt;<i>  
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_for_each_entry(p, n, rx_list, list) {
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, rx_list, list) {
+</I>&gt;<i>                 char *fmt = p-&gt;can_id &amp; CAN_EFF_FLAG ? /* EFF &amp; 
+</I>&gt;<i> CAN_ID_ALL */
+</I>&gt;<i>                         &quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+</I>&gt;<i>                         &quot;   %-5s     %03X    %08x  %08x  %08x  %8ld
+</I>%s\n&quot;;
+&gt;<i> @@ -226,7 +225,7 @@
+</I>&gt;<i>                         break;
+</I>&gt;<i>                 }
+</I>&gt;<i>         }
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         return len;
+</I>&gt;<i>  }
+</I>&gt;<i> @@ -353,8 +352,8 @@
+</I>&gt;<i>                         &quot;\nreceive list 'rx_all':\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i>         /* find receive list for this device */
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i>  
+</I>&gt;<i>                 if (!hlist_empty(&amp;p-&gt;rx_all)) {
+</I>&gt;<i>                         len = can_print_recv_banner(page, len);
+</I>&gt;<i> @@ -363,7 +362,7 @@
+</I>&gt;<i>                         len += snprintf(page + len, PAGE_SIZE - len,
+</I>&gt;<i>                                         &quot;  (%s: no entry)\n&quot;, 
+</I>&gt;<i> p-&gt;dev-&gt;name);
+</I>&gt;<i>         }
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -383,8 +382,8 @@
+</I>&gt;<i>                         &quot;\nreceive list 'rx_fil':\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i>         /* find receive list for this device */
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i>  
+</I>&gt;<i>                 if (!hlist_empty(&amp;p-&gt;rx_fil)) {
+</I>&gt;<i>                         len = can_print_recv_banner(page, len);
+</I>&gt;<i> @@ -393,7 +392,7 @@
+</I>&gt;<i>                         len += snprintf(page + len, PAGE_SIZE - len,
+</I>&gt;<i>                                         &quot;  (%s: no entry)\n&quot;, 
+</I>&gt;<i> p-&gt;dev-&gt;name);
+</I>&gt;<i>         }
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -413,8 +412,8 @@
+</I>&gt;<i>                         &quot;\nreceive list 'rx_inv':\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i>         /* find receive list for this device */
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i>  
+</I>&gt;<i>                 if (!hlist_empty(&amp;p-&gt;rx_inv)) {
+</I>&gt;<i>                         len = can_print_recv_banner(page, len);
+</I>&gt;<i> @@ -423,7 +422,7 @@
+</I>&gt;<i>                         len += snprintf(page + len, PAGE_SIZE - len,
+</I>&gt;<i>                                         &quot;  (%s: no entry)\n&quot;, 
+</I>&gt;<i> p-&gt;dev-&gt;name);
+</I>&gt;<i>         }
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -443,8 +442,8 @@
+</I>&gt;<i>                         &quot;\nreceive list 'rx_sff':\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i>         /* find receive list for this device */
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i>                 int i, all_empty = 1;
+</I>&gt;<i>                 /* check wether at least one list is non-empty */
+</I>&gt;<i>                 for (i = 0; i &lt; 0x800; i++)
+</I>&gt;<i> @@ -463,7 +462,7 @@
+</I>&gt;<i>                         len += snprintf(page + len, PAGE_SIZE - len,
+</I>&gt;<i>                                         &quot;  (%s: no entry)\n&quot;, 
+</I>&gt;<i> p-&gt;dev-&gt;name);
+</I>&gt;<i>         }
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -483,8 +482,8 @@
+</I>&gt;<i>                         &quot;\nreceive list 'rx_eff':\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i>         /* find receive list for this device */
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i>  
+</I>&gt;<i>                 if (!hlist_empty(&amp;p-&gt;rx_eff)) {
+</I>&gt;<i>                         len = can_print_recv_banner(page, len);
+</I>&gt;<i> @@ -493,7 +492,7 @@
+</I>&gt;<i>                         len += snprintf(page + len, PAGE_SIZE - len,
+</I>&gt;<i>                                         &quot;  (%s: no entry)\n&quot;, 
+</I>&gt;<i> p-&gt;dev-&gt;name);
+</I>&gt;<i>         }
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i> @@ -513,8 +512,8 @@
+</I>&gt;<i>                         &quot;\nreceive list 'rx_err':\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i>         /* find receive list for this device */
+</I>&gt;<i> -       read_lock(&amp;rcv_lock);
+</I>&gt;<i> -       hlist_for_each_entry (p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i> +       rcu_read_lock();
+</I>&gt;<i> +       hlist_for_each_entry_rcu(p, n, &amp;rx_dev_list, list) {
+</I>&gt;<i>  
+</I>&gt;<i>                 if (!hlist_empty(&amp;p-&gt;rx_err)) {
+</I>&gt;<i>                         len = can_print_recv_banner(page, len);
+</I>&gt;<i> @@ -523,7 +522,7 @@
+</I>&gt;<i>                         len += snprintf(page + len, PAGE_SIZE - len,
+</I>&gt;<i>                                         &quot;  (%s: no entry)\n&quot;, 
+</I>&gt;<i> p-&gt;dev-&gt;name);
+</I>&gt;<i>         }
+</I>&gt;<i> -       read_unlock(&amp;rcv_lock);
+</I>&gt;<i> +       rcu_read_unlock();
+</I>&gt;<i>  
+</I>&gt;<i>         len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+</I>&gt;<i>  
+</I>&gt;<i> 
+</I>&gt;<i> _______________________________________________
+</I>&gt;<i> Socketcan-commit mailing list
+</I>&gt;<i> <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">Socketcan-commit at lists.berlios.de</A>
+</I>&gt;<i> <A HREF="http://lists.berlios.de/mailman/listinfo/socketcan-commit">http://lists.berlios.de/mailman/listinfo/socketcan-commit</A>
+</I>&gt;<i> 
+</I>
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000034.html">r56 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000036.html">r57 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,288 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r374 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r374%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706190841.l5J8fjkr014497%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000356.html">
+   <LINK REL="Next"  HREF="000358.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r374 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r374%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706190841.l5J8fjkr014497%40sheep.berlios.de%3E"
+       TITLE="r374 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 19 10:41:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000356.html">r373 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000358.html">r375 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#357">[ date ]</a>
+              <a href="thread.html#357">[ thread ]</a>
+              <a href="subject.html#357">[ subject ]</a>
+              <a href="author.html#357">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-19 10:41:41 +0200 (Tue, 19 Jun 2007)
+New Revision: 374
+
+Modified:
+   branches/ha/locktest/net/can/af_can.c
+Log:
+reordered exported debug functions before init/exit functions.
+
+
+Modified: branches/ha/locktest/net/can/af_can.c
+===================================================================
+--- branches/ha/locktest/net/can/af_can.c	2007-06-19 08:35:34 UTC (rev 373)
++++ branches/ha/locktest/net/can/af_can.c	2007-06-19 08:41:41 UTC (rev 374)
+@@ -708,105 +708,6 @@
+ }
+ 
+ /*
+- * af_can debugging stuff
+- */
+-
+-#ifdef CONFIG_CAN_DEBUG_CORE
+-
+-#define DBG_BSIZE 1024
+-
+-/**
+- * can_debug_cframe - print CAN frame
+- * @msg: pointer to message printed before the given CAN frame
+- * @cf: pointer to CAN frame
+- */
+-void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+-{
+-	va_list ap;
+-	int len;
+-	int dlc, i;
+-	char *buf;
+-
+-	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
+-	if (!buf)
+-		return;
+-
+-	len = sprintf(buf, KERN_DEBUG);
+-	va_start(ap, cf);
+-	len += snprintf(buf + len, DBG_BSIZE - 64, msg, ap);
+-	buf[len++] = ':';
+-	buf[len++] = ' ';
+-	va_end(ap);
+-
+-	dlc = cf-&gt;can_dlc;
+-	if (dlc &gt; 8)
+-		dlc = 8;
+-
+-	if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
+-		len += sprintf(buf + len, &quot;&lt;%08X&gt; [%X] &quot;,
+-			       cf-&gt;can_id &amp; CAN_EFF_MASK, dlc);
+-	else
+-		len += sprintf(buf + len, &quot;&lt;%03X&gt; [%X] &quot;,
+-			       cf-&gt;can_id &amp; CAN_SFF_MASK, dlc);
+-
+-	for (i = 0; i &lt; dlc; i++)
+-		len += sprintf(buf + len, &quot;%02X &quot;, cf-&gt;data[i]);
+-
+-	if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
+-		len += sprintf(buf + len, &quot;(RTR)&quot;);
+-
+-	buf[len++] = '\n';
+-	buf[len]   = '\0';
+-	printk(buf);
+-	kfree(buf);
+-}
+-EXPORT_SYMBOL(can_debug_cframe);
+-
+-/**
+- * can_debug_skb - print socket buffer content to kernel log
+- * @skb: pointer to socket buffer
+- */
+-void can_debug_skb(struct sk_buff *skb)
+-{
+-	int len, nbytes, i;
+-	char *buf;
+-
+-	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
+-	if (!buf)
+-		return;
+-
+-	len = sprintf(buf,
+-		      KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
+-		      KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
+-		      &quot;h,d,t,e,l: %p %+d %+d %+d, %d&quot;,
+-		      skb, skb-&gt;dev ? skb-&gt;dev-&gt;ifindex : -1,
+-		      ntohs(skb-&gt;protocol),
+-		      atomic_read(&amp;skb-&gt;users),
+-		      atomic_read(&amp;(skb_shinfo(skb)-&gt;dataref)),
+-		      skb_shinfo(skb)-&gt;nr_frags,
+-		      skb-&gt;head, skb-&gt;data - skb-&gt;head,
+-		      skb-&gt;tail - skb-&gt;head, skb-&gt;end - skb-&gt;head, skb-&gt;len);
+-	nbytes = skb-&gt;end - skb-&gt;head;
+-	for (i = 0; i &lt; nbytes; i++) {
+-		if (i % 16 == 0)
+-			len += sprintf(buf + len, &quot;\n&quot; KERN_DEBUG &quot;  &quot;);
+-		if (len &lt; DBG_BSIZE - 16) {
+-			len += sprintf(buf + len, &quot; %02x&quot;, skb-&gt;head[i]);
+-		} else {
+-			len += sprintf(buf + len, &quot;...&quot;);
+-			break;
+-		}
+-	}
+-	buf[len++] = '\n';
+-	buf[len]   = '\0';
+-	printk(buf);
+-	kfree(buf);
+-}
+-EXPORT_SYMBOL(can_debug_skb);
+-
+-#endif
+-
+-/*
+  * af_can protocol functions
+  */
+ 
+@@ -948,6 +849,105 @@
+ }
+ 
+ /*
++ * af_can debugging stuff
++ */
++
++#ifdef CONFIG_CAN_DEBUG_CORE
++
++#define DBG_BSIZE 1024
++
++/**
++ * can_debug_cframe - print CAN frame
++ * @msg: pointer to message printed before the given CAN frame
++ * @cf: pointer to CAN frame
++ */
++void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
++{
++	va_list ap;
++	int len;
++	int dlc, i;
++	char *buf;
++
++	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
++	if (!buf)
++		return;
++
++	len = sprintf(buf, KERN_DEBUG);
++	va_start(ap, cf);
++	len += snprintf(buf + len, DBG_BSIZE - 64, msg, ap);
++	buf[len++] = ':';
++	buf[len++] = ' ';
++	va_end(ap);
++
++	dlc = cf-&gt;can_dlc;
++	if (dlc &gt; 8)
++		dlc = 8;
++
++	if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
++		len += sprintf(buf + len, &quot;&lt;%08X&gt; [%X] &quot;,
++			       cf-&gt;can_id &amp; CAN_EFF_MASK, dlc);
++	else
++		len += sprintf(buf + len, &quot;&lt;%03X&gt; [%X] &quot;,
++			       cf-&gt;can_id &amp; CAN_SFF_MASK, dlc);
++
++	for (i = 0; i &lt; dlc; i++)
++		len += sprintf(buf + len, &quot;%02X &quot;, cf-&gt;data[i]);
++
++	if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
++		len += sprintf(buf + len, &quot;(RTR)&quot;);
++
++	buf[len++] = '\n';
++	buf[len]   = '\0';
++	printk(buf);
++	kfree(buf);
++}
++EXPORT_SYMBOL(can_debug_cframe);
++
++/**
++ * can_debug_skb - print socket buffer content to kernel log
++ * @skb: pointer to socket buffer
++ */
++void can_debug_skb(struct sk_buff *skb)
++{
++	int len, nbytes, i;
++	char *buf;
++
++	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
++	if (!buf)
++		return;
++
++	len = sprintf(buf,
++		      KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
++		      KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
++		      &quot;h,d,t,e,l: %p %+d %+d %+d, %d&quot;,
++		      skb, skb-&gt;dev ? skb-&gt;dev-&gt;ifindex : -1,
++		      ntohs(skb-&gt;protocol),
++		      atomic_read(&amp;skb-&gt;users),
++		      atomic_read(&amp;(skb_shinfo(skb)-&gt;dataref)),
++		      skb_shinfo(skb)-&gt;nr_frags,
++		      skb-&gt;head, skb-&gt;data - skb-&gt;head,
++		      skb-&gt;tail - skb-&gt;head, skb-&gt;end - skb-&gt;head, skb-&gt;len);
++	nbytes = skb-&gt;end - skb-&gt;head;
++	for (i = 0; i &lt; nbytes; i++) {
++		if (i % 16 == 0)
++			len += sprintf(buf + len, &quot;\n&quot; KERN_DEBUG &quot;  &quot;);
++		if (len &lt; DBG_BSIZE - 16) {
++			len += sprintf(buf + len, &quot; %02x&quot;, skb-&gt;head[i]);
++		} else {
++			len += sprintf(buf + len, &quot;...&quot;);
++			break;
++		}
++	}
++	buf[len++] = '\n';
++	buf[len]   = '\0';
++	printk(buf);
++	kfree(buf);
++}
++EXPORT_SYMBOL(can_debug_skb);
++
++#endif
++
++/*
+  * af_can module init/exit functions
+  */
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000356.html">r373 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000358.html">r375 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#357">[ date ]</a>
+              <a href="thread.html#357">[ thread ]</a>
+              <a href="subject.html#357">[ subject ]</a>
+              <a href="author.html#357">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

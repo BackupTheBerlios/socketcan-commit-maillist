@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r521 - trunk/kernel/2.6/include/linux/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r521%20-%20trunk/kernel/2.6/include/linux/can&In-Reply-To=%3C200710042116.l94LGlSA014346%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000502.html">
+   <LINK REL="Next"  HREF="000504.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r521 - trunk/kernel/2.6/include/linux/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r521%20-%20trunk/kernel/2.6/include/linux/can&In-Reply-To=%3C200710042116.l94LGlSA014346%40sheep.berlios.de%3E"
+       TITLE="r521 - trunk/kernel/2.6/include/linux/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Oct  4 23:16:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000502.html">r520 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000504.html">r522 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#503">[ date ]</a>
+              <a href="thread.html#503">[ thread ]</a>
+              <a href="subject.html#503">[ subject ]</a>
+              <a href="author.html#503">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-10-04 23:16:45 +0200 (Thu, 04 Oct 2007)
+New Revision: 521
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+Log:
+Add a &quot;:&quot; in debug output.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-10-04 21:03:46 UTC (rev 520)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-10-04 21:16:45 UTC (rev 521)
+@@ -73,7 +73,7 @@
+ extern void can_debug_skb(struct sk_buff *skb);
+ extern void can_debug_cframe(const char *msg, struct can_frame *cframe);
+ #define DBG(fmt, args...)  (DBG_VAR &amp; 1 ? printk( \
+-					KERN_DEBUG DBG_PREFIX &quot; %s: &quot; fmt, \
++					KERN_DEBUG DBG_PREFIX &quot;: %s: &quot; fmt, \
+ 					__func__, ##args) : 0)
+ #define DBG_FRAME(fmt, cf) (DBG_VAR &amp; 2 ? can_debug_cframe(fmt, cf) : 0)
+ #define DBG_SKB(skb)       (DBG_VAR &amp; 4 ? can_debug_skb(skb) : 0)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000502.html">r520 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000504.html">r522 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#503">[ date ]</a>
+              <a href="thread.html#503">[ thread ]</a>
+              <a href="subject.html#503">[ subject ]</a>
+              <a href="author.html#503">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

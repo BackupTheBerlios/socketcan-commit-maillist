@@ -1,0 +1,468 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r129 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r129%20-%20trunk/can-utils&In-Reply-To=%3C200701101718.l0AHI3Of022815%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000112.html">
+   <LINK REL="Next"  HREF="000114.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r129 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r129%20-%20trunk/can-utils&In-Reply-To=%3C200701101718.l0AHI3Of022815%40sheep.berlios.de%3E"
+       TITLE="r129 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan 10 18:18:03 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000112.html">r128 - in trunk/kernel: 2.4/can 2.6/include/linux	2.6/include/linux/can 2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000114.html">r130 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#113">[ date ]</a>
+              <a href="thread.html#113">[ thread ]</a>
+              <a href="subject.html#113">[ subject ]</a>
+              <a href="author.html#113">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-01-10 18:18:01 +0100 (Wed, 10 Jan 2007)
+New Revision: 129
+
+Added:
+   trunk/can-utils/asc2log.c
+Modified:
+   trunk/can-utils/Makefile
+   trunk/can-utils/log2asc.c
+Log:
+Fixed typo in log2asc.c
+Added asc2log.c to convert existing CANoe/CANalyser logfiles into socketcan
+logfiles (with absolute and full qualified timestamps).
+The date and the other settings (dec/hex absolute/relative) are taken from
+the head of the ASC files.
+
+
+Modified: trunk/can-utils/Makefile
+===================================================================
+--- trunk/can-utils/Makefile	2007-01-10 16:26:33 UTC (rev 128)
++++ trunk/can-utils/Makefile	2007-01-10 17:18:01 UTC (rev 129)
+@@ -43,7 +43,7 @@
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
+ 	    -fno-strict-aliasing
+ 
+-PROGRAMS = candump can-sniffer cansend canplayer cangen log2long log2asc
++PROGRAMS = candump can-sniffer cansend canplayer cangen log2long log2asc asc2log
+ 
+ all: $(PROGRAMS)
+ 
+@@ -59,6 +59,7 @@
+ canplayer.o: lib.h
+ log2long.o:  lib.h
+ log2asc.o:   lib.h
++asc2log.o:   lib.h
+ 
+ cansend:   cansend.o   lib.o
+ cangen:    cangen.o    lib.o
+@@ -66,3 +67,4 @@
+ canplayer: canplayer.o lib.o
+ log2long:  log2long.o  lib.o
+ log2asc:   log2asc.o   lib.o
++asc2log:   asc2log.o   lib.o
+
+Added: trunk/can-utils/asc2log.c
+===================================================================
+--- trunk/can-utils/asc2log.c	2007-01-10 16:26:33 UTC (rev 128)
++++ trunk/can-utils/asc2log.c	2007-01-10 17:18:01 UTC (rev 129)
+@@ -0,0 +1,337 @@
++/*
++ *  $Id$
++ */
++
++/*
++ * asc2log.c - convert ASC logfile to compact CAN frame logfile
++ *
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;stdio.h&gt;
++#include &lt;string.h&gt;
++#include &lt;sys/time.h&gt;
++#define __USE_XOPEN /* supress warning for strptime */
++#include &lt;time.h&gt;
++#include &lt;libgen.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;locale.h&gt;
++
++#include &lt;net/if.h&gt;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/error.h&gt;
++
++#include &quot;lib.h&quot;
++
++extern int optind, opterr, optopt;
++
++void print_usage(char *prg)
++{
++    fprintf(stderr, &quot;Usage: %s\n&quot;, prg);
++    fprintf(stderr, &quot;Options: -I &lt;infile&gt;  (default stdin)\n&quot;);
++    fprintf(stderr, &quot;         -O &lt;outfile&gt; (default stdout)\n&quot;);
++}
++
++void prframe(FILE *file, struct timeval *tv, int dev, struct can_frame *cf) {
++
++    fprintf(file, &quot;(%ld.%06ld) &quot;, tv-&gt;tv_sec, tv-&gt;tv_usec);
++    if (dev &gt; 0)
++	fprintf(file, &quot;can%d &quot;, dev-1);
++    else
++	fprintf(file, &quot;canX &quot;);
++    fprint_canframe(file, cf, &quot;\n&quot;, 0);
++}
++
++void get_can_id(struct can_frame *cf, char *idstring, int base) {
++
++    if (idstring[strlen(idstring)-1] == 'x') {
++	cf-&gt;can_id = CAN_EFF_FLAG;
++	idstring[strlen(idstring)-1] = 0;
++    } else
++	cf-&gt;can_id = 0;
++    
++    cf-&gt;can_id |= strtoul(idstring, NULL, base);
++}
++
++void calc_tv(struct timeval *tv, struct timeval *read_tv,
++	     struct timeval *date_tv, char timestamps, int dplace) {
++
++    if (dplace == 4) /* shift values having only 4 decimal places */
++	read_tv-&gt;tv_usec *= 100;                /* and need for 6 */
++
++    if (timestamps == 'a') { /* absolute */
++
++	tv-&gt;tv_sec  = date_tv-&gt;tv_sec  + read_tv-&gt;tv_sec;
++	tv-&gt;tv_usec = date_tv-&gt;tv_usec + read_tv-&gt;tv_usec;
++
++    } else { /* relative */
++
++	if (((!tv-&gt;tv_sec) &amp;&amp; (!tv-&gt;tv_usec)) &amp;&amp; 
++	    (date_tv-&gt;tv_sec || date_tv-&gt;tv_usec)) {
++	    tv-&gt;tv_sec  = date_tv-&gt;tv_sec; /* initial date/time */
++	    tv-&gt;tv_usec = date_tv-&gt;tv_usec;
++	}
++
++	tv-&gt;tv_sec  += read_tv-&gt;tv_sec;
++	tv-&gt;tv_usec += read_tv-&gt;tv_usec;
++    }
++
++    if (tv-&gt;tv_usec &gt; 1000000) {
++	tv-&gt;tv_usec -= 1000000;
++	tv-&gt;tv_sec++;
++    }
++}
++
++int get_date(struct timeval *tv, char *date) {
++
++    char ctmp[10];
++    int  itmp;
++
++    struct tm tms;
++
++    if (sscanf(date, &quot;%9s %d %9s %9s %d&quot;, ctmp, &amp;itmp, ctmp, ctmp, &amp;itmp) == 5) {
++	/* assume EN/US date due to existing am/pm field */
++
++	if (!setlocale(LC_TIME, &quot;en_US&quot;))
++	    return 1;
++
++	if (!strptime(date, &quot;%B %d %r %Y&quot;, &amp;tms))
++	    return 1;
++
++    } else {
++	/* assume DE date due to non existing am/pm field */
++
++	if (sscanf(date, &quot;%9s %d %9s %d&quot;, ctmp, &amp;itmp, ctmp, &amp;itmp) != 4)
++	    return 1;
++
++	if (!setlocale(LC_TIME, &quot;de_DE&quot;))
++	    return 1;
++
++	if (!strptime(date, &quot;%B %d %T %Y&quot;, &amp;tms))
++	    return 1;
++    }
++    
++    //printf(&quot;h %d m %d s %d d %d m %d y %d\n&quot;,
++    //tms.tm_hour, tms.tm_min, tms.tm_sec,
++    //tms.tm_mday, tms.tm_mon+1, tms.tm_year+1900);
++
++    tv-&gt;tv_sec = mktime(&amp;tms);
++
++    if (tv-&gt;tv_sec &lt; 0)
++	return 1;
++
++    return 0;
++}
++
++int main(int argc, char **argv)
++{
++    char buf[100], tmp1[100], tmp2[100];
++
++    FILE *infile = stdin;
++    FILE *outfile = stdout;
++    static int verbose;
++    struct can_frame cf;
++    static struct timeval tv; /* current frame timestamp */
++    static struct timeval read_tv; /* frame timestamp from ASC file */
++    static struct timeval date_tv; /* date of the ASC file */
++    static int dplace; /* decimal place 4 or 6 or uninitialized */
++    static char base; /* 'd'ec or 'h'ex */
++    static char timestamps; /* 'a'bsolute or 'r'elative */
++
++    int interface;
++    char rtr;
++    int dlc = 0;
++    int data[8];
++    int i, found, opt;
++
++    while ((opt = getopt(argc, argv, &quot;I:O:v&quot;)) != -1) {
++	switch (opt) {
++	case 'I':
++	    infile = fopen(optarg, &quot;r&quot;);
++	    if (!infile) {
++		perror(&quot;infile&quot;);
++		return 1;
++	    }
++	    break;
++
++	case 'O':
++	    outfile = fopen(optarg, &quot;w&quot;);
++	    if (!outfile) {
++		perror(&quot;outfile&quot;);
++		return 1;
++	    }
++	    break;
++
++	case 'v':
++	    verbose = 1;
++	    break;
++
++	default:
++	    fprintf(stderr, &quot;Unknown option %c\n&quot;, opt);
++	    print_usage(basename(argv[0]));
++	    return 1;
++	    break;
++	}
++    }
++
++
++    while (fgets(buf, 99, infile)) {
++
++	if (!dplace) { /* the representation of a valid CAN frame not known */
++
++	    /* check for base and timestamp entries in the header */
++	    if ((!base) &amp;&amp;
++		(sscanf(buf, &quot;base %s timestamps %s&quot;, tmp1, tmp2) == 2)) {
++		base = tmp1[0];
++		timestamps = tmp2[0];
++		if (verbose)
++		    printf(&quot;base %c timestamps %c\n&quot;, base, timestamps);
++		if ((base != 'h') &amp;&amp; (base != 'd')) {
++		    printf(&quot;invalid base %s (must be 'hex' or 'dez')!\n&quot;,
++			   tmp1);
++		    return 1;
++		}
++		if ((timestamps != 'a') &amp;&amp; (timestamps != 'r')) {
++		    printf(&quot;invalid timestamps %s (must be 'absolute'&quot;
++			   &quot; or 'relative')!\n&quot;, tmp2);
++		    return 1;
++		}
++		continue;
++	    }
++
++	    /* check for the original logging date in the header */ 
++	    if ((!date_tv.tv_sec) &amp;&amp;
++		(!strncmp(buf, &quot;date&quot;, 4))) {
++
++		if (get_date(&amp;date_tv, &amp;buf[9])) { /* skip 'date day ' */
++		    fprintf(stderr, &quot;Not able to determine original log &quot;
++			    &quot;file date. Using current time.\n&quot;);
++		    /* use current date as default */
++		    gettimeofday(&amp;date_tv, NULL);
++		}
++		if (verbose)
++		    printf(&quot;date %ld =&gt; %s&quot;, date_tv.tv_sec, ctime(&amp;date_tv.tv_sec));
++		continue;
++	    }
++
++	    /* check for decimal places length in valid CAN frames */
++	    if (sscanf(buf, &quot;%ld.%s %d &quot;, &amp;tv.tv_sec, tmp2, &amp;i) == 3){
++		dplace = strlen(tmp2);
++		if (verbose)
++		    printf(&quot;decimal place %d, e.g. '%s'\n&quot;, dplace, tmp2);
++		if ((dplace != 4) &amp;&amp; (dplace != 6)) {
++		    printf(&quot;invalid dplace %d (must be 4 or 6)!\n&quot;, dplace);
++		    return 1;
++		}
++	    } else
++		continue; /* dplace remains zero until first found CAN frame */
++	} 
++
++	/* the representation of a valid CAN frame is known here */
++	/* so try to get CAN frames and ErrorFrames and convert them */
++
++	/* 0.002367 1 390x Rx d 8 17 00 14 00 C0 00 08 00 */
++
++	found = 0; /* found valid CAN frame ? */
++
++	if (base == 'h') { /* check for CAN frames with hexadecimal values */
++
++	    if (sscanf(buf, &quot;%ld.%ld %d %s %*s %c %d %x %x %x %x %x %x %x %x&quot;,
++		       &amp;read_tv.tv_sec, &amp;read_tv.tv_usec, &amp;interface,
++		       tmp1, &amp;rtr, &amp;dlc,
++		       &amp;data[0], &amp;data[1], &amp;data[2], &amp;data[3],
++		       &amp;data[4], &amp;data[5], &amp;data[6], &amp;data[7]
++		       ) == dlc + 6 ) {
++
++		found = 1;
++		get_can_id(&amp;cf, tmp1, 16);
++	    }
++
++	} else { /* check for CAN frames with decimal values */
++
++	    if (sscanf(buf, &quot;%ld.%ld %d %s %*s %c %d %d %d %d %d %d %d %d %d&quot;,
++		       &amp;read_tv.tv_sec, &amp;read_tv.tv_usec, &amp;interface,
++		       tmp1, &amp;rtr, &amp;dlc,
++		       &amp;data[0], &amp;data[1], &amp;data[2], &amp;data[3],
++		       &amp;data[4], &amp;data[5], &amp;data[6], &amp;data[7]
++		       ) == dlc + 6 ) {
++
++		found = 1;
++		get_can_id(&amp;cf, tmp1, 10);
++	    }
++	}
++
++	if (found) {
++	    if (rtr == 'r')
++		cf.can_id |= CAN_RTR_FLAG;
++ 
++	    cf.can_dlc = dlc &amp; 0x0FU;
++	    for (i=0; i&lt;dlc; i++)
++		cf.data[i] = data[i] &amp; 0xFFU;
++
++	    calc_tv(&amp;tv, &amp;read_tv, &amp;date_tv, timestamps, dplace);
++	    prframe(outfile, &amp;tv, interface, &amp;cf);
++	    fflush(outfile);
++	    continue;
++	}
++
++	/* check for ErrorFrames */
++	if (sscanf(buf, &quot;%ld.%ld %d %s&quot;,
++		   &amp;read_tv.tv_sec, &amp;read_tv.tv_usec,
++		   &amp;interface, tmp1) == 4) {
++		
++	    if (!strncmp(tmp1, &quot;ErrorFrame&quot;, strlen(&quot;ErrorFrame&quot;))) {
++
++		memset(&amp;cf, 0, sizeof(cf));
++		/* do not know more than 'Error' */
++		cf.can_id  = (CAN_ERR_FLAG | CAN_ERR_BUSERROR);
++		cf.can_dlc =  CAN_ERR_DLC;
++		    
++		calc_tv(&amp;tv, &amp;read_tv, &amp;date_tv, timestamps, dplace);
++		prframe(outfile, &amp;tv, interface, &amp;cf);
++		fflush(outfile);
++	    }
++	}
++    }
++    fclose(outfile);
++    return 0;
++}
+
+
+Property changes on: trunk/can-utils/asc2log.c
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/can-utils/log2asc.c
+===================================================================
+--- trunk/can-utils/log2asc.c	2007-01-10 16:26:33 UTC (rev 128)
++++ trunk/can-utils/log2asc.c	2007-01-10 17:18:01 UTC (rev 129)
+@@ -162,7 +162,7 @@
+ 	    fprintf(outfile, &quot;%-2d &quot;, devno); /* channel number left aligned */
+ 
+ 	    if (cf.can_id &amp; CAN_ERR_FLAG)
+-		fprintf(outfile, &quot;(errorframe)&quot;);
++		fprintf(outfile, &quot;ErrorFrame&quot;);
+ 	    else {
+ 		sprintf(id, &quot;%X%c&quot;, cf.can_id &amp; CAN_EFF_MASK,
+ 			(cf.can_id &amp; CAN_EFF_FLAG)?'x':' ');
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000112.html">r128 - in trunk/kernel: 2.4/can 2.6/include/linux	2.6/include/linux/can 2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000114.html">r130 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#113">[ date ]</a>
+              <a href="thread.html#113">[ thread ]</a>
+              <a href="subject.html#113">[ subject ]</a>
+              <a href="author.html#113">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

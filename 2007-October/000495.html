@@ -1,0 +1,422 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r513 - trunk/patch-series/net-2.6.24
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r513%20-%20trunk/patch-series/net-2.6.24&In-Reply-To=%3C200710021015.l92AFUDQ010248%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000494.html">
+   <LINK REL="Next"  HREF="000496.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r513 - trunk/patch-series/net-2.6.24</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r513%20-%20trunk/patch-series/net-2.6.24&In-Reply-To=%3C200710021015.l92AFUDQ010248%40sheep.berlios.de%3E"
+       TITLE="r513 - trunk/patch-series/net-2.6.24">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Oct  2 12:15:30 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000494.html">r512 - trunk/patch-series/net-2.6.24
+</A></li>
+        <LI>Next message: <A HREF="000496.html">r514 - trunk/patch-series/net-2.6.24
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#495">[ date ]</a>
+              <a href="thread.html#495">[ thread ]</a>
+              <a href="subject.html#495">[ subject ]</a>
+              <a href="author.html#495">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-10-02 12:15:26 +0200 (Tue, 02 Oct 2007)
+New Revision: 513
+
+Modified:
+   trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff
+   trunk/patch-series/net-2.6.24/02-can-core.diff
+   trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff
+   trunk/patch-series/net-2.6.24/06-can-maintainers.diff
+   trunk/patch-series/net-2.6.24/intro
+Log:
+Rebase patch series to latest net-2.6.24.
+Minor changes in intro.
+Move change in include/linux/if.h from patch/02-can-core.diff
+to patch/01-can-proto-numbers.diff
+
+
+Modified: trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff	2007-10-02 09:09:27 UTC (rev 512)
++++ trunk/patch-series/net-2.6.24/01-can-proto-numbers.diff	2007-10-02 10:15:26 UTC (rev 513)
+@@ -9,17 +9,18 @@
+ Signed-off-by: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
++ include/linux/if.h       |    4 +++-
+  include/linux/if_arp.h   |    1 +
+  include/linux/if_ether.h |    1 +
+  include/linux/socket.h   |    2 ++
+  include/linux/tty.h      |    3 ++-
+  net/core/sock.c          |    4 ++--
+- 5 files changed, 8 insertions(+), 3 deletions(-)
++ 6 files changed, 11 insertions(+), 4 deletions(-)
+ 
+ Index: net-2.6.24/include/linux/if_arp.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/if_arp.h	2007-09-20 18:48:21.000000000 +0200
+-+++ net-2.6.24/include/linux/if_arp.h	2007-09-20 18:48:57.000000000 +0200
++--- net-2.6.24.orig/include/linux/if_arp.h	2007-10-02 12:10:51.000000000 +0200
+++++ net-2.6.24/include/linux/if_arp.h	2007-10-02 12:11:01.000000000 +0200
+ @@ -52,6 +52,7 @@
+  #define ARPHRD_ROSE	270
+  #define ARPHRD_X25	271		/* CCITT X.25			*/
+@@ -30,8 +31,8 @@
+  #define ARPHRD_HDLC	ARPHRD_CISCO
+ Index: net-2.6.24/include/linux/if_ether.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/if_ether.h	2007-09-20 18:48:21.000000000 +0200
+-+++ net-2.6.24/include/linux/if_ether.h	2007-09-20 18:48:57.000000000 +0200
++--- net-2.6.24.orig/include/linux/if_ether.h	2007-10-02 12:10:51.000000000 +0200
+++++ net-2.6.24/include/linux/if_ether.h	2007-10-02 12:11:01.000000000 +0200
+ @@ -90,6 +90,7 @@
+  #define ETH_P_WAN_PPP   0x0007          /* Dummy type for WAN PPP frames*/
+  #define ETH_P_PPP_MP    0x0008          /* Dummy type for PPP MP frames */
+@@ -42,8 +43,8 @@
+  #define ETH_P_MOBITEX	0x0015		/* Mobitex (<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kaz at cafe.net</A>)	*/
+ Index: net-2.6.24/include/linux/socket.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/socket.h	2007-09-20 18:48:21.000000000 +0200
+-+++ net-2.6.24/include/linux/socket.h	2007-09-20 18:48:57.000000000 +0200
++--- net-2.6.24.orig/include/linux/socket.h	2007-10-02 12:10:51.000000000 +0200
+++++ net-2.6.24/include/linux/socket.h	2007-10-02 12:11:01.000000000 +0200
+ @@ -185,6 +185,7 @@
+  #define AF_PPPOX	24	/* PPPoX sockets		*/
+  #define AF_WANPIPE	25	/* Wanpipe API Sockets */
+@@ -62,8 +63,8 @@
+  #define PF_IUCV		AF_IUCV
+ Index: net-2.6.24/include/linux/tty.h
+ ===================================================================
+---- net-2.6.24.orig/include/linux/tty.h	2007-09-20 18:48:21.000000000 +0200
+-+++ net-2.6.24/include/linux/tty.h	2007-09-20 18:48:57.000000000 +0200
++--- net-2.6.24.orig/include/linux/tty.h	2007-10-02 12:10:51.000000000 +0200
+++++ net-2.6.24/include/linux/tty.h	2007-10-02 12:11:02.000000000 +0200
+ @@ -24,7 +24,7 @@
+  #define NR_PTYS	CONFIG_LEGACY_PTY_COUNT   /* Number of legacy ptys */
+  #define NR_UNIX98_PTY_DEFAULT	4096      /* Default maximum for Unix98 ptys */
+@@ -83,8 +84,8 @@
+   * This character is the same as _POSIX_VDISABLE: it cannot be used as
+ Index: net-2.6.24/net/core/sock.c
+ ===================================================================
+---- net-2.6.24.orig/net/core/sock.c	2007-09-20 18:48:21.000000000 +0200
+-+++ net-2.6.24/net/core/sock.c	2007-09-20 18:48:57.000000000 +0200
++--- net-2.6.24.orig/net/core/sock.c	2007-10-02 12:10:51.000000000 +0200
+++++ net-2.6.24/net/core/sock.c	2007-10-02 12:11:02.000000000 +0200
+ @@ -154,7 +154,7 @@
+    &quot;sk_lock-AF_ASH&quot;   , &quot;sk_lock-AF_ECONET&quot;   , &quot;sk_lock-AF_ATMSVC&quot;   ,
+    &quot;sk_lock-21&quot;       , &quot;sk_lock-AF_SNA&quot;      , &quot;sk_lock-AF_IRDA&quot;     ,
+@@ -103,3 +104,18 @@
+    &quot;slock-AF_TIPC&quot;  , &quot;slock-AF_BLUETOOTH&quot;, &quot;slock-AF_IUCV&quot;     ,
+    &quot;slock-AF_RXRPC&quot; , &quot;slock-AF_MAX&quot;
+  };
++Index: net-2.6.24/include/linux/if.h
++===================================================================
++--- net-2.6.24.orig/include/linux/if.h	2007-10-02 12:10:28.000000000 +0200
+++++ net-2.6.24/include/linux/if.h	2007-10-02 12:09:34.000000000 +0200
++@@ -50,7 +50,9 @@
++ #define IFF_LOWER_UP	0x10000		/* driver signals L1 up		*/
++ #define IFF_DORMANT	0x20000		/* driver signals dormant	*/
++ 
++-#define IFF_VOLATILE	(IFF_LOOPBACK|IFF_POINTOPOINT|IFF_BROADCAST|\
+++#define IFF_ECHO	0x40000		/* echo sent packets		*/
+++
+++#define IFF_VOLATILE	(IFF_LOOPBACK|IFF_POINTOPOINT|IFF_BROADCAST|IFF_ECHO|\
++ 		IFF_MASTER|IFF_SLAVE|IFF_RUNNING|IFF_LOWER_UP|IFF_DORMANT)
++ 
++ /* Private (from user) interface flags (netdevice-&gt;priv_flags). */
+
+Modified: trunk/patch-series/net-2.6.24/02-can-core.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/02-can-core.diff	2007-10-02 09:09:27 UTC (rev 512)
++++ trunk/patch-series/net-2.6.24/02-can-core.diff	2007-10-02 10:15:26 UTC (rev 513)
+@@ -12,7 +12,6 @@
+  include/linux/can.h       |  111 +++++
+  include/linux/can/core.h  |   77 +++
+  include/linux/can/error.h |   93 ++++
+- include/linux/if.h        |    4 
+  net/Kconfig               |    1 
+  net/Makefile              |    1 
+  net/can/Kconfig           |   25 +
+@@ -20,12 +19,12 @@
+  net/can/af_can.c          |  970 ++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/af_can.h          |  120 +++++
+  net/can/proc.c            |  532 +++++++++++++++++++++++++
+- 11 files changed, 1939 insertions(+), 1 deletion(-)
++ 10 files changed, 1936 insertions(+)
+ 
+ Index: net-2.6.24/include/linux/can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can.h	2007-10-02 06:18:29.000000000 +0200
+++++ net-2.6.24/include/linux/can.h	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,111 @@
+ +/*
+ + * linux/can.h
+@@ -141,7 +140,7 @@
+ Index: net-2.6.24/include/linux/can/core.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can/core.h	2007-10-02 08:15:32.000000000 +0200
+++++ net-2.6.24/include/linux/can/core.h	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,77 @@
+ +/*
+ + * linux/can/core.h
+@@ -222,9 +221,9 @@
+ +#endif /* CAN_CORE_H */
+ Index: net-2.6.24/net/Kconfig
+ ===================================================================
+---- net-2.6.24.orig/net/Kconfig	2007-10-02 06:17:07.000000000 +0200
+-+++ net-2.6.24/net/Kconfig	2007-10-02 06:18:29.000000000 +0200
+-@@ -210,6 +210,7 @@
++--- net-2.6.24.orig/net/Kconfig	2007-10-02 12:10:09.000000000 +0200
+++++ net-2.6.24/net/Kconfig	2007-10-02 12:10:18.000000000 +0200
++@@ -218,6 +218,7 @@
+  endmenu
+  
+  source &quot;net/ax25/Kconfig&quot;
+@@ -234,8 +233,8 @@
+  source &quot;net/rxrpc/Kconfig&quot;
+ Index: net-2.6.24/net/Makefile
+ ===================================================================
+---- net-2.6.24.orig/net/Makefile	2007-10-02 06:17:07.000000000 +0200
+-+++ net-2.6.24/net/Makefile	2007-10-02 06:18:29.000000000 +0200
++--- net-2.6.24.orig/net/Makefile	2007-10-02 12:10:09.000000000 +0200
+++++ net-2.6.24/net/Makefile	2007-10-02 12:10:18.000000000 +0200
+ @@ -34,6 +34,7 @@
+  obj-$(CONFIG_NETROM)		+= netrom/
+  obj-$(CONFIG_ROSE)		+= rose/
+@@ -247,7 +246,7 @@
+ Index: net-2.6.24/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/Kconfig	2007-10-02 08:36:04.000000000 +0200
+++++ net-2.6.24/net/can/Kconfig	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +#
+ +# Controller Area Network (CAN) network layer core configuration
+@@ -277,7 +276,7 @@
+ Index: net-2.6.24/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/Makefile	2007-10-02 08:36:04.000000000 +0200
+++++ net-2.6.24/net/can/Makefile	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,6 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network core.
+@@ -288,7 +287,7 @@
+ Index: net-2.6.24/net/can/af_can.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/af_can.c	2007-10-02 08:36:42.000000000 +0200
+++++ net-2.6.24/net/can/af_can.c	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,970 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+@@ -1263,7 +1262,7 @@
+ Index: net-2.6.24/net/can/af_can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/af_can.h	2007-10-02 08:36:43.000000000 +0200
+++++ net-2.6.24/net/can/af_can.h	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,120 @@
+ +/*
+ + * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+@@ -1388,7 +1387,7 @@
+ Index: net-2.6.24/net/can/proc.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/net/can/proc.c	2007-10-02 08:39:22.000000000 +0200
+++++ net-2.6.24/net/can/proc.c	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,532 @@
+ +/*
+ + * proc.c - procfs support for Protocol family CAN core module
+@@ -1925,7 +1924,7 @@
+ Index: net-2.6.24/include/linux/can/error.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/include/linux/can/error.h	2007-10-02 06:18:29.000000000 +0200
+++++ net-2.6.24/include/linux/can/error.h	2007-10-02 12:10:18.000000000 +0200
+ @@ -0,0 +1,93 @@
+ +/*
+ + * linux/can/error.h
+@@ -2020,18 +2019,3 @@
+ +/* controller specific additional information / data[5..7] */
+ +
+ +#endif /* CAN_ERROR_H */
+-Index: net-2.6.24/include/linux/if.h
+-===================================================================
+---- net-2.6.24.orig/include/linux/if.h	2007-10-02 06:24:41.000000000 +0200
+-+++ net-2.6.24/include/linux/if.h	2007-10-02 06:27:10.000000000 +0200
+-@@ -50,7 +50,9 @@
+- #define IFF_LOWER_UP	0x10000		/* driver signals L1 up		*/
+- #define IFF_DORMANT	0x20000		/* driver signals dormant	*/
+- 
+--#define IFF_VOLATILE	(IFF_LOOPBACK|IFF_POINTOPOINT|IFF_BROADCAST|\
+-+#define IFF_ECHO	0x40000		/* echo sent packets		*/
+-+
+-+#define IFF_VOLATILE	(IFF_LOOPBACK|IFF_POINTOPOINT|IFF_BROADCAST|IFF_ECHO|\
+- 		IFF_MASTER|IFF_SLAVE|IFF_RUNNING|IFF_LOWER_UP|IFF_DORMANT)
+- 
+- /* Private (from user) interface flags (netdevice-&gt;priv_flags). */
+
+Modified: trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff	2007-10-02 09:09:27 UTC (rev 512)
++++ trunk/patch-series/net-2.6.24/05-can-vcan-driver.diff	2007-10-02 10:15:26 UTC (rev 513)
+@@ -18,9 +18,9 @@
+ 
+ Index: net-2.6.24/drivers/net/Makefile
+ ===================================================================
+---- net-2.6.24.orig/drivers/net/Makefile	2007-09-25 15:28:51.000000000 +0200
+-+++ net-2.6.24/drivers/net/Makefile	2007-10-02 08:42:20.000000000 +0200
+-@@ -10,6 +10,7 @@
++--- net-2.6.24.orig/drivers/net/Makefile	2007-09-20 23:46:01.000000000 +0200
+++++ net-2.6.24/drivers/net/Makefile	2007-10-02 12:03:30.000000000 +0200
++@@ -12,6 +12,7 @@
+  obj-$(CONFIG_CHELSIO_T1) += chelsio/
+  obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+  obj-$(CONFIG_EHEA) += ehea/
+@@ -31,7 +31,7 @@
+ Index: net-2.6.24/drivers/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/drivers/net/can/Kconfig	2007-10-02 08:42:20.000000000 +0200
+++++ net-2.6.24/drivers/net/can/Kconfig	2007-10-02 12:03:30.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +menu &quot;CAN Device Drivers&quot;
+ +	depends on CAN
+@@ -61,7 +61,7 @@
+ Index: net-2.6.24/drivers/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/drivers/net/can/Makefile	2007-10-02 08:42:20.000000000 +0200
+++++ net-2.6.24/drivers/net/can/Makefile	2007-10-02 12:03:30.000000000 +0200
+ @@ -0,0 +1,5 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network drivers.
+@@ -71,7 +71,7 @@
+ Index: net-2.6.24/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.24/drivers/net/can/vcan.c	2007-10-02 08:42:52.000000000 +0200
+++++ net-2.6.24/drivers/net/can/vcan.c	2007-10-02 12:03:30.000000000 +0200
+ @@ -0,0 +1,207 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+@@ -282,8 +282,8 @@
+ +module_exit(vcan_cleanup_module);
+ Index: net-2.6.24/net/can/Kconfig
+ ===================================================================
+---- net-2.6.24.orig/net/can/Kconfig	2007-10-02 08:42:19.000000000 +0200
+-+++ net-2.6.24/net/can/Kconfig	2007-10-02 08:42:20.000000000 +0200
++--- net-2.6.24.orig/net/can/Kconfig	2007-10-02 12:03:28.000000000 +0200
+++++ net-2.6.24/net/can/Kconfig	2007-10-02 12:03:30.000000000 +0200
+ @@ -47,3 +47,6 @@
+  	  Say Y here if you want the CAN core to produce a bunch of debug
+  	  messages to the system log.  Select this if you are having a
+
+Modified: trunk/patch-series/net-2.6.24/06-can-maintainers.diff
+===================================================================
+--- trunk/patch-series/net-2.6.24/06-can-maintainers.diff	2007-10-02 09:09:27 UTC (rev 512)
++++ trunk/patch-series/net-2.6.24/06-can-maintainers.diff	2007-10-02 10:15:26 UTC (rev 513)
+@@ -13,9 +13,9 @@
+ 
+ Index: net-2.6.24/CREDITS
+ ===================================================================
+---- net-2.6.24.orig/CREDITS	2007-09-20 18:48:21.000000000 +0200
+-+++ net-2.6.24/CREDITS	2007-09-20 18:49:00.000000000 +0200
+-@@ -1331,6 +1331,14 @@
++--- net-2.6.24.orig/CREDITS	2007-09-20 06:37:28.000000000 +0200
+++++ net-2.6.24/CREDITS	2007-10-02 12:03:43.000000000 +0200
++@@ -1347,6 +1347,14 @@
+  S: 5623 HZ Eindhoven
+  S: The Netherlands
+  
+@@ -30,7 +30,7 @@
+  N: Andrew Haylett
+  E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">ajh at primag.co.uk</A>
+  D: Selection mechanism
+-@@ -3284,6 +3292,14 @@
++@@ -3300,6 +3308,14 @@
+  S: F-35042 Rennes Cedex
+  S: France
+  
+@@ -47,9 +47,9 @@
+  W: <A HREF="http://www.esi.us.es/~jon">http://www.esi.us.es/~jon</A>
+ Index: net-2.6.24/MAINTAINERS
+ ===================================================================
+---- net-2.6.24.orig/MAINTAINERS	2007-09-20 18:48:21.000000000 +0200
+-+++ net-2.6.24/MAINTAINERS	2007-09-20 18:49:00.000000000 +0200
+-@@ -975,6 +975,15 @@
++--- net-2.6.24.orig/MAINTAINERS	2007-09-28 18:01:52.000000000 +0200
+++++ net-2.6.24/MAINTAINERS	2007-10-02 12:03:43.000000000 +0200
++@@ -991,6 +991,15 @@
+  L:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">video4linux-list at redhat.com</A>
+  S:	Maintained
+  
+
+Modified: trunk/patch-series/net-2.6.24/intro
+===================================================================
+--- trunk/patch-series/net-2.6.24/intro	2007-10-02 09:09:27 UTC (rev 512)
++++ trunk/patch-series/net-2.6.24/intro	2007-10-02 10:15:26 UTC (rev 513)
+@@ -4,7 +4,7 @@
+ 
+ Hello Dave, hello Patrick,
+ 
+-this is the eigth post of the patch series that adds the PF_CAN
++this is the nineth post of the patch series that adds the PF_CAN
+ protocol family for the Controller Area Network.
+ 
+ Since our last post we have changed the following:
+@@ -14,7 +14,8 @@
+   - Don't kfree() the sk_protinfo field
+ * Fixed licence text as pointed out by Yoshifuji Hideaki and Patrick McHardy.
+ * Added IFF_ECHO to include/linux/if.h and use that instead of IFF_LOOPBACK,
+-  as suggested by Eric W. Biederman
++  as suggested by Eric W. Biederman.  IFF_LOOPBACK is only for the normal
++  loopback interface.
+ 
+ The changes in try #8 were:
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000494.html">r512 - trunk/patch-series/net-2.6.24
+</A></li>
+	<LI>Next message: <A HREF="000496.html">r514 - trunk/patch-series/net-2.6.24
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#495">[ date ]</a>
+              <a href="thread.html#495">[ thread ]</a>
+              <a href="subject.html#495">[ subject ]</a>
+              <a href="author.html#495">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

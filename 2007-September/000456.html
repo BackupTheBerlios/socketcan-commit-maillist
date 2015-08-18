@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r474 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r474%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200709191224.l8JCO1fg013389%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000455.html">
+   <LINK REL="Next"  HREF="000457.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r474 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r474%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200709191224.l8JCO1fg013389%40sheep.berlios.de%3E"
+       TITLE="r474 - trunk/kernel/2.6/drivers/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 19 14:24:01 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000455.html">r473 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000457.html">r475 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#456">[ date ]</a>
+              <a href="thread.html#456">[ thread ]</a>
+              <a href="subject.html#456">[ subject ]</a>
+              <a href="author.html#456">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-09-19 14:24:00 +0200 (Wed, 19 Sep 2007)
+New Revision: 474
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+Log:
+Some changes suggested by Patrick McHardy:
+* use sbk_share_check().
+* use new and much simpler rtnl API
+  - delete list of vcan devices and struct vcan_priv.
+  - delete newlink() and dellink() functions.
+  To reduce kernel version depencies, the new rtnl API will
+  now only be used for 2.6.24 and higher.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-09-19 12:08:38 UTC (rev 473)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-09-19 12:24:00 UTC (rev 474)
+@@ -89,7 +89,7 @@
+ }
+ #endif
+ 
+-#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
+ static int numdev = 4; /* default number of virtual CAN interfaces */
+ module_param(numdev, int, S_IRUGO);
+ MODULE_PARM_DESC(numdev, &quot;Number of virtual CAN devices&quot;);
+@@ -105,16 +105,14 @@
+ module_param(loopback, int, S_IRUGO);
+ MODULE_PARM_DESC(loopback, &quot;Loop back frames (for testing). Default: 0 (Off)&quot;);
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
+-struct vcan_priv {
+-	struct net_device *dev;
+-	struct list_head list;
+-};
+-static LIST_HEAD(vcan_devs);
+-#else
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
+ static struct net_device **vcan_devs; /* root pointer to netdevice structs */
++#endif
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ #define PRIVSIZE sizeof(struct net_device_stats)
++#elif LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
++#define PRIVSIZE 0
+ #endif
+ 
+ static int vcan_open(struct net_device *dev)
+@@ -191,19 +189,10 @@
+ 	if (loop) {
+ 		struct sock *srcsk = skb-&gt;sk;
+ 
+-		if (atomic_read(&amp;skb-&gt;users) != 1) {
+-			struct sk_buff *old_skb = skb;
++		skb = skb_share_check(skb, GFP_ATOMIC);
++		if (!skb)
++			return 0;
+ 
+-			skb = skb_clone(old_skb, GFP_ATOMIC);
+-			DBG(KERN_INFO &quot;%s: %s: freeing old skbuff %p, &quot;
+-			    &quot;using new skbuff %p\n&quot;,
+-			    dev-&gt;name, __FUNCTION__, old_skb, skb);
+-			kfree_skb(old_skb);
+-			if (!skb)
+-				return 0;
+-		} else
+-			skb_orphan(skb);
+-
+ 		/* receive with packet counting */
+ 		skb-&gt;sk = srcsk;
+ 		vcan_rx(skb, dev);
+@@ -241,73 +230,36 @@
+ 	dev-&gt;open              = vcan_open;
+ 	dev-&gt;stop              = vcan_stop;
+ 	dev-&gt;hard_start_xmit   = vcan_tx;
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+ 	dev-&gt;destructor        = free_netdev;
+-#else
++#endif
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ 	dev-&gt;get_stats         = vcan_get_stats;
+ #endif
+-
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
+ 	SET_MODULE_OWNER(dev);
+ #endif
+ }
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
+-static int vcan_newlink(struct net_device *dev,
+-			struct nlattr *tb[], struct nlattr *data[])
+-{
+-	struct vcan_priv *priv = netdev_priv(dev);
+-	int err;
+-
+-	err = register_netdevice(dev);
+-	if (err &lt; 0)
+-		return err;
+-
+-	priv-&gt;dev = dev;
+-	list_add_tail(&amp;priv-&gt;list, &amp;vcan_devs);
+-	return 0;
+-}
+-
+-static void vcan_dellink(struct net_device *dev)
+-{
+-	struct vcan_priv *priv = netdev_priv(dev);
+-
+-	list_del(&amp;priv-&gt;list);
+-	unregister_netdevice(dev);
+-}
+-
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+ static struct rtnl_link_ops vcan_link_ops __read_mostly = {
+        .kind           = &quot;vcan&quot;,
+-       .priv_size      = sizeof(struct vcan_priv),
+        .setup          = vcan_setup,
+-       .newlink        = vcan_newlink,
+-       .dellink        = vcan_dellink,
+ };
+ 
+ static __init int vcan_init_module(void)
+ {
+-	int err;
+-
+ 	printk(banner);
+ 
+ 	if (loopback)
+ 		printk(KERN_INFO &quot;vcan: enabled loopback on driver level.\n&quot;);
+ 
+-	rtnl_lock();
+-	err = __rtnl_link_register(&amp;vcan_link_ops);
+-	rtnl_unlock();
+-	return err;
++	return rtnl_link_register(&amp;vcan_link_ops);
+ }
+ 
+ static __exit void vcan_cleanup_module(void)
+ {
+-	struct vcan_priv *priv, *n;
+-
+-	rtnl_lock();
+-	list_for_each_entry_safe(priv, n, &amp;vcan_devs, list)
+-		vcan_dellink(priv-&gt;dev);
+-	__rtnl_link_unregister(&amp;vcan_link_ops);
+-	rtnl_unlock();
++	rtnl_link_unregister(&amp;vcan_link_ops);
+ }
+ #else
+ static __init int vcan_init_module(void)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000455.html">r473 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000457.html">r475 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#456">[ date ]</a>
+              <a href="thread.html#456">[ thread ]</a>
+              <a href="subject.html#456">[ subject ]</a>
+              <a href="author.html#456">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

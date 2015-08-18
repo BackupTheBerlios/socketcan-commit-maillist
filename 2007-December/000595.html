@@ -1,0 +1,405 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r613 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r613%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712121541.lBCFfHeV024837%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000594.html">
+   <LINK REL="Next"  HREF="000596.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r613 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r613%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712121541.lBCFfHeV024837%40sheep.berlios.de%3E"
+       TITLE="r613 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 12 16:41:17 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000594.html">r612 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000596.html">r614 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#595">[ date ]</a>
+              <a href="thread.html#595">[ thread ]</a>
+              <a href="subject.html#595">[ subject ]</a>
+              <a href="author.html#595">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-12 16:41:11 +0100 (Wed, 12 Dec 2007)
+New Revision: 613
+
+Modified:
+   trunk/kernel/2.4/net/can/bcm.c
+Log:
+Use of gfp_any() and kzalloc() and some more cosmetical changes.
+Check for CAN netdevice in bcm_connect().
+
+
+Modified: trunk/kernel/2.4/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/net/can/bcm.c	2007-12-12 15:06:05 UTC (rev 612)
++++ trunk/kernel/2.4/net/can/bcm.c	2007-12-12 15:41:11 UTC (rev 613)
+@@ -43,15 +43,16 @@
+ 
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/poll.h&gt;
+-#include &lt;net/sock.h&gt;
+ 
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/can/core.h&gt;
+ #include &lt;linux/can/bcm.h&gt;
++#include &lt;net/sock.h&gt;
++
+ #include &quot;compat.h&quot;
+ 
+ #include &lt;linux/can/version.h&gt;
+@@ -278,9 +279,7 @@
+ 		return;
+ 	}
+ 
+-	skb = alloc_skb(CFSIZ,
+-			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+-
++	skb = alloc_skb(CFSIZ, gfp_any());
+ 	if (!skb)
+ 		goto out;
+ 
+@@ -316,8 +315,7 @@
+ 	int datalen = head-&gt;nframes * CFSIZ;
+ 	int err;
+ 
+-	skb = alloc_skb(sizeof(*head) + datalen,
+-			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
++	skb = alloc_skb(sizeof(*head) + datalen, gfp_any());
+ 	if (!skb)
+ 		return;
+ 
+@@ -331,7 +329,6 @@
+ 	addr = (struct sockaddr_can *)skb-&gt;cb;
+ 	memset(addr, 0, sizeof(*addr));
+ 	addr-&gt;can_family  = AF_CAN;
+-	/* restore originator for recvfrom() */
+ 	addr-&gt;can_ifindex = op-&gt;rx_ifindex;
+ 
+ 	if (head-&gt;nframes) {
+@@ -344,10 +341,14 @@
+ 		if (head-&gt;nframes == 1)
+ 			firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
+ 	}
+-	if ((err = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
++
++	err = sock_queue_rcv_skb(sk, skb);
++	if (err &lt; 0) {
+ 		struct bcm_opt *bo = bcm_sk(sk);
++
+ 		kfree_skb(skb);
+-		bo-&gt;dropped_usr_msgs++; /* don't care about overflows */
++		/* don't care about overflows in this statistic */
++		bo-&gt;dropped_usr_msgs++;
+ 	}
+ }
+ 
+@@ -441,13 +442,13 @@
+ 	/* throttle bcm_rx_changed ? */
+ 	if ((op-&gt;thrtimer.expires) ||
+ 	    ((op-&gt;j_ival2) &amp;&amp; (nexttx &gt; jiffies))) {
+-		/* we already waiting OR we have to start waiting */
++		/* we are already waiting OR we have to start waiting */
+ 
+ 		/* mark as 'throttled' */
+ 		lastdata-&gt;can_dlc |= RX_THR;
+ 
+ 		if (!(op-&gt;thrtimer.expires)) {
+-			/* start only the first time */
++			/* start the timer only the first time */
+ 			mod_timer(&amp;op-&gt;thrtimer, nexttx);
+ 		}
+ 
+@@ -476,7 +477,6 @@
+ 	}
+ 
+ 	/* do a real check in can_frame data section */
+-
+ 	if ((GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(rxdata)) !=
+ 	    (GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(&amp;op-&gt;last_frames[index]))) {
+ 		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
+@@ -543,7 +543,8 @@
+ 	struct bcm_op *op = (struct bcm_op *)data;
+ 	int i = 0;
+ 
+-	op-&gt;thrtimer.expires = 0; /* mark disabled / consumed timer */
++	/* mark disabled / consumed timer */
++	op-&gt;thrtimer.expires = 0;
+ 
+ 	if (op-&gt;nframes &gt; 1) {
+ 		/* for MUX filter we start at index 1 */
+@@ -619,11 +620,10 @@
+ 		 * multiplex compare
+ 		 *
+ 		 * find the first multiplex mask that fits.
+-		 * Remark: The MUX-mask is in index 0
++		 * Remark: The MUX-mask is stored in index 0
+ 		 */
+ 
+ 		for (i = 1; i &lt; op-&gt;nframes; i++) {
+-
+ 			if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
+ 			    (GET_U64(&amp;op-&gt;frames[0]) &amp;
+ 			     GET_U64(&amp;op-&gt;frames[i]))) {
+@@ -735,27 +735,21 @@
+ static int bcm_read_op(struct bcm_op *ops, struct bcm_msg_head *msg_head,
+ 		       int ifindex)
+ {
+-	struct bcm_op *op;
+-	int ret;
++	struct bcm_op *op = bcm_find_op(ops, msg_head-&gt;can_id, ifindex);
+ 
+-	if ((op = bcm_find_op(ops, msg_head-&gt;can_id, ifindex))) {
++	if (!op)
++		return -EINVAL;
+ 
+-		/* put current values into msg_head */
+-		msg_head-&gt;flags   = op-&gt;flags;
+-		msg_head-&gt;count   = op-&gt;count;
+-		msg_head-&gt;ival1   = op-&gt;ival1;
+-		msg_head-&gt;ival2   = op-&gt;ival2;
+-		msg_head-&gt;nframes = op-&gt;nframes;
++	/* put current values into msg_head */
++	msg_head-&gt;flags   = op-&gt;flags;
++	msg_head-&gt;count   = op-&gt;count;
++	msg_head-&gt;ival1   = op-&gt;ival1;
++	msg_head-&gt;ival2   = op-&gt;ival2;
++	msg_head-&gt;nframes = op-&gt;nframes;
+ 
+-		bcm_send_to_user(op, msg_head, op-&gt;frames, NULL);
++	bcm_send_to_user(op, msg_head, op-&gt;frames, NULL);
+ 
+-		ret = MHSIZ;
+-
+-	} else {
+-		ret = -EINVAL;
+-	}
+-
+-	return ret;
++	return MHSIZ;
+ }
+ 
+ /*
+@@ -780,7 +774,6 @@
+ 	op = bcm_find_op(bo-&gt;tx_ops, msg_head-&gt;can_id, ifindex);
+ 
+ 	if (op) {
+-
+ 		/* update existing BCM operation */
+ 
+ 		/*
+@@ -807,12 +800,10 @@
+ 	} else {
+ 		/* insert new BCM operation for the given can_id */
+ 
+-		op = kmalloc(OPSIZ, GFP_KERNEL);
++		op = kzalloc(OPSIZ, GFP_KERNEL);
+ 		if (!op)
+ 			return -ENOMEM;
+ 
+-		memset(op, 0, OPSIZ); /* init to zero, e.g. for timers */
+-
+ 		op-&gt;can_id    = msg_head-&gt;can_id;
+ 
+ 		/* create array for can_frames and copy the data */
+@@ -844,7 +835,7 @@
+ 		op-&gt;sk = sk;
+ 		op-&gt;ifindex = ifindex;
+ 
+-		/* initialize uninitialized (kmalloc) structure */
++		/* initialize uninitialized (kzalloc) structure */
+ 		setup_timer(&amp;op-&gt;timer, bcm_tx_timeout_handler,
+ 			    (unsigned long)op);
+ 
+@@ -873,9 +864,9 @@
+ 
+ 	if (op-&gt;flags &amp; SETTIMER) {
+ 		/* set timer values */
+-		op-&gt;count   = msg_head-&gt;count;
+-		op-&gt;ival1   = msg_head-&gt;ival1;
+-		op-&gt;ival2   = msg_head-&gt;ival2;
++		op-&gt;count = msg_head-&gt;count;
++		op-&gt;ival1 = msg_head-&gt;ival1;
++		op-&gt;ival2 = msg_head-&gt;ival2;
+ 		op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
+ 		op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ 
+@@ -917,7 +908,8 @@
+ 	if ((msg_head-&gt;flags &amp; RX_FILTER_ID) || (!(msg_head-&gt;nframes))) {
+ 		/* be robust against wrong usage ... */
+ 		msg_head-&gt;flags |= RX_FILTER_ID;
+-		msg_head-&gt;nframes = 0; /* ignore trailing garbage */
++		/* ignore trailing garbage */
++		msg_head-&gt;nframes = 0;
+ 	}
+ 
+ 	if ((msg_head-&gt;flags &amp; RX_RTR_FRAME) &amp;&amp;
+@@ -926,10 +918,8 @@
+ 		return -EINVAL;
+ 
+ 	/* check the given can_id */
+-
+ 	op = bcm_find_op(bo-&gt;rx_ops, msg_head-&gt;can_id, ifindex);
+ 	if (op) {
+-
+ 		/* update existing BCM operation */
+ 
+ 		/*
+@@ -959,13 +949,10 @@
+ 
+ 	} else {
+ 		/* insert new BCM operation for the given can_id */
+-
+-		op = kmalloc(OPSIZ, GFP_KERNEL);
++		op = kzalloc(OPSIZ, GFP_KERNEL);
+ 		if (!op)
+ 			return -ENOMEM;
+ 
+-		memset(op, 0, OPSIZ); /* init to zero, e.g. for timers */
+-
+ 		op-&gt;can_id    = msg_head-&gt;can_id;
+ 		op-&gt;nframes   = msg_head-&gt;nframes;
+ 
+@@ -988,7 +975,7 @@
+ 			}
+ 
+ 			/* create array for received can_frames */
+-			op-&gt;last_frames = kmalloc(msg_head-&gt;nframes * CFSIZ,
++			op-&gt;last_frames = kzalloc(msg_head-&gt;nframes * CFSIZ,
+ 						  GFP_KERNEL);
+ 			if (!op-&gt;last_frames) {
+ 				kfree(op-&gt;frames);
+@@ -996,8 +983,6 @@
+ 				return -ENOMEM;
+ 			}
+ 
+-			/* clear last_frames to indicate 'nothing received' */
+-			memset(op-&gt;last_frames, 0, msg_head-&gt;nframes * CFSIZ);
+ 		} else {
+ 			/* op-&gt;frames = NULL due to memset */
+ 
+@@ -1005,21 +990,18 @@
+ 			/* to store the last frame for the throttle feature */
+ 
+ 			/* create array for received can_frames */
+-			op-&gt;last_frames = kmalloc(CFSIZ, GFP_KERNEL);
++			op-&gt;last_frames = kzalloc(CFSIZ, GFP_KERNEL);
+ 			if (!op-&gt;last_frames) {
+ 				kfree(op);
+ 				return -ENOMEM;
+ 			}
+-
+-			/* clear last_frames to indicate 'nothing received' */
+-			memset(op-&gt;last_frames, 0, CFSIZ);
+ 		}
+ 
+ 		/* bcm_can_tx / bcm_tx_timeout_handler needs this */
+ 		op-&gt;sk = sk;
+ 		op-&gt;ifindex = ifindex;
+ 
+-		/* initialize uninitialized (kmalloc) structure */
++		/* initialize uninitialized (kzalloc) structure */
+ 		setup_timer(&amp;op-&gt;timer, bcm_rx_timeout_handler,
+ 			    (unsigned long)op);
+ 
+@@ -1060,9 +1042,9 @@
+ 		if (op-&gt;flags &amp; SETTIMER) {
+ 
+ 			/* set timer value */
+-			op-&gt;ival1   = msg_head-&gt;ival1;
++			op-&gt;ival1 = msg_head-&gt;ival1;
++			op-&gt;ival2 = msg_head-&gt;ival2;
+ 			op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
+-			op-&gt;ival2   = msg_head-&gt;ival2;
+ 			op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ 
+ 			/* disable an active timer due to zero value? */
+@@ -1089,8 +1071,9 @@
+ 	/* now we can register for can_ids, if we added a new bcm_op */
+ 	if (do_rx_register) {
+ 		if (ifindex) {
+-			struct net_device *dev = dev_get_by_index(ifindex);
++			struct net_device *dev;
+ 
++			dev = dev_get_by_index(ifindex);
+ 			if (dev) {
+ 				can_rx_register(dev, op-&gt;can_id,
+ 						REGMASK(op-&gt;can_id),
+@@ -1245,10 +1228,12 @@
+ 	struct bcm_opt *bo = bcm_sk(sk);
+ 
+ 	switch (msg) {
++
+ 	case NETDEV_UNREGISTER:
+ 		bo-&gt;bound   = 0;
+ 		bo-&gt;ifindex = 0;
+ 		/* fallthrough */
++
+ 	case NETDEV_DOWN:
+ 		sk-&gt;err = ENETDOWN;
+ 		if (!sk-&gt;dead)
+@@ -1343,11 +1328,17 @@
+ 
+ 	/* bind a device to this socket */
+ 	if (addr-&gt;can_ifindex) {
+-		struct net_device *dev = dev_get_by_index(addr-&gt;can_ifindex);
++		struct net_device *dev;
+ 
++		dev = dev_get_by_index(addr-&gt;can_ifindex);
+ 		if (!dev)
+ 			return -ENODEV;
+ 
++		if (dev-&gt;type != ARPHRD_CAN) {
++			dev_put(dev);
++			return -ENODEV;
++		}
++
+ 		bo-&gt;ifindex = dev-&gt;ifindex;
+ 		can_dev_register(dev, bcm_notifier, sk); /* register notif. */
+ 		dev_put(dev);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000594.html">r612 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000596.html">r614 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#595">[ date ]</a>
+              <a href="thread.html#595">[ thread ]</a>
+              <a href="subject.html#595">[ subject ]</a>
+              <a href="author.html#595">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

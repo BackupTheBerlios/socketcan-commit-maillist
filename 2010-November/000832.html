@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1200 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1200%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101113164329.DD5ED480F56%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000833.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1200 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1200%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20101113164329.DD5ED480F56%40sheep.berlios.de%3E"
+       TITLE="r1200 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 13 17:43:29 CET 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000833.html">r1201 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#832">[ date ]</a>
+              <a href="thread.html#832">[ thread ]</a>
+              <a href="subject.html#832">[ subject ]</a>
+              <a href="author.html#832">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-13 17:43:29 +0100 (Sat, 13 Nov 2010)
+New Revision: 1200
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+can-bcm: fix minor heap overflow
+
+On 64-bit platforms the ASCII representation of a pointer may be up to 17
+bytes long. This patch increases the length of the buffer accordingly.
+
+<A HREF="http://marc.info/?l=linux-netdev&amp;m=128872251418192&amp;w=2">http://marc.info/?l=linux-netdev&amp;m=128872251418192&amp;w=2</A>
+
+Reported-by: Dan Rosenberg &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">drosenberg at vsecurity.com</A>&gt;
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+CC: Linus Torvalds &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">torvalds at linux-foundation.org</A>&gt;
+Signed-off-by: David S. Miller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">davem at davemloft.net</A>&gt;
+
+Upstream Commit:
+<A HREF="http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=0597d1b99fcfc2c0eada09a698f85ed413d4ba84">http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=0597d1b99fcfc2c0eada09a698f85ed413d4ba84</A>
+
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2010-10-22 05:24:03 UTC (rev 1199)
++++ trunk/kernel/2.6/net/can/bcm.c	2010-11-13 16:43:29 UTC (rev 1200)
+@@ -140,7 +140,7 @@
+ 	struct list_head tx_ops;
+ 	unsigned long dropped_usr_msgs;
+ 	struct proc_dir_entry *bcm_proc_read;
+-	char procname [9]; /* pointer printed in ASCII with \0 */
++	char procname [20]; /* pointer printed in ASCII with \0 */
+ };
+ 
+ static inline struct bcm_sock *bcm_sk(const struct sock *sk)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000833.html">r1201 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#832">[ date ]</a>
+              <a href="thread.html#832">[ thread ]</a>
+              <a href="subject.html#832">[ subject ]</a>
+              <a href="author.html#832">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

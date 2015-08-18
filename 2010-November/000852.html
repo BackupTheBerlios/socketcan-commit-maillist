@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1220 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1220%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101129195927.EF960480034%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000851.html">
+   <LINK REL="Next"  HREF="000853.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1220 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1220%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101129195927.EF960480034%40sheep.berlios.de%3E"
+       TITLE="r1220 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 29 20:59:27 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000851.html">r1219 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000853.html">r1221 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#852">[ date ]</a>
+              <a href="thread.html#852">[ thread ]</a>
+              <a href="subject.html#852">[ subject ]</a>
+              <a href="author.html#852">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-29 20:59:27 +0100 (Mon, 29 Nov 2010)
+New Revision: 1220
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+slcan: Fix whitespace issues for mainline.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-29 19:48:07 UTC (rev 1219)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-29 19:59:27 UTC (rev 1220)
+@@ -163,7 +163,7 @@
+ #endif
+ 
+  /************************************************************************
+-  *			SLCAN ENCAPSULATION FORMAT		  	 *
++  *			SLCAN ENCAPSULATION FORMAT			 *
+   ************************************************************************/
+ 
+ /*
+@@ -198,7 +198,7 @@
+  */
+ 
+  /************************************************************************
+-  *			STANDARD SLCAN DECAPSULATION		  	 *
++  *			STANDARD SLCAN DECAPSULATION			 *
+   ************************************************************************/
+ 
+ static int asc2nibble(char c)
+@@ -328,7 +328,7 @@
+ }
+ 
+  /************************************************************************
+-  *			STANDARD SLCAN ENCAPSULATION		  	 *
++  *			STANDARD SLCAN ENCAPSULATION			 *
+   ************************************************************************/
+ 
+ /* Encapsulate one can_frame and stuff into a TTY queue. */
+@@ -706,8 +706,8 @@
+ 	sl = netdev_priv(dev);
+ 
+ 	/* Initialize channel control data */
+-	sl-&gt;magic       = SLCAN_MAGIC;
+-	sl-&gt;dev	      	= dev;
++	sl-&gt;magic = SLCAN_MAGIC;
++	sl-&gt;dev	= dev;
+ 	spin_lock_init(&amp;sl-&gt;lock);
+ 	slcan_devs[i] = dev;
+ 
+@@ -880,18 +880,18 @@
+ #else
+ static struct tty_ldisc_ops slc_ldisc = {
+ #endif
+-	.owner 		= THIS_MODULE,
+-	.magic 		= TTY_LDISC_MAGIC,
+-	.name 		= &quot;slcan&quot;,
+-	.open 		= slcan_open,
+-	.close	 	= slcan_close,
++	.owner		= THIS_MODULE,
++	.magic		= TTY_LDISC_MAGIC,
++	.name		= &quot;slcan&quot;,
++	.open		= slcan_open,
++	.close		= slcan_close,
+ #if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,31)
+-	.hangup	 	= slcan_hangup,
++	.hangup		= slcan_hangup,
+ #endif
+ 	.ioctl		= slcan_ioctl,
+ 	.receive_buf	= slcan_receive_buf,
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,16)
+-	.receive_room   = slcan_receive_room,
++	.receive_room	= slcan_receive_room,
+ #endif
+ 	.write_wakeup	= slcan_write_wakeup,
+ };
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000851.html">r1219 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000853.html">r1221 - in trunk/kernel/2.6: include/socketcan/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#852">[ date ]</a>
+              <a href="thread.html#852">[ thread ]</a>
+              <a href="subject.html#852">[ subject ]</a>
+              <a href="author.html#852">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r304 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r304%20-%20trunk&In-Reply-To=%3C200705131947.l4DJlPrB030257%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000287.html">
+   <LINK REL="Next"  HREF="000289.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r304 - trunk</H1>
+    <B>wolf at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r304%20-%20trunk&In-Reply-To=%3C200705131947.l4DJlPrB030257%40sheep.berlios.de%3E"
+       TITLE="r304 - trunk">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun May 13 21:47:25 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000287.html">r303 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+        <LI>Next message: <A HREF="000289.html">r305 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/i82527	drivers/net/can/mscan drivers/net/can/sja1000 include/linux/can	net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#288">[ date ]</a>
+              <a href="thread.html#288">[ thread ]</a>
+              <a href="subject.html#288">[ subject ]</a>
+              <a href="author.html#288">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2007-05-13 21:47:23 +0200 (Sun, 13 May 2007)
+New Revision: 304
+
+Modified:
+   trunk/Makefile
+   trunk/mkpatch
+Log:
+Add support for creating a complete kernel patch
+
+This patch permits to make a &quot;full&quot; Socket-CAN patch including all drivers
+with &quot;make patch26all&quot;. Furthermore, an error message is printed by mkpatch,
+when the general diff file for the detected kernel version does not exist.
+
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2007-05-13 15:13:55 UTC (rev 303)
++++ trunk/Makefile	2007-05-13 19:47:23 UTC (rev 304)
+@@ -12,3 +12,6 @@
+ 
+ patch26:
+ 	./mkpatch $(KERNELRELEASE) &gt;patch-$(KERNELRELEASE)-socketcan &lt; FILES-2.6
++
++patch26all:
++	./mkpatch $(KERNELRELEASE) &gt;patch-$(KERNELRELEASE)-socketcan-all &lt; FILES-2.6-ALL
+
+Modified: trunk/mkpatch
+===================================================================
+--- trunk/mkpatch	2007-05-13 15:13:55 UTC (rev 303)
++++ trunk/mkpatch	2007-05-13 19:47:23 UTC (rev 304)
+@@ -11,6 +11,8 @@
+ 
+ if (-r &quot;patches/$version.diff&quot;) {
+     copy_file(&quot;patches/$version.diff&quot;);
++} else {
++    die &quot;Patch patches/$version.diff not found&quot;;
+ }
+ 
+ while (&lt;&gt;) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000287.html">r303 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+	<LI>Next message: <A HREF="000289.html">r305 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/i82527	drivers/net/can/mscan drivers/net/can/sja1000 include/linux/can	net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#288">[ date ]</a>
+              <a href="thread.html#288">[ thread ]</a>
+              <a href="subject.html#288">[ subject ]</a>
+              <a href="author.html#288">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

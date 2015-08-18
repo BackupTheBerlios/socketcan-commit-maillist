@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r427 - in trunk/patch-series: 2.6.22 net-2.6.23
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r427%20-%20in%20trunk/patch-series%3A%202.6.22%20net-2.6.23&In-Reply-To=%3C200707091129.l69BT3fZ030756%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000408.html">
+   <LINK REL="Next"  HREF="000410.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r427 - in trunk/patch-series: 2.6.22 net-2.6.23</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r427%20-%20in%20trunk/patch-series%3A%202.6.22%20net-2.6.23&In-Reply-To=%3C200707091129.l69BT3fZ030756%40sheep.berlios.de%3E"
+       TITLE="r427 - in trunk/patch-series: 2.6.22 net-2.6.23">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  9 13:29:03 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000408.html">r426 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000410.html">r428 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#409">[ date ]</a>
+              <a href="thread.html#409">[ thread ]</a>
+              <a href="subject.html#409">[ subject ]</a>
+              <a href="author.html#409">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-09 13:28:55 +0200 (Mon, 09 Jul 2007)
+New Revision: 427
+
+Modified:
+   trunk/patch-series/2.6.22/05-can-vcan-driver.diff
+   trunk/patch-series/2.6.22/intro
+   trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff
+   trunk/patch-series/net-2.6.23/intro
+Log:
+Update patch series to r426.
+
+
+Modified: trunk/patch-series/2.6.22/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/2.6.22/05-can-vcan-driver.diff	2007-07-09 11:24:40 UTC (rev 426)
++++ trunk/patch-series/2.6.22/05-can-vcan-driver.diff	2007-07-09 11:28:55 UTC (rev 427)
+@@ -12,9 +12,9 @@
+  drivers/net/Makefile     |    1 
+  drivers/net/can/Kconfig  |   25 ++++
+  drivers/net/can/Makefile |    5 
+- drivers/net/can/vcan.c   |  285 +++++++++++++++++++++++++++++++++++++++++++++++
++ drivers/net/can/vcan.c   |  286 +++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/Kconfig          |    3 
+- 5 files changed, 319 insertions(+)
++ 5 files changed, 320 insertions(+)
+ 
+ Index: linux-2.6.22/drivers/net/Makefile
+ ===================================================================
+@@ -71,8 +71,8 @@
+ Index: linux-2.6.22/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/drivers/net/can/vcan.c	2007-07-09 10:43:00.000000000 +0200
+-@@ -0,0 +1,285 @@
+++++ linux-2.6.22/drivers/net/can/vcan.c	2007-07-09 13:22:58.000000000 +0200
++@@ -0,0 +1,286 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+ + *
+@@ -266,10 +266,11 @@
+ +{
+ +	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+ +
+-+	ether_setup(dev);
+-+
+ +	dev-&gt;type              = ARPHRD_CAN;
+ +	dev-&gt;mtu               = sizeof(struct can_frame);
+++	dev-&gt;hard_header_len   = 0;
+++	dev-&gt;addr_len          = 0;
+++	dev-&gt;tx_queue_len      = 0;
+ +	dev-&gt;flags             = IFF_NOARP;
+ +
+ +	/* set flags according to driver capabilities */
+
+Modified: trunk/patch-series/2.6.22/intro
+===================================================================
+--- trunk/patch-series/2.6.22/intro	2007-07-09 11:24:40 UTC (rev 426)
++++ trunk/patch-series/2.6.22/intro	2007-07-09 11:28:55 UTC (rev 427)
+@@ -3,7 +3,7 @@
+ ESUBJECT
+ 
+ This patch series applies against linux-2.6.22 and is derived from
+-Subversion revision r422 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++Subversion revision r426 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+ It can be found in the directory
+ <A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
+ 
+
+Modified: trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff	2007-07-09 11:24:40 UTC (rev 426)
++++ trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff	2007-07-09 11:28:55 UTC (rev 427)
+@@ -12,9 +12,9 @@
+  drivers/net/Makefile     |    1 
+  drivers/net/can/Kconfig  |   25 ++++
+  drivers/net/can/Makefile |    5 
+- drivers/net/can/vcan.c   |  263 +++++++++++++++++++++++++++++++++++++++++++++++
++ drivers/net/can/vcan.c   |  264 +++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/Kconfig          |    3 
+- 5 files changed, 297 insertions(+)
++ 5 files changed, 298 insertions(+)
+ 
+ Index: net-2.6.23/drivers/net/Makefile
+ ===================================================================
+@@ -71,8 +71,8 @@
+ Index: net-2.6.23/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.23/drivers/net/can/vcan.c	2007-07-09 10:42:01.000000000 +0200
+-@@ -0,0 +1,263 @@
+++++ net-2.6.23/drivers/net/can/vcan.c	2007-07-09 13:22:44.000000000 +0200
++@@ -0,0 +1,264 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+ + *
+@@ -259,10 +259,11 @@
+ +{
+ +	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+ +
+-+	ether_setup(dev);
+-+
+ +	dev-&gt;type              = ARPHRD_CAN;
+ +	dev-&gt;mtu               = sizeof(struct can_frame);
+++	dev-&gt;hard_header_len   = 0;
+++	dev-&gt;addr_len          = 0;
+++	dev-&gt;tx_queue_len      = 0;
+ +	dev-&gt;flags             = IFF_NOARP;
+ +
+ +	/* set flags according to driver capabilities */
+
+Modified: trunk/patch-series/net-2.6.23/intro
+===================================================================
+--- trunk/patch-series/net-2.6.23/intro	2007-07-09 11:24:40 UTC (rev 426)
++++ trunk/patch-series/net-2.6.23/intro	2007-07-09 11:28:55 UTC (rev 427)
+@@ -22,7 +22,7 @@
+ * Minor cleanup of #include's
+ 
+ This patch series applies against net-2.6.23 and is derived from Subversion
+-revision r422 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++revision r426 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+ It can be found in the directory
+ <A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000408.html">r426 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000410.html">r428 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#409">[ date ]</a>
+              <a href="thread.html#409">[ thread ]</a>
+              <a href="subject.html#409">[ subject ]</a>
+              <a href="author.html#409">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r793 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r793%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200806221047.m5MAl6mD030505%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000772.html">
+   <LINK REL="Next"  HREF="000774.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r793 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r793%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200806221047.m5MAl6mD030505%40sheep.berlios.de%3E"
+       TITLE="r793 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Jun 22 12:47:06 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000772.html">r792 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000774.html">r794 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#773">[ date ]</a>
+              <a href="thread.html#773">[ thread ]</a>
+              <a href="subject.html#773">[ subject ]</a>
+              <a href="author.html#773">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-22 12:47:01 +0200 (Sun, 22 Jun 2008)
+New Revision: 793
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Added missing casts that produced warnings on 64-bit compilers.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2008-06-20 12:19:15 UTC (rev 792)
++++ trunk/kernel/2.6/net/can/bcm.c	2008-06-22 10:47:01 UTC (rev 793)
+@@ -239,11 +239,13 @@
+ 		if (op-&gt;kt_ival1.tv64)
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;timeo=%lld &quot;,
++					(long long)
+ 					ktime_to_us(op-&gt;kt_ival1));
+ 
+ 		if (op-&gt;kt_ival2.tv64)
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;thr=%lld &quot;,
++					(long long)
+ 					ktime_to_us(op-&gt;kt_ival2));
+ #else
+ 		if (op-&gt;j_ival1)
+@@ -281,11 +283,11 @@
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,22)
+ 		if (op-&gt;kt_ival1.tv64)
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;t1=%lld &quot;,
+-					ktime_to_us(op-&gt;kt_ival1));
++					(long long) ktime_to_us(op-&gt;kt_ival1));
+ 
+ 		if (op-&gt;kt_ival2.tv64)
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;t2=%lld &quot;,
+-					ktime_to_us(op-&gt;kt_ival2));
++					(long long) ktime_to_us(op-&gt;kt_ival2));
+ #else
+ 		if (op-&gt;j_ival1)
+ 			len += snprintf(page + len, PAGE_SIZE - len, &quot;t1=%ld &quot;,
+@@ -542,7 +544,6 @@
+ 	return ktime_to_us(ktime_sub(later, earlier));
+ }
+ #endif
+-
+ /*
+  * bcm_rx_update_and_send - process a detected relevant receive content change
+  *                          1. update the last received data
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000772.html">r792 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000774.html">r794 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#773">[ date ]</a>
+              <a href="thread.html#773">[ thread ]</a>
+              <a href="subject.html#773">[ subject ]</a>
+              <a href="author.html#773">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

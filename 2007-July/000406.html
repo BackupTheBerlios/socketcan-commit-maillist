@@ -1,0 +1,790 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r424 - in trunk/patch-series: . net-2.6.23
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r424%20-%20in%20trunk/patch-series%3A%20.%20net-2.6.23&In-Reply-To=%3C200707090849.l698n8cK007355%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000405.html">
+   <LINK REL="Next"  HREF="000407.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r424 - in trunk/patch-series: . net-2.6.23</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r424%20-%20in%20trunk/patch-series%3A%20.%20net-2.6.23&In-Reply-To=%3C200707090849.l698n8cK007355%40sheep.berlios.de%3E"
+       TITLE="r424 - in trunk/patch-series: . net-2.6.23">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  9 10:49:08 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000405.html">r422 - trunk/kernel/2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000407.html">r425 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#406">[ date ]</a>
+              <a href="thread.html#406">[ thread ]</a>
+              <a href="subject.html#406">[ subject ]</a>
+              <a href="author.html#406">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-09 10:49:06 +0200 (Mon, 09 Jul 2007)
+New Revision: 424
+
+Added:
+   trunk/patch-series/net-2.6.23/
+Modified:
+   trunk/patch-series/net-2.6.23/01-can-proto-numbers.diff
+   trunk/patch-series/net-2.6.23/02-can-core.diff
+   trunk/patch-series/net-2.6.23/03-can-raw-proto.diff
+   trunk/patch-series/net-2.6.23/04-can-bcm-proto.diff
+   trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff
+   trunk/patch-series/net-2.6.23/06-can-maintainers.diff
+   trunk/patch-series/net-2.6.23/07-can-doc.diff
+   trunk/patch-series/net-2.6.23/intro
+Log:
+Add patch-series for net-2.6.23.
+
+
+Copied: trunk/patch-series/net-2.6.23 (from rev 423, trunk/patch-series/2.6.22)
+
+Modified: trunk/patch-series/net-2.6.23/01-can-proto-numbers.diff
+===================================================================
+--- trunk/patch-series/2.6.22/01-can-proto-numbers.diff	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/01-can-proto-numbers.diff	2007-07-09 08:49:06 UTC (rev 424)
+@@ -16,10 +16,10 @@
+  net/core/sock.c          |    4 ++--
+  5 files changed, 8 insertions(+), 3 deletions(-)
+ 
+-Index: linux-2.6.22/include/linux/if_arp.h
++Index: net-2.6.23/include/linux/if_arp.h
+ ===================================================================
+---- linux-2.6.22.orig/include/linux/if_arp.h	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/include/linux/if_arp.h	2007-07-09 10:42:48.000000000 +0200
++--- net-2.6.23.orig/include/linux/if_arp.h	2007-07-09 10:41:39.000000000 +0200
+++++ net-2.6.23/include/linux/if_arp.h	2007-07-09 10:41:47.000000000 +0200
+ @@ -52,6 +52,7 @@
+  #define ARPHRD_ROSE	270
+  #define ARPHRD_X25	271		/* CCITT X.25			*/
+@@ -28,10 +28,10 @@
+  #define ARPHRD_PPP	512
+  #define ARPHRD_CISCO	513		/* Cisco HDLC	 		*/
+  #define ARPHRD_HDLC	ARPHRD_CISCO
+-Index: linux-2.6.22/include/linux/if_ether.h
++Index: net-2.6.23/include/linux/if_ether.h
+ ===================================================================
+---- linux-2.6.22.orig/include/linux/if_ether.h	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/include/linux/if_ether.h	2007-07-09 10:42:48.000000000 +0200
++--- net-2.6.23.orig/include/linux/if_ether.h	2007-07-09 10:41:39.000000000 +0200
+++++ net-2.6.23/include/linux/if_ether.h	2007-07-09 10:41:47.000000000 +0200
+ @@ -90,6 +90,7 @@
+  #define ETH_P_WAN_PPP   0x0007          /* Dummy type for WAN PPP frames*/
+  #define ETH_P_PPP_MP    0x0008          /* Dummy type for PPP MP frames */
+@@ -40,10 +40,10 @@
+  #define ETH_P_PPPTALK	0x0010		/* Dummy type for Atalk over PPP*/
+  #define ETH_P_TR_802_2	0x0011		/* 802.2 frames 		*/
+  #define ETH_P_MOBITEX	0x0015		/* Mobitex (<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kaz at cafe.net</A>)	*/
+-Index: linux-2.6.22/include/linux/socket.h
++Index: net-2.6.23/include/linux/socket.h
+ ===================================================================
+---- linux-2.6.22.orig/include/linux/socket.h	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/include/linux/socket.h	2007-07-09 10:42:48.000000000 +0200
++--- net-2.6.23.orig/include/linux/socket.h	2007-07-09 10:41:39.000000000 +0200
+++++ net-2.6.23/include/linux/socket.h	2007-07-09 10:41:47.000000000 +0200
+ @@ -185,6 +185,7 @@
+  #define AF_PPPOX	24	/* PPPoX sockets		*/
+  #define AF_WANPIPE	25	/* Wanpipe API Sockets */
+@@ -60,10 +60,10 @@
+  #define PF_TIPC		AF_TIPC
+  #define PF_BLUETOOTH	AF_BLUETOOTH
+  #define PF_IUCV		AF_IUCV
+-Index: linux-2.6.22/include/linux/tty.h
++Index: net-2.6.23/include/linux/tty.h
+ ===================================================================
+---- linux-2.6.22.orig/include/linux/tty.h	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/include/linux/tty.h	2007-07-09 10:42:48.000000000 +0200
++--- net-2.6.23.orig/include/linux/tty.h	2007-07-09 10:41:39.000000000 +0200
+++++ net-2.6.23/include/linux/tty.h	2007-07-09 10:41:47.000000000 +0200
+ @@ -24,7 +24,7 @@
+  #define NR_PTYS	CONFIG_LEGACY_PTY_COUNT   /* Number of legacy ptys */
+  #define NR_UNIX98_PTY_DEFAULT	4096      /* Default maximum for Unix98 ptys */
+@@ -81,10 +81,10 @@
+  
+  /*
+   * This character is the same as _POSIX_VDISABLE: it cannot be used as
+-Index: linux-2.6.22/net/core/sock.c
++Index: net-2.6.23/net/core/sock.c
+ ===================================================================
+---- linux-2.6.22.orig/net/core/sock.c	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/net/core/sock.c	2007-07-09 10:42:48.000000000 +0200
++--- net-2.6.23.orig/net/core/sock.c	2007-07-09 10:41:39.000000000 +0200
+++++ net-2.6.23/net/core/sock.c	2007-07-09 10:41:47.000000000 +0200
+ @@ -153,7 +153,7 @@
+    &quot;sk_lock-AF_ASH&quot;   , &quot;sk_lock-AF_ECONET&quot;   , &quot;sk_lock-AF_ATMSVC&quot;   ,
+    &quot;sk_lock-21&quot;       , &quot;sk_lock-AF_SNA&quot;      , &quot;sk_lock-AF_IRDA&quot;     ,
+
+Modified: trunk/patch-series/net-2.6.23/02-can-core.diff
+===================================================================
+--- trunk/patch-series/2.6.22/02-can-core.diff	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/02-can-core.diff	2007-07-09 08:49:06 UTC (rev 424)
+@@ -21,10 +21,10 @@
+  net/can/proc.c            |  531 ++++++++++++++++++++++++
+  10 files changed, 1951 insertions(+)
+ 
+-Index: linux-2.6.22/include/linux/can.h
++Index: net-2.6.23/include/linux/can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can.h	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/include/linux/can.h	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,98 @@
+ +/*
+ + * linux/can.h
+@@ -124,10 +124,10 @@
+ +#define CAN_INV_FILTER 0x20000000U /* to be set in can_filter.can_id */
+ +
+ +#endif /* CAN_H */
+-Index: linux-2.6.22/include/linux/can/core.h
++Index: net-2.6.23/include/linux/can/core.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/core.h	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/include/linux/can/core.h	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,80 @@
+ +/*
+ + * linux/can/core.h
+@@ -209,10 +209,10 @@
+ +#endif
+ +
+ +#endif /* CAN_CORE_H */
+-Index: linux-2.6.22/net/Kconfig
++Index: net-2.6.23/net/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/Kconfig	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/net/Kconfig	2007-07-09 10:42:51.000000000 +0200
++--- net-2.6.23.orig/net/Kconfig	2007-07-09 10:41:39.000000000 +0200
+++++ net-2.6.23/net/Kconfig	2007-07-09 10:41:50.000000000 +0200
+ @@ -210,6 +210,7 @@
+  endmenu
+  
+@@ -221,10 +221,10 @@
+  source &quot;net/irda/Kconfig&quot;
+  source &quot;net/bluetooth/Kconfig&quot;
+  source &quot;net/rxrpc/Kconfig&quot;
+-Index: linux-2.6.22/net/Makefile
++Index: net-2.6.23/net/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/net/Makefile	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/net/Makefile	2007-07-09 10:42:51.000000000 +0200
++--- net-2.6.23.orig/net/Makefile	2007-07-09 10:41:39.000000000 +0200
+++++ net-2.6.23/net/Makefile	2007-07-09 10:41:50.000000000 +0200
+ @@ -34,6 +34,7 @@
+  obj-$(CONFIG_NETROM)		+= netrom/
+  obj-$(CONFIG_ROSE)		+= rose/
+@@ -233,10 +233,10 @@
+  obj-$(CONFIG_IRDA)		+= irda/
+  obj-$(CONFIG_BT)		+= bluetooth/
+  obj-$(CONFIG_SUNRPC)		+= sunrpc/
+-Index: linux-2.6.22/net/can/Kconfig
++Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +#
+ +# Controller Area Network (CAN) network layer core configuration
+@@ -263,10 +263,10 @@
+ +	  Say Y here if you want the CAN core to produce a bunch of debug
+ +	  messages to the system log.  Select this if you are having a
+ +	  problem with CAN support and want to see more of what is going on.
+-Index: linux-2.6.22/net/can/Makefile
++Index: net-2.6.23/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/Makefile	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/net/can/Makefile	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,6 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network core.
+@@ -274,10 +274,10 @@
+ +
+ +obj-$(CONFIG_CAN)	+= can.o
+ +can-objs		:= af_can.o proc.o
+-Index: linux-2.6.22/net/can/af_can.c
++Index: net-2.6.23/net/can/af_can.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/af_can.c	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/net/can/af_can.c	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,995 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+@@ -1274,10 +1274,10 @@
+ +
+ +module_init(can_init);
+ +module_exit(can_exit);
+-Index: linux-2.6.22/net/can/af_can.h
++Index: net-2.6.23/net/can/af_can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/af_can.h	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/net/can/af_can.h	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,121 @@
+ +/*
+ + * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+@@ -1400,10 +1400,10 @@
+ +extern struct hlist_head rx_dev_list;	/* rx dispatcher structures */
+ +
+ +#endif /* AF_CAN_H */
+-Index: linux-2.6.22/net/can/proc.c
++Index: net-2.6.23/net/can/proc.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/proc.c	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/net/can/proc.c	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,531 @@
+ +/*
+ + * proc.c - procfs support for Protocol family CAN core module
+@@ -1936,10 +1936,10 @@
+ +	if (can_dir)
+ +		remove_proc_entry(CAN_PROC_DIR, NULL);
+ +}
+-Index: linux-2.6.22/include/linux/can/error.h
++Index: net-2.6.23/include/linux/can/error.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/error.h	2007-07-09 10:42:51.000000000 +0200
+++++ net-2.6.23/include/linux/can/error.h	2007-07-09 10:41:50.000000000 +0200
+ @@ -0,0 +1,93 @@
+ +/*
+ + * linux/can/error.h
+
+Modified: trunk/patch-series/net-2.6.23/03-can-raw-proto.diff
+===================================================================
+--- trunk/patch-series/2.6.22/03-can-raw-proto.diff	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/03-can-raw-proto.diff	2007-07-09 08:49:06 UTC (rev 424)
+@@ -13,10 +13,10 @@
+  net/can/raw.c           |  757 ++++++++++++++++++++++++++++++++++++++++++++++++
+  4 files changed, 817 insertions(+)
+ 
+-Index: linux-2.6.22/include/linux/can/raw.h
++Index: net-2.6.23/include/linux/can/raw.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/raw.h	2007-07-09 10:42:54.000000000 +0200
+++++ net-2.6.23/include/linux/can/raw.h	2007-07-09 10:41:55.000000000 +0200
+ @@ -0,0 +1,31 @@
+ +/*
+ + * linux/can/raw.h
+@@ -49,10 +49,10 @@
+ +};
+ +
+ +#endif
+-Index: linux-2.6.22/net/can/Kconfig
++Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Kconfig	2007-07-09 10:42:51.000000000 +0200
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:42:54.000000000 +0200
++--- net-2.6.23.orig/net/can/Kconfig	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-09 10:41:55.000000000 +0200
+ @@ -16,6 +16,32 @@
+  	  If you want CAN support, you should say Y here and also to the
+  	  specific driver for your controller(s) below.
+@@ -86,10 +86,10 @@
+  config CAN_DEBUG_CORE
+  	bool &quot;CAN Core debugging messages&quot;
+  	depends on CAN
+-Index: linux-2.6.22/net/can/Makefile
++Index: net-2.6.23/net/can/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Makefile	2007-07-09 10:42:51.000000000 +0200
+-+++ linux-2.6.22/net/can/Makefile	2007-07-09 10:42:54.000000000 +0200
++--- net-2.6.23.orig/net/can/Makefile	2007-07-09 10:41:50.000000000 +0200
+++++ net-2.6.23/net/can/Makefile	2007-07-09 10:41:55.000000000 +0200
+ @@ -4,3 +4,6 @@
+  
+  obj-$(CONFIG_CAN)	+= can.o
+@@ -97,10 +97,10 @@
+ +
+ +obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+ +can-raw-objs		:= raw.o
+-Index: linux-2.6.22/net/can/raw.c
++Index: net-2.6.23/net/can/raw.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/raw.c	2007-07-09 10:42:54.000000000 +0200
+++++ net-2.6.23/net/can/raw.c	2007-07-09 10:41:55.000000000 +0200
+ @@ -0,0 +1,757 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+
+Modified: trunk/patch-series/net-2.6.23/04-can-bcm-proto.diff
+===================================================================
+--- trunk/patch-series/2.6.22/04-can-bcm-proto.diff	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/04-can-bcm-proto.diff	2007-07-09 08:49:06 UTC (rev 424)
+@@ -13,10 +13,10 @@
+  net/can/bcm.c           | 1755 ++++++++++++++++++++++++++++++++++++++++++++++++
+  4 files changed, 1851 insertions(+)
+ 
+-Index: linux-2.6.22/include/linux/can/bcm.h
++Index: net-2.6.23/include/linux/can/bcm.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/include/linux/can/bcm.h	2007-07-09 10:42:57.000000000 +0200
+++++ net-2.6.23/include/linux/can/bcm.h	2007-07-09 10:41:58.000000000 +0200
+ @@ -0,0 +1,65 @@
+ +/*
+ + * linux/can/bcm.h
+@@ -83,10 +83,10 @@
+ +#define RX_RTR_FRAME        0x0400
+ +
+ +#endif /* CAN_BCM_H */
+-Index: linux-2.6.22/net/can/Kconfig
++Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Kconfig	2007-07-09 10:42:54.000000000 +0200
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:42:57.000000000 +0200
++--- net-2.6.23.orig/net/can/Kconfig	2007-07-09 10:41:55.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-09 10:41:58.000000000 +0200
+ @@ -42,6 +42,34 @@
+  	  Say Y here if you want non-root users to be able to access CAN_RAW
+  	  sockets.
+@@ -122,10 +122,10 @@
+  config CAN_DEBUG_CORE
+  	bool &quot;CAN Core debugging messages&quot;
+  	depends on CAN
+-Index: linux-2.6.22/net/can/Makefile
++Index: net-2.6.23/net/can/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Makefile	2007-07-09 10:42:54.000000000 +0200
+-+++ linux-2.6.22/net/can/Makefile	2007-07-09 10:42:57.000000000 +0200
++--- net-2.6.23.orig/net/can/Makefile	2007-07-09 10:41:55.000000000 +0200
+++++ net-2.6.23/net/can/Makefile	2007-07-09 10:41:58.000000000 +0200
+ @@ -7,3 +7,6 @@
+  
+  obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+@@ -133,10 +133,10 @@
+ +
+ +obj-$(CONFIG_CAN_BCM)	+= can-bcm.o
+ +can-bcm-objs		:= bcm.o
+-Index: linux-2.6.22/net/can/bcm.c
++Index: net-2.6.23/net/can/bcm.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/net/can/bcm.c	2007-07-09 10:42:57.000000000 +0200
+++++ net-2.6.23/net/can/bcm.c	2007-07-09 10:41:58.000000000 +0200
+ @@ -0,0 +1,1755 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+
+Modified: trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/2.6.22/05-can-vcan-driver.diff	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/05-can-vcan-driver.diff	2007-07-09 08:49:06 UTC (rev 424)
+@@ -12,14 +12,14 @@
+  drivers/net/Makefile     |    1 
+  drivers/net/can/Kconfig  |   25 ++++
+  drivers/net/can/Makefile |    5 
+- drivers/net/can/vcan.c   |  285 +++++++++++++++++++++++++++++++++++++++++++++++
++ drivers/net/can/vcan.c   |  263 +++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/Kconfig          |    3 
+- 5 files changed, 319 insertions(+)
++ 5 files changed, 297 insertions(+)
+ 
+-Index: linux-2.6.22/drivers/net/Makefile
++Index: net-2.6.23/drivers/net/Makefile
+ ===================================================================
+---- linux-2.6.22.orig/drivers/net/Makefile	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/drivers/net/Makefile	2007-07-09 10:43:00.000000000 +0200
++--- net-2.6.23.orig/drivers/net/Makefile	2007-07-09 10:41:38.000000000 +0200
+++++ net-2.6.23/drivers/net/Makefile	2007-07-09 10:42:01.000000000 +0200
+ @@ -8,6 +8,7 @@
+  obj-$(CONFIG_CHELSIO_T1) += chelsio/
+  obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+@@ -28,10 +28,10 @@
+  obj-$(CONFIG_BONDING) += bonding/
+  obj-$(CONFIG_ATL1) += atl1/
+  obj-$(CONFIG_GIANFAR) += gianfar_driver.o
+-Index: linux-2.6.22/drivers/net/can/Kconfig
++Index: net-2.6.23/drivers/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/drivers/net/can/Kconfig	2007-07-09 10:43:00.000000000 +0200
+++++ net-2.6.23/drivers/net/can/Kconfig	2007-07-09 10:42:01.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +menu &quot;CAN Device Drivers&quot;
+ +	depends on CAN
+@@ -58,21 +58,21 @@
+ +	  on.
+ +
+ +endmenu
+-Index: linux-2.6.22/drivers/net/can/Makefile
++Index: net-2.6.23/drivers/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/drivers/net/can/Makefile	2007-07-09 10:43:00.000000000 +0200
+++++ net-2.6.23/drivers/net/can/Makefile	2007-07-09 10:42:01.000000000 +0200
+ @@ -0,0 +1,5 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network drivers.
+ +#
+ +
+ +obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+-Index: linux-2.6.22/drivers/net/can/vcan.c
++Index: net-2.6.23/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/drivers/net/can/vcan.c	2007-07-09 10:43:00.000000000 +0200
+-@@ -0,0 +1,285 @@
+++++ net-2.6.23/drivers/net/can/vcan.c	2007-07-09 10:42:01.000000000 +0200
++@@ -0,0 +1,263 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+ + *
+@@ -123,6 +123,7 @@
+ +#include &lt;linux/if_arp.h&gt;
+ +#include &lt;linux/if_ether.h&gt;
+ +#include &lt;linux/can.h&gt;
+++#include &lt;net/rtnetlink.h&gt;
+ +
+ +static __initdata const char banner[] =
+ +	KERN_INFO &quot;vcan: Virtual CAN interface driver\n&quot;;
+@@ -145,9 +146,6 @@
+ +#define DBG(args...)
+ +#endif
+ +
+-+static int numdev = 4; /* default number of virtual CAN interfaces */
+-+module_param(numdev, int, S_IRUGO);
+-+MODULE_PARM_DESC(numdev, &quot;Number of virtual CAN devices&quot;);
+ +
+ +/*
+ + * CAN network devices *should* support a local loopback functionality
+@@ -162,10 +160,12 @@
+ +module_param(loopback, int, S_IRUGO);
+ +MODULE_PARM_DESC(loopback, &quot;Loop back sent frames. vcan default: 0 (Off)&quot;);
+ +
+-+static struct net_device **vcan_devs; /* root pointer to netdevice structs */
+++struct vcan_priv {
+++	struct net_device *dev;
+++	struct list_head list;
+++};
+++static LIST_HEAD(vcan_devs);
+ +
+-+#define PRIVSIZE sizeof(struct net_device_stats)
+-+
+ +static int vcan_open(struct net_device *dev)
+ +{
+ +	DBG(&quot;%s: interface up\n&quot;, dev-&gt;name);
+@@ -184,7 +184,7 @@
+ +
+ +static void vcan_rx(struct sk_buff *skb, struct net_device *dev)
+ +{
+-+	struct net_device_stats *stats = netdev_priv(dev);
+++	struct net_device_stats *stats = &amp;dev-&gt;stats;
+ +
+ +	stats-&gt;rx_packets++;
+ +	stats-&gt;rx_bytes += skb-&gt;len;
+@@ -201,7 +201,7 @@
+ +
+ +static int vcan_tx(struct sk_buff *skb, struct net_device *dev)
+ +{
+-+	struct net_device_stats *stats = netdev_priv(dev);
+++	struct net_device_stats *stats = &amp;dev-&gt;stats;
+ +	int loop;
+ +
+ +	DBG(&quot;sending skbuff on interface %s\n&quot;, dev-&gt;name);
+@@ -255,13 +255,6 @@
+ +	return 0;
+ +}
+ +
+-+static struct net_device_stats *vcan_get_stats(struct net_device *dev)
+-+{
+-+	struct net_device_stats *stats = netdev_priv(dev);
+-+
+-+	return stats;
+-+}
+-+
+ +static void vcan_setup(struct net_device *dev)
+ +{
+ +	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+@@ -279,89 +272,74 @@
+ +	dev-&gt;open              = vcan_open;
+ +	dev-&gt;stop              = vcan_stop;
+ +	dev-&gt;hard_start_xmit   = vcan_tx;
+-+	dev-&gt;get_stats         = vcan_get_stats;
+++	dev-&gt;destructor        = free_netdev;
+ +
+ +	SET_MODULE_OWNER(dev);
+ +}
+ +
+-+static __init int vcan_init_module(void)
+++static int vcan_newlink(struct net_device *dev,
+++			struct nlattr *tb[], struct nlattr *data[])
+ +{
+-+	int i, result;
+++	struct vcan_priv *priv = netdev_priv(dev);
+++	int err;
+ +
+-+	printk(banner);
+++	err = register_netdevice(dev);
+++	if (err &lt; 0)
+++		return err;
+ +
+-+	/* register at least one interface */
+-+	if (numdev &lt; 1)
+-+		numdev = 1;
+++	priv-&gt;dev = dev;
+++	list_add_tail(&amp;priv-&gt;list, &amp;vcan_devs);
+++	return 0;
+++}
+ +
+-+	printk(KERN_INFO
+-+	       &quot;vcan: registering %d virtual CAN interfaces. (loopback %s)\n&quot;,
+-+	       numdev, loopback ? &quot;enabled&quot; : &quot;disabled&quot;);
+++static void vcan_dellink(struct net_device *dev)
+++{
+++	struct vcan_priv *priv = netdev_priv(dev);
+ +
+-+	vcan_devs = kzalloc(numdev * sizeof(struct net_device *), GFP_KERNEL);
+-+	if (!vcan_devs) {
+-+		printk(KERN_ERR &quot;vcan: Can't allocate vcan devices array!\n&quot;);
+-+		return -ENOMEM;
+-+	}
+++	list_del(&amp;priv-&gt;list);
+++	unregister_netdevice(dev);
+++}
+ +
+-+	for (i = 0; i &lt; numdev; i++) {
+-+		vcan_devs[i] = alloc_netdev(PRIVSIZE, &quot;vcan%d&quot;, vcan_setup);
+-+		if (!vcan_devs[i]) {
+-+			printk(KERN_ERR &quot;vcan: error allocating net_device\n&quot;);
+-+			result = -ENOMEM;
+-+			goto out;
+-+		}
+++static struct rtnl_link_ops vcan_link_ops __read_mostly = {
+++       .kind           = &quot;vcan&quot;,
+++       .priv_size      = sizeof(struct vcan_priv),
+++       .setup          = vcan_setup,
+++       .newlink        = vcan_newlink,
+++       .dellink        = vcan_dellink,
+++};
+ +
+-+		result = register_netdev(vcan_devs[i]);
+-+		if (result &lt; 0) {
+-+			printk(KERN_ERR
+-+			       &quot;vcan: error %d registering interface %s\n&quot;,
+-+			       result, vcan_devs[i]-&gt;name);
+-+			free_netdev(vcan_devs[i]);
+-+			vcan_devs[i] = NULL;
+-+			goto out;
+++static __init int vcan_init_module(void)
+++{
+++	int err;
+ +
+-+		} else {
+-+			DBG(&quot;successfully registered interface %s\n&quot;,
+-+			    vcan_devs[i]-&gt;name);
+-+		}
+-+	}
+++	printk(banner);
+ +
+-+	return 0;
+++	if (loopback)
+++		printk(KERN_INFO &quot;vcan: enabled loopback on driver level.\n&quot;);
+ +
+-+ out:
+-+	for (i = 0; i &lt; numdev; i++) {
+-+		if (vcan_devs[i]) {
+-+			unregister_netdev(vcan_devs[i]);
+-+			free_netdev(vcan_devs[i]);
+-+		}
+-+	}
+-+
+-+	kfree(vcan_devs);
+-+
+-+	return result;
+++	rtnl_lock();
+++	err = __rtnl_link_register(&amp;vcan_link_ops);
+++	rtnl_unlock();
+++	return err;
+ +}
+ +
+ +static __exit void vcan_cleanup_module(void)
+ +{
+-+	int i;
+++	struct vcan_priv *priv, *n;
+ +
+-+	for (i = 0; i &lt; numdev; i++) {
+-+		if (vcan_devs[i]) {
+-+			unregister_netdev(vcan_devs[i]);
+-+			free_netdev(vcan_devs[i]);
+-+		}
+-+	}
+-+
+-+	kfree(vcan_devs);
+++	rtnl_lock();
+++	list_for_each_entry_safe(priv, n, &amp;vcan_devs, list)
+++		vcan_dellink(priv-&gt;dev);
+++	__rtnl_link_unregister(&amp;vcan_link_ops);
+++	rtnl_unlock();
+ +}
+ +
+ +module_init(vcan_init_module);
+ +module_exit(vcan_cleanup_module);
+-Index: linux-2.6.22/net/can/Kconfig
++Index: net-2.6.23/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22.orig/net/can/Kconfig	2007-07-09 10:42:57.000000000 +0200
+-+++ linux-2.6.22/net/can/Kconfig	2007-07-09 10:43:00.000000000 +0200
++--- net-2.6.23.orig/net/can/Kconfig	2007-07-09 10:41:58.000000000 +0200
+++++ net-2.6.23/net/can/Kconfig	2007-07-09 10:42:01.000000000 +0200
+ @@ -77,3 +77,6 @@
+  	  Say Y here if you want the CAN core to produce a bunch of debug
+  	  messages to the system log.  Select this if you are having a
+
+Modified: trunk/patch-series/net-2.6.23/06-can-maintainers.diff
+===================================================================
+--- trunk/patch-series/2.6.22/06-can-maintainers.diff	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/06-can-maintainers.diff	2007-07-09 08:49:06 UTC (rev 424)
+@@ -11,10 +11,10 @@
+  MAINTAINERS |    9 +++++++++
+  2 files changed, 25 insertions(+)
+ 
+-Index: linux-2.6.22/CREDITS
++Index: net-2.6.23/CREDITS
+ ===================================================================
+---- linux-2.6.22.orig/CREDITS	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/CREDITS	2007-07-09 10:43:05.000000000 +0200
++--- net-2.6.23.orig/CREDITS	2007-07-09 10:41:38.000000000 +0200
+++++ net-2.6.23/CREDITS	2007-07-09 10:42:04.000000000 +0200
+ @@ -1330,6 +1330,14 @@
+  S: 5623 HZ Eindhoven
+  S: The Netherlands
+@@ -45,10 +45,10 @@
+  N: Jon Tombs
+  E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">jon at gte.esi.us.es</A>
+  W: <A HREF="http://www.esi.us.es/~jon">http://www.esi.us.es/~jon</A>
+-Index: linux-2.6.22/MAINTAINERS
++Index: net-2.6.23/MAINTAINERS
+ ===================================================================
+---- linux-2.6.22.orig/MAINTAINERS	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/MAINTAINERS	2007-07-09 10:43:05.000000000 +0200
++--- net-2.6.23.orig/MAINTAINERS	2007-07-09 10:41:38.000000000 +0200
+++++ net-2.6.23/MAINTAINERS	2007-07-09 10:42:04.000000000 +0200
+ @@ -951,6 +951,15 @@
+  L:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">video4linux-list at redhat.com</A>
+  S:	Maintained
+
+Modified: trunk/patch-series/net-2.6.23/07-can-doc.diff
+===================================================================
+--- trunk/patch-series/2.6.22/07-can-doc.diff	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/07-can-doc.diff	2007-07-09 08:49:06 UTC (rev 424)
+@@ -11,10 +11,10 @@
+  Documentation/networking/can.txt  |  635 ++++++++++++++++++++++++++++++++++++++
+  2 files changed, 637 insertions(+)
+ 
+-Index: linux-2.6.22/Documentation/networking/can.txt
++Index: net-2.6.23/Documentation/networking/can.txt
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22/Documentation/networking/can.txt	2007-07-09 10:43:09.000000000 +0200
+++++ net-2.6.23/Documentation/networking/can.txt	2007-07-09 10:42:09.000000000 +0200
+ @@ -0,0 +1,635 @@
+ +============================================================================
+ +
+@@ -651,10 +651,10 @@
+ +  Klaus Hitschler (PEAK driver integration)
+ +  Uwe Koppe (CAN netdevices with PF_PACKET approach)
+ +  Michael Schulze (driver layer loopback requirement, RT CAN drivers review)
+-Index: linux-2.6.22/Documentation/networking/00-INDEX
++Index: net-2.6.23/Documentation/networking/00-INDEX
+ ===================================================================
+---- linux-2.6.22.orig/Documentation/networking/00-INDEX	2007-07-09 10:42:42.000000000 +0200
+-+++ linux-2.6.22/Documentation/networking/00-INDEX	2007-07-09 10:43:09.000000000 +0200
++--- net-2.6.23.orig/Documentation/networking/00-INDEX	2007-07-09 10:41:38.000000000 +0200
+++++ net-2.6.23/Documentation/networking/00-INDEX	2007-07-09 10:42:09.000000000 +0200
+ @@ -26,6 +26,8 @@
+  	- info on the driver for Baycom style amateur radio modems
+  bridge.txt
+
+Modified: trunk/patch-series/net-2.6.23/intro
+===================================================================
+--- trunk/patch-series/2.6.22/intro	2007-07-09 08:47:42 UTC (rev 423)
++++ trunk/patch-series/net-2.6.23/intro	2007-07-09 08:49:06 UTC (rev 424)
+@@ -1,14 +1,39 @@
+ SUBJECT
+-CAN: Add new PF_CAN protocol family
++CAN: Add new PF_CAN protocol family, try #4
+ ESUBJECT
+ 
+-This patch series applies against linux-2.6.22 and is derived from
+-Subversion revision r422 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++Hello Dave,
++
++this is the fourth post of the patch series that adds the PF_CAN
++protocol family for the Controller Area Network.
++
++Since our last post we have changed the following:
++
++* Revert our change to use skb-&gt;iif instead of skb-&gt;cb.  After
++  discussion with Patrick and Jamal it turned out, our first
++  implementation was correct.
++ 
++* Change vcan network driver to use the new RTNL API.
++
++* Use skb_tail_pointer() instead of skb-&gt;tail directly.
++
++* Minor changes for 64-bit-cleanliness.
++
++* Minor cleanup of #include's
++
++This patch series applies against net-2.6.23 and is derived from Subversion
++revision r422 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+ It can be found in the directory
+ <A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
+ 
+ This patch doesn't touch anything in the kernel except for the allocation
+ of a couple of numbers for protocol, arp hw type, and a line discipline.
+ 
++Please consider this patch series for integration into your tree.
++
++Thanks very much for your work!
++
++Best regards,
++
+ Urs Thuermann
+ Oliver Hartkopp
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000405.html">r422 - trunk/kernel/2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000407.html">r425 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#406">[ date ]</a>
+              <a href="thread.html#406">[ thread ]</a>
+              <a href="subject.html#406">[ subject ]</a>
+              <a href="author.html#406">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1195 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1195%20-%20trunk/can-utils&In-Reply-To=%3C20100924175653.50C32480FB3%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000828.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1195 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1195%20-%20trunk/can-utils&In-Reply-To=%3C20100924175653.50C32480FB3%40sheep.berlios.de%3E"
+       TITLE="r1195 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 24 19:56:53 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000828.html">r1196 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#827">[ date ]</a>
+              <a href="thread.html#827">[ thread ]</a>
+              <a href="subject.html#827">[ subject ]</a>
+              <a href="author.html#827">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-09-24 19:56:53 +0200 (Fri, 24 Sep 2010)
+New Revision: 1195
+
+Modified:
+   trunk/can-utils/canbusload.c
+Log:
+Fixed calculation of needed bits on the physical wire according Ken Tindells
+*worst* case calculation for stuff-bits.
+(see &quot;Guaranteeing Message Latencies on Controller Area Network&quot; 1st ICC'94)
+Due to the bitstuffing estimation the calculated busload may exceed 100%.
+
+
+Modified: trunk/can-utils/canbusload.c
+===================================================================
+--- trunk/can-utils/canbusload.c	2010-08-13 16:15:16 UTC (rev 1194)
++++ trunk/can-utils/canbusload.c	2010-09-24 17:56:53 UTC (rev 1195)
+@@ -88,6 +88,7 @@
+ static unsigned char timestamp;
+ static unsigned char color;
+ static unsigned char bargraph;
++static unsigned char ignore_bitstuffing;
+ static char *prg;
+ 
+ void print_usage(char *prg)
+@@ -98,11 +99,13 @@
+ 	fprintf(stderr, &quot;         -c (colorize lines)\n&quot;);
+ 	fprintf(stderr, &quot;         -b (show bargraph in %d%% resolution)\n&quot;, PERCENTRES);
+ 	fprintf(stderr, &quot;         -r (redraw the terminal - similar to top)\n&quot;);
++	fprintf(stderr, &quot;         -i (ignore bitstuffing estimation in bandwith calculation)\n&quot;);
+ 	fprintf(stderr, &quot;\n&quot;);
+ 	fprintf(stderr, &quot;Up to %d CAN interfaces with mandatory bitrate can be specified on the \n&quot;, MAXSOCK);
+ 	fprintf(stderr, &quot;commandline in the form: &lt;ifname&gt;@&lt;bitrate&gt;\n\n&quot;);
+ 	fprintf(stderr, &quot;The bitrate is mandatory as it is needed to know the CAN bus bitrate to\n&quot;);
+ 	fprintf(stderr, &quot;calcultate the bus load percentage based on the received CAN frames.\n&quot;);
++	fprintf(stderr, &quot;Due to the bitstuffing estimation the calculated busload may exceed 100%%.\n&quot;);
+ 	fprintf(stderr, &quot;For each given interface the data is presented in one line which contains:\n\n&quot;);
+ 	fprintf(stderr, &quot;(interface) (received CAN frames) (used bits total) (used bits for payload)\n&quot;);
+ 	fprintf(stderr, &quot;\nExample:\n&quot;);
+@@ -174,6 +177,9 @@
+ 
+ 			printf(&quot;  |&quot;);
+ 
++			if (percent &gt; 100)
++				percent = 100;
++
+ 			for (j=0; j &lt; NUMBAR; j++){
+ 				if (j &lt; percent/PERCENTRES)
+ 					printf(&quot;X&quot;);
+@@ -220,7 +226,7 @@
+ 
+ 	prg = basename(argv[0]);
+ 
+-	while ((opt = getopt(argc, argv, &quot;rtbch?&quot;)) != -1) {
++	while ((opt = getopt(argc, argv, &quot;rtbcih?&quot;)) != -1) {
+ 		switch (opt) {
+ 		case 'r':
+ 			redraw = 1;
+@@ -238,6 +244,10 @@
+ 			color = 1;
+ 			break;
+ 
++		case 'i':
++			ignore_bitstuffing = 1;
++			break;
++
+ 		default:
+ 			print_usage(prg);
+ 			exit(1);
+@@ -365,11 +375,32 @@
+ 
+ 				stat[i].recv_frames++;
+ 				stat[i].recv_bits_payload += frame.can_dlc*8;
+-				stat[i].recv_bits_total += frame.can_dlc*8;
+-				if (frame.can_id &amp; CAN_EFF_FLAG)
+-					stat[i].recv_bits_total += 67;
+-				else
+-					stat[i].recv_bits_total += 47;
++
++				/*
++				 * Following Ken Tindells *worst* case calculation for stuff-bits
++				 * (see &quot;Guaranteeing Message Latencies on Controller Area Network&quot; 1st ICC'94)
++				 * the needed bits on the wire can be calculated as:
++				 *
++				 * (34 + 8n)/5 + 47 + 8n for SFF frames (11 bit CAN-ID) =&gt; (269 + 48n)/5 
++				 * (54 + 8n)/5 + 67 + 8n for EFF frames (29 bit CAN-ID) =&gt; (389 + 48n)/5 
++				 *
++				 * while 'n' is the data length code (number of payload bytes)
++				 *
++				 */
++
++				if (ignore_bitstuffing) {
++					/* calculation without bitstuffing */
++					if (frame.can_id &amp; CAN_EFF_FLAG)
++						stat[i].recv_bits_total += 67 + frame.can_dlc*8;
++					else
++						stat[i].recv_bits_total += 47 + frame.can_dlc*8;
++				} else {
++					/* needed bits including estimated worst case stuff bits */
++					if (frame.can_id &amp; CAN_EFF_FLAG)
++						stat[i].recv_bits_total += (389 + frame.can_dlc*48)/5;
++					else
++						stat[i].recv_bits_total += (269 + frame.can_dlc*48)/5;
++				}
+ 			}
+ 		}
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000828.html">r1196 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#827">[ date ]</a>
+              <a href="thread.html#827">[ thread ]</a>
+              <a href="subject.html#827">[ subject ]</a>
+              <a href="author.html#827">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

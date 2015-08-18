@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r404 - branches/ut/vcan-rtnl
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r404%20-%20branches/ut/vcan-rtnl&In-Reply-To=%3C200707050135.l651ZRxX011817%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000386.html">
+   <LINK REL="Next"  HREF="000388.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r404 - branches/ut/vcan-rtnl</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r404%20-%20branches/ut/vcan-rtnl&In-Reply-To=%3C200707050135.l651ZRxX011817%40sheep.berlios.de%3E"
+       TITLE="r404 - branches/ut/vcan-rtnl">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul  5 03:35:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000386.html">r403 - branches/ut/vcan-rtnl
+</A></li>
+        <LI>Next message: <A HREF="000388.html">r405 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#387">[ date ]</a>
+              <a href="thread.html#387">[ thread ]</a>
+              <a href="subject.html#387">[ subject ]</a>
+              <a href="author.html#387">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-05 03:35:26 +0200 (Thu, 05 Jul 2007)
+New Revision: 404
+
+Modified:
+   branches/ut/vcan-rtnl/vcan.c
+Log:
+Use {un,}register_netdevice() instead of {un,}register_netdev()
+since we already hold the rtnl_lock() when calling these functions.
+
+
+Modified: branches/ut/vcan-rtnl/vcan.c
+===================================================================
+--- branches/ut/vcan-rtnl/vcan.c	2007-07-05 01:27:43 UTC (rev 403)
++++ branches/ut/vcan-rtnl/vcan.c	2007-07-05 01:35:26 UTC (rev 404)
+@@ -259,7 +259,7 @@
+ 	struct vcan_priv *priv = netdev_priv(dev);
+ 	int err;
+ 
+-	err = register_netdev(dev);
++	err = register_netdevice(dev);
+ 	if (err &lt; 0)
+ 		return err;
+ 
+@@ -273,7 +273,7 @@
+ 	struct vcan_priv *priv = netdev_priv(dev);
+ 
+ 	list_del(&amp;priv-&gt;list);
+-	unregister_netdev(dev);
++	unregister_netdevice(dev);
+ }
+ 
+ static struct rtnl_link_ops vcan_link_ops __read_mostly = {
+@@ -308,9 +308,12 @@
+ 			err = -ENOMEM;
+ 			break;
+ 		}
++		err = dev_alloc_name(dev, dev-&gt;name);
++		if (err &lt; 0)
++			break;
+ 
+ 		dev-&gt;rtnl_link_ops = &amp;vcan_link_ops;
+-		err = register_netdev(dev);
++		err = register_netdevice(dev);
+ 		if (err &lt; 0) {
+ 			printk(KERN_ERR
+ 			       &quot;vcan: error %d registering interface %s\n&quot;,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000386.html">r403 - branches/ut/vcan-rtnl
+</A></li>
+	<LI>Next message: <A HREF="000388.html">r405 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#387">[ date ]</a>
+              <a href="thread.html#387">[ thread ]</a>
+              <a href="subject.html#387">[ subject ]</a>
+              <a href="author.html#387">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

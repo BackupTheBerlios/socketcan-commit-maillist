@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r393 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r393%20-%20trunk/can-utils&In-Reply-To=%3C200706220825.l5M8PZ3w031329%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000375.html">
+   <LINK REL="Next"  HREF="000377.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r393 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r393%20-%20trunk/can-utils&In-Reply-To=%3C200706220825.l5M8PZ3w031329%40sheep.berlios.de%3E"
+       TITLE="r393 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 22 10:25:35 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000375.html">r392 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000377.html">r394 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#376">[ date ]</a>
+              <a href="thread.html#376">[ thread ]</a>
+              <a href="subject.html#376">[ subject ]</a>
+              <a href="author.html#376">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-22 10:25:34 +0200 (Fri, 22 Jun 2007)
+New Revision: 393
+
+Modified:
+   trunk/can-utils/cangen.c
+Log:
+Changed option name '-l' to '-x' as this option should also go into canplayer.
+Cosmetics in print_help().
+
+
+Modified: trunk/can-utils/cangen.c
+===================================================================
+--- trunk/can-utils/cangen.c	2007-06-22 08:04:48 UTC (rev 392)
++++ trunk/can-utils/cangen.c	2007-06-22 08:25:34 UTC (rev 393)
+@@ -77,21 +77,21 @@
+ {
+     fprintf(stderr, &quot;\n%s: generate random CAN frames\n\n&quot;, prg);
+     fprintf(stderr, &quot;Usage: %s [can-interface]\n&quot;, prg);
+-    fprintf(stderr, &quot;Options: -g &lt;ms&gt;       (gap in milli seconds)   &quot;
++    fprintf(stderr, &quot;Options: -g &lt;ms&gt;       (gap in milli seconds)  &quot;
+ 	    &quot;default: %d\n&quot;, DEFAULT_GAP);
+-    fprintf(stderr, &quot;         -e            (extended frame mode)    &quot;
++    fprintf(stderr, &quot;         -e            (extended frame mode)   &quot;
+ 	    &quot;default: standard frame format \n&quot;);
+-    fprintf(stderr, &quot;         -I            (fixed CAN ID)           &quot;
++    fprintf(stderr, &quot;         -I            (fixed CAN ID)          &quot;
+ 	    &quot;default: 0x123\n&quot;);
+-    fprintf(stderr, &quot;         -D            (fixed CAN Data)         &quot;
++    fprintf(stderr, &quot;         -D            (fixed CAN Data)        &quot;
+ 	    &quot;default: 01 23 45 67 89 AB CD EF\n&quot;);
+-    fprintf(stderr, &quot;         -L            (fixed CAN DLC)          &quot;
++    fprintf(stderr, &quot;         -L            (fixed CAN DLC)         &quot;
+ 	    &quot;default: 8\n&quot;);
+-    fprintf(stderr, &quot;         -f &lt;canframe&gt; (other fixed CAN frame)  &quot;
++    fprintf(stderr, &quot;         -f &lt;canframe&gt; (other fixed CAN frame) &quot;
+ 	    &quot;default: 123#0123456789ABCDEF\n&quot;);
+-    fprintf(stderr, &quot;         -l            (local loopback disable) &quot;
+-	    &quot;default: loopback\n&quot;);
+-    fprintf(stderr, &quot;         -v            (verbose)                &quot;
++    fprintf(stderr, &quot;         -x            (disable loopback)      &quot;
++	    &quot;default: standard loopback\n&quot;);
++    fprintf(stderr, &quot;         -v            (verbose)               &quot;
+ 	    &quot;default: don't print sent frames\n&quot;);
+ }
+ 
+@@ -125,7 +125,7 @@
+     signal(SIGHUP, sigterm);
+     signal(SIGINT, sigterm);
+ 
+-    while ((opt = getopt(argc, argv, &quot;g:eIDLf:lv&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;g:eIDLf:xv&quot;)) != -1) {
+ 	switch (opt) {
+ 	case 'g':
+ 	    gap = strtoul(optarg, NULL, 10);
+@@ -159,7 +159,7 @@
+ 	    verbose = 1;
+ 	    break;
+ 
+-	case 'l':
++	case 'x':
+ 	    loopback_disable = 1;
+ 	    break;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000375.html">r392 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000377.html">r394 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#376">[ date ]</a>
+              <a href="thread.html#376">[ thread ]</a>
+              <a href="subject.html#376">[ subject ]</a>
+              <a href="author.html#376">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r626 - in trunk/kernel/2.4: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r626%20-%20in%20trunk/kernel/2.4%3A%20include/linux/can%20net/can&In-Reply-To=%3C200712141055.lBEAtCp0016605%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000607.html">
+   <LINK REL="Next"  HREF="000609.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r626 - in trunk/kernel/2.4: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r626%20-%20in%20trunk/kernel/2.4%3A%20include/linux/can%20net/can&In-Reply-To=%3C200712141055.lBEAtCp0016605%40sheep.berlios.de%3E"
+       TITLE="r626 - in trunk/kernel/2.4: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 14 11:55:12 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000607.html">r625 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000609.html">r627 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#608">[ date ]</a>
+              <a href="thread.html#608">[ thread ]</a>
+              <a href="subject.html#608">[ subject ]</a>
+              <a href="author.html#608">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-14 11:55:10 +0100 (Fri, 14 Dec 2007)
+New Revision: 626
+
+Modified:
+   trunk/kernel/2.4/include/linux/can/core.h
+   trunk/kernel/2.4/net/can/af_can.c
+Log:
+Remove obsolete can_dev_(un)register() notifier handling.
+Changed version string to -pre3.
+
+
+Modified: trunk/kernel/2.4/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.4/include/linux/can/core.h	2007-12-14 10:41:55 UTC (rev 625)
++++ trunk/kernel/2.4/include/linux/can/core.h	2007-12-14 10:55:10 UTC (rev 626)
+@@ -21,7 +21,7 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ 
+-#define CAN_VERSION &quot;20071116-backport-pre2&quot;
++#define CAN_VERSION &quot;20071116-backport-pre3&quot;
+ 
+ /* increment this number each time you change some user-space interface */
+ #define CAN_ABI_VERSION &quot;8&quot;
+@@ -51,12 +51,6 @@
+ extern int  can_proto_register(struct can_proto *cp);
+ extern void can_proto_unregister(struct can_proto *cp);
+ 
+-/* FIX ME: &quot;can_dev_(un)register() to be removed after notifier rework! */
+-extern void can_dev_register(struct net_device *dev,
+-			     void (*func)(unsigned long msg, void *), void *data);
+-extern void can_dev_unregister(struct net_device *dev,
+-			       void (*func)(unsigned long msg, void *), void *data);
+-
+ extern int  can_rx_register(struct net_device *dev, canid_t can_id,
+ 			    canid_t mask,
+ 			    void (*func)(struct sk_buff *, void *),
+
+Modified: trunk/kernel/2.4/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/net/can/af_can.c	2007-12-14 10:41:55 UTC (rev 625)
++++ trunk/kernel/2.4/net/can/af_can.c	2007-12-14 10:55:10 UTC (rev 626)
+@@ -85,9 +85,6 @@
+ 	void *data;
+ };
+ 
+-static LIST_HEAD(notifier_list);
+-static rwlock_t notifier_lock = RW_LOCK_UNLOCKED;
+-
+ static struct dev_rcv_lists can_rx_alldev_list;
+ struct dev_rcv_lists *can_rx_dev_list;
+ rwlock_t can_rcvlists_lock = RW_LOCK_UNLOCKED;
+@@ -593,64 +590,10 @@
+ 	proto_tab[proto] = NULL;
+ }
+ 
+-/**
+- * can_dev_register - subscribe notifier for CAN device status changes
+- * @dev: pointer to netdevice
+- * @func: callback function on status change
+- * @data: returned parameter for callback function
+- *
+- * Description:
+- *  Invokes the callback function with the status 'msg' and the given
+- *  parameter 'data' on a status change of the given CAN network device.
+- */
+-void can_dev_register(struct net_device *dev,
+-		      void (*func)(unsigned long msg, void *), void *data)
+-{
+-	struct notifier *n;
+-
+-	n = kmalloc(sizeof(*n), GFP_KERNEL);
+-	if (!n)
+-		return;
+-
+-	n-&gt;dev  = dev;
+-	n-&gt;func = func;
+-	n-&gt;data = data;
+-
+-	write_lock(&amp;notifier_lock);
+-	list_add(&amp;n-&gt;list, &amp;notifier_list);
+-	write_unlock(&amp;notifier_lock);
+-}
+-
+-/**
+- * can_dev_unregister - unsubscribe notifier for CAN device status changes
+- * @dev: pointer to netdevice
+- * @func: callback function on filter match
+- * @data: returned parameter for callback function
+- *
+- * Description:
+- *  Removes subscription entry depending on given (subscription) values.
+- */
+-void can_dev_unregister(struct net_device *dev,
+-			void (*func)(unsigned long msg, void *), void *data)
+-{
+-	struct notifier *n, *next;
+-
+-	write_lock(&amp;notifier_lock);
+-	list_for_each_entry_safe(n, next, &amp;notifier_list, list) {
+-		if (n-&gt;dev == dev &amp;&amp; n-&gt;func == func &amp;&amp; n-&gt;data == data) {
+-			list_del(&amp;n-&gt;list);
+-			kfree(n);
+-			break;
+-		}
+-	}
+-	write_unlock(&amp;notifier_lock);
+-}
+-
+ static int can_notifier(struct notifier_block *nb,
+ 			unsigned long msg, void *data)
+ {
+ 	struct net_device *dev = (struct net_device *)data;
+-	struct notifier *n;
+ 
+ 	if (dev-&gt;type != ARPHRD_CAN)
+ 		return NOTIFY_DONE;
+@@ -714,13 +657,6 @@
+ 		break;
+ 	}
+ 
+-	read_lock(&amp;notifier_lock);
+-	list_for_each_entry(n, &amp;notifier_list, list) {
+-		if (n-&gt;dev == dev)
+-			n-&gt;func(msg, n-&gt;data);
+-	}
+-	read_unlock(&amp;notifier_lock);
+-
+ 	return NOTIFY_DONE;
+ }
+ 
+@@ -831,7 +767,5 @@
+ EXPORT_SYMBOL(can_proto_unregister);
+ EXPORT_SYMBOL(can_rx_register);
+ EXPORT_SYMBOL(can_rx_unregister);
+-EXPORT_SYMBOL(can_dev_register);
+-EXPORT_SYMBOL(can_dev_unregister);
+ EXPORT_SYMBOL(can_send);
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000607.html">r625 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000609.html">r627 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#608">[ date ]</a>
+              <a href="thread.html#608">[ thread ]</a>
+              <a href="subject.html#608">[ subject ]</a>
+              <a href="author.html#608">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

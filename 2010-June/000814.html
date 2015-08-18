@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1182 - trunk/kernel/2.6/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1182%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C201006222041.o5MKfIAS026091%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1182 - trunk/kernel/2.6/drivers/net/can/sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1182%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C201006222041.o5MKfIAS026091%40sheep.berlios.de%3E"
+       TITLE="r1182 - trunk/kernel/2.6/drivers/net/can/sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 22 22:41:18 CEST 2010</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#814">[ date ]</a>
+              <a href="thread.html#814">[ thread ]</a>
+              <a href="subject.html#814">[ subject ]</a>
+              <a href="author.html#814">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-06-22 22:41:17 +0200 (Tue, 22 Jun 2010)
+New Revision: 1182
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sja1000/peak_pci.c
+Log:
+Added PCI device ID for the PCAN Express Card hardware.
+Updated module descriptions with PCIe(xpress).
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/peak_pci.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/peak_pci.c	2010-05-19 16:21:00 UTC (rev 1181)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/peak_pci.c	2010-06-22 20:41:17 UTC (rev 1182)
+@@ -43,8 +43,8 @@
+ #endif
+ 
+ MODULE_AUTHOR(&quot;Wolfgang Grandegger &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">wg at grandegger.com</A>&gt;&quot;);
+-MODULE_DESCRIPTION(&quot;Socket-CAN driver for PEAK PCAN PCI cards&quot;);
+-MODULE_SUPPORTED_DEVICE(&quot;PEAK PCAN PCI CAN card&quot;);
++MODULE_DESCRIPTION(&quot;Socket-CAN driver for PEAK PCAN PCI/PCIe cards&quot;);
++MODULE_SUPPORTED_DEVICE(&quot;PEAK PCAN PCI/PCIe CAN card&quot;);
+ MODULE_LICENSE(&quot;GPL v2&quot;);
+ 
+ struct peak_pci {
+@@ -77,10 +77,14 @@
+ #define PCI_PORT_SIZE        0x0400	/* size of a channel io-memory */
+ 
+ #define PEAK_PCI_VENDOR_ID   0x001C	/* the PCI device and vendor IDs */
+-#define PEAK_PCI_DEVICE_ID   0x0001
++#define PEAK_PCI_DEVICE_ID   0x0001	/* PCAN PCI and PCIe slot cards */
++#define PEAK_PCIE_CARD_ID    0x0002	/* PCAN ExpressCard */
+ 
++/* TODO: Add LED Status support for PCAN ExpressCard */
++
+ static struct pci_device_id peak_pci_tbl[] = {
+ 	{PEAK_PCI_VENDOR_ID, PEAK_PCI_DEVICE_ID, PCI_ANY_ID, PCI_ANY_ID,},
++	{PEAK_PCI_VENDOR_ID, PEAK_PCIE_CARD_ID, PCI_ANY_ID, PCI_ANY_ID,},
+ 	{0,}
+ };
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#814">[ date ]</a>
+              <a href="thread.html#814">[ thread ]</a>
+              <a href="subject.html#814">[ subject ]</a>
+              <a href="author.html#814">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

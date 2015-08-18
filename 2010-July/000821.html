@@ -1,0 +1,223 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1189 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1189%20-%20trunk/can-utils&In-Reply-To=%3C20100720134320.9A08B480CBA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000820.html">
+   <LINK REL="Next"  HREF="000822.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1189 - trunk/can-utils</H1>
+    <B>bet-frogger at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1189%20-%20trunk/can-utils&In-Reply-To=%3C20100720134320.9A08B480CBA%40sheep.berlios.de%3E"
+       TITLE="r1189 - trunk/can-utils">bet-frogger at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul 20 15:43:20 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000820.html">r1188 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000822.html">r1190 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#821">[ date ]</a>
+              <a href="thread.html#821">[ thread ]</a>
+              <a href="subject.html#821">[ subject ]</a>
+              <a href="author.html#821">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bet-frogger
+Date: 2010-07-20 15:43:20 +0200 (Tue, 20 Jul 2010)
+New Revision: 1189
+
+Modified:
+   trunk/can-utils/can-calc-bit-timing.c
+Log:
+can-calc-bit-timing: add more can controller definitions and ref clocks
+
+Signed-off-by: Marc Kleine-Budde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">mkl at pengutronix.de</A>&gt;
+
+Modified: trunk/can-utils/can-calc-bit-timing.c
+===================================================================
+--- trunk/can-utils/can-calc-bit-timing.c	2010-07-20 13:43:16 UTC (rev 1188)
++++ trunk/can-utils/can-calc-bit-timing.c	2010-07-20 13:43:20 UTC (rev 1189)
+@@ -170,6 +170,21 @@
+ 	}
+ }
+ 
++static void printf_btr_flexcan(struct can_bittiming *bt, int hdr)
++{
++	if (hdr) {
++		printf(&quot;%10s&quot;, &quot;CAN_CTRL&quot;);
++	} else {
++		uint32_t ctrl = (((bt-&gt;brp        - 1) &lt;&lt; 24) |
++				 ((bt-&gt;sjw        - 1) &lt;&lt; 22) |
++				 ((bt-&gt;phase_seg1 - 1) &lt;&lt; 19) |
++				 ((bt-&gt;phase_seg2 - 1) &lt;&lt; 16) |
++				 ((bt-&gt;prop_seg   - 1) &lt;&lt;  0));
++
++		printf(&quot;0x%08x&quot;, ctrl);
++	}
++}
++
+ static void printf_btr_mcp251x(struct can_bittiming *bt, int hdr)
+ {
+ 	uint8_t cnf1, cnf2, cnf3;
+@@ -225,10 +240,52 @@
+ 		.brp_max = 64,
+ 		.brp_inc = 1,
+ 
++		.ref_clk = 32000000,
++		.printf_btr = printf_btr_sja1000,
++	},
++	{
++		.name = &quot;mscan&quot;,
++		.tseg1_min = 4,
++		.tseg1_max = 16,
++		.tseg2_min = 2,
++		.tseg2_max = 8,
++		.sjw_max = 4,
++		.brp_min = 1,
++		.brp_max = 64,
++		.brp_inc = 1,
++
+ 		.ref_clk = 33000000,
+ 		.printf_btr = printf_btr_sja1000,
+ 	},
+ 	{
++		.name = &quot;mscan&quot;,
++		.tseg1_min = 4,
++		.tseg1_max = 16,
++		.tseg2_min = 2,
++		.tseg2_max = 8,
++		.sjw_max = 4,
++		.brp_min = 1,
++		.brp_max = 64,
++		.brp_inc = 1,
++
++		.ref_clk = 33300000,
++		.printf_btr = printf_btr_sja1000,
++	},
++	{
++		.name = &quot;mscan&quot;,
++		.tseg1_min = 4,
++		.tseg1_max = 16,
++		.tseg2_min = 2,
++		.tseg2_max = 8,
++		.sjw_max = 4,
++		.brp_min = 1,
++		.brp_max = 64,
++		.brp_inc = 1,
++
++		.ref_clk = 33333333,
++		.printf_btr = printf_btr_sja1000,
++	},
++	{
+ 		.name = &quot;at91&quot;,
+ 		.tseg1_min = 4,
+ 		.tseg1_max = 16,
+@@ -243,6 +300,49 @@
+ 		.printf_btr = printf_btr_at91,
+ 	},
+ 	{
++		.name = &quot;at91&quot;,
++		.tseg1_min = 4,
++		.tseg1_max = 16,
++		.tseg2_min = 2,
++		.tseg2_max = 8,
++		.sjw_max = 4,
++		.brp_min = 2,
++		.brp_max = 128,
++		.brp_inc = 1,
++
++		/* real world clock as found on the ronetix PM9263 */
++		.ref_clk = 99532800,
++		.printf_btr = printf_btr_at91,
++	},
++	{
++		.name = &quot;flexcan&quot;,
++		.tseg1_min = 4,
++		.tseg1_max = 16,
++		.tseg2_min = 2,
++		.tseg2_max = 8,
++		.sjw_max = 4,
++		.brp_min = 1,
++		.brp_max = 256,
++		.brp_inc = 1,
++
++		.ref_clk = 49875000,
++		.printf_btr = printf_btr_flexcan,
++	},
++	{
++		.name = &quot;flexcan&quot;,
++		.tseg1_min = 4,
++		.tseg1_max = 16,
++		.tseg2_min = 2,
++		.tseg2_max = 8,
++		.sjw_max = 4,
++		.brp_min = 1,
++		.brp_max = 256,
++		.brp_inc = 1,
++
++		.ref_clk = 66500000,
++		.printf_btr = printf_btr_flexcan,
++	},
++	{
+ 		.name = &quot;mcp251x&quot;,
+ 		.tseg1_min = 3,
+ 		.tseg1_max = 16,
+@@ -253,6 +353,20 @@
+ 		.brp_max = 64,
+ 		.brp_inc = 1,
+ 
++		.ref_clk = 8000000,
++		.printf_btr = printf_btr_mcp251x,
++	},
++	{
++		.name = &quot;mcp251x&quot;,
++		.tseg1_min = 3,
++		.tseg1_max = 16,
++		.tseg2_min = 2,
++		.tseg2_max = 8,
++		.sjw_max = 4,
++		.brp_min = 1,
++		.brp_max = 64,
++		.brp_inc = 1,
++
+ 		.ref_clk = 16000000,
+ 		.printf_btr = printf_btr_mcp251x,
+ 	},
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000820.html">r1188 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000822.html">r1190 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#821">[ date ]</a>
+              <a href="thread.html#821">[ thread ]</a>
+              <a href="subject.html#821">[ subject ]</a>
+              <a href="author.html#821">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

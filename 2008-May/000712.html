@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r730 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r730%20-%20branches/cannetdriver26/net/can%20branches/ha/hrtimer/net/can%0A%09trunk/kernel/2.6/net/can&In-Reply-To=%3C200805071154.m47BsAY2005035%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000711.html">
+   <LINK REL="Next"  HREF="000713.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r730 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r730%20-%20branches/cannetdriver26/net/can%20branches/ha/hrtimer/net/can%0A%09trunk/kernel/2.6/net/can&In-Reply-To=%3C200805071154.m47BsAY2005035%40sheep.berlios.de%3E"
+       TITLE="r730 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May  7 13:54:10 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000711.html">r729 - trunk/patches
+</A></li>
+        <LI>Next message: <A HREF="000713.html">r731 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#712">[ date ]</a>
+              <a href="thread.html#712">[ thread ]</a>
+              <a href="subject.html#712">[ subject ]</a>
+              <a href="author.html#712">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-07 13:54:07 +0200 (Wed, 07 May 2008)
+New Revision: 730
+
+Modified:
+   branches/cannetdriver26/net/can/compat.h
+   branches/ha/hrtimer/net/can/compat.h
+   trunk/kernel/2.6/net/can/compat.h
+Log:
+Only #define PF_CAN/AF_CAN when they are not already defined.
+
+
+Modified: branches/cannetdriver26/net/can/compat.h
+===================================================================
+--- branches/cannetdriver26/net/can/compat.h	2008-05-07 10:50:37 UTC (rev 729)
++++ branches/cannetdriver26/net/can/compat.h	2008-05-07 11:54:07 UTC (rev 730)
+@@ -5,8 +5,13 @@
+ #ifndef CAN_COMPAT_H
+ #define CAN_COMPAT_H
+ 
++#ifndef PF_CAN
+ #define PF_CAN 29
++#endif
++
++#ifndef AF_CAN
+ #define AF_CAN PF_CAN
++#endif
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static inline void *kzalloc(size_t size, unsigned int __nocast flags)
+
+Modified: branches/ha/hrtimer/net/can/compat.h
+===================================================================
+--- branches/ha/hrtimer/net/can/compat.h	2008-05-07 10:50:37 UTC (rev 729)
++++ branches/ha/hrtimer/net/can/compat.h	2008-05-07 11:54:07 UTC (rev 730)
+@@ -5,8 +5,13 @@
+ #ifndef CAN_COMPAT_H
+ #define CAN_COMPAT_H
+ 
++#ifndef PF_CAN
+ #define PF_CAN 29
++#endif
++
++#ifndef AF_CAN
+ #define AF_CAN PF_CAN
++#endif
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static inline void *kzalloc(size_t size, unsigned int __nocast flags)
+
+Modified: trunk/kernel/2.6/net/can/compat.h
+===================================================================
+--- trunk/kernel/2.6/net/can/compat.h	2008-05-07 10:50:37 UTC (rev 729)
++++ trunk/kernel/2.6/net/can/compat.h	2008-05-07 11:54:07 UTC (rev 730)
+@@ -5,8 +5,13 @@
+ #ifndef CAN_COMPAT_H
+ #define CAN_COMPAT_H
+ 
++#ifndef PF_CAN
+ #define PF_CAN 29
++#endif
++
++#ifndef AF_CAN
+ #define AF_CAN PF_CAN
++#endif
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static inline void *kzalloc(size_t size, unsigned int __nocast flags)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000711.html">r729 - trunk/patches
+</A></li>
+	<LI>Next message: <A HREF="000713.html">r731 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#712">[ date ]</a>
+              <a href="thread.html#712">[ thread ]</a>
+              <a href="subject.html#712">[ subject ]</a>
+              <a href="author.html#712">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

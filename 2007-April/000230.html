@@ -1,0 +1,305 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r246 - in trunk/kernel/2.6: include/linux include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r246%20-%20in%20trunk/kernel/2.6%3A%20include/linux%20include/linux/can%20net/can&In-Reply-To=%3C200704260549.l3Q5nQrl011412%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000229.html">
+   <LINK REL="Next"  HREF="000231.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r246 - in trunk/kernel/2.6: include/linux include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r246%20-%20in%20trunk/kernel/2.6%3A%20include/linux%20include/linux/can%20net/can&In-Reply-To=%3C200704260549.l3Q5nQrl011412%40sheep.berlios.de%3E"
+       TITLE="r246 - in trunk/kernel/2.6: include/linux include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 26 07:49:26 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000229.html">r245 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000231.html">r247 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#230">[ date ]</a>
+              <a href="thread.html#230">[ thread ]</a>
+              <a href="subject.html#230">[ subject ]</a>
+              <a href="author.html#230">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-26 07:49:23 +0200 (Thu, 26 Apr 2007)
+New Revision: 246
+
+Modified:
+   trunk/kernel/2.6/include/linux/can.h
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+some more comment beautifying.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-04-25 12:56:22 UTC (rev 245)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-04-26 05:49:23 UTC (rev 246)
+@@ -39,7 +39,6 @@
+  * @ops:        pointer to struct proto_ops for sock-&gt;ops.
+  * @prot:       pointer to struct proto structure.
+  */
+-
+ struct can_proto {
+ 	int              type;
+ 	int              protocol;
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2007-04-25 12:56:22 UTC (rev 245)
++++ trunk/kernel/2.6/include/linux/can.h	2007-04-26 05:49:23 UTC (rev 246)
+@@ -41,7 +41,6 @@
+  * @can_dlc: the data length field of the CAN frame
+  * @data:    the CAN frame payload.
+  */
+-
+ struct can_frame {
+ 	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
+ 	__u8    can_dlc; /* data length code: 0 .. 8 */
+@@ -66,10 +65,9 @@
+  * @can_ifindex: CAN network interface index.
+  * @can_addr:    transport protocol specific address, mostly CAN IDs.
+  */
+-
+ struct sockaddr_can {
+-	sa_family_t   can_family;
+-	int           can_ifindex;
++	sa_family_t can_family;
++	int         can_ifindex;
+ 	union {
+ 		struct { canid_t rx_id, tx_id; } tp16;
+ 		struct { canid_t rx_id, tx_id; } tp20;
+@@ -94,7 +92,6 @@
+  * The filter can be inverted (CAN_INV_FILTER bit set in can_id) or it can
+  * filter for error frames (CAN_ERR_FLAG bit set in mask).
+  */
+-
+ struct can_filter {
+ 	canid_t can_id;
+ 	canid_t can_mask;
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-25 12:56:22 UTC (rev 245)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-26 05:49:23 UTC (rev 246)
+@@ -245,7 +245,7 @@
+  *  0 on success
+  *  -ENETDOWN when the selected interface is down
+  *  -ENOBUFS on full driver queue (see net_xmit_errno())
+- **/
++ */
+ int can_send(struct sk_buff *skb, int loop)
+ {
+ 	int err;
+@@ -382,7 +382,7 @@
+  *  0 on success
+  *  -ENOMEM on missing cache mem to create subscription entry
+  *  -ENODEV unknown device
+- **/
++ */
+ int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		    void (*func)(struct sk_buff *, void *), void *data,
+ 		    char *ident)
+@@ -471,7 +471,7 @@
+  *  0 on success
+  *  -EINVAL on missing subscription entry
+  *  -ENODEV unknown device
+- **/
++ */
+ int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		      void (*func)(struct sk_buff *, void *), void *data)
+ {
+@@ -675,7 +675,7 @@
+  *
+  * Return:
+  *  calculated jiffies (max: ULONG_MAX)
+- **/
++ */
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up)
+ {
+ 	unsigned long jif;
+@@ -710,7 +710,7 @@
+  * can_debug_cframe - print CAN frame
+  * @msg: pointer to message printed before the given CAN frame
+  * @cf: pointer to CAN frame
+- **/
++ */
+ void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+ {
+ 	va_list ap;
+@@ -751,7 +751,7 @@
+ /**
+  * can_debug_skb - print socket buffer content to kernel log
+  * @skb: pointer to socket buffer
+- **/
++ */
+ void can_debug_skb(struct sk_buff *skb)
+ {
+ 	int len, nbytes, i;
+@@ -800,7 +800,7 @@
+  *  -EINVAL invalid (out of range) protocol number
+  *  -EBUSY  protocol already in use
+  *  -ENOBUF if proto_register() fails
+- **/
++ */
+ int can_proto_register(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+@@ -840,7 +840,7 @@
+  * Return:
+  *  0 on success
+  *  -ESRCH protocol number was not registered
+- **/
++ */
+ int can_proto_unregister(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+@@ -872,7 +872,7 @@
+  *  0 on success
+  *  -ENOMEM on missing mem to create subscription entry
+  *  -ENODEV unknown device
+- **/
++ */
+ int can_dev_register(struct net_device *dev,
+ 		     void (*func)(unsigned long msg, void *), void *data)
+ {
+@@ -911,7 +911,7 @@
+  * Return:
+  *  0 on success
+  *  -EINVAL on missing subscription entry
+- **/
++ */
+ int can_dev_unregister(struct net_device *dev,
+ 		       void (*func)(unsigned long msg, void *), void *data)
+ {
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-04-25 12:56:22 UTC (rev 245)
++++ trunk/kernel/2.6/net/can/proc.c	2007-04-26 05:49:23 UTC (rev 246)
+@@ -53,7 +53,9 @@
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-/* proc filenames */
++/*
++ * proc filenames for the PF_CAN core
++ */
+ 
+ #define CAN_PROC_VERSION     &quot;version&quot;
+ #define CAN_PROC_STATS       &quot;stats&quot;
+@@ -112,16 +114,12 @@
+ extern struct hlist_head rx_dev_list;    /* rx dispatcher structures */
+ extern int stats_timer;                  /* module parameter. default: on */
+ 
+-/**************************************************/
+-/* procfs init / remove                           */
+-/**************************************************/
+-
++/*
++ * can_init_proc - create main CAN proc directory and procfs entries
++ */
+ void can_init_proc(void)
+ {
+-
+-	/* procfs init */
+-
+-	/* create /proc/can directory */
++	/* create /proc/net/can directory */
+ 	can_dir = proc_mkdir(CAN_PROC_DIR, NULL);
+ 
+ 	if (!can_dir) {
+@@ -163,9 +161,11 @@
+ 	}
+ }
+ 
++/*
++ * can_remove_proc - remove procfs entries and main CAN proc directory
++ */
+ void can_remove_proc(void)
+ {
+-	/* procfs remove */
+ 	if (pde_version)
+ 		can_remove_proc_readentry(CAN_PROC_VERSION);
+ 
+@@ -197,9 +197,9 @@
+ 		remove_proc_entry(CAN_PROC_DIR, NULL);
+ }
+ 
+-/**************************************************/
+-/* proc read functions                            */
+-/**************************************************/
++/* 
++ * proc read functions
++ */
+ 
+ static int can_print_rcvlist(char *page, int len, struct hlist_head *rx_list,
+ 			     struct net_device *dev)
+@@ -562,9 +562,9 @@
+ 	return len;
+ }
+ 
+-/**************************************************/
+-/* proc utility functions                         */
+-/**************************************************/
++/*
++ * proc utility functions
++ */
+ 
+ static struct proc_dir_entry *can_create_proc_readentry(const char *name,
+ 							mode_t mode,
+@@ -604,9 +604,9 @@
+ 	return ret;
+ }
+ 
+-/**************************************************/
+-/* af_can statistics stuff                        */
+-/**************************************************/
++/* 
++ * af_can statistics stuff
++ */
+ 
+ static void can_init_stats(int caller)
+ {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000229.html">r245 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000231.html">r247 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#230">[ date ]</a>
+              <a href="thread.html#230">[ thread ]</a>
+              <a href="subject.html#230">[ subject ]</a>
+              <a href="author.html#230">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

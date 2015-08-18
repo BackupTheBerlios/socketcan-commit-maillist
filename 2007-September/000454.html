@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r472 - in trunk/kernel/2.6: Documentation/networking include/linux	net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r472%20-%20in%20trunk/kernel/2.6%3A%20Documentation/networking%20include/linux%0A%09net/can&In-Reply-To=%3C200709191052.l8JAqNE8028559%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000453.html">
+   <LINK REL="Next"  HREF="000455.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r472 - in trunk/kernel/2.6: Documentation/networking include/linux	net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r472%20-%20in%20trunk/kernel/2.6%3A%20Documentation/networking%20include/linux%0A%09net/can&In-Reply-To=%3C200709191052.l8JAqNE8028559%40sheep.berlios.de%3E"
+       TITLE="r472 - in trunk/kernel/2.6: Documentation/networking include/linux	net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 19 12:52:23 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000453.html">r471 - in trunk/kernel/2.6/drivers/net/can: . i82527 sja1000
+</A></li>
+        <LI>Next message: <A HREF="000455.html">r473 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#454">[ date ]</a>
+              <a href="thread.html#454">[ thread ]</a>
+              <a href="subject.html#454">[ subject ]</a>
+              <a href="author.html#454">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-09-19 12:52:18 +0200 (Wed, 19 Sep 2007)
+New Revision: 472
+
+Modified:
+   trunk/kernel/2.6/Documentation/networking/can.txt
+   trunk/kernel/2.6/include/linux/can.h
+   trunk/kernel/2.6/net/can/dev.c
+Log:
+Fix some more typos and white-space.
+
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2007-09-18 11:33:24 UTC (rev 471)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2007-09-19 10:52:18 UTC (rev 472)
+@@ -97,7 +97,7 @@
+ CAN-IDs, frames, etc.
+ 
+ Similar functionality visible from user-space could be provided by a
+-character decive, too, but this would lead to a technically inelegant
++character device, too, but this would lead to a technically inelegant
+ solution for a couple of reasons:
+ 
+ * Intricate usage.  Instead of passing a protocol argument to
+@@ -111,7 +111,7 @@
+ * Abstraction.  In most existing character-device implementations, the
+   hardware-specific device driver for a CAN controller directly
+   provides the character device for the application to work with.
+-  This is at least very unusual in Unix systems, for both char and
++  This is at least very unusual in Unix systems for both, char and
+   block devices.  For example you don't have a character device for a
+   certain UART of a serial interface, a certain sound chip in your
+   computer, a SCSI or IDE controller providing access to your hard
+@@ -123,7 +123,7 @@
+   and IDE subsystems for the devices mentioned above.
+ 
+   The easiest way to implement a CAN device driver is as a character
+-  without such a (complete) abstraction layer, as is done by most
++  device without such a (complete) abstraction layer, as is done by most
+   existing drivers.  The right way, however, would be to add such a
+   layer with all the functionality like registering for certain CAN
+   IDs, supporting several open file descriptors and (de)multiplexing
+@@ -141,7 +141,7 @@
+ 
+   As described in chapter 2 it is the main goal of Socket CAN to
+   provide a socket interface to user space applications which builds
+-  upon the Linux networklayer. In contrast to the commonly known
++  upon the Linux network layer. In contrast to the commonly known
+   TCP/IP and ethernet networking, the CAN bus is a broadcast-only(!)
+   medium that has no MAC-layer addressing like ethernet. The CAN-identifier
+   (can_id) is used for arbitration on the CAN-bus. Therefore the CAN-IDs
+@@ -186,7 +186,7 @@
+   The Linux network devices (by default) just can handle the
+   transmission and reception of media dependent frames. Due to the
+   arbritration on the CAN bus the transmission of a low prio CAN-ID
+-  may be delayed by the recepition of a high prio CAN frame. To
++  may be delayed by the reception of a high prio CAN frame. To
+   reflect the correct* traffic on the node the loopback of the sent
+   data has to be performed right after a successful transmission. If
+   the CAN network interface is not capable of performing the loopback for
+@@ -273,7 +273,7 @@
+   default. A read(2) system call on a CAN_RAW socket transfers a
+   struct can_frame to the user space.
+ 
+-  The sockaddr_can structure has an interface index analogue to the
++  The sockaddr_can structure has an interface index like the
+   PF_PACKET socket, that also binds to a specific interface:
+ 
+     struct sockaddr_can {
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2007-09-18 11:33:24 UTC (rev 471)
++++ trunk/kernel/2.6/include/linux/can.h	2007-09-19 10:52:18 UTC (rev 472)
+@@ -1,7 +1,7 @@
+ /*
+  * linux/can.h
+  *
+- * Definitions for CAN networklayer (socket addr / CAN frame / CAN filter)
++ * Definitions for CAN network layer (socket addr / CAN frame / CAN filter)
+  *
+  * $Id$
+  *
+
+Modified: trunk/kernel/2.6/net/can/dev.c
+===================================================================
+--- trunk/kernel/2.6/net/can/dev.c	2007-09-18 11:33:24 UTC (rev 471)
++++ trunk/kernel/2.6/net/can/dev.c	2007-09-19 10:52:18 UTC (rev 472)
+@@ -220,7 +220,7 @@
+ 	case SIOCGCANFILTER:
+ 		break;
+ 	case SIOCGCANSTATE:
+-		if(can-&gt;do_get_state)
++		if (can-&gt;do_get_state)
+ 			return can-&gt;do_get_state(dev, (can_state_t *)(&amp;ifr-&gt;ifr_ifru));
+ 		break;
+ 	case SIOCGCANSTATS:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000453.html">r471 - in trunk/kernel/2.6/drivers/net/can: . i82527 sja1000
+</A></li>
+	<LI>Next message: <A HREF="000455.html">r473 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#454">[ date ]</a>
+              <a href="thread.html#454">[ thread ]</a>
+              <a href="subject.html#454">[ subject ]</a>
+              <a href="author.html#454">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

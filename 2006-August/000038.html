@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r59 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r59%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200608291209.k7TC9vRi027451%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000037.html">
+   <LINK REL="Next"  HREF="000039.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r59 - trunk/kernel/2.4/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r59%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200608291209.k7TC9vRi027451%40sheep.berlios.de%3E"
+       TITLE="r59 - trunk/kernel/2.4/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 29 14:09:57 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000037.html">r58 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000039.html">r60 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#38">[ date ]</a>
+              <a href="thread.html#38">[ thread ]</a>
+              <a href="subject.html#38">[ subject ]</a>
+              <a href="author.html#38">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-08-29 14:09:55 +0200 (Tue, 29 Aug 2006)
+New Revision: 59
+
+Modified:
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/can.h
+   trunk/kernel/2.4/can/can_error.h
+   trunk/kernel/2.4/can/raw.h
+Log:
+updated Kernel 2.4 includes to values from Kernel 2.6 (e.g. PF_CAN = 29)
+to be able to compile the test tools and can-utils again.
+
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2006-08-29 11:49:49 UTC (rev 58)
++++ trunk/kernel/2.4/can/af_can.h	2006-08-29 12:09:55 UTC (rev 59)
+@@ -61,17 +61,20 @@
+ 
+ #include &quot;can.h&quot;
+ 
+-#define PF_CAN       30
+-#define AF_CAN       PF_CAN
++/* CAN socket protocol family definition */
++/* to be moved to include/linux/socket.h */
++#define PF_CAN		29	/* Controller Area Network      */
++#define AF_CAN		PF_CAN
+ 
+-#define CAN_TP16     1
+-#define CAN_TP20     2
+-#define CAN_RAW      3
+-#define CAN_BCM      4
+-#define CAN_MCNET    5
+-#define CAN_ISOTP    6
+-#define CAN_BAP      7
+-#define CAN_MAX      8
++/* particular protocols of the protocol family PF_CAN */
++#define CAN_RAW		1 /* RAW sockets */
++#define CAN_BCM		2 /* Broadcast Manager */
++#define CAN_TP16	3 /* VAG Transport Protocol v1.6 */
++#define CAN_TP20	4 /* VAG Transport Protocol v2.0 */
++#define CAN_MCNET	5 /* Bosch MCNet */
++#define CAN_ISOTP	6 /* ISO 15765-2 Transport Protocol */
++#define CAN_BAP		7 /* VAG Bedien- und Anzeigeprotokoll */
++#define CAN_MAX		8
+ 
+ #define SOL_CAN_BASE 100
+ 
+@@ -96,7 +99,7 @@
+ 
+ #ifdef __KERNEL__
+ 
+-#define CAN_PROC_DIR &quot;sys/net/can&quot; /* /proc/... */
++#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+ 
+ void can_proto_register(int proto, struct proto_ops *ops);
+ void can_proto_unregister(int proto);
+
+Modified: trunk/kernel/2.4/can/can.h
+===================================================================
+--- trunk/kernel/2.4/can/can.h	2006-08-29 11:49:49 UTC (rev 58)
++++ trunk/kernel/2.4/can/can.h	2006-08-29 12:09:55 UTC (rev 59)
+@@ -52,8 +52,15 @@
+ 
+ #include &lt;linux/types.h&gt;
+ 
+-#define ETH_P_CAN    0x000c
++/* controller area network (CAN) kernel definitions */
+ 
++/* ethernet protocol identifier */
++#define ETH_P_CAN	0x000C	/* to be moved to include/linux/if_ether.h */
++
++/* ARP protocol identifier (dummy type for non ARP hardware) */
++#define ARPHRD_CAN	804	/* to be moved to include/linux/if_arp.h */
++
++
+ /* special address description flags for the CAN_ID */
+ #define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+ #define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+@@ -66,9 +73,9 @@
+ typedef __u32 canid_t;
+ 
+ struct can_frame {
+-    canid_t can_id;      /* 32 bit CAN_ID + EFF/RTR flags */
+-    __u8    can_dlc;     /* data length code: 0 .. 8 */
+-    __u8    data[8] __attribute__ ((aligned(8)));
++	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
++	__u8    can_dlc; /* data length code: 0 .. 8 */
++	__u8    data[8] __attribute__ ((aligned(8)));
+ };
+ 
+ #endif /* CAN_H */
+
+Modified: trunk/kernel/2.4/can/can_error.h
+===================================================================
+--- trunk/kernel/2.4/can/can_error.h	2006-08-29 11:49:49 UTC (rev 58)
++++ trunk/kernel/2.4/can/can_error.h	2006-08-29 12:09:55 UTC (rev 59)
+@@ -53,13 +53,15 @@
+ #define CAN_ERR_DLC 8 /* dlc for error frames */
+ 
+ /* error class (mask) in can_id */
+-#define CAN_ERR_BUSOFF       0x00000001U /* bus off */
+-#define CAN_ERR_TX_TIMEOUT   0x00000002U /* TX timeout (netdevice driver) */
+-#define CAN_ERR_ACK          0x00000004U /* received no ACK on transmission */
+-#define CAN_ERR_LOSTARB      0x00000008U /* lost arbitration    / data[0]    */
+-#define CAN_ERR_CRTL         0x00000010U /* controller problems / data[1]    */
+-#define CAN_ERR_PROT         0x00000020U /* protocol violations / data[2..3] */
+-#define CAN_ERR_TRX          0x00000040U /* transceiver status  / data[4]    */
++#define CAN_ERR_TX_TIMEOUT   0x00000001U /* TX timeout (by netdevice driver) */
++#define CAN_ERR_LOSTARB      0x00000002U /* lost arbitration    / data[0]    */
++#define CAN_ERR_CRTL         0x00000004U /* controller problems / data[1]    */
++#define CAN_ERR_PROT         0x00000008U /* protocol violations / data[2..3] */
++#define CAN_ERR_TRX          0x00000010U /* transceiver status  / data[4]    */
++#define CAN_ERR_ACK          0x00000020U /* received no ACK on transmission */
++#define CAN_ERR_BUSOFF       0x00000040U /* bus off */
++#define CAN_ERR_BUSERROR     0x00000080U /* bus error (may flood!) */
++#define CAN_ERR_RESTARTED    0x00000100U /* controller restarted */
+ 
+ #define CAN_ERR_MASK         0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
+ 
+@@ -73,6 +75,10 @@
+ #define CAN_ERR_CRTL_TX_OVERFLOW 0x02 /* TX buffer overflow */
+ #define CAN_ERR_CRTL_RX_WARNING  0x04 /* reached warning level for RX errors */
+ #define CAN_ERR_CRTL_TX_WARNING  0x08 /* reached warning level for TX errors */
++#define CAN_ERR_CRTL_RX_PASSIVE  0x10 /* reached error passive status RX */
++#define CAN_ERR_CRTL_TX_PASSIVE  0x20 /* reached error passive status TX */
++				      /* (at least one error counter exceeds */
++				      /* the protocol-defined level of 127)  */
+ 
+ /* error in CAN protocol (type) / data[2] */
+ #define CAN_ERR_PROT_UNSPEC      0x00 /* unspecified */
+
+Modified: trunk/kernel/2.4/can/raw.h
+===================================================================
+--- trunk/kernel/2.4/can/raw.h	2006-08-29 11:49:49 UTC (rev 58)
++++ trunk/kernel/2.4/can/raw.h	2006-08-29 12:09:55 UTC (rev 59)
+@@ -55,7 +55,9 @@
+ 
+ #define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
+ 
+-#define CAN_RAW_FILTER     1
+-#define CAN_RAW_ERR_FILTER 2
++#define CAN_RAW_FILTER        1
++#define CAN_RAW_ERR_FILTER    2
++#define CAN_RAW_LOOPBACK      3
++#define CAN_RAW_RECV_OWN_MSGS 4
+ 
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000037.html">r58 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000039.html">r60 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#38">[ date ]</a>
+              <a href="thread.html#38">[ thread ]</a>
+              <a href="subject.html#38">[ subject ]</a>
+              <a href="author.html#38">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

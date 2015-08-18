@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r210 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r210%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200704151015.l3FAFbaH014699%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000193.html">
+   <LINK REL="Next"  HREF="000195.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r210 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r210%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200704151015.l3FAFbaH014699%40sheep.berlios.de%3E"
+       TITLE="r210 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 15 12:15:37 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000193.html">r209 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000195.html">r211 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#194">[ date ]</a>
+              <a href="thread.html#194">[ thread ]</a>
+              <a href="subject.html#194">[ subject ]</a>
+              <a href="author.html#194">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-15 12:15:36 +0200 (Sun, 15 Apr 2007)
+New Revision: 210
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+Log:
+Increased readability for LKML code review (see comment in r209 log).
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-04-14 19:28:34 UTC (rev 209)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-04-15 10:15:36 UTC (rev 210)
+@@ -135,12 +135,14 @@
+ 	stats-&gt;tx_packets++;
+ 	stats-&gt;tx_bytes += skb-&gt;len;
+ 
+-	loop = *(struct sock **)skb-&gt;cb != NULL;   /* loopback required */
++	/* loopback (on driver level) required? */
++	loop = *(struct sock **)skb-&gt;cb != NULL;
+ 
+ #ifdef DO_LOOPBACK
+ 	if (loop) {
+ 		if (atomic_read(&amp;skb-&gt;users) != 1) {
+ 			struct sk_buff *old_skb = skb;
++
+ 			skb = skb_clone(old_skb, GFP_ATOMIC);
+ 			DBG(&quot;  freeing old skbuff %p, using new skbuff %p\n&quot;,
+ 			    old_skb, skb);
+@@ -151,13 +153,14 @@
+ 		} else
+ 			skb_orphan(skb);
+ 
+-		vcan_rx(skb, dev); /* with packet counting */
++		/* receive with packet counting */
++		vcan_rx(skb, dev);
+ 	} else {
+ 		/* no looped packets =&gt; no counting */
+ 		kfree_skb(skb);
+ 	}
+ #else
+-	/* only count, when the CAN core did a loopback */
++	/* only count here, because the CAN core already did the loopback */
+ 	if (loop) {
+ 		stats-&gt;rx_packets++;
+ 		stats-&gt;rx_bytes += skb-&gt;len;
+@@ -229,34 +232,36 @@
+ 
+ 	printk(banner);
+ 
++	/* register at least one interface */
+ 	if (numdev &lt; 1)
+-		numdev = 1; /* register at least one interface */
++		numdev = 1;
+ 
+ 	printk(KERN_INFO &quot;vcan: registering %d virtual CAN interfaces.\n&quot;,
+ 	       numdev );
+ 
+-	vcan_devs = kmalloc(numdev * sizeof(struct net_device *), GFP_KERNEL);
++	vcan_devs = kzalloc(numdev * sizeof(struct net_device *), GFP_KERNEL);
+ 	if (!vcan_devs) {
+ 		printk(KERN_ERR &quot;vcan: Can't allocate vcan devices array!\n&quot;);
+ 		return -ENOMEM;
+ 	}
+ 
+-	/* Clear the pointer array */
+-	memset(vcan_devs, 0, numdev * sizeof(struct net_device *));
+-
+ 	for (i = 0; i &lt; numdev; i++) {
+-		if (!(vcan_devs[i] = alloc_netdev(STATSIZE, &quot;vcan%d&quot;,
+-						  vcan_init))) {
++		vcan_devs[i] = alloc_netdev(STATSIZE, &quot;vcan%d&quot;, vcan_init);
++		if (!vcan_devs[i]) {
+ 			printk(KERN_ERR &quot;vcan: error allocating net_device\n&quot;);
+ 			result = -ENOMEM;
+ 			goto out;
+-		} else if ((result = register_netdev(vcan_devs[i])) &lt; 0) {
++		}
++
++		result = register_netdev(vcan_devs[i]);
++		if (result &lt; 0) {
+ 			printk(KERN_ERR &quot;vcan: error %d registering &quot;
+ 			       &quot;interface %s\n&quot;,
+ 			       result, vcan_devs[i]-&gt;name);
+ 			free_netdev(vcan_devs[i]);
+ 			vcan_devs[i] = NULL;
+ 			goto out;
++
+ 		} else {
+ 			DBG(&quot;successfully registered interface %s\n&quot;,
+ 			    vcan_devs[i]-&gt;name);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000193.html">r209 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000195.html">r211 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#194">[ date ]</a>
+              <a href="thread.html#194">[ thread ]</a>
+              <a href="subject.html#194">[ subject ]</a>
+              <a href="author.html#194">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

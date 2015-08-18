@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r741 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r741%20-%20trunk&In-Reply-To=%3C200805220744.m4M7iM9K022867%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000721.html">
+   <LINK REL="Next"  HREF="000723.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r741 - trunk</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r741%20-%20trunk&In-Reply-To=%3C200805220744.m4M7iM9K022867%40sheep.berlios.de%3E"
+       TITLE="r741 - trunk">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu May 22 09:44:22 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000721.html">r740 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000723.html">r742 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#722">[ date ]</a>
+              <a href="thread.html#722">[ thread ]</a>
+              <a href="subject.html#722">[ subject ]</a>
+              <a href="author.html#722">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-22 09:44:21 +0200 (Thu, 22 May 2008)
+New Revision: 741
+
+Modified:
+   trunk/FILES-2.6-ALL
+Log:
+Updated file ist for patch generation.
+
+
+Modified: trunk/FILES-2.6-ALL
+===================================================================
+--- trunk/FILES-2.6-ALL	2008-05-22 07:15:22 UTC (rev 740)
++++ trunk/FILES-2.6-ALL	2008-05-22 07:44:21 UTC (rev 741)
+@@ -1,44 +1,63 @@
+-kernel/2.6/net/can/Kconfig
+-kernel/2.6/net/can/Makefile
+-kernel/2.6/net/can/compat.h
+-kernel/2.6/net/can/af_can.c
+-kernel/2.6/net/can/af_can.h
+-kernel/2.6/net/can/proc.c
+-kernel/2.6/net/can/raw.c
+-kernel/2.6/net/can/bcm.c
+-kernel/2.6/net/can/dev.c
+ kernel/2.6/include/linux/can.h
++kernel/2.6/include/linux/can/error.h
+ kernel/2.6/include/linux/can/core.h
+-kernel/2.6/include/linux/can/error.h
++kernel/2.6/include/linux/can/ioctl.h
++kernel/2.6/include/linux/can/dev.h
+ kernel/2.6/include/linux/can/raw.h
+ kernel/2.6/include/linux/can/bcm.h
+-kernel/2.6/include/linux/can/ioctl.h
+-kernel/2.6/include/linux/can/dev.h
+-kernel/2.6/drivers/net/can/Kconfig
+-kernel/2.6/drivers/net/can/Makefile
+-kernel/2.6/drivers/net/can/vcan.c
++kernel/2.6/net/can/af_can.c
++kernel/2.6/net/can/dev.c
++kernel/2.6/net/can/raw.c
++kernel/2.6/net/can/proc.c
++kernel/2.6/net/can/af_can.h
++kernel/2.6/net/can/bcm.c
++kernel/2.6/net/can/sysfs.c
++kernel/2.6/net/can/compat.h
++kernel/2.6/net/can/Makefile
++kernel/2.6/net/can/sysfs.h
++kernel/2.6/net/can/Kconfig
++kernel/2.6/drivers/net/can/sja1000/sja1000.h
++kernel/2.6/drivers/net/can/sja1000/ixxat_pci.c
++kernel/2.6/drivers/net/can/sja1000/sja1000.c
++kernel/2.6/drivers/net/can/sja1000/peak_pci.c
++kernel/2.6/drivers/net/can/sja1000/ems_pci.c
++kernel/2.6/drivers/net/can/sja1000/kvaser_pci.c
++kernel/2.6/drivers/net/can/sja1000/pcm027.c
++kernel/2.6/drivers/net/can/sja1000/Makefile
+ kernel/2.6/drivers/net/can/slcan.c
++kernel/2.6/drivers/net/can/mscan/mscan.h
++kernel/2.6/drivers/net/can/mscan/mscan.c
++kernel/2.6/drivers/net/can/mscan/Makefile
++kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
++kernel/2.6/drivers/net/can/ccan/h7202_can.c
+ kernel/2.6/drivers/net/can/ccan/ccan.c
++kernel/2.6/drivers/net/can/ccan/Makefile
+ kernel/2.6/drivers/net/can/ccan/ccan.h
+-kernel/2.6/drivers/net/can/ccan/h7202_can.c
+-kernel/2.6/drivers/net/can/ccan/Makefile
+-kernel/2.6/drivers/net/can/old/i82527/proc.c
+-kernel/2.6/drivers/net/can/old/i82527/i82527.c
+-kernel/2.6/drivers/net/can/old/i82527/i82527.h
+-kernel/2.6/drivers/net/can/old/i82527/Makefile
+-kernel/2.6/drivers/net/can/mscan/Makefile
+-kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+-kernel/2.6/drivers/net/can/mscan/mscan.c
+-kernel/2.6/drivers/net/can/mscan/mscan.h
++kernel/2.6/drivers/net/can/vcan.c
++kernel/2.6/drivers/net/can/Makefile
++kernel/2.6/drivers/net/can/old/sja1000/sja1000.h
++kernel/2.6/drivers/net/can/old/sja1000/sja1000.c
++kernel/2.6/drivers/net/can/old/sja1000/proc.c
+ kernel/2.6/drivers/net/can/old/sja1000/Makefile
+-kernel/2.6/drivers/net/can/old/sja1000/proc.c
+-kernel/2.6/drivers/net/can/old/sja1000/sja1000.c
+-kernel/2.6/drivers/net/can/old/sja1000/sja1000.h
+-kernel/2.6/drivers/net/can/old/hal/pc7io.c
++kernel/2.6/drivers/net/can/old/mscan/mscan.h
++kernel/2.6/drivers/net/can/old/mscan/mscan.c
++kernel/2.6/drivers/net/can/old/mscan/Makefile
++kernel/2.6/drivers/net/can/old/mscan/mpc52xx_can.c
++kernel/2.6/drivers/net/can/old/hal/hal.h
+ kernel/2.6/drivers/net/can/old/hal/iomux.c
++kernel/2.6/drivers/net/can/old/hal/c200.c
++kernel/2.6/drivers/net/can/old/hal/io.c
++kernel/2.6/drivers/net/can/old/hal/iomem.c
+ kernel/2.6/drivers/net/can/old/hal/gw2.c
+-kernel/2.6/drivers/net/can/old/hal/iomem.c
+ kernel/2.6/drivers/net/can/old/hal/esdio.c
+-kernel/2.6/drivers/net/can/old/hal/c200.c
+-kernel/2.6/drivers/net/can/old/hal/hal.h
+-kernel/2.6/drivers/net/can/old/hal/io.c
++kernel/2.6/drivers/net/can/old/hal/pc7io.c
++kernel/2.6/drivers/net/can/old/ccan/h7202_can.c
++kernel/2.6/drivers/net/can/old/ccan/ccan.c
++kernel/2.6/drivers/net/can/old/ccan/Makefile
++kernel/2.6/drivers/net/can/old/ccan/ccan.h
++kernel/2.6/drivers/net/can/old/i82527/proc.c
++kernel/2.6/drivers/net/can/old/i82527/i82527.h
++kernel/2.6/drivers/net/can/old/i82527/i82527.c
++kernel/2.6/drivers/net/can/old/i82527/Makefile
++kernel/2.6/drivers/net/can/old/Kconfig
++kernel/2.6/drivers/net/can/Kconfig
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000721.html">r740 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000723.html">r742 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#722">[ date ]</a>
+              <a href="thread.html#722">[ thread ]</a>
+              <a href="subject.html#722">[ subject ]</a>
+              <a href="author.html#722">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

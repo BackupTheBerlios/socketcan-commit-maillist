@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r251 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r251%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704301136.l3UBaP6h000354%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000234.html">
+   <LINK REL="Next"  HREF="000236.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r251 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r251%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704301136.l3UBaP6h000354%40sheep.berlios.de%3E"
+       TITLE="r251 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr 30 13:36:25 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000234.html">r250 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000236.html">r252 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#235">[ date ]</a>
+              <a href="thread.html#235">[ thread ]</a>
+              <a href="subject.html#235">[ subject ]</a>
+              <a href="author.html#235">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-04-30 13:36:19 +0200 (Mon, 30 Apr 2007)
+New Revision: 251
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Moved/deleted comments which were on the same line as code.
+Replaced a goto by return.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-30 11:14:50 UTC (rev 250)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-30 11:36:19 UTC (rev 251)
+@@ -338,12 +338,15 @@
+ 	else
+ 		*mask &amp;= (CAN_SFF_MASK | CAN_RTR_FLAG);
+ 
+-	*can_id &amp;= *mask; /* reduce condition testing at receive time */
++	/* reduce condition testing at receive time */
++	*can_id &amp;= *mask;
+ 
+-	if (inv) /* inverse can_id/can_mask filter */
++	/* inverse can_id/can_mask filter */
++	if (inv)
+ 		return &amp;d-&gt;rx_inv;
+ 
+-	if (!(*mask)) /* mask == 0 =&gt; no condition testing at receive time */
++	/* mask == 0 =&gt; no condition testing at receive time */
++	if (!(*mask))
+ 		return &amp;d-&gt;rx_all;
+ 
+ 	/* use extra filterset for the subscription of exactly *ONE* can_id */
+@@ -357,7 +360,8 @@
+ 			return &amp;d-&gt;rx_sff[*can_id];
+ 	}
+ 
+-	return &amp;d-&gt;rx_fil;  /* default: filter via can_id/can_mask */
++	/* default: filter via can_id/can_mask */
++	return &amp;d-&gt;rx_fil;
+ }
+ 
+ /**
+@@ -545,7 +549,7 @@
+ 	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ 	if (clone) {
+ 		r-&gt;func(clone, r-&gt;data);
+-		r-&gt;matches++;    /* update specific statistics */
++		r-&gt;matches++;
+ 	}
+ }
+ 
+@@ -569,7 +573,7 @@
+ 				matches++;
+ 			}
+ 		}
+-		goto out;
++		return matches;
+ 	}
+ 
+ 	/* check for unfiltered entries */
+@@ -615,7 +619,6 @@
+ 		}
+ 	}
+ 
+- out:
+ 	return matches;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000234.html">r250 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000236.html">r252 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#235">[ date ]</a>
+              <a href="thread.html#235">[ thread ]</a>
+              <a href="subject.html#235">[ subject ]</a>
+              <a href="author.html#235">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

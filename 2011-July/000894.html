@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1263 - trunk/test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1263%20-%20trunk/test&In-Reply-To=%3C20110709180042.0F4E3480B8A%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000895.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1263 - trunk/test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1263%20-%20trunk/test&In-Reply-To=%3C20110709180042.0F4E3480B8A%40sheep.berlios.de%3E"
+       TITLE="r1263 - trunk/test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Jul  9 20:00:41 CEST 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000895.html">r1264 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#894">[ date ]</a>
+              <a href="thread.html#894">[ thread ]</a>
+              <a href="subject.html#894">[ subject ]</a>
+              <a href="author.html#894">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-07-09 20:00:41 +0200 (Sat, 09 Jul 2011)
+New Revision: 1263
+
+Added:
+   trunk/test/tst-filter.c
+Modified:
+   trunk/test/Makefile
+Log:
+Added new programm to test the CAN filters in af_can.c .
+As the formerly test bench consisting of
+- tst-filter-master.c
+- tst-filter-server.c
+- tst-filter-server.result
+is pretty hard to use, this new tst-filter tool is intended to replace these
+tools in the Linux test project LTP.
+
+Together with tst-rcv-own-msgs, tst-filter is a complete new test bench then.
+
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+
+
+Modified: trunk/test/Makefile
+===================================================================
+--- trunk/test/Makefile	2011-06-29 16:54:18 UTC (rev 1262)
++++ trunk/test/Makefile	2011-07-09 18:00:41 UTC (rev 1263)
+@@ -53,6 +53,7 @@
+ 		tst-err		  \
+ 		tst-raw-sendto	  \
+ 		tst-packet	  \
++		tst-filter	  \
+ 		tst-filter-master \
+ 		tst-filter-server \
+ 		tst-rcv-own-msgs  \
+
+Added: trunk/test/tst-filter.c
+===================================================================
+--- trunk/test/tst-filter.c	                        (rev 0)
++++ trunk/test/tst-filter.c	2011-07-09 18:00:41 UTC (rev 1263)
+@@ -0,0 +1,244 @@
++/*
++ *  $Id$
++ */
++
++/*
++ * tst-filter.c
++ *
++ * Copyright (c) 2011 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
++ * GPL apply INSTEAD OF those given above.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;string.h&gt;
++
++#include &lt;sys/types.h&gt;
++#include &lt;sys/socket.h&gt;
++#include &lt;sys/ioctl.h&gt;
++#include &lt;sys/time.h&gt;
++#include &lt;net/if.h&gt;
++
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
++
++#define ID 0x123
++#define TC 18 /* # of testcases */
++
++const int rx_res[TC] = {4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1};
++const int rxbits_res[TC] = {4369, 4369, 4369, 4369, 17, 4352, 17, 4352, 257, 257, 4112, 4112, 1, 256, 16, 4096, 1, 256};
++
++canid_t calc_id(int testcase)
++{
++	canid_t id = ID;
++
++	if (testcase &amp; 1)
++		id |= CAN_EFF_FLAG;
++	if (testcase &amp; 2)
++		id |= CAN_RTR_FLAG;
++
++	return id;
++}
++
++canid_t calc_mask(int testcase)
++{
++	canid_t mask = CAN_SFF_MASK;
++
++	if (testcase &gt; 15)
++		return (CAN_EFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG);
++
++	if (testcase &amp; 4)
++		mask |= CAN_EFF_FLAG;
++	if (testcase &amp; 8)
++		mask |= CAN_RTR_FLAG;
++
++	return mask;
++}
++
++int main(int argc, char **argv)
++{
++	fd_set rdfs;
++        struct timeval tv;
++	int s;
++	struct sockaddr_can addr;
++	struct can_filter rfilter;
++	struct can_frame frame;
++	int testcase;
++	int have_rx;
++	int rx;
++	int rxbits, rxbitval;
++	int ret;
++	int recv_own_msgs = 1;
++	struct ifreq ifr;
++
++	/* check command line options */
++	if (argc != 2) {
++		fprintf(stderr, &quot;Usage: %s &lt;device&gt;\n&quot;, argv[0]);
++		return 1;
++	}
++
++	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
++		perror(&quot;socket&quot;);
++		return 1;
++	}
++
++	strcpy(ifr.ifr_name, argv[1]);
++	if (ioctl(s, SIOCGIFINDEX, &amp;ifr) &lt; 0) {
++		perror(&quot;SIOCGIFINDEX&quot;);
++		return 1;
++	}
++	addr.can_family = AF_CAN;
++	addr.can_ifindex = ifr.ifr_ifindex;
++
++	setsockopt(s, SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS,
++		   &amp;recv_own_msgs, sizeof(recv_own_msgs));
++
++	if (bind(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
++		perror(&quot;bind&quot;);
++		return 1;
++	}
++
++	printf(&quot;---\n&quot;);
++
++	for (testcase = 0; testcase &lt; TC; testcase++) {
++		
++		rfilter.can_id   = calc_id(testcase);
++		rfilter.can_mask = calc_mask(testcase);
++		setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER,
++			   &amp;rfilter, sizeof(rfilter));
++
++		printf(&quot;testcase %2d filters : can_id = 0x%08X can_mask = 0x%08X\n&quot;,
++		       testcase, rfilter.can_id, rfilter.can_mask);
++
++		printf(&quot;testcase %2d sending patterns ... &quot;, testcase);
++
++		frame.can_dlc = 1;
++		frame.data[0] = testcase;
++
++		frame.can_id = ID;
++		if (write(s, &amp;frame, sizeof(frame)) &lt; 0) {
++			perror(&quot;write&quot;);
++			exit(1);
++		}
++		frame.can_id = (ID | CAN_RTR_FLAG);
++		if (write(s, &amp;frame, sizeof(frame)) &lt; 0) {
++			perror(&quot;write&quot;);
++			exit(1);
++		}
++		frame.can_id = (ID | CAN_EFF_FLAG);
++		if (write(s, &amp;frame, sizeof(frame)) &lt; 0) {
++			perror(&quot;write&quot;);
++			exit(1);
++		}
++		frame.can_id = (ID | CAN_EFF_FLAG | CAN_RTR_FLAG);
++		if (write(s, &amp;frame, sizeof(frame)) &lt; 0) {
++			perror(&quot;write&quot;);
++			exit(1);
++		}
++
++		printf(&quot;ok\n&quot;);
++
++		have_rx = 1;
++		rx = 0;
++		rxbits = 0;
++
++		while (have_rx) {
++
++			have_rx = 0;
++			FD_ZERO(&amp;rdfs);
++			FD_SET(s, &amp;rdfs);
++			tv.tv_sec = 0;
++			tv.tv_usec = 50000; /* 50ms timeout */
++
++			ret = select(s+1, &amp;rdfs, NULL, NULL, &amp;tv);
++			if (ret &lt; 0) {
++				perror(&quot;select&quot;);
++				exit(1);
++			}
++
++			if (FD_ISSET(s, &amp;rdfs)) {
++				have_rx = 1;
++				ret = read(s, &amp;frame, sizeof(struct can_frame));
++				if (ret &lt; 0) {
++					perror(&quot;read&quot;);
++					exit(1);
++				}
++				if ((frame.can_id &amp; CAN_SFF_MASK) != ID) {
++					fprintf(stderr, &quot;received wrong can_id!\n&quot;);
++					exit(1);
++				}
++				if (frame.data[0] != testcase) {
++					fprintf(stderr, &quot;received wrong testcase!\n&quot;);
++					exit(1);
++				}
++
++				/* test &amp; calc rxbits */
++				rxbitval = 1 &lt;&lt; ((frame.can_id &amp; (CAN_EFF_FLAG|CAN_RTR_FLAG|CAN_ERR_FLAG)) &gt;&gt; 28);
++
++				/* only receive a rxbitval once */
++				if ((rxbits &amp; rxbitval) == rxbitval) {
++					fprintf(stderr, &quot;received rxbitval %d twice!\n&quot;, rxbitval);
++					exit(1);
++				}
++				rxbits |= rxbitval;
++				rx++;
++
++				printf(&quot;testcase %2d rx : can_id = 0x%08X rx = %d rxbits = %d\n&quot;,
++				       testcase, frame.can_id, rx, rxbits);
++			}
++		}
++		/* rx timed out -&gt; check the received results */
++		if (rx_res[testcase] != rx) {
++			fprintf(stderr, &quot;wrong rx value in testcase %d : %d (expected %d)\n&quot;,
++				testcase, rx, rx_res[testcase]);
++			exit(1);
++		}
++		if (rxbits_res[testcase] != rxbits) {
++			fprintf(stderr, &quot;wrong rxbits value in testcase %d : %d (expected %d)\n&quot;,
++				testcase, rxbits, rxbits_res[testcase]);
++			exit(1);
++		}
++		printf(&quot;testcase %2d ok\n---\n&quot;, testcase);
++	}
++
++	close(s);
++
++	return 0;
++}
+
+
+Property changes on: trunk/test/tst-filter.c
+___________________________________________________________________
+Added: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000895.html">r1264 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#894">[ date ]</a>
+              <a href="thread.html#894">[ thread ]</a>
+              <a href="subject.html#894">[ subject ]</a>
+              <a href="author.html#894">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

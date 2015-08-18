@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1240 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1240%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110420120258.553A84813F7%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000871.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1240 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1240%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110420120258.553A84813F7%40sheep.berlios.de%3E"
+       TITLE="r1240 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 20 14:02:58 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000871.html">r1239 - in trunk/kernel/2.6: Documentation/networking	Documentation/networking/can drivers/net/can/mscan	drivers/net/can/sja1000 drivers/net/can/softing	drivers/net/can/usb include/socketcan/can net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#872">[ date ]</a>
+              <a href="thread.html#872">[ thread ]</a>
+              <a href="subject.html#872">[ subject ]</a>
+              <a href="author.html#872">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-04-20 14:02:58 +0200 (Wed, 20 Apr 2011)
+New Revision: 1240
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/isotp.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+can: add missing socket check in {raw|bcm|isotp}_release functions
+
+We can get here with a NULL socket argument passed from userspace,
+so we need to handle it accordingly.
+
+Thanks to Dave Jones pointing at this issue in net/can/bcm.c
+
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2011-04-19 14:15:21 UTC (rev 1239)
++++ trunk/kernel/2.6/net/can/bcm.c	2011-04-20 12:02:58 UTC (rev 1240)
+@@ -1557,9 +1557,14 @@
+ static int bcm_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_sock *bo = bcm_sk(sk);
++	struct bcm_sock *bo;
+ 	struct bcm_op *op, *next;
+ 
++	if (sk == NULL)
++		return 0;
++
++	bo = bcm_sk(sk);
++
+ 	/* remove bcm_ops, timer, rx_unregister(), etc. */
+ 
+ 	unregister_netdevice_notifier(&amp;bo-&gt;notifier);
+
+Modified: trunk/kernel/2.6/net/can/isotp.c
+===================================================================
+--- trunk/kernel/2.6/net/can/isotp.c	2011-04-19 14:15:21 UTC (rev 1239)
++++ trunk/kernel/2.6/net/can/isotp.c	2011-04-20 12:02:58 UTC (rev 1240)
+@@ -795,8 +795,13 @@
+ static int isotp_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct isotp_sock *so = isotp_sk(sk);
++	struct isotp_sock *so;
+ 
++	if (!sk)
++		return 0;
++
++	so = isotp_sk(sk);
++
+ 	/* wait for complete transmission of current pdu */
+ 	wait_event_interruptible(so-&gt;wait, so-&gt;tx.state == ISOTP_IDLE);
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2011-04-19 14:15:21 UTC (rev 1239)
++++ trunk/kernel/2.6/net/can/raw.c	2011-04-20 12:02:58 UTC (rev 1240)
+@@ -333,8 +333,13 @@
+ static int raw_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct raw_sock *ro = raw_sk(sk);
++	struct raw_sock *ro;
+ 
++	if (!sk)
++		return 0;
++
++	ro = raw_sk(sk);
++
+ 	unregister_netdevice_notifier(&amp;ro-&gt;notifier);
+ 
+ 	lock_sock(sk);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000871.html">r1239 - in trunk/kernel/2.6: Documentation/networking	Documentation/networking/can drivers/net/can/mscan	drivers/net/can/sja1000 drivers/net/can/softing	drivers/net/can/usb include/socketcan/can net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#872">[ date ]</a>
+              <a href="thread.html#872">[ thread ]</a>
+              <a href="subject.html#872">[ subject ]</a>
+              <a href="author.html#872">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

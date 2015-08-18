@@ -1,0 +1,206 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1213 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1213%20-%20trunk/can-utils&In-Reply-To=%3C20101119195240.46491480AB4%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000844.html">
+   <LINK REL="Next"  HREF="000846.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1213 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1213%20-%20trunk/can-utils&In-Reply-To=%3C20101119195240.46491480AB4%40sheep.berlios.de%3E"
+       TITLE="r1213 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 19 20:52:40 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000844.html">r1212 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000846.html">r1214 - in trunk/kernel/2.6/Documentation/networking: . can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#845">[ date ]</a>
+              <a href="thread.html#845">[ thread ]</a>
+              <a href="subject.html#845">[ subject ]</a>
+              <a href="author.html#845">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-19 20:52:39 +0100 (Fri, 19 Nov 2010)
+New Revision: 1213
+
+Modified:
+   trunk/can-utils/slcand.c
+Log:
+slcand : added new commandline option to support direct assignment of a CAN
+netdevice name to the given tty (by renaming the created netdevice).
+
+Signed-off-by: Robert Haddon &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">robert.haddon at cirrascale.com</A>&gt;
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+
+
+
+Modified: trunk/can-utils/slcand.c
+===================================================================
+--- trunk/can-utils/slcand.c	2010-11-18 21:31:41 UTC (rev 1212)
++++ trunk/can-utils/slcand.c	2010-11-19 19:52:39 UTC (rev 1213)
+@@ -52,6 +52,7 @@
+ #include &lt;pwd.h&gt;
+ #include &lt;signal.h&gt;
+ #include &lt;sys/ioctl.h&gt;
++#include &lt;net/if.h&gt;
+ 
+ /* default slcan line discipline since Kernel 2.6.25 */
+ #define LDISC_N_SLCAN 17
+@@ -67,10 +68,10 @@
+ 
+ void print_usage(char *prg)
+ {
+-	fprintf(stderr, &quot;\nUsage: %s tty\n\n&quot;, prg);
++	fprintf(stderr, &quot;\nUsage: %s tty [name]\n\n&quot;, prg);
+ 	fprintf(stderr, &quot;Example:\n&quot;);
+ 	fprintf(stderr, &quot;%s ttyUSB1\n&quot;, prg);
+-	fprintf(stderr, &quot;%s ttyS0\n&quot;, prg);
++	fprintf(stderr, &quot;%s ttyS0 can0\n&quot;, prg);
+ 	fprintf(stderr, &quot;\n&quot;);
+ 	exit(EXIT_FAILURE);
+ }
+@@ -91,7 +92,7 @@
+ 	}
+ }
+ 
+-static void daemonize (const char *lockfile, char *tty)
++static void daemonize (const char *lockfile, char *tty, char *name)
+ {
+ 	pid_t pid, sid, parent;
+ 	int lfp = -1;
+@@ -124,7 +125,7 @@
+ 		struct passwd *pw = getpwnam (RUN_AS_USER);
+ 		if (pw)
+ 		{
+-			syslog (LOG_NOTICE, &quot;setting user to &quot; RUN_AS_USER);
++			//syslog (LOG_NOTICE, &quot;setting user to &quot; RUN_AS_USER);
+ 			setuid (pw-&gt;pw_uid);
+ 		}
+ 	}
+@@ -207,17 +208,26 @@
+ 
+ int main (int argc, char *argv[])
+ {
+-	char *tty;
++	char *tty = NULL;
+ 	char *ttypath;
+ 	char const *devprefix = &quot;/dev/&quot;;
++	char *name = NULL;
++	char buf[IFNAMSIZ+1];
+ 
+ 	/* Initialize the logging interface */
+ 	openlog (DAEMON_NAME, LOG_PID, LOG_LOCAL5);
+ 
+ 	/* See how we're called */
+-	if (argc != 2)
++	if (argc == 2) {
++		tty = argv[1];
++	} else if (argc == 3) {
++		tty = argv[1];
++		name = argv[2];
++		if (strlen(name) &gt; IFNAMSIZ-1)
++			print_usage(argv[0]);
++	} else {
+ 		print_usage(argv[0]);
+-	tty = argv[1];
++	}
+ 
+ 	/* Prepare the tty device name string */
+ 	char * pch;
+@@ -230,22 +240,53 @@
+ 	syslog (LOG_INFO, &quot;starting on TTY device %s&quot;, ttypath);
+ 
+ 	/* Daemonize */
+-	daemonize (&quot;/var/lock/&quot; DAEMON_NAME, tty);
++	daemonize (&quot;/var/lock/&quot; DAEMON_NAME, tty, name);
+ 
+ 	/* Now we are a daemon -- do the work for which we were paid */
+ 	int fd;
+ 	int ldisc = LDISC_N_SLCAN;
+ 
+ 	if ((fd = open (ttypath, O_WRONLY | O_NOCTTY )) &lt; 0) {
++	    syslog (LOG_NOTICE, &quot;failed to open TTY device %s\n&quot;, ttypath);
+ 		perror(ttypath);
+ 		exit(1);
+ 	}
+ 
++	/* set slcan like discipline on given tty */
+ 	if (ioctl (fd, TIOCSETD, &amp;ldisc) &lt; 0) {
+-		perror(&quot;ioctl&quot;);
++		perror(&quot;ioctl TIOCSETD&quot;);
+ 		exit(1);
+ 	}
++	
++	/* retrieve the name of the created CAN netdevice */
++	if (ioctl (fd, SIOCGIFNAME, buf) &lt; 0) {
++		perror(&quot;ioctl SIOCGIFNAME&quot;);
++		exit(1);
++	}
+ 
++	syslog (LOG_NOTICE, &quot;attached TTY %s to netdevice %s\n&quot;, ttypath, buf);
++	
++	/* try to rename the created netdevice */
++	if (name) {
++		struct ifreq ifr;
++		int s = socket(PF_INET, SOCK_DGRAM, 0);
++		if (s &lt; 0)
++			perror(&quot;socket for interface rename&quot;);
++		else {
++			strncpy (ifr.ifr_name, buf, IFNAMSIZ);
++			strncpy (ifr.ifr_newname, name, IFNAMSIZ);
++
++			if (ioctl(s, SIOCSIFNAME, &amp;ifr) &lt; 0) {
++				syslog (LOG_NOTICE, &quot;netdevice %s rename to %s failed\n&quot;, buf, name);
++				perror(&quot;ioctl SIOCSIFNAME rename&quot;);
++                exit(1);
++			} else
++				syslog (LOG_NOTICE, &quot;netdevice %s renamed to %s\n&quot;, buf, name);
++
++			close(s);
++		}	
++	}
++
+ 	/* The Big Loop */
+ 	while (1) {
+ 		sleep(60); /* wait 60 seconds */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000844.html">r1212 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000846.html">r1214 - in trunk/kernel/2.6/Documentation/networking: . can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#845">[ date ]</a>
+              <a href="thread.html#845">[ thread ]</a>
+              <a href="subject.html#845">[ subject ]</a>
+              <a href="author.html#845">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

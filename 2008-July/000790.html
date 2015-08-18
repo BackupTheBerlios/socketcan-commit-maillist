@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r810 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r810%20-%20trunk/can-utils&In-Reply-To=%3C200807101101.m6AB1gL0022507%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000789.html">
+   <LINK REL="Next"  HREF="000791.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r810 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r810%20-%20trunk/can-utils&In-Reply-To=%3C200807101101.m6AB1gL0022507%40sheep.berlios.de%3E"
+       TITLE="r810 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 10 13:01:42 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000789.html">r809 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000791.html">r811 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#790">[ date ]</a>
+              <a href="thread.html#790">[ thread ]</a>
+              <a href="subject.html#790">[ subject ]</a>
+              <a href="author.html#790">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-07-10 13:01:37 +0200 (Thu, 10 Jul 2008)
+New Revision: 810
+
+Modified:
+   trunk/can-utils/cansniffer.c
+Log:
+Added missing help test.
+
+
+Modified: trunk/can-utils/cansniffer.c
+===================================================================
+--- trunk/can-utils/cansniffer.c	2008-07-10 10:59:37 UTC (rev 809)
++++ trunk/can-utils/cansniffer.c	2008-07-10 11:01:37 UTC (rev 810)
+@@ -174,6 +174,7 @@
+ 	fprintf(stderr, &quot;         -b         (start with binary mode)\n&quot;);
+ 	fprintf(stderr, &quot;         -B         (start with binary mode with gap - exceeds 80 chars!)\n&quot;);
+ 	fprintf(stderr, &quot;         -c         (color changes)\n&quot;);
++	fprintf(stderr, &quot;         -f         (filter on CAN-ID only)\n&quot;);
+ 	fprintf(stderr, &quot;         -t &lt;time&gt;  (timeout for ID display [x100ms] default: %d, 0 = OFF)\n&quot;, TIMEOUT);
+ 	fprintf(stderr, &quot;         -h &lt;time&gt;  (hold marker on changes [x100ms] default: %d)\n&quot;, HOLD);
+ 	fprintf(stderr, &quot;         -l &lt;time&gt;  (loop time (display) [x100ms] default: %d)\n&quot;, LOOP);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000789.html">r809 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000791.html">r811 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#790">[ date ]</a>
+              <a href="thread.html#790">[ thread ]</a>
+              <a href="subject.html#790">[ subject ]</a>
+              <a href="author.html#790">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r556 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r556%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200711160913.lAG9Dx4a032054%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000537.html">
+   <LINK REL="Next"  HREF="000539.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r556 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r556%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200711160913.lAG9Dx4a032054%40sheep.berlios.de%3E"
+       TITLE="r556 - trunk/kernel/2.6/drivers/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 16 10:13:59 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000537.html">r555 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000539.html">r557 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#538">[ date ]</a>
+              <a href="thread.html#538">[ thread ]</a>
+              <a href="subject.html#538">[ subject ]</a>
+              <a href="author.html#538">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-11-16 10:13:58 +0100 (Fri, 16 Nov 2007)
+New Revision: 556
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+Log:
+Use NETDEV_TX_OK instead 0 for return value.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-11-16 09:13:20 UTC (rev 555)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-11-16 09:13:58 UTC (rev 556)
+@@ -156,7 +156,7 @@
+ 
+ 		skb = skb_share_check(skb, GFP_ATOMIC);
+ 		if (!skb)
+-			return 0;
++			return NETDEV_TX_OK;
+ 
+ 		/* receive with packet counting */
+ 		skb-&gt;sk = srcsk;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000537.html">r555 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000539.html">r557 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#538">[ date ]</a>
+              <a href="thread.html#538">[ thread ]</a>
+              <a href="subject.html#538">[ subject ]</a>
+              <a href="author.html#538">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,156 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r668 - branches/cannetdriver26/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r668%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801271749.m0RHnfJM021643%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000649.html">
+   <LINK REL="Next"  HREF="000651.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r668 - branches/cannetdriver26/drivers/net/can/sja1000</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r668%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801271749.m0RHnfJM021643%40sheep.berlios.de%3E"
+       TITLE="r668 - branches/cannetdriver26/drivers/net/can/sja1000">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 18:49:41 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000649.html">r667 - branches/cannetdriver26/drivers/net/can/mscan
+</A></li>
+        <LI>Next message: <A HREF="000651.html">r669 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#650">[ date ]</a>
+              <a href="thread.html#650">[ thread ]</a>
+              <a href="subject.html#650">[ subject ]</a>
+              <a href="author.html#650">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 18:49:39 +0100 (Sun, 27 Jan 2008)
+New Revision: 668
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h
+Log:
+Some more fixes for the SJA1000 driver
+
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 17:47:18 UTC (rev 667)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 17:49:39 UTC (rev 668)
+@@ -78,10 +78,10 @@
+ 
+ #define CONFIG_CAN_DEBUG_DEVICES
+ #ifdef CONFIG_CAN_DEBUG_DEVICES
+-#define DBG(args...)   ((priv-&gt;debug &gt; 0) ? printk(args) : 0)
++#define DBG(args...)   ((debug &gt; 0) ? printk(args) : 0)
+ /* logging in interrupt context! */
+-#define iDBG(args...)  ((priv-&gt;debug &gt; 1) ? printk(args) : 0)
+-#define iiDBG(args...) ((priv-&gt;debug &gt; 2) ? printk(args) : 0)
++#define iDBG(args...)  ((debug &gt; 1) ? printk(args) : 0)
++#define iiDBG(args...) ((debug &gt; 2) ? printk(args) : 0)
+ #else
+ #define DBG(args...)
+ #define iDBG(args...)
+@@ -197,7 +197,6 @@
+ 		if ((status &amp; MOD_RM) == 0) {
+ #ifdef CONFIG_CAN_DEBUG_DEVICES
+ 			if (i &gt; 1) {
+-				struct sja1000_priv *priv = netdev_priv(dev);
+ 				iDBG(KERN_INFO &quot;%s: %s looped %d times\n&quot;,
+ 				     dev-&gt;name, __FUNCTION__, i);
+ 			}
+@@ -279,7 +278,7 @@
+ 	} else {
+ 		status = priv-&gt;read_reg(dev, REG_SR);
+ 		if (status &amp; SR_BS)
+-			*state = CAN_STATE_BUS_PASSIVE;
++			*state = CAN_STATE_BUS_OFF;
+ 		else if (status &amp; SR_ES) {
+ 			if (priv-&gt;read_reg(dev, REG_TXERR) &gt; 127 ||
+ 			    priv-&gt;read_reg(dev, REG_RXERR) &gt; 127 )
+@@ -518,7 +517,6 @@
+ 			iDBG(KERN_INFO &quot;%s: BUS OFF\n&quot;, dev-&gt;name);
+ 		} else if (status &amp; SR_ES) {
+ 			state = CAN_STATE_BUS_WARNING;
+-			cf-&gt;can_id |= CAN_ERR_BUSOFF;
+ 			iDBG(KERN_INFO &quot;%s: error\n&quot;, dev-&gt;name);
+ 		} else
+ 			state = CAN_STATE_ACTIVE;
+@@ -569,7 +567,7 @@
+ 			state = CAN_STATE_BUS_PASSIVE;
+ 		} else {
+ 			iDBG(KERN_INFO &quot;%s: ERROR ACTIVE\n&quot;, dev-&gt;name);
+-			state = CAN_STATE_BUS_WARNING;
++			state = CAN_STATE_BUS_ACTIVE;
+ 		}
+ 	}
+ 	if (isrc &amp; IRQ_ALI) {
+@@ -589,7 +587,7 @@
+ 					 state == CAN_STATE_BUS_PASSIVE)) {
+ 		uint8_t rxerr = priv-&gt;read_reg(dev, REG_RXERR);
+ 		uint8_t txerr = priv-&gt;read_reg(dev, REG_TXERR);
+-		cf-&gt;can_id |= CAN_ERR_PROT;
++		cf-&gt;can_id |= CAN_ERR_CRTL;
+ 		if (state == CAN_STATE_BUS_WARNING)
+ 			cf-&gt;data[1] = (txerr &gt; rxerr) ?
+ 				CAN_ERR_CRTL_TX_WARNING :
+@@ -737,8 +735,6 @@
+ 	if (sizeof_priv)
+ 		priv-&gt;priv = (void *)priv + sizeof(struct sja1000_priv);
+ 
+-	priv-&gt;debug = debug;
+-
+ 	return dev;
+ }
+ 
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h	2008-01-27 17:47:18 UTC (rev 667)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.h	2008-01-27 17:49:39 UTC (rev 668)
+@@ -173,7 +173,6 @@
+ struct sja1000_priv {
+ 	struct can_priv can;	/* must be the first member! */
+ 	long open_time;
+-	int debug;
+ 	struct sk_buff *echo_skb;
+ 	u8 (*read_reg) (struct net_device * dev, int reg);
+ 	void (*write_reg) (struct net_device * dev, int reg, u8 val);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000649.html">r667 - branches/cannetdriver26/drivers/net/can/mscan
+</A></li>
+	<LI>Next message: <A HREF="000651.html">r669 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#650">[ date ]</a>
+              <a href="thread.html#650">[ thread ]</a>
+              <a href="subject.html#650">[ subject ]</a>
+              <a href="author.html#650">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

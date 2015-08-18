@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r636 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r636%20-%20trunk/can-utils&In-Reply-To=%3C200712231817.lBNIHVkN004509%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000617.html">
+   <LINK REL="Next"  HREF="000619.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r636 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r636%20-%20trunk/can-utils&In-Reply-To=%3C200712231817.lBNIHVkN004509%40sheep.berlios.de%3E"
+       TITLE="r636 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 23 19:17:31 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000617.html">r635 - trunk/kernel/2.4/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000619.html">r637 - in trunk/kernel: 2.4/include/linux/can 2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#618">[ date ]</a>
+              <a href="thread.html#618">[ thread ]</a>
+              <a href="subject.html#618">[ subject ]</a>
+              <a href="author.html#618">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-23 19:17:29 +0100 (Sun, 23 Dec 2007)
+New Revision: 636
+
+Modified:
+   trunk/can-utils/vcan.c
+Log:
+Fixed the temporary hack to run with 2.6.24-rc5 again.
+
+
+Modified: trunk/can-utils/vcan.c
+===================================================================
+--- trunk/can-utils/vcan.c	2007-12-17 12:43:18 UTC (rev 635)
++++ trunk/can-utils/vcan.c	2007-12-23 18:17:29 UTC (rev 636)
+@@ -26,8 +26,9 @@
+ #include &lt;linux/netlink.h&gt;
+ #include &lt;linux/rtnetlink.h&gt;
+ 
+-//#include &lt;linux/if_link.h&gt;
++#include &lt;linux/if_link.h&gt;
+ 
++#if 0
+ #define IFLA_LINKINFO 18
+ 
+ enum
+@@ -38,6 +39,7 @@
+     IFLA_INFO_XSTATS,
+     __IFLA_INFO_MAX,
+ };
++#endif
+ 
+ #define NLMSG_TAIL(nmsg) \
+         ((struct rtattr *)(((void *) (nmsg)) + NLMSG_ALIGN((nmsg)-&gt;nlmsg_len)))
+@@ -88,7 +90,7 @@
+ 
+ 	linkinfo = NLMSG_TAIL(&amp;req.n);
+ 	addattr_l(&amp;req.n, sizeof(req), IFLA_LINKINFO, NULL, 0);
+-	addattr_l(&amp;req.n, sizeof(req), IFLA_INFO_NAME, &quot;vcan&quot;, strlen(&quot;vcan&quot;));
++	addattr_l(&amp;req.n, sizeof(req), IFLA_INFO_KIND, &quot;vcan&quot;, strlen(&quot;vcan&quot;));
+ 	linkinfo-&gt;rta_len = (void*)NLMSG_TAIL(&amp;req.n) - (void*)linkinfo;
+ 
+     } else if (strcmp(cmd, &quot;delete&quot;) == 0) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000617.html">r635 - trunk/kernel/2.4/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000619.html">r637 - in trunk/kernel: 2.4/include/linux/can 2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#618">[ date ]</a>
+              <a href="thread.html#618">[ thread ]</a>
+              <a href="subject.html#618">[ subject ]</a>
+              <a href="author.html#618">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

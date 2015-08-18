@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r642 - branches/cannetdriver26/include/linux/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r642%20-%20branches/cannetdriver26/include/linux/can&In-Reply-To=%3C200801091122.m09BMr6C013914%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000623.html">
+   <LINK REL="Next"  HREF="000625.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r642 - branches/cannetdriver26/include/linux/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r642%20-%20branches/cannetdriver26/include/linux/can&In-Reply-To=%3C200801091122.m09BMr6C013914%40sheep.berlios.de%3E"
+       TITLE="r642 - branches/cannetdriver26/include/linux/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:22:53 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000623.html">r641 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000625.html">r643 - in branches/cannetdriver26: drivers/net/can/old/i82527	drivers/net/can/old/sja1000 include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#624">[ date ]</a>
+              <a href="thread.html#624">[ thread ]</a>
+              <a href="subject.html#624">[ subject ]</a>
+              <a href="author.html#624">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:22:52 +0100 (Wed, 09 Jan 2008)
+New Revision: 642
+
+Modified:
+   branches/cannetdriver26/include/linux/can/ioctl.h
+Log:
+Cleaning up ioctl.h (remove obsolete stuff)
+
+Modified: branches/cannetdriver26/include/linux/can/ioctl.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/ioctl.h	2008-01-09 11:20:21 UTC (rev 641)
++++ branches/cannetdriver26/include/linux/can/ioctl.h	2008-01-09 11:22:52 UTC (rev 642)
+@@ -1,3 +1,4 @@
++
+ /*
+  * linux/can/ioctl.h
+  *
+@@ -99,19 +100,6 @@
+ #define CAN_CTRLMODE_LISTENONLY 0x2
+ 
+ 
+-/* SIOCGCANFILTER */
+-
+-typedef __u32 can_filter_t;
+-
+-/* filter modes (may vary due to controller specific capabilities) */
+-#define CAN_FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
+-#define CAN_FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
+-#define CAN_FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
+-				  /* filters 3 - 31 currently undefined */
+-
+-#define CAN_FILTER_MAX         31 /* max. filter type value */
+-
+-
+ /* SIOCGCANSTATE */
+ 
+ typedef __u32 can_state_t;
+@@ -120,7 +108,6 @@
+ #define CAN_STATE_BUS_WARNING		1
+ #define CAN_STATE_BUS_PASSIVE		2
+ #define CAN_STATE_BUS_OFF		3
+-#define CAN_STATE_SCANNING_BAUDRATE	4
+ #define CAN_STATE_STOPPED		5
+ #define CAN_STATE_SLEEPING		6
+ 
+@@ -138,14 +125,4 @@
+ 	int bus_error_at_init;
+ };
+ 
+-/* SIOC[SG]CANERRORCONFIG */
+-
+-typedef enum CAN_ERRCFG_TYPE {
+-	CAN_ERRCFG_MASK,
+-	CAN_ERRCFG_BUSERR,
+-	CAN_ERRCFG_BUSOFF
+-} can_errcfg_type_t;
+-
+-/* tbd */
+-
+ #endif /* CAN_IOCTL_H */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000623.html">r641 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000625.html">r643 - in branches/cannetdriver26: drivers/net/can/old/i82527	drivers/net/can/old/sja1000 include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#624">[ date ]</a>
+              <a href="thread.html#624">[ thread ]</a>
+              <a href="subject.html#624">[ subject ]</a>
+              <a href="author.html#624">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

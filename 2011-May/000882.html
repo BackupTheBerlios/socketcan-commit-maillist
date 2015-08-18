@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1251 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1251%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110503113924.1BFE9481255%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000881.html">
+   <LINK REL="Next"  HREF="000883.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1251 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1251%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110503113924.1BFE9481255%40sheep.berlios.de%3E"
+       TITLE="r1251 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue May  3 13:39:23 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000881.html">r1250 - in branches/j1939/kernel/2.6: . net/can net/can/j1939
+</A></li>
+        <LI>Next message: <A HREF="000883.html">r1252 - branches/j1939/kernel/2.6/include/socketcan/can	branches/j1939/kernel/2.6/net/can	branches/j1939/kernel/2.6/net/can/j1939	trunk/kernel/2.6/include/socketcan/can trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#882">[ date ]</a>
+              <a href="thread.html#882">[ thread ]</a>
+              <a href="subject.html#882">[ subject ]</a>
+              <a href="author.html#882">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-05-03 13:39:23 +0200 (Tue, 03 May 2011)
+New Revision: 1251
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+net: check the length of the socket address passed to connect(2)
+
+I missed that upstream commit from Changli Gao.
+<A HREF="http://git.kernel.org/?p=linux/kernel/git/davem/net-next-2.6.git;a=commitdiff;h=6503d96168f891ffa3b70ae6c9698a1a722025a0">http://git.kernel.org/?p=linux/kernel/git/davem/net-next-2.6.git;a=commitdiff;h=6503d96168f891ffa3b70ae6c9698a1a722025a0</A>
+So here it comes for the BerliOS trunk also ... (in branches/j1939 it is already included)
+
+Check the length of the socket address passed to connect(2). If the
+length is invalid, -EINVAL will be returned.
+
+Signed-off-by: Changli Gao &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">xiaosuo at gmail.com</A>&gt;
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2011-05-03 11:21:36 UTC (rev 1250)
++++ trunk/kernel/2.6/net/can/bcm.c	2011-05-03 11:39:23 UTC (rev 1251)
+@@ -1628,6 +1628,9 @@
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct bcm_sock *bo = bcm_sk(sk);
+ 
++	if (len &lt; sizeof(*addr))
++		return -EINVAL;
++
+ 	if (bo-&gt;bound)
+ 		return -EISCONN;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000881.html">r1250 - in branches/j1939/kernel/2.6: . net/can net/can/j1939
+</A></li>
+	<LI>Next message: <A HREF="000883.html">r1252 - branches/j1939/kernel/2.6/include/socketcan/can	branches/j1939/kernel/2.6/net/can	branches/j1939/kernel/2.6/net/can/j1939	trunk/kernel/2.6/include/socketcan/can trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#882">[ date ]</a>
+              <a href="thread.html#882">[ thread ]</a>
+              <a href="subject.html#882">[ subject ]</a>
+              <a href="author.html#882">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

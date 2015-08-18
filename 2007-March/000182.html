@@ -1,0 +1,2010 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r197 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . hal i82527
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r197%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20.%20hal%20i82527&In-Reply-To=%3C200703291359.l2TDxGte001170%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000181.html">
+   <LINK REL="Next"  HREF="000183.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r197 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . hal i82527</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r197%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20.%20hal%20i82527&In-Reply-To=%3C200703291359.l2TDxGte001170%40sheep.berlios.de%3E"
+       TITLE="r197 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . hal i82527">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Mar 29 15:59:16 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000181.html">r196 - branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000183.html">r198 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#182">[ date ]</a>
+              <a href="thread.html#182">[ thread ]</a>
+              <a href="subject.html#182">[ subject ]</a>
+              <a href="author.html#182">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-29 15:59:09 +0200 (Thu, 29 Mar 2007)
+New Revision: 197
+
+Added:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/Makefile
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/proc.c
+Modified:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile
+Log:
+First implementation of i82527 socketcan driver based on parts from
+socketcan sja1000 netdev / ocan hal / can4linux register access.
+Know issues: Currently only receives SFF CAN frames due different
+handling of SFF/EFF and RTR frames in opposite to the SJA1000 controller. 
+
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile	2007-03-27 15:52:05 UTC (rev 196)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/Makefile	2007-03-29 13:59:09 UTC (rev 197)
+@@ -8,7 +8,7 @@
+ KERNELDIR = /usr/src/linux
+ PWD       = $(shell pwd)
+ 
+-all: vcan sja1000 mscan
++all: vcan sja1000 i82527 mscan
+ 
+ vcan:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_VCAN=m modules
+@@ -19,13 +19,16 @@
+ sja1000:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_SJA1000=m modules
+ 
++i82527:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_I82527=m modules
++
+ mscan:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_MSCAN=m modules
+ 
+ clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+ 
+-.PHONY: clean all vcan slcan sja1000 mscan
++.PHONY: clean all vcan slcan sja1000 i82527 mscan
+ 
+ else
+ 
+@@ -42,6 +45,7 @@
+ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+ obj-$(CONFIG_CAN_SLCAN)		+= slcan.o
+ obj-$(CONFIG_CAN_SJA1000)	+= sja1000/
++obj-$(CONFIG_CAN_I82527)	+= i82527/
+ obj-$(CONFIG_CAN_MSCAN)		+= mscan/
+ 
+ endif
+
+Added: branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-03-27 15:52:05 UTC (rev 196)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-03-29 13:59:09 UTC (rev 197)
+@@ -0,0 +1,131 @@
++/*
++ * pc7io.c - linear register access CAN hardware abstraction layer
++ *
++ * $Id$
++ *
++ * Inspired by the OCAN driver <A HREF="http://ar.linux.it/software/#ocan">http://ar.linux.it/software/#ocan</A>
++ *
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/ioport.h&gt;
++#include &lt;asm/io.h&gt;
++#include &quot;hal.h&quot;
++
++/* init the HAL - call at driver module init */
++int hal_init(void) { return 0; }
++
++/* exit the HAL - call at driver module exit */
++int hal_exit(void) { return 0; }
++
++/* get name of this CAN HAL */
++char *hal_name(void) { return &quot;pc7io&quot;; }
++
++/* fill arrays base[] and irq[] with HAL specific defaults */
++void hal_use_defaults(void)
++{
++	extern unsigned long base[];
++	extern unsigned int  irq[];
++	extern unsigned int  speed[];
++
++	base[0]		= 0x1000UL;
++	irq[0]		= 9;
++	speed[0]	= 500;
++}
++
++/* request controller register access space */
++int hal_request_region(int dev_num,
++		       unsigned int num_regs,
++		       char *drv_name)
++{
++	extern unsigned long base[];
++	extern unsigned long rbase[];
++
++	/* set for device base_addr */
++	rbase[dev_num] = base[dev_num];
++
++	/* creating the region for IO is pretty easy */
++	return (request_region(base[dev_num], num_regs, drv_name))? 1 : 0;
++}
++
++/* release controller register access space */
++void hal_release_region(int dev_num,
++			unsigned int num_regs)
++{
++	extern unsigned long base[];
++
++	release_region(base[dev_num], num_regs);
++}
++
++/* enable non controller hardware (e.g. irq routing, etc.) */
++int hw_attach(int dev_num) {
++
++	/* Unlock special function register */
++	outb(5, 0x169);
++
++	return 0;
++}
++
++/* disable non controller hardware (e.g. irq routing, etc.) */
++int hw_detach(int dev_num) { return 0; }
++
++/* reset controller hardware (with specific non controller hardware) */
++int hw_reset_dev(int dev_num) { return 0; }
++
++/* read from controller register */
++u8 hw_readreg(unsigned long base, int reg) {
++
++	return inb(base + reg);
++}
++
++/* write to controller register */
++void hw_writereg(unsigned long base, int reg, u8 val) {
++
++	outb(val, base + reg);
++}
++
++/* hardware specific work to do at start of irq handler */
++void hw_preirq(struct net_device *dev) { return; }
++
++/* hardware specific work to do at end of irq handler */
++void hw_postirq(struct net_device *dev) { return; }
++
+
+Added: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/Makefile
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/Makefile	2007-03-27 15:52:05 UTC (rev 196)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/Makefile	2007-03-29 13:59:09 UTC (rev 197)
+@@ -0,0 +1,68 @@
++#
++#  $Id$
++#
++#  Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++#  All rights reserved.
++#
++#  Redistribution and use in source and binary forms, with or without
++#  modification, are permitted provided that the following conditions
++#  are met:
++#  1. Redistributions of source code must retain the above copyright
++#     notice, this list of conditions, the following disclaimer and
++#     the referenced file 'COPYING'.
++#  2. Redistributions in binary form must reproduce the above copyright
++#     notice, this list of conditions and the following disclaimer in the
++#     documentation and/or other materials provided with the distribution.
++#  3. Neither the name of Volkswagen nor the names of its contributors
++#     may be used to endorse or promote products derived from this software
++#     without specific prior written permission.
++#
++#  Alternatively, provided that this notice is retained in full, this
++#  software may be distributed under the terms of the GNU General
++#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++#  file from the main directory of the linux kernel source.
++#
++#  The provided data structures and external interfaces from this code
++#  are not restricted to be used by modules with a GPL compatible license.
++#
++#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++#  DAMAGE.
++#
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++
++ifeq ($(KERNELRELEASE),)
++
++KERNELDIR = /usr/src/linux
++PWD       = $(shell pwd)
++
++default:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
++
++clean:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
++
++else
++
++ifneq ($(KBUILD_EXTMOD),)
++EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include \
++		-I$(KBUILD_EXTMOD)/hal \
++		-DETH_P_CAN=0x000C \
++		-DARPHRD_CAN=280
++endif
++
++obj-m := i82527-pc7io.o i82527-iomem.o
++
++i82527-pc7io-objs := i82527.o proc.o ../hal/pc7io.o
++i82527-iomem-objs := i82527.o proc.o ../hal/iomem.o
++
++endif
+
+Added: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-03-27 15:52:05 UTC (rev 196)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-03-29 13:59:09 UTC (rev 197)
+@@ -0,0 +1,1164 @@
++/*
++ * $Id$
++ *
++ * i82527.c -  Intel I82527 network device driver
++ *
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;linux/autoconf.h&gt;
++#include &lt;linux/module.h&gt;
++#include &lt;linux/init.h&gt;
++#include &lt;linux/kernel.h&gt;
++#include &lt;linux/sched.h&gt;
++#include &lt;linux/types.h&gt;
++#include &lt;linux/fcntl.h&gt;
++#include &lt;linux/interrupt.h&gt;
++#include &lt;linux/ptrace.h&gt;
++#include &lt;linux/string.h&gt;
++#include &lt;linux/errno.h&gt;
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/if_arp.h&gt;
++#include &lt;linux/if_ether.h&gt;
++#include &lt;linux/skbuff.h&gt;
++
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt; /* for struct can_device_stats */
++#include &quot;hal.h&quot;
++#include &quot;i82527.h&quot;
++
++MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
++MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
++MODULE_DESCRIPTION(&quot;LLCF/socketcan '&quot; CHIP_NAME &quot;' network device driver&quot;);
++
++#define CONFIG_CAN_DEBUG_DEVICES
++
++#ifdef CONFIG_CAN_DEBUG_DEVICES
++#define DBG(args...)   ((priv-&gt;debug &gt; 0) ? printk(args) : 0)
++/* logging in interrupt context! */
++#define iDBG(args...)  ((priv-&gt;debug &gt; 1) ? printk(args) : 0)
++#define iiDBG(args...) ((priv-&gt;debug &gt; 2) ? printk(args) : 0)
++#else
++#define DBG(args...)
++#define iDBG(args...)
++#define iiDBG(args...)
++#endif
++
++char drv_name[DRV_NAME_LEN] = &quot;undefined&quot;;
++
++/* driver and version information */
++static const char *drv_version	= &quot;0.0.1&quot;;
++static const char *drv_reldate	= &quot;2007-03-27&quot;;
++
++/* array of all can chips */
++struct net_device *can_dev[MAXDEV];
++
++/* module parameters */
++unsigned long base[MAXDEV]	= { 0 }; /* hardware address */
++unsigned long rbase[MAXDEV]	= { 0 }; /* (remapped) device address */
++unsigned int  irq[MAXDEV]	= { 0 };
++
++unsigned int speed[MAXDEV]	= { 0 };
++unsigned int btr[MAXDEV]	= { 0 };
++
++static int rx_probe[MAXDEV]	= { 0 };
++static int clk			= DEFAULT_HW_CLK;
++static int debug		= 0;
++static int restart_ms		= 100;
++
++static int base_n;
++static int irq_n;
++static int speed_n;
++static int btr_n;
++static int rx_probe_n;
++
++module_param_array(base, int, &amp;base_n, 0);
++module_param_array(irq, int, &amp;irq_n, 0);
++module_param_array(speed, int, &amp;speed_n, 0);
++module_param_array(btr, int, &amp;btr_n, 0);
++module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
++
++module_param(clk, int, 0);
++module_param(debug, int, 0);
++module_param(restart_ms, int, 0);
++
++
++/* function declarations */
++
++static void chipset_init(struct net_device *dev, int wake);
++static void chipset_init_rx(struct net_device *dev);
++static void chipset_init_trx(struct net_device *dev);
++static void can_netdev_setup(struct net_device *dev);
++static struct net_device* can_create_netdev(int dev_num, int hw_regs);
++static int  can_set_drv_name(void);
++int set_reset_mode(struct net_device *dev);
++static int i82527_probe_chip(unsigned long base);
++
++static __exit void i82527_exit_module(void)
++{
++	int i, ret;
++
++	for (i = 0; i &lt; MAXDEV; i++) {
++		if (can_dev[i] != NULL) {
++			struct can_priv *priv = netdev_priv(can_dev[i]);
++			unregister_netdev(can_dev[i]);
++			del_timer(&amp;priv-&gt;timer);
++			hal_release_region(i, I82527_IO_SIZE);
++			free_netdev(can_dev[i]);
++		}
++	}
++	can_proc_remove(drv_name);
++
++	if ((ret = hal_exit()))
++		printk(KERN_INFO &quot;%s: hal_exit error %d.\n&quot;, drv_name, ret);
++}
++
++static __init int i82527_init_module(void)
++{
++	int i, ret;
++	struct net_device *dev;
++
++	if ((sizeof(canmessage_t) != 15) || (sizeof(canregs_t) != 256)) {
++		printk(KERN_WARNING &quot;%s sizes: canmessage_t %d canregs_t %d\n&quot;,
++		       CHIP_NAME, sizeof(canmessage_t), sizeof(canregs_t));
++		return -EBUSY;
++	}
++
++	if ((ret = hal_init()))
++		return ret;
++
++	if ((ret = can_set_drv_name()))
++		return ret;
++
++	if (clk &lt; 1000 ) /* MHz command line value */
++		clk *= 1000000;
++
++	if (clk &lt; 1000000 ) /* kHz command line value */
++		clk *= 1000;
++
++	printk(KERN_INFO &quot;%s driver v%s (%s)\n&quot;,
++	       drv_name, drv_version, drv_reldate);
++	printk(KERN_INFO &quot;%s - options [clk %d.%06d MHz] [restart_ms %dms]&quot;
++	       &quot; [debug %d]\n&quot;,
++	       drv_name, clk/1000000, clk%1000000, restart_ms, debug);
++
++	if (!base[0]) {
++		printk(KERN_INFO &quot;%s: loading defaults.\n&quot;, drv_name);
++		hal_use_defaults();
++	}
++		
++	for (i = 0; base[i]; i++) {
++		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%lX ...\n&quot;,
++		       drv_name, CHIP_NAME, base[i]);
++
++		if (!hal_request_region(i, I82527_IO_SIZE, drv_name)) {
++			printk(KERN_ERR &quot;%s: memory already in use\n&quot;,
++			       drv_name);
++			i82527_exit_module();
++			return -EBUSY;
++		}
++
++		hw_attach(i);
++		hw_reset_dev(i);
++
++		if (!i82527_probe_chip(base[i])) {
++			printk(KERN_ERR &quot;%s: probably missing controller&quot;
++			       &quot; hardware\n&quot;, drv_name);
++			hal_release_region(i, I82527_IO_SIZE);
++			i82527_exit_module();
++			return -ENODEV;
++		}
++
++		dev = can_create_netdev(i, I82527_IO_SIZE);
++
++		if (dev != NULL) {
++			can_dev[i] = dev;
++			set_reset_mode(dev);
++			can_proc_create(drv_name);
++		} else {
++			can_dev[i] = NULL;
++			hw_detach(i);
++			hal_release_region(i, I82527_IO_SIZE);
++		}
++	}
++	return 0;
++}
++
++static int i82527_probe_chip(unsigned long base)
++{
++	// Check if hardware reset is still inactive OR
++	// maybe there is no chip in this address space
++	if (CANin(base, cpuInterfaceReg) &amp; iCPU_RST) {
++		printk(KERN_INFO &quot;%s: probing @ 0x%lX failed (reset)\n&quot;,
++		       drv_name, base);
++		return 0;
++	}
++
++	// Write test pattern
++	CANout(base, message1Reg.dataReg[1], 0x25);
++	CANout(base, message2Reg.dataReg[3], 0x52);
++	CANout(base, message10Reg.dataReg[6], 0xc3);
++
++	// Read back test pattern
++	if ((CANin(base, message1Reg.dataReg[1]) != 0x25 ) ||
++	    (CANin(base, message2Reg.dataReg[3]) != 0x52 ) ||
++	    (CANin(base, message10Reg.dataReg[6]) != 0xc3 )) {
++		printk(KERN_INFO &quot;%s: probing @ 0x%lX failed (pattern)\n&quot;,
++		       drv_name, base);
++		return 0;
++	}
++
++	return 1;
++}
++
++/*
++ * set baud rate divisor values
++ */
++static void set_btr(struct net_device *dev, int btr0, int btr1)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	unsigned long base = dev-&gt;base_addr;
++
++	/* no bla bla when restarting the device */
++	if (priv-&gt;state == STATE_UNINITIALIZED)
++		printk(KERN_INFO &quot;%s: setting BTR0=%02X BTR1=%02X\n&quot;,
++		       dev-&gt;name, btr0, btr1);
++
++	CANout(base, bitTiming0Reg, btr0);
++	CANout(base, bitTiming1Reg, btr1);
++}
++
++/*
++ * calculate baud rate divisor values
++ */
++static void set_baud(struct net_device *dev, int baud, int clock)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	int error;
++	int brp;
++	int tseg;
++	int tseg1 = 0;
++	int tseg2 = 0;
++
++	int best_error = 1000000000;
++	int best_tseg = 0;
++	int best_brp = 0;
++	int best_baud = 0;
++
++	int SAM = (baud &gt; 100000 ? 0 : 1);
++
++	if (clock &gt; 10000000)
++		clock &gt;&gt;= 1; /* auto devide system clock */
++
++	clock &gt;&gt;= 1;
++
++	for (tseg = (0 + 0 + 2) * 2;
++	     tseg &lt;= (MAX_TSEG2 + MAX_TSEG1 + 2) * 2 + 1;
++	     tseg++) {
++		brp = clock / ((1 + tseg / 2) * baud) + tseg % 2;
++		if ((brp &gt; 0) &amp;&amp; (brp &lt;= 64)) {
++			error = baud - clock / (brp * (1 + tseg / 2));
++			if (error &lt; 0) {
++				error = -error;
++			}
++			if (error &lt;= best_error) {
++				best_error = error;
++				best_tseg = tseg / 2;
++				best_brp = brp - 1;
++				best_baud = clock / (brp * (1 + tseg / 2));
++			}
++		}
++	}
++	if (best_error &amp;&amp; (baud / best_error &lt; 10)) {
++		printk(&quot;%s: unable to set baud rate %d (ext clock %dHz)\n&quot;,
++		       dev-&gt;name, baud, clock * 2);
++		return;
++//		return -EINVAL;
++	}
++	tseg2 = best_tseg - (SAMPLE_POINT * (best_tseg + 1)) / 100;
++	if (tseg2 &lt; 0) {
++		tseg2 = 0;
++	} else if (tseg2 &gt; MAX_TSEG2) {
++		tseg2 = MAX_TSEG2;
++	}
++	tseg1 = best_tseg - tseg2 - 2;
++	if (tseg1 &gt; MAX_TSEG1) {
++		tseg1 = MAX_TSEG1;
++		tseg2 = best_tseg - tseg1 - 2;
++	}
++
++	priv-&gt;btr = ((best_brp | JUMPWIDTH)&lt;&lt;8) + 
++		((SAM &lt;&lt; 7) | (tseg2 &lt;&lt; 4) | tseg1);
++
++	printk(KERN_INFO &quot;%s: calculated best baudrate: %d / btr is 0x%04X\n&quot;,
++	       dev-&gt;name, best_baud, priv-&gt;btr);
++
++	set_btr(dev, (priv-&gt;btr&gt;&gt;8) &amp; 0xFF, priv-&gt;btr &amp; 0xFF);
++//	set_btr(dev, best_brp | JUMPWIDTH, (SAM &lt;&lt; 7) | (tseg2 &lt;&lt; 4) | tseg1);
++}
++
++/*
++ * This is currently an attempt to support acceptance code and mask
++ * for i82527. However the interpretation of mask and code is currently
++ * different to the SJA1000 function.
++ *
++ * This MUST change in the future to have a common exchangable API for
++ * both chips.
++ *
++ * Currently if code and mask are both 0 OR both 0xFFFFFFFF the
++ * acceptance filtering is disabled.
++ *
++ * If the highest bit of mask or code is set OR the value is bigger than
++ * 0x7FF (11 bit), an extended mask is assumed.
++ */
++int i82527_set_mask(struct net_device *dev, unsigned int code, unsigned int mask)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	unsigned long base = dev-&gt;base_addr;
++
++	// 0xfffff is a magic value and means no mask set.
++	// We have to change this to 0 to make this work with i82527, here 0
++	// means don't care.
++	if (code == 0xffffffff)
++		code = 0;
++	if (mask == 0xffffffff)
++		mask = 0;
++
++	// Extended (29-bit) or basic (11-bit) mask?
++	if (((code &amp; 0x8000000) == 0x8000000) ||
++	    ((mask &amp; 0x8000000) == 0x8000000) ||
++	    (code &gt; 0x7FF) ||
++	    (mask &gt; 0x7FF))
++	{
++		CANout(base, globalMaskExtendedReg[0], (mask &gt;&gt; 21) &amp; 0xFFU);
++		CANout(base, globalMaskExtendedReg[1], (mask &gt;&gt; 13) &amp; 0xFFU);
++		CANout(base, globalMaskExtendedReg[2], (mask &gt;&gt; 5) &amp; 0xFFU);
++		CANout(base, globalMaskExtendedReg[3], (mask &lt;&lt; 3) &amp; 0xFFU);
++		CANout(base, message15Reg.idReg[0], (code &gt;&gt; 21) &amp; 0xFFU);
++		CANout(base, message15Reg.idReg[1], (code &gt;&gt; 13) &amp; 0xFFU);
++		CANout(base, message15Reg.idReg[2], (code &gt;&gt; 5) &amp; 0xFFU);
++		CANout(base, message15Reg.idReg[3], (code &lt;&lt; 3) &amp; 0xFFU);
++		CANout(base, message15Reg.messageConfigReg, MCFG_XTD);
++
++		DBG(KERN_INFO &quot;%s: %s: EFF mask %X\n&quot;,
++		    dev-&gt;name, __FUNCTION__, mask);
++
++		DBG(KERN_INFO &quot;%s: %s: EFF code %X\n&quot;,
++		    dev-&gt;name, __FUNCTION__, code);
++	}
++	else
++	{
++		CANout(base, globalMaskStandardReg[0], (mask &gt;&gt; 3) &amp; 0xFFU);
++		CANout(base, globalMaskStandardReg[1], (mask &lt;&lt; 5) &amp; 0xFFU);
++		CANout(base, message15Reg.idReg[0], (code &gt;&gt; 3) &amp; 0xFFU);
++		CANout(base, message15Reg.idReg[1], (code &lt;&lt; 5) &amp; 0xFFU);
++		CANout(base, message15Reg.messageConfigReg, 0x00);
++
++		DBG(KERN_INFO &quot;%s: %s: SFF mask %X\n&quot;,
++		    dev-&gt;name, __FUNCTION__, mask);
++
++		DBG(KERN_INFO &quot;%s: %s: SFF code %X\n&quot;,
++		    dev-&gt;name, __FUNCTION__, code);
++	}
++
++	return 0;
++}
++
++int set_reset_mode(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	unsigned long base = dev-&gt;base_addr;
++
++	// Configure cpu interface
++	if (priv-&gt;clock &gt; 10000000) /* auto devide system clock */
++		CANout(base, cpuInterfaceReg,(iCPU_DMC | iCPU_CEN | iCPU_DSC));
++	else
++		CANout(base, cpuInterfaceReg,(iCPU_DMC | iCPU_CEN));
++
++	// Enable configuration and puts chip in bus-off, disable interrupts
++	CANout(base, controlReg, iCTL_CCE | iCTL_INI);
++
++	// Clear interrupts
++	CANin(base, interruptReg);
++
++	// Clear status register
++	CANout(base, statusReg, 0);
++
++	// Clear message object for receiption
++	CANout(base, message15Reg.msgCtrl1Reg,
++	       NEWD_RES | MLST_RES | TXRQ_RES | RMPD_RES);
++	CANout(base, message15Reg.msgCtrl0Reg,
++	       MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES);
++
++	// Clear message object for send
++	CANout(base, message1Reg.msgCtrl1Reg,
++	       RMPD_RES | TXRQ_RES | CPUU_RES | NEWD_RES);
++	CANout(base, message1Reg.msgCtrl0Reg,
++	       MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES);
++
++	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	    dev-&gt;name, __FUNCTION__,
++	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
++
++	return 0;
++}
++
++static int set_normal_mode(struct net_device *dev)
++{
++	unsigned long base = dev-&gt;base_addr;
++
++	// Clear interrupts
++	CANin(base, interruptReg);
++
++	// Clear status register
++	CANout(base, statusReg, 0);
++
++	// Configure message object for receiption
++	CANout(base, message15Reg.msgCtrl1Reg,
++	       NEWD_RES | MLST_RES | TXRQ_RES | RMPD_RES);
++	CANout(base, message15Reg.msgCtrl0Reg,
++	       MVAL_SET | TXIE_RES | RXIE_SET | INTPD_RES);
++
++	i82527_set_mask(dev, 0, 0); /* no filter */
++
++	// Clear message object for send
++	CANout(base, message1Reg.msgCtrl1Reg,
++	       RMPD_RES | TXRQ_RES | CPUU_RES | NEWD_RES);
++	CANout(base, message1Reg.msgCtrl0Reg,
++	       MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES);
++
++	return 0;
++}
++
++static int set_listen_mode(struct net_device *dev)
++{
++	return set_normal_mode(dev); /* for now */
++}
++
++/*
++ * Clear and invalidate message objects
++ */
++int i82527_clear_msg_objects(unsigned long base)
++{
++    int i;
++    int id;
++    int data;
++
++    for (i = 1; i &lt;= 15; i++) {
++	    CANout(base, msgArr[i].messageReg.msgCtrl0Reg,
++		   INTPD_RES | RXIE_RES | TXIE_RES | MVAL_RES);
++	    CANout(base, msgArr[i].messageReg.msgCtrl1Reg,
++		   NEWD_RES | MLST_RES | TXRQ_RES | RMPD_RES);
++	    for (data = 0; data &lt; 8; data++)
++		    CANout(base, msgArr[i].messageReg.dataReg[data], 0);
++	    for (id = 0; id &lt; 4; id++)
++		    CANout(base, msgArr[i].messageReg.idReg[id], 0);
++	    CANout(base, msgArr[i].messageReg.messageConfigReg, 0);
++    }
++
++    return 0;
++}
++
++/*
++ * initialize I82527 chip:
++ *   - reset chip
++ *   - set output mode
++ *   - set baudrate
++ *   - enable interrupts
++ *   - start operating mode
++ */
++static void chipset_init_regs(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	unsigned long base = dev-&gt;base_addr;
++
++	// Enable configuration and puts chip in bus-off, disable interrupts
++	CANout(base, controlReg, (iCTL_CCE | iCTL_INI));
++
++	// Set clock out slew rates
++	CANout(base, clkOutReg, (iCLK_SL1 | iCLK_CD1));
++
++	// Bus configuration
++	CANout(base, busConfigReg, (iBUS_CBY));
++
++	// Clear interrupts
++	CANin(base, interruptReg);
++
++	// Clear status register
++	CANout(base, statusReg, 0);
++
++	i82527_clear_msg_objects(base);
++
++	CANout(base, globalMaskStandardReg[0], 0);	
++	CANout(base, globalMaskStandardReg[1], 0);
++	CANout(base, globalMaskExtendedReg[0], 0);
++	CANout(base, globalMaskExtendedReg[1], 0);
++	CANout(base, globalMaskExtendedReg[2], 0);
++	CANout(base, globalMaskExtendedReg[3], 0);
++	// Set message 15 mask, we are not using it, only standard mask is used
++	// We set all bits to one because this mask is anded with the global mask.
++	CANout(base, message15MaskReg[0], 0xFF);
++	CANout(base, message15MaskReg[1], 0xFF);
++	CANout(base, message15MaskReg[2], 0xFF);
++	CANout(base, message15MaskReg[3], 0xFF);
++
++	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	    dev-&gt;name, __FUNCTION__,
++	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
++
++	// Note: At this stage the CAN ship is still in bus-off condition
++	// and must be started using StartChip()
++
++	/* set baudrate */
++	if (priv-&gt;btr) { /* no calculation when btr is provided */
++		set_btr(dev, (priv-&gt;btr&gt;&gt;8) &amp; 0xFF, priv-&gt;btr &amp; 0xFF);
++	} else {
++		if (priv-&gt;speed == 0) {
++			priv-&gt;speed = DEFAULT_SPEED;
++		}
++		set_baud(dev, priv-&gt;speed * 1000, priv-&gt;clock);
++	}
++
++}
++
++static void chipset_init(struct net_device *dev, int wake)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	if (priv-&gt;rx_probe)
++		chipset_init_rx(dev); /* wait for valid reception first */
++	else
++		chipset_init_trx(dev);
++
++	if ((wake) &amp;&amp; netif_queue_stopped(dev))
++		netif_wake_queue(dev);
++}
++
++static void chipset_init_rx(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	unsigned long base    = dev-&gt;base_addr;
++
++	iDBG(KERN_INFO &quot;%s: %s()\n&quot;, dev-&gt;name, __FUNCTION__);
++
++	/* set chip into reset mode */
++	set_reset_mode(dev);
++
++	/* set registers */
++	chipset_init_regs(dev);
++
++	/* automatic bit rate detection */
++	set_listen_mode(dev);
++
++	priv-&gt;state = STATE_PROBE;
++
++	// Clear bus-off, Interrupts only for errors, not for status change
++	CANout(base, controlReg, iCTL_IE | iCTL_EIE);
++
++	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	    dev-&gt;name, __FUNCTION__,
++	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
++}
++
++static void chipset_init_trx(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	unsigned long base    = dev-&gt;base_addr;
++
++	iDBG(KERN_INFO &quot;%s: %s()\n&quot;, dev-&gt;name, __FUNCTION__);
++
++	/* set chip into reset mode */
++	set_reset_mode(dev);
++
++	/* set registers */
++	chipset_init_regs(dev);
++
++	/* leave reset mode */
++	set_normal_mode(dev);
++
++	priv-&gt;state = STATE_ACTIVE;
++
++	// Clear bus-off, Interrupts only for errors, not for status change
++	CANout(base, controlReg, iCTL_IE | iCTL_EIE);
++
++	DBG(KERN_INFO &quot;%s: %s: CAN_CON 0x%x CAN_CPU 0x%x\n&quot;,
++	    dev-&gt;name, __FUNCTION__,
++	    CANin(base, controlReg), CANin(base, cpuInterfaceReg));
++}
++
++/*
++ * transmit a CAN message
++ * message layout in the sk_buff should be like this:
++ * xx xx xx xx  ll   00 11 22 33 44 55 66 77
++ * [  can-id ] [len] [can data (up to 8 bytes]
++ */
++static int can_start_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct can_priv  *priv	= netdev_priv(dev);
++	struct can_frame *cf	= (struct can_frame*)skb-&gt;data;
++	unsigned long base	= dev-&gt;base_addr;
++	uint8_t	dlc;
++	uint8_t	rtr;
++	canid_t	id;
++	int	i;
++
++	if ((CANin(base, message1Reg.msgCtrl1Reg) &amp; TXRQ_UNC) == TXRQ_SET) {
++		printk(KERN_ERR &quot;%s: %s: TX register is occupied!\n&quot;, dev-&gt;name, drv_name);
++		return 0;
++	}
++
++	netif_stop_queue(dev);
++
++	dlc = cf-&gt;can_dlc;
++	id  = cf-&gt;can_id;
++
++	if ( cf-&gt;can_id &amp; CAN_RTR_FLAG )
++		rtr = 0;
++	else
++		rtr = MCFG_DIR;
++
++	CANout(base, message1Reg.msgCtrl1Reg,
++	       RMPD_RES | TXRQ_RES | CPUU_SET | NEWD_RES);
++	CANout(base, message1Reg.msgCtrl0Reg,
++	       MVAL_SET | TXIE_SET | RXIE_RES | INTPD_RES);
++
++	if (id &amp; CAN_EFF_FLAG) {
++		id &amp;= CAN_EFF_MASK;
++		CANout(base, message1Reg.messageConfigReg,
++		       (dlc &lt;&lt; 4) + rtr + MCFG_XTD);
++		CANout(base, message1Reg.idReg[3], (id &lt;&lt; 3) &amp; 0xFFU);
++		CANout(base, message1Reg.idReg[2], (id &gt;&gt; 5) &amp; 0xFFU);
++		CANout(base, message1Reg.idReg[1], (id &gt;&gt; 13) &amp; 0xFFU);
++		CANout(base, message1Reg.idReg[0], (id &gt;&gt; 21) &amp; 0xFFU);
++	}
++	else {
++		id &amp;= CAN_SFF_MASK;
++		CANout(base, message1Reg.messageConfigReg,
++		       ( dlc &lt;&lt; 4 ) + rtr);
++		CANout(base, message1Reg.idReg[0], (id &gt;&gt; 3) &amp; 0xFFU);
++		CANout(base, message1Reg.idReg[1], (id &lt;&lt; 5) &amp; 0xFFU);
++	}
++
++	dlc &amp;= 0x0f; //restore length only
++	for ( i=0; i &lt; dlc; i++ ) {
++		CANout(base, message1Reg.dataReg[i],
++		       cf-&gt;data[i]);
++	}
++
++	CANout(base, message1Reg.msgCtrl1Reg,
++	       (RMPD_RES | TXRQ_SET | CPUU_RES | NEWD_UNC));
++
++	// HM: We had some cases of repeated IRQs, so make sure the INT is acknowledged
++	// I know it's already further up, but doing again fixed the issue
++	CANout(base, message1Reg.msgCtrl0Reg,
++	       (MVAL_UNC | TXIE_UNC | RXIE_UNC | INTPD_RES));
++
++	priv-&gt;stats.tx_bytes += dlc;
++
++	dev-&gt;trans_start = jiffies;
++
++	dev_kfree_skb(skb);
++
++	return 0;
++}
++
++static void can_tx_timeout(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	priv-&gt;stats.tx_errors++;
++
++	/* do not conflict with e.g. bus error handling */
++	if (!(priv-&gt;timer.expires)){ /* no restart on the run */
++		chipset_init_trx(dev); /* no tx queue wakeup */
++		netif_wake_queue(dev); /* wakeup here */
++	}
++	else
++		DBG(KERN_INFO &quot;%s: %s: can_restart_dev already active.\n&quot;,
++		    dev-&gt;name, __FUNCTION__ );
++
++}
++
++# if 0
++static void can_restart_on(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	if (!(priv-&gt;timer.expires)){ /* no restart on the run */
++
++		set_reset_mode(dev);
++
++		priv-&gt;timer.function = can_restart_dev;
++		priv-&gt;timer.data = (unsigned long) dev;
++
++		/* restart chip on persistent error in &lt;xxx&gt; ms */
++		priv-&gt;timer.expires = jiffies + (priv-&gt;restart_ms * HZ) / 1000;
++		add_timer(&amp;priv-&gt;timer);
++
++		iDBG(KERN_INFO &quot;%s: %s start (%ld)\n&quot;,
++		     dev-&gt;name, __FUNCTION__ , jiffies);
++	} else
++		iDBG(KERN_INFO &quot;%s: %s already (%ld)\n&quot;,
++		     dev-&gt;name, __FUNCTION__ , jiffies);
++}
++
++static void can_restart_dev(unsigned long data)
++{
++	struct net_device *dev = (struct net_device*) data;
++	struct can_priv *priv = netdev_priv(dev);
++
++	DBG(KERN_INFO &quot;%s: can_restart_dev (%ld)\n&quot;,
++	    dev-&gt;name, jiffies);
++
++	/* mark inactive timer */
++	priv-&gt;timer.expires = 0;
++
++	if (priv-&gt;state != STATE_UNINITIALIZED) {
++
++		/* count number of restarts */
++		priv-&gt;can_stats.restarts++;
++
++		chipset_init(dev, 1);
++	}
++}
++#endif
++
++#if 0
++/* the timerless version */
++
++static void can_restart_now(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	if (priv-&gt;state != STATE_UNINITIALIZED) {
++
++		/* count number of restarts */
++		priv-&gt;can_stats.restarts++;
++
++		chipset_init(dev, 1);
++	}
++}
++#endif
++
++/*
++ * Subroutine of ISR for RX interrupts.
++ *
++ * Note: This code depends on using message object 15 for receiving.
++ * Object 15 has a double buffer and using this routine would not work
++ * reliably on other message objects!
++ */
++static void can_rx(struct net_device *dev)
++{
++	struct can_priv *priv	= netdev_priv(dev);
++	unsigned long base	= dev-&gt;base_addr;
++	struct can_frame *cf;
++	struct sk_buff	*skb;
++	uint8_t msgctlreg;
++	uint8_t ctl1reg;
++	canid_t	id;
++	uint8_t	dlc;
++	int	i;
++
++	skb = dev_alloc_skb(sizeof(struct can_frame));
++	if (skb == NULL) {
++		return;
++	}
++	skb-&gt;dev = dev;
++	skb-&gt;protocol = htons(ETH_P_CAN);
++
++	ctl1reg = CANin(base, message15Reg.msgCtrl1Reg);
++	msgctlreg = CANin(base, message15Reg.messageConfigReg);
++
++	if( msgctlreg &amp; MCFG_XTD ) {
++		id = CANin(base, message15Reg.idReg[3])
++			| (CANin(base, message15Reg.idReg[2]) &lt;&lt; 8)
++			| (CANin(base, message15Reg.idReg[1]) &lt;&lt; 16)
++			| (CANin(base, message15Reg.idReg[0]) &lt;&lt; 24);
++		id &gt;&gt;= 3;
++		id |= CAN_EFF_FLAG;
++	} else {
++		id = CANin(base, message15Reg.idReg[1])
++			|(CANin(base, message15Reg.idReg[0]) &lt;&lt; 8);
++		id &gt;&gt;= 5;
++	}
++
++	if (ctl1reg &amp; RMPD_SET) {
++		id |= CAN_RTR_FLAG;
++	}
++
++	msgctlreg  &amp;= 0xf0;/* strip length code */
++	dlc  = msgctlreg &gt;&gt; 4;
++	dlc %= 9;	/* limit count to 8 bytes */
++
++	cf = (struct can_frame*)skb_put(skb, sizeof(struct can_frame));
++	memset(cf, 0, sizeof(struct can_frame));
++	cf-&gt;can_id    = id;
++	cf-&gt;can_dlc   = dlc;
++	for (i = 0; i &lt; dlc; i++) {
++		cf-&gt;data[i] = CANin(base, message15Reg.dataReg[i]);
++	}
++
++	// Make the chip ready to receive the next message
++	CANout(base, message15Reg.msgCtrl0Reg,
++	       MVAL_SET | TXIE_RES | RXIE_SET | INTPD_RES);
++	CANout(base, message15Reg.msgCtrl1Reg,
++	       RMPD_RES | TXRQ_RES | MLST_RES | NEWD_RES);
++
++	netif_rx(skb);
++
++	dev-&gt;last_rx = jiffies;
++	priv-&gt;stats.rx_packets++;
++	priv-&gt;stats.rx_bytes += dlc;
++}
++
++static struct net_device_stats *can_get_stats(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	/* TODO: read statistics from chip */
++	return &amp;priv-&gt;stats;
++}
++
++static int can_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
++{
++	if (!netif_running(dev))
++		return -EINVAL;
++
++	switch (cmd) {
++	case SIOCSCANBAUDRATE:
++		;
++		return 0;
++	case SIOCGCANBAUDRATE:
++		;
++		return 0;
++	}
++	return 0;
++}
++
++/*
++ * I82527 interrupt handler
++ */
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,20)
++static irqreturn_t can_interrupt(int irq, void *dev_id, struct pt_regs *regs)
++#else
++static irqreturn_t can_interrupt(int irq, void *dev_id)
++#endif
++{
++	struct net_device *dev	= (struct net_device*)dev_id;
++	struct can_priv *priv	= netdev_priv(dev);
++	unsigned long base	= dev-&gt;base_addr;
++	uint8_t irqreg;
++	uint8_t lastIrqreg;
++	int n = 0;
++
++	hw_preirq(dev);
++
++	if (priv-&gt;state == STATE_UNINITIALIZED) {
++		printk(KERN_ERR &quot;%s: %s: uninitialized controller!\n&quot;,
++		       dev-&gt;name, __FUNCTION__);
++		//chipset_init(dev, 1); /* should be possible at this stage */
++		return IRQ_NONE;
++	}
++
++	if (priv-&gt;state == STATE_RESET_MODE) {
++		iiDBG(KERN_ERR &quot;%s: %s: controller is in reset mode!\n&quot;,
++		      dev-&gt;name, __FUNCTION__);
++		return IRQ_NONE;
++	}
++
++     
++	// Read the highest pending interrupt request
++	irqreg = CANin(base, interruptReg);
++	lastIrqreg = irqreg;
++    
++	while ( irqreg ) {
++		n++;
++		switch (irqreg)	{
++
++		case 1: // Status register
++		{
++			uint8_t status;
++
++			// Read the STATUS reg
++			status = CANin(base, statusReg);
++			CANout (base, statusReg, 0);
++
++			if ( status &amp; iSTAT_RXOK ) {
++				// Intel: Software must clear this bit in ISR
++				CANout (base, statusReg, status &amp; ~iSTAT_RXOK);
++			}
++			if ( status &amp; iSTAT_TXOK ) {
++				// Intel: Software must clear this bit in ISR
++				CANout (base, statusReg, status &amp; ~iSTAT_TXOK);
++			}
++			if ( status &amp; iSTAT_WARN ) {
++				// Note: status bit is read-only, don't clear
++				/* error warning interrupt */
++				iDBG(KERN_INFO &quot;%s: error warning\n&quot;,
++				     dev-&gt;name);
++				priv-&gt;can_stats.error_warning++;
++			}
++			if ( status &amp; iSTAT_BOFF ) {
++				uint8_t flags;
++
++				// Note: status bit is read-only, don't clear
++
++				priv-&gt;can_stats.bus_error++;
++
++				// Clear init flag and reenable interrupts
++				flags = CANin(base, controlReg) | ( iCTL_IE | iCTL_EIE );
++				flags &amp;= ~iCTL_INI; // Reset init flag
++				CANout(base, controlReg, flags);
++			}
++		}
++		break;
++
++		case 2: // Receiption, message object 15
++		{
++			uint8_t ctl1reg;
++			ctl1reg = CANin(base, message15Reg.msgCtrl1Reg);
++			while (ctl1reg &amp; NEWD_SET) {
++				if (ctl1reg &amp; MLST_SET)
++					priv-&gt;can_stats.data_overrun++;
++
++				can_rx(dev);
++				ctl1reg = CANin(base, message15Reg.msgCtrl1Reg);
++			}
++
++			if (priv-&gt;state == STATE_PROBE) {
++				/* valid RX -&gt; switch to trx-mode */
++				chipset_init_trx(dev); /* no tx queue wakeup */
++				break; /* check again after init controller */
++			}
++		}
++		break;
++
++		case 3: // Message object 1 (our write object)
++			/* transmission complete interrupt */
++
++			// Nothing more to send, switch off interrupts
++			CANout(base, message1Reg.msgCtrl0Reg,
++			       (MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES));
++			// We had some cases of repeated IRQ, so make sure the INT is acknowledged
++			CANout(base, message1Reg.msgCtrl0Reg,
++			       (MVAL_UNC | TXIE_UNC | RXIE_UNC | INTPD_RES));
++
++			priv-&gt;stats.tx_packets++;
++			netif_wake_queue(dev);
++			break;
++
++		default: // Unexpected
++			iDBG(KERN_INFO &quot;%s: Unexpected i82527 interrupt: &quot;
++			     &quot;irqreq=0x%X\n&quot;, dev-&gt;name, irqreg);
++			break;
++		}
++
++		// Get irq status again for next loop iteration
++		irqreg = CANin(base, interruptReg);
++		if (irqreg == lastIrqreg)
++			iDBG(KERN_INFO &quot;%s: i82527 interrupt repeated: &quot;
++			     &quot;irqreq=0x%X\n&quot;, dev-&gt;name, irqreg);
++
++		lastIrqreg = irqreg;
++	} /* end while (irqreq) */
++
++	if (n &gt; 1) {
++		iDBG(KERN_INFO &quot;%s: handled %d IRQs\n&quot;, dev-&gt;name, n);
++	}
++
++	hw_postirq(dev);
++
++	return n == 0 ? IRQ_NONE : IRQ_HANDLED;
++}
++
++/*
++ * initialize CAN bus driver
++ */
++static int can_open(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	/* set chip into reset mode */
++	set_reset_mode(dev);
++
++	priv-&gt;state = STATE_UNINITIALIZED;
++
++	/* register interrupt handler */
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,20)
++	if (request_irq(dev-&gt;irq, &amp;can_interrupt, SA_SHIRQ,
++			dev-&gt;name, (void*)dev)) {
++#else
++	if (request_irq(dev-&gt;irq, &amp;can_interrupt, IRQF_SHARED,
++			dev-&gt;name, (void*)dev)) {
++#endif
++		return -EAGAIN;
++	}
++
++	/* clear statistics */
++	memset(&amp;priv-&gt;stats, 0, sizeof(priv-&gt;stats));
++
++	/* init chip */
++	chipset_init(dev, 0);
++	priv-&gt;open_time = jiffies;
++
++	netif_start_queue(dev);
++
++	return 0;
++}
++
++/*
++ * stop CAN bus activity
++ */
++static int can_close(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	/* set chip into reset mode */
++	set_reset_mode(dev);
++
++	priv-&gt;open_time = 0;
++
++	if (priv-&gt;timer.expires) {
++		del_timer(&amp;priv-&gt;timer);
++		priv-&gt;timer.expires = 0;
++	}
++
++	free_irq(dev-&gt;irq, (void*)dev);
++	priv-&gt;state = STATE_UNINITIALIZED;
++
++	netif_stop_queue(dev);
++
++	return 0;
++}
++
++void can_netdev_setup(struct net_device *dev)
++{
++	/* Fill in the the fields of the device structure
++	   with CAN netdev generic values */
++
++	dev-&gt;change_mtu			= NULL;
++	dev-&gt;hard_header		= NULL;
++	dev-&gt;rebuild_header		= NULL;
++	dev-&gt;set_mac_address		= NULL;
++	dev-&gt;hard_header_cache		= NULL;
++	dev-&gt;header_cache_update	= NULL;
++	dev-&gt;hard_header_parse		= NULL;
++
++	dev-&gt;type			= ARPHRD_CAN;
++	dev-&gt;hard_header_len		= 0;
++	dev-&gt;mtu			= sizeof(struct can_frame);
++	dev-&gt;addr_len			= 0;
++	dev-&gt;tx_queue_len		= 10;
++
++	dev-&gt;flags			= IFF_NOARP;
++	dev-&gt;features			= NETIF_F_NO_CSUM;
++
++	dev-&gt;open			= can_open;
++	dev-&gt;stop			= can_close;
++	dev-&gt;hard_start_xmit		= can_start_xmit;
++	dev-&gt;get_stats			= can_get_stats;
++	dev-&gt;do_ioctl           	= can_ioctl;
++
++	dev-&gt;tx_timeout			= can_tx_timeout;
++	dev-&gt;watchdog_timeo		= TX_TIMEOUT;
++
++	SET_MODULE_OWNER(dev);
++}
++
++static struct net_device* can_create_netdev(int dev_num, int hw_regs)
++{
++	struct net_device	*dev;
++	struct can_priv		*priv;
++
++	if (!(dev = alloc_netdev(sizeof(struct can_priv), CAN_NETDEV_NAME,
++				 can_netdev_setup))) {
++		printk(KERN_ERR &quot;%s: out of memory\n&quot;, CHIP_NAME);
++		return NULL;
++	}
++
++	printk(KERN_INFO &quot;%s: base 0x%lX / irq %d / speed %d / &quot;
++	       &quot;btr 0x%X / rx_probe %d\n&quot;,
++	       drv_name, rbase[dev_num], irq[dev_num],
++	       speed[dev_num], btr[dev_num], rx_probe[dev_num]);
++
++	/* fill net_device structure */
++
++	priv             = netdev_priv(dev);
++
++	dev-&gt;irq         = irq[dev_num];
++	dev-&gt;base_addr   = rbase[dev_num];
++
++	priv-&gt;speed      = speed[dev_num];
++	priv-&gt;btr        = btr[dev_num];
++	priv-&gt;rx_probe   = rx_probe[dev_num];
++	priv-&gt;clock      = clk;
++	priv-&gt;hw_regs    = hw_regs;
++	priv-&gt;restart_ms = restart_ms;
++	priv-&gt;debug      = debug;
++
++	init_timer(&amp;priv-&gt;timer);
++	priv-&gt;timer.expires = 0;
++
++	if (register_netdev(dev)) {
++		printk(KERN_INFO &quot;%s: register netdev failed\n&quot;, CHIP_NAME);
++		free_netdev(dev);
++		return NULL;
++	}
++
++	return dev;
++}
++
++int can_set_drv_name(void)
++{
++	char *hname = hal_name();
++
++	if (strlen(CHIP_NAME) + strlen(hname) &gt;= DRV_NAME_LEN-1) {
++		printk(KERN_ERR &quot;%s: driver name too long!\n&quot;, CHIP_NAME);
++		return -EINVAL;
++	}
++	sprintf(drv_name, &quot;%s-%s&quot;, CHIP_NAME, hname);
++	return 0;
++}
++
++module_init(i82527_init_module);
++module_exit(i82527_exit_module);
++
+
+Added: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-03-27 15:52:05 UTC (rev 196)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-03-29 13:59:09 UTC (rev 197)
+@@ -0,0 +1,284 @@
++/*
++ * $Id$
++ *
++ * i82527.h -  Intel I82527 network device driver
++ *
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Original version Written by Arnaud Westenberg email:<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">arnaud at wanadoo.nl</A>
++ * This software is released under the GPL-License.
++ *
++ * Major Refactoring and Integration into can4linux version 3.1 by
++ * Henrik W Maier of FOCUS Software Engineering Pty Ltd &lt;www.focus-sw.com&gt;
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#ifndef I82527_H
++#define I82527_H
++
++#define I82527_IO_SIZE 0x100
++
++#define CHIP_NAME	&quot;i82527&quot;
++
++#define DRV_NAME_LEN	30 /* for &quot;&lt;chip_name&gt;-&lt;hal_name&gt;&quot; */
++
++#define PROCBASE          &quot;driver&quot; /* /proc/ ... */
++
++#define DEFAULT_HW_CLK	16000000
++#define DEFAULT_SPEED	100 /* kBit/s */
++
++#define CAN_NETDEV_NAME	&quot;can%d&quot;
++
++#define TX_TIMEOUT      (50*HZ/1000) /* 50ms */ 
++#define RESTART_MS      100  /* restart chip on persistent errors in 100ms */
++#define MAX_BUS_ERRORS  200  /* prevent from flooding bus error interrupts */
++
++/* bus timing */
++#define MAX_TSEG1	15
++#define MAX_TSEG2	 7
++#define SAMPLE_POINT	75
++#define JUMPWIDTH     0x40
++
++typedef struct canmessage {
++	uint8_t	msgCtrl0Reg;	
++	uint8_t	msgCtrl1Reg;	
++	uint8_t	idReg[4];
++	uint8_t	messageConfigReg;
++	uint8_t	dataReg[8];	
++} canmessage_t; // __attribute__ ((packed));
++
++typedef struct canregs {
++  union
++  {
++    struct
++    {
++      canmessage_t messageReg;
++      uint8_t someOtherReg; // padding
++    } msgArr[16];
++    struct
++    {
++      uint8_t      controlReg;               // Control Register
++      uint8_t      statusReg;                // Status Register
++      uint8_t      cpuInterfaceReg;          // CPU Interface Register
++      uint8_t      reserved1Reg;
++      uint8_t      highSpeedReadReg[2];      // High Speed Read
++      uint8_t      globalMaskStandardReg[2]; // Standard Global Mask byte 0
++      uint8_t      globalMaskExtendedReg[4]; // Extended Global Mask bytes
++      uint8_t      message15MaskReg[4];      // Message 15 Mask bytes
++      canmessage_t message1Reg;
++      uint8_t      clkOutReg;                // Clock Out Register
++      canmessage_t message2Reg;
++      uint8_t      busConfigReg;             // Bus Configuration Register
++      canmessage_t message3Reg;
++      uint8_t      bitTiming0Reg;            // Bit Timing Register byte 0
++      canmessage_t message4Reg;
++      uint8_t      bitTiming1Reg;            // Bit Timing Register byte 1
++      canmessage_t message5Reg;
++      uint8_t      interruptReg;             // Interrupt Register
++      canmessage_t message6Reg;
++      uint8_t      reserved2Reg;
++      canmessage_t message7Reg;
++      uint8_t      reserved3Reg;
++      canmessage_t message8Reg;
++      uint8_t      reserved4Reg;
++      canmessage_t message9Reg;
++      uint8_t      p1ConfReg;
++      canmessage_t message10Reg;
++      uint8_t      p2ConfReg;
++      canmessage_t message11Reg;
++      uint8_t      p1InReg;
++      canmessage_t message12Reg;
++      uint8_t      p2InReg;
++      canmessage_t message13Reg;
++      uint8_t      p1OutReg;
++      canmessage_t message14Reg;
++      uint8_t      p2OutReg;
++      canmessage_t message15Reg;
++      uint8_t      serialResetAddressReg;
++    };
++  };
++} canregs_t; // __attribute__ ((packed));
++
++/* Control Register (0x00) */
++enum i82527_iCTL {
++	iCTL_INI = 1,		// Initialization
++	iCTL_IE  = 1&lt;&lt;1,	// Interrupt Enable
++	iCTL_SIE = 1&lt;&lt;2,	// Status Interrupt Enable
++	iCTL_EIE = 1&lt;&lt;3,	// Error Interrupt Enable
++	iCTL_CCE = 1&lt;&lt;6		// Change Configuration Enable
++};
++
++/* Status Register (0x01) */
++enum i82527_iSTAT {
++	iSTAT_TXOK = 1&lt;&lt;3,	// Transmit Message Successfully
++	iSTAT_RXOK = 1&lt;&lt;4,	// Receive Message Successfully
++	iSTAT_WAKE = 1&lt;&lt;5,	// Wake Up Status
++	iSTAT_WARN = 1&lt;&lt;6,	// Warning Status
++	iSTAT_BOFF = 1&lt;&lt;7	// Bus Off Status
++};
++
++/* CPU Interface Register (0x02) */
++enum i82527_iCPU {
++	iCPU_CEN = 1,		// Clock Out Enable
++	iCPU_MUX = 1&lt;&lt;2,	// Multiplex
++	iCPU_SLP = 1&lt;&lt;3,	// Sleep
++	iCPU_PWD = 1&lt;&lt;4,	// Power Down Mode
++	iCPU_DMC = 1&lt;&lt;5,	// Divide Memory Clock
++	iCPU_DSC = 1&lt;&lt;6,	// Divide System Clock
++	iCPU_RST = 1&lt;&lt;7,	// Hardware Reset Status
++};
++
++/* Clock Out Register (0x1f) */
++enum i82527_iCLK {
++	iCLK_CD0 = 1,		// Clock Divider bit 0
++	iCLK_CD1 = 1&lt;&lt;1,
++	iCLK_CD2 = 1&lt;&lt;2,
++	iCLK_CD3 = 1&lt;&lt;3,
++	iCLK_SL0 = 1&lt;&lt;4,	// Slew Rate bit 0
++	iCLK_SL1 = 1&lt;&lt;5
++};
++
++/* Bus Configuration Register (0x2f) */
++enum i82527_iBUS {
++	iBUS_DR0 = 1,		// Disconnect RX0 Input
++	iBUS_DR1 = 1&lt;&lt;1,	// Disconnect RX1 Input
++	iBUS_DT1 = 1&lt;&lt;3,	// Disconnect TX1 Output
++	iBUS_POL = 1&lt;&lt;5,	// Polarity
++	iBUS_CBY = 1&lt;&lt;6		// Comparator Bypass
++};
++
++#define RESET 1			// Bit Pair Reset Status
++#define SET 2			// Bit Pair Set Status
++#define UNCHANGED 3		// Bit Pair Unchanged
++
++/* Message Control Register 0 (Base Address + 0x0) */
++enum i82527_iMSGCTL0 {
++	INTPD_SET = SET,		// Interrupt pending
++	INTPD_RES = RESET,		// No Interrupt pending
++	INTPD_UNC = UNCHANGED,
++	RXIE_SET  = SET&lt;&lt;2,		// Receive Interrupt Enable
++	RXIE_RES  = RESET&lt;&lt;2,		// Receive Interrupt Disable
++	RXIE_UNC  = UNCHANGED&lt;&lt;2,
++	TXIE_SET  = SET&lt;&lt;4,		// Transmit Interrupt Enable
++	TXIE_RES  = RESET&lt;&lt;4,		// Transmit Interrupt Disable
++	TXIE_UNC  = UNCHANGED&lt;&lt;4,
++	MVAL_SET  = SET&lt;&lt;6,		// Message Valid
++	MVAL_RES  = RESET&lt;&lt;6,		// Message Invalid
++	MVAL_UNC  = UNCHANGED&lt;&lt;6
++};
++
++/* Message Control Register 1 (Base Address + 0x01) */
++enum i82527_iMSGCTL1 {
++	NEWD_SET = SET,			// New Data
++	NEWD_RES = RESET,		// No New Data
++	NEWD_UNC = UNCHANGED,
++	MLST_SET = SET&lt;&lt;2,		// Message Lost
++	MLST_RES = RESET&lt;&lt;2,		// No Message Lost
++	MLST_UNC = UNCHANGED&lt;&lt;2,
++	CPUU_SET = SET&lt;&lt;2,		// CPU Updating
++	CPUU_RES = RESET&lt;&lt;2,		// No CPU Updating
++	CPUU_UNC = UNCHANGED&lt;&lt;2,
++	TXRQ_SET = SET&lt;&lt;4,		// Transmission Request
++	TXRQ_RES = RESET&lt;&lt;4,		// No Transmission Request
++	TXRQ_UNC = UNCHANGED&lt;&lt;4,
++	RMPD_SET = SET&lt;&lt;6,		// Remote Request Pending
++	RMPD_RES = RESET&lt;&lt;6,		// No Remote Request Pending
++	RMPD_UNC = UNCHANGED&lt;&lt;6
++};
++
++/* Message Configuration Register (Base Address + 0x06) */
++enum i82527_iMSGCFG {
++	MCFG_XTD = 1&lt;&lt;2,		// Extended Identifier
++	MCFG_DIR = 1&lt;&lt;3			// Direction is Transmit
++};
++
++#undef IOPRINT
++#undef IODEBUG
++
++#ifdef IOPRINT
++#define CANout(base,adr,v) \
++	printk(&quot;CANout: (%lx+%x)=%x\n&quot;, base, (int)&amp;((canregs_t *)0)-&gt;adr,v)
++
++#define CANin(base,adr) \
++	printk(&quot;CANin: (%lx+%x)\n&quot;, base, (int)&amp;((canregs_t *)0)-&gt;adr)
++
++#else /* IOPRINT */
++
++#ifdef IODEBUG
++#define CANout(base,adr,v)      \
++	(printk(&quot;CANout: (%lx+%x)=%x\n&quot;, base, (int)&amp;((canregs_t *)0)-&gt;adr,v),\
++			   hw_writereg(base, (int)&amp;((canregs_t *)0)-&gt;adr, v))
++#else
++#define CANout(base,adr,v) hw_writereg(base, (int)&amp;((canregs_t *)0)-&gt;adr, v)
++#endif
++
++#define CANin(base,adr)	hw_readreg(base, (int)&amp;((canregs_t *)0)-&gt;adr)
++
++#endif /* IOPRINT */
++
++/* CAN private data structure */
++
++struct can_priv {
++	struct net_device_stats	stats;
++	struct can_device_stats	can_stats;
++	long			open_time;
++	int			clock;
++	int			hw_regs;
++	int			restart_ms;
++	int			debug;
++	int			speed;
++	int			btr;
++	int			rx_probe;
++	struct timer_list       timer;
++	int			state;
++};
++
++#define STATE_UNINITIALIZED	0
++#define STATE_PROBE		1
++#define STATE_ACTIVE		2
++#define STATE_ERROR_ACTIVE	3
++#define STATE_ERROR_PASSIVE	4
++#define STATE_BUS_OFF		5
++#define STATE_RESET_MODE	6
++
++void can_proc_create(const char *drv_name);
++void can_proc_remove(const char *drv_name);
++
++#endif /* I82527_H */
+
+Added: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/proc.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/proc.c	2007-03-27 15:52:05 UTC (rev 196)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/proc.c	2007-03-29 13:59:09 UTC (rev 197)
+@@ -0,0 +1,213 @@
++/*
++ * $Id$
++ *
++ * proc.c -  proc file system functions for I82527 CAN driver.
++ *
++ * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;linux/module.h&gt;
++
++#include &lt;linux/slab.h&gt;
++#include &lt;linux/proc_fs.h&gt;
++#include &lt;linux/netdevice.h&gt;
++
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt;
++#include &quot;i82527.h&quot;
++#include &quot;hal.h&quot;
++
++extern struct net_device *can_dev[];
++
++static struct proc_dir_entry *pde       = NULL;
++static struct proc_dir_entry *pde_regs  = NULL;
++static struct proc_dir_entry *pde_reset = NULL;
++
++static int can_proc_read_stats(char *page, char **start, off_t off,
++			       int count, int *eof, void *data)
++{
++	int len = 0;
++	int i;
++
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;CAN bus device statistics:\n&quot;);
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;       errwarn  overrun   wakeup   buserr   &quot;
++			&quot;errpass  arbitr   restarts clock        baud\n&quot;);
++	for (i = 0; (i &lt; MAXDEV) &amp;&amp; (len &lt; PAGE_SIZE - 200); i++) {
++		if (can_dev[i]) {
++			struct net_device *dev = can_dev[i];
++			struct can_priv *priv  = netdev_priv(dev);
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;%s: %8d %8d %8d %8d %8d &quot;
++					&quot;%8d %8d %10d %8d\n&quot;, dev-&gt;name,
++					priv-&gt;can_stats.error_warning,
++					priv-&gt;can_stats.data_overrun,
++					priv-&gt;can_stats.wakeup,
++					priv-&gt;can_stats.bus_error,
++					priv-&gt;can_stats.error_passive,
++					priv-&gt;can_stats.arbitration_lost,
++					priv-&gt;can_stats.restarts,
++					priv-&gt;clock,
++					priv-&gt;speed
++				);
++
++		}
++	}
++
++	*eof = 1;
++	return len;
++}
++
++
++static int can_proc_dump_regs(char *page, int len, struct net_device *dev)
++{
++	int r,s;
++	struct can_priv	*priv = netdev_priv(dev);
++	int regs = priv-&gt;hw_regs;
++
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;%s registers:\n&quot;, dev-&gt;name);
++
++	for (r = 0; r &lt; regs; r += 0x10) {
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;%02X: &quot;, r);
++		for (s = 0; s &lt; 0x10; s++) {
++			if (r+s &lt; regs)
++				len += snprintf(page + len, PAGE_SIZE-len,
++						&quot;%02X &quot;,
++						hw_readreg(dev-&gt;base_addr,
++							   r+s));
++		}
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	}
++
++        return len;
++}
++
++static int can_proc_read_regs(char *page, char **start, off_t off,
++				  int count, int *eof, void *data)
++{
++	int len = 0;
++	int i;
++
++	for (i = 0; (i &lt; MAXDEV) &amp;&amp; (len &lt; PAGE_SIZE - 200); i++) {
++		if (can_dev[i])
++			len = can_proc_dump_regs(page, len, can_dev[i]);
++	}
++
++	*eof = 1;
++	return len;
++}
++
++static int can_proc_read_reset(char *page, char **start, off_t off,
++				   int count, int *eof, void *data)
++{
++	int len = 0;
++	struct net_device *dev;
++	int i;
++	struct can_priv   *priv;
++
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;resetting &quot;);
++	for (i = 0; (i &lt; MAXDEV) &amp;&amp; (len &lt; PAGE_SIZE - 200); i++) {
++		if (can_dev[i]) {
++			dev = can_dev[i];
++			priv = netdev_priv(can_dev[i]);
++			if ((priv-&gt;state != STATE_UNINITIALIZED)
++			    &amp;&amp; (priv-&gt;state != STATE_RESET_MODE)) {
++				len += snprintf(page + len, PAGE_SIZE - len,
++						&quot;%s &quot;, dev-&gt;name);
++				dev-&gt;stop(dev);
++				dev-&gt;open(dev);
++				/* count number of restarts */
++				priv-&gt;can_stats.restarts++;
++
++			} else {
++				len += snprintf(page + len, PAGE_SIZE - len,
++						&quot;(%s|%d) &quot;, dev-&gt;name,
++						priv-&gt;state);
++			}
++		}
++	}
++
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;done\n&quot;);
++
++	*eof = 1;
++	return len;
++}
++
++void can_proc_create(const char *drv_name)
++{
++	char fname[256];
++
++	if (pde == NULL) {
++		sprintf(fname, PROCBASE &quot;/%s_stats&quot;, drv_name);
++		pde = create_proc_read_entry(fname, 0644, NULL,
++					     can_proc_read_stats, NULL);
++	}
++	if (pde_regs == NULL) {
++		sprintf(fname, PROCBASE &quot;/%s_regs&quot;, drv_name);
++		pde_regs = create_proc_read_entry(fname, 0644, NULL,
++						  can_proc_read_regs, NULL);
++	}
++	if (pde_reset == NULL) {
++		sprintf(fname, PROCBASE &quot;/%s_reset&quot;, drv_name);
++		pde_reset = create_proc_read_entry(fname, 0644, NULL,
++						   can_proc_read_reset, NULL);
++	}
++}
++
++void can_proc_remove(const char *drv_name)
++{
++	char fname[256];
++
++	if (pde) {
++		sprintf(fname, PROCBASE &quot;/%s_stats&quot;, drv_name);
++		remove_proc_entry(fname, NULL);
++	}
++	if (pde_regs) {
++		sprintf(fname, PROCBASE &quot;/%s_regs&quot;, drv_name);
++		remove_proc_entry(fname, NULL);
++	}
++	if (pde_reset) {
++		sprintf(fname, PROCBASE &quot;/%s_reset&quot;, drv_name);
++		remove_proc_entry(fname, NULL);
++	}
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000181.html">r196 - branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000183.html">r198 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#182">[ date ]</a>
+              <a href="thread.html#182">[ thread ]</a>
+              <a href="subject.html#182">[ subject ]</a>
+              <a href="author.html#182">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

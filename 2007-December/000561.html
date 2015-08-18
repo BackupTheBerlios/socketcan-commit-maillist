@@ -1,0 +1,602 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r579 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r579%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082225.lB8MPbsi010211%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000560.html">
+   <LINK REL="Next"  HREF="000562.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r579 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r579%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082225.lB8MPbsi010211%40sheep.berlios.de%3E"
+       TITLE="r579 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  8 23:25:37 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000560.html">r578 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000562.html">r580 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#561">[ date ]</a>
+              <a href="thread.html#561">[ thread ]</a>
+              <a href="subject.html#561">[ subject ]</a>
+              <a href="author.html#561">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-12-08 23:25:35 +0100 (Sat, 08 Dec 2007)
+New Revision: 579
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/proc.c
+Log:
+Rename variables.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-08 22:25:12 UTC (rev 578)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-08 22:25:35 UTC (rev 579)
+@@ -102,18 +102,18 @@
+ static LIST_HEAD(notifier_list);
+ static rwlock_t notifier_lock = RW_LOCK_UNLOCKED;
+ 
+-static struct dev_rcv_lists rx_alldev_list;
+-struct dev_rcv_lists *rx_dev_list;
+-rwlock_t rcv_lists_lock = RW_LOCK_UNLOCKED;
++static struct dev_rcv_lists can_rx_alldev_list;
++struct dev_rcv_lists *can_rx_dev_list;
++rwlock_t can_rcvlists_lock = RW_LOCK_UNLOCKED;
+ 
+ static kmem_cache_t *rcv_cache;
+ 
+ /* table of registered CAN protocols */
+ static struct can_proto *proto_tab[CAN_NPROTO];
+ 
+-extern struct timer_list stattimer; /* timer for statistics update */
+-extern struct s_stats  stats;       /* packet statistics */
+-extern struct s_pstats pstats;      /* receive list statistics */
++extern struct timer_list can_stattimer; /* timer for statistics update */
++extern struct s_stats  can_stats;       /* packet statistics */
++extern struct s_pstats can_pstats;      /* receive list statistics */
+ 
+ /*
+  * af_can socket functions
+@@ -149,7 +149,7 @@
+ {
+ 	struct sock *sk;
+ 	struct can_proto *cp;
+-	int ret;
++	int err;
+ 
+ 	DBG(&quot;socket %p, type %d, proto %d\n&quot;, sock, sock-&gt;type, protocol);
+ 
+@@ -188,14 +188,14 @@
+ 
+ 	DBG(&quot;created sock: %p\n&quot;, sk);
+ 
+-	ret = 0;
++	err = 0;
+ 	if (cp-&gt;init)
+-		ret = cp-&gt;init(sk);
+-	if (ret) {
++		err = cp-&gt;init(sk);
++	if (err) {
+ 		/* release sk on errors */
+ 		sock_orphan(sk);
+ 		sock_put(sk);
+-		return ret;
++		return err;
+ 	}
+ 
+ 	return 0;
+@@ -246,8 +246,8 @@
+ 		err = net_xmit_errno(err);
+ 
+ 	/* update statistics */
+-	stats.tx_frames++;
+-	stats.tx_frames_delta++;
++	can_stats.tx_frames++;
++	can_stats.tx_frames_delta++;
+ 
+ 	return err;
+ }
+@@ -263,9 +263,9 @@
+ 	/* find receive list for this device */
+ 
+ 	if (!dev)
+-		return &amp;rx_alldev_list;
++		return &amp;can_rx_alldev_list;
+ 
+-	for (d = rx_dev_list; d; d = d-&gt;next)
++	for (d = can_rx_dev_list; d; d = d-&gt;next)
+ 		if (d-&gt;dev == dev)
+ 			break;
+ 
+@@ -344,7 +344,7 @@
+ {
+ 	struct receiver *r, **rl;
+ 	struct dev_rcv_lists *d;
+-	int ret = 0;
++	int err = 0;
+ 
+ 	/* insert new receiver  (dev,canid,mask) -&gt; (func,data) */
+ 
+@@ -355,7 +355,7 @@
+ 	if (!r)
+ 		return -ENOMEM;
+ 
+-	write_lock_bh(&amp;rcv_lists_lock);
++	write_lock_bh(&amp;can_rcvlists_lock);
+ 
+ 	d = find_dev_rcv_lists(dev);
+ 	if (d) {
+@@ -372,18 +372,18 @@
+ 		*rl = r;
+ 		d-&gt;entries++;
+ 
+-		pstats.rcv_entries++;
+-		if (pstats.rcv_entries_max &lt; pstats.rcv_entries)
+-			pstats.rcv_entries_max = pstats.rcv_entries;
++		can_pstats.rcv_entries++;
++		if (can_pstats.rcv_entries_max &lt; can_pstats.rcv_entries)
++			can_pstats.rcv_entries_max = can_pstats.rcv_entries;
+ 	} else {
+ 		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
+ 		    DNAME(dev), can_id, mask);
+ 		kmem_cache_free(rcv_cache, r);
+-		ret = -ENODEV;
++		err = -ENODEV;
+ 	}
+-	write_unlock_bh(&amp;rcv_lists_lock);
++	write_unlock_bh(&amp;can_rcvlists_lock);
+ 
+-	return ret;
++	return err;
+ }
+ 
+ static void can_rx_delete_all(struct receiver **rl)
+@@ -418,18 +418,18 @@
+ {
+ 	struct receiver *r, **rl;
+ 	struct dev_rcv_lists *d;
+-	int ret = 0;
++	int err = 0;
+ 
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+ 	    dev, can_id, mask, func, data);
+ 
+-	write_lock_bh(&amp;rcv_lists_lock);
++	write_lock_bh(&amp;can_rcvlists_lock);
+ 
+ 	d = find_dev_rcv_lists(dev);
+ 	if (!d) {
+ 		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
+ 		    DNAME(dev), can_id, mask);
+-		ret = -ENODEV;
++		err = -ENODEV;
+ 		goto out;
+ 	}
+ 
+@@ -455,7 +455,7 @@
+ 	if (!r) {
+ 		DBG(&quot;receive list entry not found for &quot;
+ 		    &quot;dev %s, id %03X, mask %03X\n&quot;, DNAME(dev), can_id, mask);
+-		ret = -EINVAL;
++		err = -EINVAL;
+ 		goto out;
+ 	}
+ 
+@@ -463,13 +463,13 @@
+ 	kmem_cache_free(rcv_cache, r);
+ 	d-&gt;entries--;
+ 
+-	if (pstats.rcv_entries &gt; 0)
+-		pstats.rcv_entries--;
++	if (can_pstats.rcv_entries &gt; 0)
++		can_pstats.rcv_entries--;
+ 
+  out:
+-	write_unlock_bh(&amp;rcv_lists_lock);
++	write_unlock_bh(&amp;can_rcvlists_lock);
+ 
+-	return ret;
++	return err;
+ }
+ 
+ static inline void deliver(struct sk_buff *skb, struct receiver *r)
+@@ -562,28 +562,28 @@
+ 		  (struct can_frame *)skb-&gt;data);
+ 
+ 	/* update statistics */
+-	stats.rx_frames++;
+-	stats.rx_frames_delta++;
++	can_stats.rx_frames++;
++	can_stats.rx_frames_delta++;
+ 
+-	read_lock(&amp;rcv_lists_lock);
++	read_lock(&amp;can_rcvlists_lock);
+ 
+ 	/* deliver the packet to sockets listening on all devices */
+-	matches = can_rcv_filter(&amp;rx_alldev_list, skb);
++	matches = can_rcv_filter(&amp;can_rx_alldev_list, skb);
+ 
+ 	/* find receive list for this device */
+ 	d = find_dev_rcv_lists(dev);
+ 	if (d)
+ 		matches += can_rcv_filter(d, skb);
+ 
+-	read_unlock(&amp;rcv_lists_lock);
++	read_unlock(&amp;can_rcvlists_lock);
+ 
+ 	/* free the skbuff allocated by the netdevice driver */
+ 	DBG(&quot;freeing skbuff %p\n&quot;, skb);
+ 	kfree_skb(skb);
+ 
+ 	if (matches &gt; 0) {
+-		stats.matches++;
+-		stats.matches_delta++;
++		can_stats.matches++;
++		can_stats.matches_delta++;
+ 	}
+ 
+ 	return 0;
+@@ -811,18 +811,18 @@
+ 		d-&gt;dev = dev;
+ 
+ 		/* insert d into the list */
+-		write_lock_bh(&amp;rcv_lists_lock);
+-		d-&gt;next        = rx_dev_list;
+-		d-&gt;pprev       = &amp;rx_dev_list;
+-		rx_dev_list    = d;
++		write_lock_bh(&amp;can_rcvlists_lock);
++		d-&gt;next        = can_rx_dev_list;
++		d-&gt;pprev       = &amp;can_rx_dev_list;
++		can_rx_dev_list    = d;
+ 		if (d-&gt;next)
+ 			d-&gt;next-&gt;pprev = &amp;d-&gt;next;
+-		write_unlock_bh(&amp;rcv_lists_lock);
++		write_unlock_bh(&amp;can_rcvlists_lock);
+ 
+ 		break;
+ 
+ 	case NETDEV_UNREGISTER:
+-		write_lock_bh(&amp;rcv_lists_lock);
++		write_lock_bh(&amp;can_rcvlists_lock);
+ 
+ 		d = find_dev_rcv_lists(dev);
+ 		if (!d) {
+@@ -846,7 +846,7 @@
+ 		kfree(d);
+ 
+ 	unreg_out:
+-		write_unlock_bh(&amp;rcv_lists_lock);
++		write_unlock_bh(&amp;can_rcvlists_lock);
+ 
+ 		break;
+ 	}
+@@ -899,14 +899,14 @@
+ 	 * and the entries counter.
+ 	 */
+ 
+-	write_lock_bh(&amp;rcv_lists_lock);
+-	rx_alldev_list.pprev = &amp;rx_dev_list;
+-	rx_dev_list          = &amp;rx_alldev_list;
+-	write_unlock_bh(&amp;rcv_lists_lock);
++	write_lock_bh(&amp;can_rcvlists_lock);
++	can_rx_alldev_list.pprev = &amp;can_rx_dev_list;
++	can_rx_dev_list          = &amp;can_rx_alldev_list;
++	write_unlock_bh(&amp;can_rcvlists_lock);
+ 
+ 	if (stats_timer) {
+ 		/* statistics init */
+-		init_timer(&amp;stattimer);
++		init_timer(&amp;can_stattimer);
+ 	}
+ 
+ 	can_init_proc();
+@@ -933,7 +933,7 @@
+ 	struct dev_rcv_lists *d;
+ 
+ 	if (stats_timer)
+-		del_timer(&amp;stattimer);
++		del_timer(&amp;can_stattimer);
+ 
+ 	can_remove_proc();
+ 
+@@ -942,13 +942,13 @@
+ 	unregister_netdevice_notifier(&amp;can_netdev_notifier);
+ 	sock_unregister(PF_CAN);
+ 
+-	/* remove rx_dev_list */
+-	write_lock_bh(&amp;rcv_lists_lock);
+-	for (d = rx_dev_list; d; d = d-&gt;next)
+-		if (d != &amp;rx_alldev_list)
++	/* remove can_rx_dev_list */
++	write_lock_bh(&amp;can_rcvlists_lock);
++	for (d = can_rx_dev_list; d; d = d-&gt;next)
++		if (d != &amp;can_rx_alldev_list)
+ 			kfree(d);
+-	rx_dev_list = NULL;
+-	write_unlock_bh(&amp;rcv_lists_lock);
++	can_rx_dev_list = NULL;
++	write_unlock_bh(&amp;can_rcvlists_lock);
+ 
+ 	kmem_cache_destroy(rcv_cache);
+ }
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-12-08 22:25:12 UTC (rev 578)
++++ trunk/kernel/2.4/can/proc.c	2007-12-08 22:25:35 UTC (rev 579)
+@@ -76,10 +76,10 @@
+ static struct proc_dir_entry *pde_rcvlist_eff;
+ static struct proc_dir_entry *pde_rcvlist_err;
+ 
+-struct timer_list stattimer; /* timer for statistics update */
++struct timer_list can_stattimer; /* timer for statistics update */
+ 
+-struct s_stats  stats; /* statistics */
+-struct s_pstats pstats;
++struct s_stats  can_stats; /* statistics */
++struct s_pstats can_pstats;
+ 
+ extern struct dev_rcv_lists *rx_dev_list; /* rx dispatcher structures */
+ extern int stats_timer;                   /* module parameter. default: on */
+@@ -90,15 +90,15 @@
+ 
+ static void can_init_stats(int caller)
+ {
+-	memset(&amp;stats, 0, sizeof(stats));
+-	stats.jiffies_init = jiffies;
+-	pstats.stats_reset++;
++	memset(&amp;can_stats, 0, sizeof(can_stats));
++	can_stats.jiffies_init = jiffies;
++	can_pstats.stats_reset++;
+ }
+ 
+ static unsigned long calc_rate(unsigned long oldjif, unsigned long newjif,
+ 			       unsigned long count)
+ {
+-	unsigned long ret = 0;
++	unsigned long rate;
+ 
+ 	if (oldjif == newjif)
+ 		return 0;
+@@ -110,9 +110,9 @@
+ 		return 99999999;
+ 	}
+ 
+-	ret = (count * HZ) / (newjif - oldjif);
++	rate = (count * HZ) / (newjif - oldjif);
+ 
+-	return ret;
++	return rate;
+ }
+ 
+ static void can_stat_update(unsigned long data)
+@@ -120,53 +120,54 @@
+ 	unsigned long j = jiffies; /* snapshot */
+ 
+ 	/* restart counting on jiffies overflow */
+-	if (j &lt; stats.jiffies_init)
++	if (j &lt; can_stats.jiffies_init)
+ 		can_init_stats(2);
+ 
+ 	/* prevent overflow in calc_rate() */
+-	if (stats.rx_frames &gt; (ULONG_MAX / HZ))
++	if (can_stats.rx_frames &gt; (ULONG_MAX / HZ))
+ 		can_init_stats(3);
+ 
+ 	/* matches overflow - very improbable */
+-	if (stats.matches &gt; (ULONG_MAX / 100))
++	if (can_stats.matches &gt; (ULONG_MAX / 100))
+ 		can_init_stats(4);
+ 
+ 	/* calc total values */
+-	if (stats.rx_frames)
+-		stats.total_rx_match_ratio = (stats.matches * 100) /
+-						stats.rx_frames;
++	if (can_stats.rx_frames)
++		can_stats.total_rx_match_ratio = (can_stats.matches * 100) /
++			can_stats.rx_frames;
+ 
+-	stats.total_tx_rate = calc_rate(stats.jiffies_init, j,
+-					stats.tx_frames);
+-	stats.total_rx_rate = calc_rate(stats.jiffies_init, j,
+-					stats.rx_frames);
++	can_stats.total_tx_rate = calc_rate(can_stats.jiffies_init, j,
++					    can_stats.tx_frames);
++	can_stats.total_rx_rate = calc_rate(can_stats.jiffies_init, j,
++					    can_stats.rx_frames);
+ 
+ 	/* calc current values */
+-	if (stats.rx_frames_delta)
+-		stats.current_rx_match_ratio =
+-			(stats.matches_delta * 100) / stats.rx_frames_delta;
++	if (can_stats.rx_frames_delta)
++		can_stats.current_rx_match_ratio =
++			(can_stats.matches_delta * 100) /
++			can_stats.rx_frames_delta;
+ 
+-	stats.current_tx_rate = calc_rate(0, HZ, stats.tx_frames_delta);
+-	stats.current_rx_rate = calc_rate(0, HZ, stats.rx_frames_delta);
++	can_stats.current_tx_rate = calc_rate(0, HZ, can_stats.tx_frames_delta);
++	can_stats.current_rx_rate = calc_rate(0, HZ, can_stats.rx_frames_delta);
+ 
+ 	/* check / update maximum values */
+-	if (stats.max_tx_rate &lt; stats.current_tx_rate)
+-		stats.max_tx_rate = stats.current_tx_rate;
++	if (can_stats.max_tx_rate &lt; can_stats.current_tx_rate)
++		can_stats.max_tx_rate = can_stats.current_tx_rate;
+ 
+-	if (stats.max_rx_rate &lt; stats.current_rx_rate)
+-		stats.max_rx_rate = stats.current_rx_rate;
++	if (can_stats.max_rx_rate &lt; can_stats.current_rx_rate)
++		can_stats.max_rx_rate = can_stats.current_rx_rate;
+ 
+-	if (stats.max_rx_match_ratio &lt; stats.current_rx_match_ratio)
+-		stats.max_rx_match_ratio = stats.current_rx_match_ratio;
++	if (can_stats.max_rx_match_ratio &lt; can_stats.current_rx_match_ratio)
++		can_stats.max_rx_match_ratio = can_stats.current_rx_match_ratio;
+ 
+ 	/* clear values for 'current rate' calculation */
+-	stats.tx_frames_delta = 0;
+-	stats.rx_frames_delta = 0;
+-	stats.matches_delta   = 0;
++	can_stats.tx_frames_delta = 0;
++	can_stats.rx_frames_delta = 0;
++	can_stats.matches_delta   = 0;
+ 
+ 	/* restart timer (one second) */
+-	stattimer.expires = jiffies + HZ;
+-	add_timer(&amp;stattimer);
++	can_stattimer.expires = jiffies + HZ;
++	add_timer(&amp;can_stattimer);
+ }
+ 
+ /*
+@@ -228,64 +229,65 @@
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot; %8ld transmitted frames (TXF)\n&quot;, stats.tx_frames);
++			&quot; %8ld transmitted frames (TXF)\n&quot;,
++			can_stats.tx_frames);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot; %8ld received frames (RXF)\n&quot;, stats.rx_frames);
++			&quot; %8ld received frames (RXF)\n&quot;, can_stats.rx_frames);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot; %8ld matched frames (RXMF)\n&quot;, stats.matches);
++			&quot; %8ld matched frames (RXMF)\n&quot;, can_stats.matches);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld %% total match ratio (RXMR)\n&quot;,
+-			stats.total_rx_match_ratio);
++			can_stats.total_rx_match_ratio);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld frames/s total tx rate (TXR)\n&quot;,
+-			stats.total_tx_rate);
++			can_stats.total_tx_rate);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld frames/s total rx rate (RXR)\n&quot;,
+-			stats.total_rx_rate);
++			can_stats.total_rx_rate);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld %% current match ratio (CRXMR)\n&quot;,
+-			stats.current_rx_match_ratio);
++			can_stats.current_rx_match_ratio);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld frames/s current tx rate (CTXR)\n&quot;,
+-			stats.current_tx_rate);
++			can_stats.current_tx_rate);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld frames/s current rx rate (CRXR)\n&quot;,
+-			stats.current_rx_rate);
++			can_stats.current_rx_rate);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld %% max match ratio (MRXMR)\n&quot;,
+-			stats.max_rx_match_ratio);
++			can_stats.max_rx_match_ratio);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld frames/s max tx rate (MTXR)\n&quot;,
+-			stats.max_tx_rate);
++			can_stats.max_tx_rate);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld frames/s max rx rate (MRXR)\n&quot;,
+-			stats.max_rx_rate);
++			can_stats.max_rx_rate);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld current receive list entries (CRCV)\n&quot;,
+-			pstats.rcv_entries);
++			can_pstats.rcv_entries);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld maximum receive list entries (MRCV)\n&quot;,
+-			pstats.rcv_entries_max);
++			can_pstats.rcv_entries_max);
+ 
+-	if (pstats.stats_reset)
++	if (can_pstats.stats_reset)
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot;\n %8ld statistic resets (STR)\n&quot;,
+-				pstats.stats_reset);
++				can_pstats.stats_reset);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+@@ -306,7 +308,7 @@
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot;CAN statistic reset #%ld done.\n&quot;,
+-			pstats.stats_reset);
++			can_pstats.stats_reset);
+ 
+ 	MOD_DEC_USE_COUNT;
+ 
+@@ -607,10 +609,10 @@
+ 
+ 	if (stats_timer) {
+ 		/* the statistics are updated every second (timer triggered) */
+-		stattimer.function = can_stat_update;
+-		stattimer.data = 0;
+-		stattimer.expires = jiffies + HZ; /* every second */
+-		add_timer(&amp;stattimer); /* start statistics timer */
++		can_stattimer.function = can_stat_update;
++		can_stattimer.data = 0;
++		can_stattimer.expires = jiffies + HZ; /* every second */
++		add_timer(&amp;can_stattimer); /* start statistics timer */
+ 	}
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000560.html">r578 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000562.html">r580 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#561">[ date ]</a>
+              <a href="thread.html#561">[ thread ]</a>
+              <a href="subject.html#561">[ subject ]</a>
+              <a href="author.html#561">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

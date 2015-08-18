@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1198 - trunk/kernel/2.6/Documentation/networking
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1198%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C20100930125154.ACF2C481009%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000829.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1198 - trunk/kernel/2.6/Documentation/networking</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1198%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C20100930125154.ACF2C481009%40sheep.berlios.de%3E"
+       TITLE="r1198 - trunk/kernel/2.6/Documentation/networking">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep 30 14:51:54 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000829.html">r1197 - trunk/can-utils
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#830">[ date ]</a>
+              <a href="thread.html#830">[ thread ]</a>
+              <a href="subject.html#830">[ subject ]</a>
+              <a href="author.html#830">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-09-30 14:51:54 +0200 (Thu, 30 Sep 2010)
+New Revision: 1198
+
+Modified:
+   trunk/kernel/2.6/Documentation/networking/can.txt
+Log:
+Added information how to obtain timestamps as suggested by
+Daniele Venzano &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">venza at brownhat.org</A>&gt;. Extended the possibility
+to get timestamps via recvmsg().
+
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2010-09-25 10:24:37 UTC (rev 1197)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2010-09-30 12:51:54 UTC (rev 1198)
+@@ -25,6 +25,7 @@
+     4.2 Broadcast Manager protocol sockets (SOCK_DGRAM)
+     4.3 connected transport protocols (SOCK_SEQPACKET)
+     4.4 unconnected transport protocols (SOCK_DGRAM)
++    4.5 Timestamps
+ 
+   5 Socket CAN core module
+     5.1 can.ko module params
+@@ -334,7 +335,7 @@
+             return 1;
+     }
+ 
+-    /* paraniod check ... */
++    /* paranoid check ... */
+     if (nbytes &lt; sizeof(struct can_frame)) {
+             fprintf(stderr, &quot;read: incomplete CAN frame\n&quot;);
+             return 1;
+@@ -475,7 +476,28 @@
+   4.3 connected transport protocols (SOCK_SEQPACKET)
+   4.4 unconnected transport protocols (SOCK_DGRAM)
+ 
++  4.5 Timestamps
++  
++  For applications in the CAN environment it is often of interest an
++  accurate timestamp of the instant a message from CAN bus has been received.
++  Such a timestamp can be read with ioctl(2) after reading a message from
++  the socket. Example:
+ 
++    struct timeval tv;
++    ioctl(s, SIOCGSTAMP, &amp;tv);
++
++  The timestamp on Linux has a resolution of one microsecond and it is set
++  automatically at the reception of a CAN frame.
++
++  Alternatively the timestamp can be obtained as a control message (cmsg) using
++  the recvmsg() system call. After enabling the timestamps in the cmsg's by
++
++    const int timestamp = 1;
++    setsockopt(s, SOL_SOCKET, SO_TIMESTAMP, &amp;timestamp, sizeof(timestamp));  
++
++  the data structures filled by recvmsg() need to be parsed for
++  cmsg-&gt;cmsg_type == SO_TIMESTAMP to get the timestamp. See cmsg() manpage.
++
+ 5. Socket CAN core module
+ -------------------------
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000829.html">r1197 - trunk/can-utils
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#830">[ date ]</a>
+              <a href="thread.html#830">[ thread ]</a>
+              <a href="subject.html#830">[ subject ]</a>
+              <a href="author.html#830">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

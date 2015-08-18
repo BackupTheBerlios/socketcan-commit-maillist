@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r704 - branches/ha/hrtimer/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r704%20-%20branches/ha/hrtimer/net/can&In-Reply-To=%3C200804090725.m397PTsv019045%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000685.html">
+   <LINK REL="Next"  HREF="000687.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r704 - branches/ha/hrtimer/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r704%20-%20branches/ha/hrtimer/net/can&In-Reply-To=%3C200804090725.m397PTsv019045%40sheep.berlios.de%3E"
+       TITLE="r704 - branches/ha/hrtimer/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr  9 09:25:29 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000685.html">r703 - branches/ha/hrtimer/net/can
+</A></li>
+        <LI>Next message: <A HREF="000687.html">r705 - branches/cannetdriver26/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#686">[ date ]</a>
+              <a href="thread.html#686">[ thread ]</a>
+              <a href="subject.html#686">[ subject ]</a>
+              <a href="author.html#686">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-04-09 09:25:28 +0200 (Wed, 09 Apr 2008)
+New Revision: 704
+
+Modified:
+   branches/ha/hrtimer/net/can/bcm.c
+Log:
+Fixed hrtimer_forward() parameter which was stupidly optimized away 
+completely in commit r702 :-/
+
+
+Modified: branches/ha/hrtimer/net/can/bcm.c
+===================================================================
+--- branches/ha/hrtimer/net/can/bcm.c	2008-04-09 06:47:38 UTC (rev 703)
++++ branches/ha/hrtimer/net/can/bcm.c	2008-04-09 07:25:28 UTC (rev 704)
+@@ -752,7 +752,7 @@
+ 	struct bcm_op *op = container_of(hrtimer, struct bcm_op, thrtimer);
+ 
+ 	if (bcm_rx_thr_flush(op)) {
+-		hrtimer_forward(hrtimer, op-&gt;kt_lastmsg, op-&gt;kt_ival2);
++		hrtimer_forward(hrtimer, ktime_get(), op-&gt;kt_ival2);
+ 		return HRTIMER_RESTART;
+ 	} else {
+ 		/* rearm throttle handling */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000685.html">r703 - branches/ha/hrtimer/net/can
+</A></li>
+	<LI>Next message: <A HREF="000687.html">r705 - branches/cannetdriver26/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#686">[ date ]</a>
+              <a href="thread.html#686">[ thread ]</a>
+              <a href="subject.html#686">[ subject ]</a>
+              <a href="author.html#686">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

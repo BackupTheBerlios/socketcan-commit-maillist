@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r447 - trunk/kernel/2.6/drivers/net/can/ccan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r447%20-%20trunk/kernel/2.6/drivers/net/can/ccan&In-Reply-To=%3C200707251202.l6PC25al031420%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000428.html">
+   <LINK REL="Next"  HREF="000430.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r447 - trunk/kernel/2.6/drivers/net/can/ccan</H1>
+    <B>skallweit at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r447%20-%20trunk/kernel/2.6/drivers/net/can/ccan&In-Reply-To=%3C200707251202.l6PC25al031420%40sheep.berlios.de%3E"
+       TITLE="r447 - trunk/kernel/2.6/drivers/net/can/ccan">skallweit at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 25 14:02:05 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000428.html">r446 - trunk/kernel/2.6/drivers/net/can/ccan
+</A></li>
+        <LI>Next message: <A HREF="000430.html">r448 - in trunk/kernel/2.6: . drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: skallweit
+Date: 2007-07-25 14:02:04 +0200 (Wed, 25 Jul 2007)
+New Revision: 447
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/ccan/Makefile
+Log:
+Fixed in-kerneltree compilation
+
+Modified: trunk/kernel/2.6/drivers/net/can/ccan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/ccan/Makefile	2007-07-25 11:55:21 UTC (rev 446)
++++ trunk/kernel/2.6/drivers/net/can/ccan/Makefile	2007-07-25 12:02:04 UTC (rev 447)
+@@ -51,7 +51,7 @@
+ 
+ else
+ 
+-include $(TOPDIR)/Makefile.common
++-include $(TOPDIR)/Makefile.common
+ 
+ obj-$(CONFIG_CAN_CCAN)		+= ccan.o
+ obj-$(CONFIG_CAN_H7202)		+= h7202_can.o
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000428.html">r446 - trunk/kernel/2.6/drivers/net/can/ccan
+</A></li>
+	<LI>Next message: <A HREF="000430.html">r448 - in trunk/kernel/2.6: . drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r452 - trunk/kernel/2.6/drivers/net/can/i82527
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r452%20-%20trunk/kernel/2.6/drivers/net/can/i82527&In-Reply-To=%3C200708030732.l737Wufs021802%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000433.html">
+   <LINK REL="Next"  HREF="000435.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r452 - trunk/kernel/2.6/drivers/net/can/i82527</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r452%20-%20trunk/kernel/2.6/drivers/net/can/i82527&In-Reply-To=%3C200708030732.l737Wufs021802%40sheep.berlios.de%3E"
+       TITLE="r452 - trunk/kernel/2.6/drivers/net/can/i82527">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Aug  3 09:32:56 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000433.html">r451 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+        <LI>Next message: <A HREF="000435.html">r453 - in trunk/kernel/2.6/drivers/net/can: mscan sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#434">[ date ]</a>
+              <a href="thread.html#434">[ thread ]</a>
+              <a href="subject.html#434">[ subject ]</a>
+              <a href="author.html#434">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-08-03 09:32:55 +0200 (Fri, 03 Aug 2007)
+New Revision: 452
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.h
+Log:
+Added module parameter for irq_mode to force the driver to use 
+non-shared interrupt handling and to let the Linux Kernel disable local 
+interrupts when processing the irq handler.
+Fixed irqflags defines that have been changed from 2.6.17 to 2.6.18 and 
+not (like the irq handler) from 2.6.18 to 2.6.19.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-08-02 19:21:24 UTC (rev 451)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-08-03 07:32:55 UTC (rev 452)
+@@ -84,8 +84,8 @@
+ char drv_name[DRV_NAME_LEN] = &quot;undefined&quot;;
+ 
+ /* driver and version information */
+-static const char *drv_version	= &quot;0.0.3&quot;;
+-static const char *drv_reldate	= &quot;2007-04-11&quot;;
++static const char *drv_version	= &quot;0.0.4&quot;;
++static const char *drv_reldate	= &quot;2007-08-03&quot;;
+ 
+ static const canid_t rxobjflags[] = {0, CAN_EFF_FLAG,
+ 				     CAN_RTR_FLAG, CAN_RTR_FLAG | CAN_EFF_FLAG,
+@@ -109,6 +109,7 @@
+ static int rx_probe[MAXDEV]	= { 0 };
+ static int clk			= DEFAULT_HW_CLK;
+ static int force_dmc		= DEFAULT_FORCE_DMC;
++static int irq_mode		= DEFAULT_IRQ_MODE;
+ static int debug		= 0;
+ static int restart_ms		= 100;
+ 
+@@ -121,8 +122,9 @@
+ static int mo15_n;
+ static int rx_probe_n;
+ 
+-static u8 dsc = 0; /* devide system clock */
+-static u8 dmc = 0; /* devide memory clock */
++static u8 dsc; /* devide system clock */
++static u8 dmc; /* devide memory clock */
++static unsigned long irqflags; /* for shared / disabled local interrupts */
+ 
+ module_param_array(base, int, &amp;base_n, 0);
+ module_param_array(irq, int, &amp;irq_n, 0);
+@@ -135,6 +137,7 @@
+ 
+ module_param(clk, int, 0);
+ module_param(force_dmc, int, 0);
++module_param(irq_mode, int, 0);
+ module_param(debug, int, 0);
+ module_param(restart_ms, int, 0);
+ 
+@@ -149,6 +152,7 @@
+ 
+ MODULE_PARM_DESC(clk, &quot;CAN controller chip clock (default: 16MHz)&quot;);
+ MODULE_PARM_DESC(force_dmc, &quot;set i82527 DMC bit (default: calculate from clk)&quot;); 
++MODULE_PARM_DESC(irq_mode, &quot;specify irq setup bits (1:shared 2:disable local irqs while processing) (default: 1)&quot;); 
+ MODULE_PARM_DESC(debug, &quot;set debug mask (default: 0)&quot;);
+ MODULE_PARM_DESC(restart_ms, &quot;restart chip on heavy bus errors / bus off after x ms (default 100ms)&quot;);
+ 
+@@ -1005,15 +1009,9 @@
+ 	priv-&gt;state = STATE_UNINITIALIZED;
+ 
+ 	/* register interrupt handler */
+-#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,19)
+-	if (request_irq(dev-&gt;irq, &amp;can_interrupt, SA_SHIRQ,
+-			dev-&gt;name, (void*)dev)) {
+-#else
+-	if (request_irq(dev-&gt;irq, &amp;can_interrupt, IRQF_SHARED,
+-			dev-&gt;name, (void*)dev)) {
+-#endif
++	if (request_irq(dev-&gt;irq, &amp;can_interrupt, irqflags,
++			dev-&gt;name, (void*)dev))
+ 		return -EAGAIN;
+-	}
+ 
+ 	/* clear statistics */
+ 	memset(&amp;priv-&gt;stats, 0, sizeof(priv-&gt;stats));
+@@ -1194,6 +1192,8 @@
+ 	printk(KERN_INFO &quot;%s - options [clk %d.%06d MHz] [restart_ms %dms]&quot;
+ 	       &quot; [debug %d]\n&quot;,
+ 	       drv_name, clk/1000000, clk%1000000, restart_ms, debug);
++	printk(KERN_INFO &quot;%s - options [force_dmc %d] [irq_mode %d]\n&quot;,
++	       drv_name, force_dmc, irq_mode);
+ 
+ 	if (!base[0]) {
+ 		printk(KERN_INFO &quot;%s: loading defaults.\n&quot;, drv_name);
+@@ -1211,6 +1211,18 @@
+ 	if (force_dmc)
+ 		dmc = iCPU_DMC;
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,18)
++	if (irq_mode &amp; IRQ_MODE_SHARED)
++		irqflags |= SA_SHIRQ;
++	if (irq_mode &amp; IRQ_MODE_DISABLE_LOCAL_IRQS)
++		irqflags |= SA_INTERRUPT;
++#else
++	if (irq_mode &amp; IRQ_MODE_SHARED)
++		irqflags |= IRQF_SHARED;
++	if (irq_mode &amp; IRQ_MODE_DISABLE_LOCAL_IRQS)
++		irqflags |= IRQF_DISABLED;
++#endif
++
+ 	for (i = 0; base[i]; i++) {
+ 		int clkout;
+ 		u8 clockdiv;
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-08-02 19:21:24 UTC (rev 451)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-08-03 07:32:55 UTC (rev 452)
+@@ -65,6 +65,9 @@
+ #define DEFAULT_SPEED	500 /* kBit/s */
+ #define DEFAULT_FORCE_DMC 0 /* for critical register access, e.g. ser1274 */
+ 
++#define IRQ_MODE_SHARED 1 /* enable shared interrupts */
++#define IRQ_MODE_DISABLE_LOCAL_IRQS 2 /* when processing the irq handler */
++#define DEFAULT_IRQ_MODE IRQ_MODE_SHARED
+ 
+ /* The message object 15 has a shadow register for reliable data receiption  */
+ /* under heavy bus load. Therefore it makes sense to use this message object */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000433.html">r451 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+	<LI>Next message: <A HREF="000435.html">r453 - in trunk/kernel/2.6/drivers/net/can: mscan sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#434">[ date ]</a>
+              <a href="thread.html#434">[ thread ]</a>
+              <a href="subject.html#434">[ subject ]</a>
+              <a href="author.html#434">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

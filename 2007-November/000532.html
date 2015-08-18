@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r550 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r550%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711151441.lAFEfaIA030918%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000531.html">
+   <LINK REL="Next"  HREF="000533.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r550 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r550%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711151441.lAFEfaIA030918%40sheep.berlios.de%3E"
+       TITLE="r550 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 15 15:41:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000531.html">r549 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000533.html">r551 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#532">[ date ]</a>
+              <a href="thread.html#532">[ thread ]</a>
+              <a href="subject.html#532">[ subject ]</a>
+              <a href="author.html#532">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-15 15:41:33 +0100 (Thu, 15 Nov 2007)
+New Revision: 550
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Some more cosmetics in comments.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-11-15 14:14:07 UTC (rev 549)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-11-15 14:41:33 UTC (rev 550)
+@@ -212,10 +212,11 @@
+ 	if (!ifindex)
+ 		return &quot;any&quot;;
+ 
++	/* no usage counting */
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+-	dev = __dev_get_by_index(&amp;init_net, ifindex); /* no usage counting */
++	dev = __dev_get_by_index(&amp;init_net, ifindex); 
+ #else
+-	dev = __dev_get_by_index(ifindex); /* no usage counting */
++	dev = __dev_get_by_index(ifindex);
+ #endif
+ 	if (dev)
+ 		return dev-&gt;name;
+@@ -689,7 +690,6 @@
+ 
+ 	if (op-&gt;flags &amp; RX_FILTER_ID) {
+ 		/* the easiest case */
+-
+ 		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[0], &amp;rxframe);
+ 		bcm_rx_starttimer(op);
+ 		return;
+@@ -697,14 +697,14 @@
+ 
+ 	if (op-&gt;nframes == 1) {
+ 		/* simple compare with index 0 */
+-
+ 		bcm_rx_cmp_to_index(op, 0, &amp;rxframe);
+ 		bcm_rx_starttimer(op);
+ 		return;
+ 	}
+ 
+ 	if (op-&gt;nframes &gt; 1) {
+-		/* multiplex compare
++		/*
++		 * multiplex compare
+ 		 *
+ 		 * find the first multiplex mask that fits.
+ 		 * Remark: The MUX-mask is stored in index 0
+@@ -879,8 +879,9 @@
+ 	op = bcm_find_op(&amp;bo-&gt;tx_ops, msg_head-&gt;can_id, ifindex);
+ 
+ 	if (op) {
+-		/* update existing BCM operation
+-		 *
++		/* update existing BCM operation */
++
++		/*
+ 		 * Do we need more space for the can_frames than currently
+ 		 * allocated? -&gt; This is a _really_ unusual use-case and
+ 		 * therefore (complexity / locking) it is not supported.
+@@ -942,7 +943,6 @@
+ 
+ 		/* bcm_can_tx / bcm_tx_timeout_handler needs this */
+ 		op-&gt;sk = sk;
+-
+ 		op-&gt;ifindex = ifindex;
+ 
+ 		/* initialize uninitialized (kmalloc) structure */
+@@ -979,7 +979,6 @@
+ 
+ 	if (op-&gt;flags &amp; SETTIMER) {
+ 		/* set timer values */
+-
+ 		op-&gt;count = msg_head-&gt;count;
+ 		op-&gt;ival1 = msg_head-&gt;ival1;
+ 		op-&gt;ival2 = msg_head-&gt;ival2;
+@@ -1028,7 +1027,8 @@
+ 	if ((msg_head-&gt;flags &amp; RX_FILTER_ID) || (!(msg_head-&gt;nframes))) {
+ 		/* be robust against wrong usage ... */
+ 		msg_head-&gt;flags |= RX_FILTER_ID;
+-		msg_head-&gt;nframes = 0; /* ignore trailing garbage */
++		/* ignore trailing garbage */
++		msg_head-&gt;nframes = 0;
+ 	}
+ 
+ 	if ((msg_head-&gt;flags &amp; RX_RTR_FRAME) &amp;&amp;
+@@ -1039,8 +1039,9 @@
+ 	/* check the given can_id */
+ 	op = bcm_find_op(&amp;bo-&gt;rx_ops, msg_head-&gt;can_id, ifindex);
+ 	if (op) {
+-		/* update existing BCM operation
+-		 *
++		/* update existing BCM operation */
++
++		/*
+ 		 * Do we need more space for the can_frames than currently
+ 		 * allocated? -&gt; This is a _really_ unusual use-case and
+ 		 * therefore (complexity / locking) it is not supported.
+@@ -1067,7 +1068,6 @@
+ 
+ 	} else {
+ 		/* insert new BCM operation for the given can_id */
+-
+ 		op = kzalloc(OPSIZ, GFP_KERNEL);
+ 		if (!op)
+ 			return -ENOMEM;
+@@ -1111,6 +1111,7 @@
+ 			}
+ 		}
+ 
++		/* bcm_can_tx / bcm_tx_timeout_handler needs this */
+ 		op-&gt;sk = sk;
+ 		op-&gt;ifindex = ifindex;
+ 
+@@ -1181,6 +1182,7 @@
+ 				op-&gt;thrtimer.expires = jiffies + 2;
+ 				add_timer(&amp;op-&gt;thrtimer);
+ 			}
++
+ 			/*
+ 			 * if (op-&gt;j_ival2) is zero, no (new) throttling
+ 			 * will happen. For details see functions
+@@ -1239,9 +1241,8 @@
+ 	struct net_device *dev;
+ 	int err;
+ 
+-	/* just copy and send one can_frame */
+-
+-	if (!ifindex) /* we need a real device to send frames */
++	/* we need a real device to send frames */
++	if (!ifindex)
+ 		return -ENODEV;
+ 
+ 	skb = alloc_skb(CFSIZ, GFP_KERNEL);
+@@ -1298,7 +1299,8 @@
+ 		if (addr-&gt;can_family != AF_CAN)
+ 			return -EINVAL;
+ 
+-		ifindex = addr-&gt;can_ifindex; /* ifindex from sendto() */
++		/* ifindex from sendto() */
++		ifindex = addr-&gt;can_ifindex;
+ 
+ 		if (ifindex) {
+ 			struct net_device *dev;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000531.html">r549 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000533.html">r551 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#532">[ date ]</a>
+              <a href="thread.html#532">[ thread ]</a>
+              <a href="subject.html#532">[ subject ]</a>
+              <a href="author.html#532">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

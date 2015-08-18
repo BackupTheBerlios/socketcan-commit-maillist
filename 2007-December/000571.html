@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r589 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r589%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101023.lBAANdSU032414%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000570.html">
+   <LINK REL="Next"  HREF="000572.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r589 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r589%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101023.lBAANdSU032414%40sheep.berlios.de%3E"
+       TITLE="r589 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 10 11:23:39 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000570.html">r588 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000572.html">r590 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#571">[ date ]</a>
+              <a href="thread.html#571">[ thread ]</a>
+              <a href="subject.html#571">[ subject ]</a>
+              <a href="author.html#571">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-12-10 11:23:37 +0100 (Mon, 10 Dec 2007)
+New Revision: 589
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/can_core.h
+Log:
+Change can_proto_register() to return an error code.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-10 09:57:20 UTC (rev 588)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-10 10:23:37 UTC (rev 589)
+@@ -548,25 +548,33 @@
+ /**
+  * can_proto_register - register CAN transport protocol
+  * @cp: pointer to CAN protocol structure
++ *
++ * Return:
++ *  0 on success
++ *  -EINVAL invalid (out of range) protocol number
++ *  -EBUSY  protocol already in use
+  */
+-void can_proto_register(struct can_proto *cp)
++int can_proto_register(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
++
+ 	if (proto &lt; 0 || proto &gt;= CAN_NPROTO) {
+-		printk(KERN_ERR &quot;CAN: protocol number %d out &quot;
+-		       &quot;of range\n&quot;, proto);
+-		return;
++		printk(KERN_ERR &quot;can: protocol number %d out of range\n&quot;,
++		       proto);
++		return -EINVAL;
+ 	}
+ 	if (proto_tab[proto]) {
+-		printk(KERN_ERR &quot;CAN: protocol %d already &quot;
+-		       &quot;registered\n&quot;, proto);
+-		return;
++		printk(KERN_ERR &quot;can: protocol %d already registered\n&quot;,
++		       proto);
++		return -EBUSY;
+ 	}
+ 	proto_tab[proto] = cp;
+ 
+ 	/* use generic ioctl function if the module doesn't bring its own */
+ 	if (!cp-&gt;ops-&gt;ioctl)
+ 		cp-&gt;ops-&gt;ioctl = can_ioctl;
++
++	return 0;
+ }
+ 
+ /**
+@@ -576,8 +584,10 @@
+ void can_proto_unregister(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
++
+ 	if (!proto_tab[proto]) {
+-		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
++		printk(KERN_ERR &quot;BUG: can: protocol %d is not registered\n&quot;,
++		       proto);
+ 		return;
+ 	}
+ 	proto_tab[proto] = NULL;
+
+Modified: trunk/kernel/2.4/can/can_core.h
+===================================================================
+--- trunk/kernel/2.4/can/can_core.h	2007-12-10 09:57:20 UTC (rev 588)
++++ trunk/kernel/2.4/can/can_core.h	2007-12-10 10:23:37 UTC (rev 589)
+@@ -69,7 +69,7 @@
+ 
+ /* function prototypes for the CAN networklayer core (af_can.c) */
+ 
+-void can_proto_register(struct can_proto *cp);
++int  can_proto_register(struct can_proto *cp);
+ void can_proto_unregister(struct can_proto *cp);
+ int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		     void (*func)(struct sk_buff *, void *), void *data,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000570.html">r588 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000572.html">r590 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#571">[ date ]</a>
+              <a href="thread.html#571">[ thread ]</a>
+              <a href="subject.html#571">[ subject ]</a>
+              <a href="author.html#571">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

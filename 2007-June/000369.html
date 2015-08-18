@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r386 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r386%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706211302.l5LD2RaK003018%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000368.html">
+   <LINK REL="Next"  HREF="000370.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r386 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r386%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706211302.l5LD2RaK003018%40sheep.berlios.de%3E"
+       TITLE="r386 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 21 15:02:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000368.html">r385 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000370.html">r387 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#369">[ date ]</a>
+              <a href="thread.html#369">[ thread ]</a>
+              <a href="subject.html#369">[ subject ]</a>
+              <a href="author.html#369">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-06-21 15:02:24 +0200 (Thu, 21 Jun 2007)
+New Revision: 386
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Add (untested) support for kernels before 2.6.21.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-06-21 11:57:49 UTC (rev 385)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-06-21 13:02:24 UTC (rev 386)
+@@ -291,7 +291,11 @@
+ 			}
+ 
+ 			newskb-&gt;sk = skb-&gt;sk;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+ 			newskb-&gt;iif = 0;
++#else
++			newskb-&gt;input_dev = NULL;
++#endif
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 			newskb-&gt;pkt_type = PACKET_BROADCAST;
+ 			netif_rx(newskb);
+@@ -586,7 +590,11 @@
+ 	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ 	if (clone) {
+ 		clone-&gt;sk  = skb-&gt;sk;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+ 		clone-&gt;iif = skb-&gt;iif;
++#else
++		clone-&gt;input_dev = skb-&gt;input_dev;
++#endif
+ 		r-&gt;func(clone, r-&gt;data);
+ 		r-&gt;matches++;
+ 	}
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-06-21 11:57:49 UTC (rev 385)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-06-21 13:02:24 UTC (rev 386)
+@@ -393,7 +393,13 @@
+ 	}
+ 
+ 	/* restore originator for recvfrom() */
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+ 	skb-&gt;iif = op-&gt;rx_ifindex;
++#else
++	skb-&gt;input_dev = dev_get_by_index(op-&gt;rx_ifindex);
++	if (skb-&gt;input_dev)
++		dev_put(skb-&gt;input_dev);
++#endif
+ 
+ 	if (head-&gt;nframes) {
+ 		memcpy(skb_put(skb, datalen), frames, datalen);
+@@ -1725,7 +1731,17 @@
+ 		msg-&gt;msg_namelen = sizeof(*addr);
+ 		memset(addr, 0, sizeof(*addr));
+ 		addr-&gt;can_family  = AF_CAN;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+ 		addr-&gt;can_ifindex = skb-&gt;iif;
++#else
++		/* FIXME: Race condition, skb-&gt;input_dev might disappear
++		 *        while skb is waiting on the queue.
++		 */
++		if (skb-&gt;input_dev)
++			addr-&gt;can_ifindex = skb-&gt;input_dev-&gt;ifindex;
++		else
++			addr-&gt;can_ifindex = 0;
++#endif
+ 	}
+ 
+ 	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-06-21 11:57:49 UTC (rev 385)
++++ trunk/kernel/2.6/net/can/raw.c	2007-06-21 13:02:24 UTC (rev 386)
+@@ -709,7 +709,14 @@
+ 		msg-&gt;msg_namelen = sizeof(*addr);
+ 		memset(addr, 0, sizeof(*addr));
+ 		addr-&gt;can_family  = AF_CAN;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,21)
+ 		addr-&gt;can_ifindex = skb-&gt;iif;
++#else
++		/* FIXME: Race condition, skb-&gt;input_dev might disappear
++		 *        while skb is waiting on the queue.
++		 */
++		addr-&gt;can_ifindex = skb-&gt;input_dev-&gt;ifindex;
++#endif
+ 	}
+ 
+ 	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000368.html">r385 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000370.html">r387 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#369">[ date ]</a>
+              <a href="thread.html#369">[ thread ]</a>
+              <a href="subject.html#369">[ subject ]</a>
+              <a href="author.html#369">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

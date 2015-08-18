@@ -1,0 +1,406 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r178 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r178%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200703081228.l28CSm2B023641%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000169.html">
+   <LINK REL="Next"  HREF="000163.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r178 - trunk/kernel/2.4/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r178%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200703081228.l28CSm2B023641%40sheep.berlios.de%3E"
+       TITLE="r178 - trunk/kernel/2.4/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Mar  8 13:28:48 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000169.html">r177 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000163.html">r179 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#162">[ date ]</a>
+              <a href="thread.html#162">[ thread ]</a>
+              <a href="subject.html#162">[ subject ]</a>
+              <a href="author.html#162">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-08 13:28:39 +0100 (Thu, 08 Mar 2007)
+New Revision: 178
+
+Added:
+   trunk/kernel/2.4/can/can_core.h
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/bcm.h
+   trunk/kernel/2.4/can/can.h
+   trunk/kernel/2.4/can/can_error.h
+   trunk/kernel/2.4/can/can_ioctl.h
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.4/can/raw.h
+   trunk/kernel/2.4/can/version.h
+Log:
+Introduced can_core.h analogue to linux/can/core.h in Kernel 2.6 tree.
+Updated dates in copyright notices. Cosmetics.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/af_can.c	2007-03-08 12:28:39 UTC (rev 178)
+@@ -60,10 +60,11 @@
+ #include &lt;net/sock.h&gt;
+ #include &lt;asm/uaccess.h&gt;
+ 
++#include &quot;can.h&quot;
++#include &quot;can_core.h&quot;
++#include &quot;version.h&quot;
+ #include &quot;af_can.h&quot;
+-#include &quot;version.h&quot;
+ 
+-
+ RCSID(&quot;$Id$&quot;);
+ 
+ #define IDENT &quot;af_can&quot;
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/af_can.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -1,7 +1,7 @@
+ /*
+  * af_can.h
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -53,19 +53,6 @@
+ 
+ #include &quot;can.h&quot;
+ 
+-#define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
+-
+-#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+-
+-struct can_proto {
+-	int              type;
+-	int              protocol;
+-	int              capability;
+-	struct proto_ops *ops;
+-	int              (*init)(struct sock *sk);
+-	size_t           obj_size;
+-};
+-
+ /* af_can rx dispatcher structures */
+ 
+ struct receiver {
+@@ -128,24 +115,4 @@
+ void can_init_proc(void);
+ void can_remove_proc(void);
+ 
+-/* function prototypes for the CAN networklayer core (af_can.c) */
+-
+-void can_debug_skb(struct sk_buff *skb);
+-void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
+-
+-void can_proto_register(struct can_proto *cp);
+-void can_proto_unregister(struct can_proto *cp);
+-int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-		     void (*func)(struct sk_buff *, void *), void *data,
+-		     char *ident);
+-int  can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		       void (*func)(struct sk_buff *, void *), void *data);
+-void can_dev_register(struct net_device *dev,
+-		      void (*func)(unsigned long msg, void *), void *data);
+-void can_dev_unregister(struct net_device *dev,
+-			void (*func)(unsigned long msg, void *), void *data);
+-int  can_send(struct sk_buff *skb, int loop);
+-
+-unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+-
+ #endif /* AF_CAN_H */
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/bcm.c	2007-03-08 12:28:39 UTC (rev 178)
+@@ -50,7 +50,8 @@
+ #include &lt;linux/poll.h&gt;
+ #include &lt;net/sock.h&gt;
+ 
+-#include &quot;af_can.h&quot;
++#include &quot;can.h&quot;
++#include &quot;can_core.h&quot;
+ #include &quot;version.h&quot;
+ #include &quot;bcm.h&quot;
+ 
+
+Modified: trunk/kernel/2.4/can/bcm.h
+===================================================================
+--- trunk/kernel/2.4/can/bcm.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/bcm.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -1,7 +1,7 @@
+ /*
+  * bcm.h
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/kernel/2.4/can/can.h
+===================================================================
+--- trunk/kernel/2.4/can/can.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/can.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -68,9 +68,6 @@
+ /* ARP protocol identifier (dummy type for non ARP hardware) */
+ #define ARPHRD_CAN	280	/* to be moved to include/linux/if_arp.h */
+ 
+-
+-
+-
+ /* special address description flags for the CAN_ID */
+ #define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+ #define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+@@ -89,8 +86,6 @@
+ 	__u8    data[8] __attribute__ ((aligned(8)));
+ };
+ 
+-
+-
+ /* particular protocols of the protocol family PF_CAN */
+ #define CAN_RAW		1 /* RAW sockets */
+ #define CAN_BCM		2 /* Broadcast Manager */
+
+Added: trunk/kernel/2.4/can/can_core.h
+===================================================================
+--- trunk/kernel/2.4/can/can_core.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/can_core.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -0,0 +1,91 @@
++/*
++ * can_core.h
++ *
++ * Protoypes and definitions for CAN protocol modules using the PF_CAN core
++ *
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#ifndef CAN_CORE_H
++#define CAN_CORE_H
++
++#include &quot;version.h&quot;
++RCSID(&quot;$Id$&quot;);
++
++#include &lt;linux/skbuff.h&gt;
++#include &lt;linux/netdevice.h&gt;
++
++#include &quot;can.h&quot;
++
++#define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
++
++#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
++
++struct can_proto {
++	int              type;
++	int              protocol;
++	int              capability;
++	struct proto_ops *ops;
++	int              (*init)(struct sock *sk);
++	size_t           obj_size;
++};
++
++/* function prototypes for the CAN networklayer core (af_can.c) */
++
++void can_debug_skb(struct sk_buff *skb);
++void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
++
++void can_proto_register(struct can_proto *cp);
++void can_proto_unregister(struct can_proto *cp);
++int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
++		     void (*func)(struct sk_buff *, void *), void *data,
++		     char *ident);
++int  can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++		       void (*func)(struct sk_buff *, void *), void *data);
++void can_dev_register(struct net_device *dev,
++		      void (*func)(unsigned long msg, void *), void *data);
++void can_dev_unregister(struct net_device *dev,
++			void (*func)(unsigned long msg, void *), void *data);
++int  can_send(struct sk_buff *skb, int loop);
++
++unsigned long timeval2jiffies(struct timeval *tv, int round_up);
++
++#endif /* CAN_CORE_H */
+
+
+Property changes on: trunk/kernel/2.4/can/can_core.h
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/kernel/2.4/can/can_error.h
+===================================================================
+--- trunk/kernel/2.4/can/can_error.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/can_error.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -1,7 +1,7 @@
+ /*
+  * can_error_h
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/kernel/2.4/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.4/can/can_ioctl.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/can_ioctl.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -1,7 +1,7 @@
+ /*
+  * can_ioctl_h
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/proc.c	2007-03-08 12:28:39 UTC (rev 178)
+@@ -45,8 +45,10 @@
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ 
++#include &quot;can.h&quot;
++#include &quot;can_core.h&quot;
++#include &quot;version.h&quot;
+ #include &quot;af_can.h&quot;
+-#include &quot;version.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/raw.c	2007-03-08 12:28:39 UTC (rev 178)
+@@ -50,7 +50,8 @@
+ #include &lt;linux/poll.h&gt;
+ #include &lt;net/sock.h&gt;
+ 
+-#include &quot;af_can.h&quot;
++#include &quot;can.h&quot;
++#include &quot;can_core.h&quot;
+ #include &quot;can_error.h&quot;
+ #include &quot;version.h&quot;
+ #include &quot;raw.h&quot;
+
+Modified: trunk/kernel/2.4/can/raw.h
+===================================================================
+--- trunk/kernel/2.4/can/raw.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/raw.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -1,7 +1,7 @@
+ /*
+  * raw.h
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/kernel/2.4/can/version.h
+===================================================================
+--- trunk/kernel/2.4/can/version.h	2007-03-08 11:02:43 UTC (rev 177)
++++ trunk/kernel/2.4/can/version.h	2007-03-08 12:28:39 UTC (rev 178)
+@@ -1,7 +1,7 @@
+ /*
+  * version.h
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000169.html">r177 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000163.html">r179 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#162">[ date ]</a>
+              <a href="thread.html#162">[ thread ]</a>
+              <a href="subject.html#162">[ subject ]</a>
+              <a href="author.html#162">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r201 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r201%20-%20branches/ha/candrv/kernel/2.6/drivers/net/can/i82527&In-Reply-To=%3C200704072140.l37LejeZ003112%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000185.html">
+   <LINK REL="Next"  HREF="000187.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r201 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r201%20-%20branches/ha/candrv/kernel/2.6/drivers/net/can/i82527&In-Reply-To=%3C200704072140.l37LejeZ003112%40sheep.berlios.de%3E"
+       TITLE="r201 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr  7 23:40:45 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000185.html">r200 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+        <LI>Next message: <A HREF="000187.html">r202 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#186">[ date ]</a>
+              <a href="thread.html#186">[ thread ]</a>
+              <a href="subject.html#186">[ subject ]</a>
+              <a href="author.html#186">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-07 23:40:42 +0200 (Sat, 07 Apr 2007)
+New Revision: 201
+
+Modified:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+Log:
+Introduced clock devider module parameter for automatic CLKOUT calculation.
+Depending on this cdv parameter (following i82527 spec) also the slew rate
+is determined and programmed into the chip CLKOUT register.
+Made DSC &amp; DMC calculation robust against odd/unusual XTAL frequencies.
+
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-04-02 14:18:23 UTC (rev 200)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-04-07 21:40:42 UTC (rev 201)
+@@ -98,6 +98,7 @@
+ 
+ unsigned int speed[MAXDEV]	= { 0 };
+ unsigned int btr[MAXDEV]	= { 0 };
++unsigned int cdv[MAXDEV]	= { 0 }; /* CLKOUT clock divider */
+ 
+ static int rx_probe[MAXDEV]	= { 0 };
+ static int clk			= DEFAULT_HW_CLK;
+@@ -108,6 +109,7 @@
+ static int irq_n;
+ static int speed_n;
+ static int btr_n;
++static int cdv_n;
+ static int rx_probe_n;
+ 
+ static u8 dsc = 0; /* devide system clock */
+@@ -117,6 +119,7 @@
+ module_param_array(irq, int, &amp;irq_n, 0);
+ module_param_array(speed, int, &amp;speed_n, 0);
+ module_param_array(btr, int, &amp;btr_n, 0);
++module_param_array(cdv, int, &amp;cdv_n, 0);
+ module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
+ 
+ module_param(clk, int, 0);
+@@ -188,7 +191,16 @@
+ 		hal_use_defaults();
+ 	}
+ 		
++	/* to ensure the proper access to the i82527 registers */
++	/* the timing dependend settings have to be done first */
++	if (clk &gt; 10000000)
++		dsc = iCPU_DSC; /* devide system clock =&gt; MCLK is 8MHz save */
++	else if (clk &gt; 8000000) /* 8MHz &lt; clk &lt;= 10MHz */
++		dmc = iCPU_DMC; /* devide memory clock */
++
+ 	for (i = 0; base[i]; i++) {
++		int clkout;
++		u8 clockdiv;
+ 
+ 		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%lX ...\n&quot;,
+ 		       drv_name, CHIP_NAME, base[i]);
+@@ -203,19 +215,29 @@
+ 		hw_attach(i);
+ 		hw_reset_dev(i);
+ 
+-		/* to ensure the proper access to the i82527 registers */
+-		/* the timing dependend settings have to be done first */
+-		if (clk &gt; 10000000)
+-			dsc = iCPU_DSC; /* devide system clock */
++		// Enable configuration, put chip in bus-off, disable ints
++		CANout(rbase[i], controlReg, iCTL_CCE | iCTL_INI);
+ 
+-		if (clk == 10000000)
+-			dmc = iCPU_DMC; /* devide memory clock */
++		/* CLKOUT devider and slew rate calculation */
++		if ((cdv[i] &lt; 0) || (cdv[i] &gt; 14)) {
++			printk(KERN_WARNING &quot;%s: adjusted cdv[%d]=%d to 0.\n&quot;,
++			       drv_name, i, cdv[i]);
++			cdv[i] = 0;
++		}
+ 
+-		// Enable configuration, put chip in bus-off, disable ints
+-		CANout(rbase[i], controlReg, iCTL_CCE | iCTL_INI);
+-		// Set clock out slew rates
+-		CANout(rbase[i], clkOutReg,
+-		       (iCLK_SL1 | iCLK_SL0 | iCLK_CD1 | iCLK_CD0));
++		clkout = clk / (cdv[i] + 1); /* CLKOUT frequency */
++		clockdiv = (u8)cdv[i]; /* devider value (see i82527 spec) */
++
++		if (clkout &lt;= 16000000) {
++			clockdiv |= iCLK_SL1;
++			if (clkout &lt;= 8000000)
++				clockdiv |= iCLK_SL0;
++		} else if (clkout &lt;= 24000000)
++				clockdiv |= iCLK_SL0;
++
++		// Set CLKOUT devider and slew rates
++		CANout(rbase[i], clkOutReg, clockdiv);
++
+ 		// Configure cpu interface
+ 		CANout(rbase[i], cpuInterfaceReg,(dsc | dmc | iCPU_CEN));
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000185.html">r200 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+	<LI>Next message: <A HREF="000187.html">r202 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#186">[ date ]</a>
+              <a href="thread.html#186">[ thread ]</a>
+              <a href="subject.html#186">[ subject ]</a>
+              <a href="author.html#186">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

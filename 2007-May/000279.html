@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r295 - in trunk/kernel/2.6: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r295%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200705090736.l497atec006463%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000278.html">
+   <LINK REL="Next"  HREF="000280.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r295 - in trunk/kernel/2.6: drivers/net/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r295%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200705090736.l497atec006463%40sheep.berlios.de%3E"
+       TITLE="r295 - in trunk/kernel/2.6: drivers/net/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed May  9 09:36:55 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000278.html">r294 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000280.html">r296 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#279">[ date ]</a>
+              <a href="thread.html#279">[ thread ]</a>
+              <a href="subject.html#279">[ subject ]</a>
+              <a href="author.html#279">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-05-09 09:36:43 +0200 (Wed, 09 May 2007)
+New Revision: 295
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/Kconfig
+   trunk/kernel/2.6/drivers/net/can/Kconfig.kernel
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/net/can/Kconfig
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+Remove trailing whitespace and blank lines.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Kconfig	2007-05-09 07:33:34 UTC (rev 294)
++++ trunk/kernel/2.6/drivers/net/can/Kconfig	2007-05-09 07:36:43 UTC (rev 295)
+@@ -82,4 +82,3 @@
+ 	  will be called mpc52xx_can.
+ 
+ endmenu
+-
+
+Modified: trunk/kernel/2.6/drivers/net/can/Kconfig.kernel
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Kconfig.kernel	2007-05-09 07:33:34 UTC (rev 294)
++++ trunk/kernel/2.6/drivers/net/can/Kconfig.kernel	2007-05-09 07:36:43 UTC (rev 295)
+@@ -23,4 +23,3 @@
+ 	  on.
+ 
+ endmenu
+-
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-09 07:33:34 UTC (rev 294)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-09 07:36:43 UTC (rev 295)
+@@ -54,7 +54,7 @@
+ RCSID(&quot;$Id$&quot;);
+ 
+ static __initdata const char banner[] =
+-	KERN_INFO &quot;vcan: Virtual CAN interface driver\n&quot;; 
++	KERN_INFO &quot;vcan: Virtual CAN interface driver\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;virtual CAN interface&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+
+Modified: trunk/kernel/2.6/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/net/can/Kconfig	2007-05-09 07:33:34 UTC (rev 294)
++++ trunk/kernel/2.6/net/can/Kconfig	2007-05-09 07:36:43 UTC (rev 295)
+@@ -23,7 +23,7 @@
+ 	---help---
+ 	  The Raw CAN protocol option offers access to the CAN bus via
+ 	  the BSD socket API. You probably want to use the raw socket in
+-	  most cases where no higher level protocol is being used. The raw 
++	  most cases where no higher level protocol is being used. The raw
+ 	  socket has several filter options e.g. ID-Masking / Errorframes.
+ 	  To receive/send raw CAN messages, use AF_CAN with protocol CAN_RAW.
+ 
+@@ -80,4 +80,3 @@
+ 
+ 
+ source &quot;drivers/net/can/Kconfig&quot;
+-
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-05-09 07:33:34 UTC (rev 294)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-05-09 07:36:43 UTC (rev 295)
+@@ -1042,7 +1042,7 @@
+ 
+ 	/*
+ 	 * Insert struct dev_rcv_lists for reception on all devices.
+-	 * This struct is zero initialized which is correct for the 
++	 * This struct is zero initialized which is correct for the
+ 	 * embedded hlist heads, the dev pointer, and the entries counter.
+ 	 */
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-05-09 07:33:34 UTC (rev 294)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-05-09 07:36:43 UTC (rev 295)
+@@ -309,7 +309,7 @@
+ 	return len;
+ }
+ 
+-/* 
++/*
+  * bcm_can_tx - send the (next) CAN frame to the appropriate CAN interface
+  *              of the given bcm tx op
+  */
+@@ -356,7 +356,7 @@
+ 	dev_put(dev);
+ }
+ 
+-/* 
++/*
+  * bcm_send_to_user - send a BCM message to the userspace
+  *                    (consisting of bcm_msg_head + x CAN frames)
+  */
+@@ -512,9 +512,9 @@
+ }
+ 
+ /*
+- * bcm_rx_update_and_send - process a detected relevant receive content change 
++ * bcm_rx_update_and_send - process a detected relevant receive content change
+  *                          1. update the last received data
+- *                          2. send a notification to the user (if possible) 
++ *                          2. send a notification to the user (if possible)
+  */
+ static void bcm_rx_update_and_send(struct bcm_op *op,
+ 				   struct can_frame *lastdata,
+@@ -1019,7 +1019,7 @@
+ 
+ 	if (op-&gt;flags &amp; TX_RESET_MULTI_IDX) {
+ 		/* start multiple frame transmission with index 0 */
+-		op-&gt;currframe = 0; 
++		op-&gt;currframe = 0;
+ 	}
+ 
+ 	if (op-&gt;flags &amp; SETTIMER) {
+@@ -1296,7 +1296,7 @@
+ 				dev_put(dev);
+ 			}
+ 
+-		} else 
++		} else
+ 			can_rx_register(NULL, op-&gt;can_id, REGMASK(op-&gt;can_id),
+ 					bcm_rx_handler, op, IDENT);
+ 	}
+@@ -1367,7 +1367,7 @@
+ 
+ 	if (!ifindex &amp;&amp; msg-&gt;msg_name) {
+ 		/* no bound device as default =&gt; check msg_name */
+-		struct sockaddr_can *addr = 
++		struct sockaddr_can *addr =
+ 			(struct sockaddr_can *)msg-&gt;msg_name;
+ 
+ 		if (addr-&gt;can_family != AF_CAN)
+@@ -1407,7 +1407,7 @@
+ 		else
+ 			ret = -EINVAL;
+ 		break;
+-		    
++
+ 	case RX_DELETE:
+ 		if (bcm_delete_rx_op(&amp;bo-&gt;rx_ops, msg_head.can_id, ifindex))
+ 			ret = MHSIZ;
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-05-09 07:33:34 UTC (rev 294)
++++ trunk/kernel/2.6/net/can/proc.c	2007-05-09 07:36:43 UTC (rev 295)
+@@ -80,7 +80,7 @@
+ 
+ static int user_reset = 0;
+ 
+-/* 
++/*
+  * af_can statistics stuff
+  */
+ 
+@@ -146,7 +146,7 @@
+ 
+ 	/* calc total values */
+ 	if (stats.rx_frames)
+-		stats.total_rx_match_ratio = (stats.matches * 100) / 
++		stats.total_rx_match_ratio = (stats.matches * 100) /
+ 						stats.rx_frames;
+ 
+ 	stats.total_tx_rate = calc_rate(stats.jiffies_init, j,
+@@ -182,7 +182,7 @@
+ 	add_timer(&amp;stattimer);
+ }
+ 
+-/* 
++/*
+  * proc read functions
+  *
+  * From known use-cases we expect about 10 entries in a receive list to be
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000278.html">r294 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000280.html">r296 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#279">[ date ]</a>
+              <a href="thread.html#279">[ thread ]</a>
+              <a href="subject.html#279">[ subject ]</a>
+              <a href="author.html#279">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

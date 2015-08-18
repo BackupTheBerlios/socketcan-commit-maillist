@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r248 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r248%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704281200.l3SC00KP008918%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000231.html">
+   <LINK REL="Next"  HREF="000233.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r248 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r248%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704281200.l3SC00KP008918%40sheep.berlios.de%3E"
+       TITLE="r248 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 28 14:00:00 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000231.html">r247 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000233.html">r249 - in trunk: . kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#232">[ date ]</a>
+              <a href="thread.html#232">[ thread ]</a>
+              <a href="subject.html#232">[ subject ]</a>
+              <a href="author.html#232">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-28 13:59:55 +0200 (Sat, 28 Apr 2007)
+New Revision: 248
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+fixed missing condition from r247.
+Added r247 functionality to bcm rx setup path.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-04-28 06:50:57 UTC (rev 247)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-04-28 11:59:55 UTC (rev 248)
+@@ -927,7 +927,8 @@
+ 			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
+ 					       msg-&gt;msg_iov, CFSIZ);
+ 			if (err &lt; 0) {
+-				kfree(op-&gt;frames);
++				if (op-&gt;frames != &amp;op-&gt;sframe)
++					kfree(op-&gt;frames);
+ 				kfree(op);
+ 				return err;
+ 			}
+@@ -1060,7 +1061,6 @@
+ 	/* check the given can_id */
+ 	op = bcm_find_op(&amp;bo-&gt;rx_ops, msg_head-&gt;can_id, ifindex);
+ 	if (op) {
+-
+ 		/* update existing BCM operation */
+ 
+ 		DBG(&quot;RX_SETUP: modifying existing rx_op %p for can_id %03X\n&quot;,
+@@ -1104,8 +1104,7 @@
+ 		op-&gt;can_id    = msg_head-&gt;can_id;
+ 		op-&gt;nframes   = msg_head-&gt;nframes;
+ 
+-		if (msg_head-&gt;nframes) {
+-
++		if (msg_head-&gt;nframes &gt; 1) {
+ 			/* create array for can_frames and copy the data */
+ 			op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ,
+ 					     GFP_KERNEL);
+@@ -1114,14 +1113,6 @@
+ 				return -ENOMEM;
+ 			}
+ 
+-			err = memcpy_fromiovec((u8*)op-&gt;frames, msg-&gt;msg_iov,
+-					       msg_head-&gt;nframes * CFSIZ);
+-			if (err &lt; 0) {
+-				kfree(op-&gt;frames);
+-				kfree(op);
+-				return err;
+-			}
+-
+ 			/* create and init array for received can_frames */
+ 			op-&gt;last_frames = kzalloc(msg_head-&gt;nframes * CFSIZ,
+ 						  GFP_KERNEL);
+@@ -1132,18 +1123,20 @@
+ 			}
+ 
+ 		} else {
+-			/* op-&gt;frames = NULL due to memset in kzalloc() */
++			op-&gt;frames = &amp;op-&gt;sframe;
++			op-&gt;last_frames = &amp;op-&gt;last_sframe;
++		}
+ 
+-			/*
+-			 * even when we have the RX_FILTER_ID case, we need
+-			 * to store the last frame for the throttle feature
+-			 */
+-
+-			/* create and init array for received can_frames */
+-			op-&gt;last_frames = kzalloc(CFSIZ, GFP_KERNEL);
+-			if (!op-&gt;last_frames) {
++		if (msg_head-&gt;nframes) {
++			err = memcpy_fromiovec((u8*)op-&gt;frames, msg-&gt;msg_iov,
++					       msg_head-&gt;nframes * CFSIZ);
++			if (err &lt; 0) {
++				if (op-&gt;frames != &amp;op-&gt;sframe)
++					kfree(op-&gt;frames);
++				if (op-&gt;last_frames != &amp;op-&gt;last_sframe)
++					kfree(op-&gt;last_frames);
+ 				kfree(op);
+-				return -ENOMEM;
++				return err;
+ 			}
+ 		}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000231.html">r247 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000233.html">r249 - in trunk: . kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#232">[ date ]</a>
+              <a href="thread.html#232">[ thread ]</a>
+              <a href="subject.html#232">[ subject ]</a>
+              <a href="author.html#232">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

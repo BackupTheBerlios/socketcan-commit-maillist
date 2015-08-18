@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r570 - in trunk: . kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r570%20-%20in%20trunk%3A%20.%20kernel/2.6/net/can&In-Reply-To=%3C200711301242.lAUCgaGH008931%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000551.html">
+   <LINK REL="Next"  HREF="000553.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r570 - in trunk: . kernel/2.6/net/can</H1>
+    <B>wolf at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r570%20-%20in%20trunk%3A%20.%20kernel/2.6/net/can&In-Reply-To=%3C200711301242.lAUCgaGH008931%40sheep.berlios.de%3E"
+       TITLE="r570 - in trunk: . kernel/2.6/net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 30 13:42:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000551.html">r569 - trunk/kernel/2.6
+</A></li>
+        <LI>Next message: <A HREF="000553.html">r571 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#552">[ date ]</a>
+              <a href="thread.html#552">[ thread ]</a>
+              <a href="subject.html#552">[ subject ]</a>
+              <a href="author.html#552">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2007-11-30 13:42:36 +0100 (Fri, 30 Nov 2007)
+New Revision: 570
+
+Modified:
+   trunk/TODO
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Add local loopback point and move naming and coding-style issues to the top
+
+Modified: trunk/TODO
+===================================================================
+--- trunk/TODO	2007-11-23 18:52:27 UTC (rev 569)
++++ trunk/TODO	2007-11-30 12:42:36 UTC (rev 570)
+@@ -2,6 +2,19 @@
+ ==============================================
+ 
+ 
++o Naming issues:
++
++  - baudrate, speed -&gt; bitrate
++  - bit_time -&gt; bittime
++  - names of CAN devices and modules
++  - prefix in variables and definitions of the SJA1000 driver
++
++
++o Coding style issues:
++
++  E.g. net/can/dev.[ch] needs reformatting and beautification.
++
++
+ o CAN bit rate setting:
+ 
+   Default CAN bit rate calculation and custom bit rate setting in a
+@@ -40,6 +53,20 @@
+   linked into the kernel (no module parameters).
+ 
+ 
++o Local loopback device (echo).
++
++  The SJA1000 driver has a local loopback implemented:
++
++  /*
++   * CAN network devices *should* support a local echo functionality
++   * (see Documentation/networking/can.txt). To test the handling of CAN
++   * interfaces that do not support the local echo both driver types are
++   * implemented inside this sja1000 driver. In the case that the driver does
++   * not support the echo the IFF_ECHO remains clear in dev-&gt;flags.
++   * This causes the PF_CAN core to perform the echo as a fallback solution.
++   */
++
++
+ o Feature RX-Probe:
+ 
+   See <A HREF="https://lists.berlios.de/pipermail/socketcan-core/2007-November/000789.html">https://lists.berlios.de/pipermail/socketcan-core/2007-November/000789.html</A>
+@@ -73,14 +100,6 @@
+   it work with static linking as well? Should we switch to SYSFS.
+ 
+ 
+-o Naming issues:
+-
+-  - baudrate, speed -&gt; bitrate
+-  - bit_time -&gt; bittime
+-  - names of CAN devices and modules
+-  - prefix in variables and definitions of the SJA1000 driver
+-
+-
+ o CAN device statistics:
+ 
+   I think it is to much biased by the SJA1000. It actually counts
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-11-23 18:52:27 UTC (rev 569)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-11-30 12:42:36 UTC (rev 570)
+@@ -217,7 +217,7 @@
+ 	sock-&gt;ops = cp-&gt;ops;
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+-	sk = sk_alloc(net, PF_CAN, GFP_KERNEL, cp-&gt;prot);
++	sk = sk_alloc(net, PF_CAN, GFP_KERNEL, cp-&gt;prot, 1);
+ #elif LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	sk = sk_alloc(PF_CAN, GFP_KERNEL, cp-&gt;prot, 1);
+ #else
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000551.html">r569 - trunk/kernel/2.6
+</A></li>
+	<LI>Next message: <A HREF="000553.html">r571 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#552">[ date ]</a>
+              <a href="thread.html#552">[ thread ]</a>
+              <a href="subject.html#552">[ subject ]</a>
+              <a href="author.html#552">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

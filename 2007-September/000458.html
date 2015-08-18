@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r476 - trunk/kernel/2.6/include/linux/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r476%20-%20trunk/kernel/2.6/include/linux/can&In-Reply-To=%3C200709191324.l8JDOfBC021975%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000457.html">
+   <LINK REL="Next"  HREF="000459.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r476 - trunk/kernel/2.6/include/linux/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r476%20-%20trunk/kernel/2.6/include/linux/can&In-Reply-To=%3C200709191324.l8JDOfBC021975%40sheep.berlios.de%3E"
+       TITLE="r476 - trunk/kernel/2.6/include/linux/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 19 15:24:41 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000457.html">r475 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000459.html">r477 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#458">[ date ]</a>
+              <a href="thread.html#458">[ thread ]</a>
+              <a href="subject.html#458">[ subject ]</a>
+              <a href="author.html#458">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-19 15:24:39 +0200 (Wed, 19 Sep 2007)
+New Revision: 476
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+Log:
+Updated function prototypes.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-09-19 13:05:43 UTC (rev 475)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-09-19 13:24:39 UTC (rev 476)
+@@ -54,18 +54,18 @@
+ 
+ /* function prototypes for the CAN networklayer core (af_can.c) */
+ 
+-extern int can_proto_register(struct can_proto *cp);
+-extern int can_proto_unregister(struct can_proto *cp);
++extern int  can_proto_register(struct can_proto *cp);
++extern void can_proto_unregister(struct can_proto *cp);
+ 
+-extern int can_rx_register(struct net_device *dev, canid_t can_id,
+-			   canid_t mask,
+-			   void (*func)(struct sk_buff *, void *),
+-			   void *data, char *ident);
++extern int  can_rx_register(struct net_device *dev, canid_t can_id,
++			    canid_t mask,
++			    void (*func)(struct sk_buff *, void *),
++			    void *data, char *ident);
+ 
+-extern int can_rx_unregister(struct net_device *dev, canid_t can_id,
+-			     canid_t mask,
+-			     void (*func)(struct sk_buff *, void *),
+-			     void *data);
++extern void can_rx_unregister(struct net_device *dev, canid_t can_id,
++			      canid_t mask,
++			      void (*func)(struct sk_buff *, void *),
++			      void *data);
+ 
+ extern int can_send(struct sk_buff *skb, int loop);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000457.html">r475 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000459.html">r477 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#458">[ date ]</a>
+              <a href="thread.html#458">[ thread ]</a>
+              <a href="subject.html#458">[ subject ]</a>
+              <a href="author.html#458">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

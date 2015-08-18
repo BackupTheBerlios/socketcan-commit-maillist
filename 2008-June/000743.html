@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r763 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r763%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200806111401.m5BE1g8A011722%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000742.html">
+   <LINK REL="Next"  HREF="000744.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r763 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r763%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200806111401.m5BE1g8A011722%40sheep.berlios.de%3E"
+       TITLE="r763 - trunk/kernel/2.6/drivers/net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 11 16:01:42 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000742.html">r762 - in trunk/kernel/2.6: drivers/net/can include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000744.html">r764 - trunk/kernel/2.6/drivers/net/can/old/ccan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#743">[ date ]</a>
+              <a href="thread.html#743">[ thread ]</a>
+              <a href="subject.html#743">[ subject ]</a>
+              <a href="author.html#743">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-06-11 16:01:41 +0200 (Wed, 11 Jun 2008)
+New Revision: 763
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sysfs.c
+Log:
+SYSFS coding style cleanup (sysfs.c)
+
+According to the Linux coding style:
+
+- don't use assignments in if statements.
+- put else on same line as {
+- use tabs as indentation, not spaces
+- convert to strict_strtoul
+
+Signed-off-by: Robert Schwebel &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">r.schwebel at pengutronix.de</A>&gt;
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sysfs.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sysfs.c	2008-06-11 13:56:54 UTC (rev 762)
++++ trunk/kernel/2.6/drivers/net/can/sysfs.c	2008-06-11 14:01:41 UTC (rev 763)
+@@ -205,7 +205,8 @@
+ 		return ret;						\
+ 	rtnl_lock();							\
+ 	if (dev_isalive(ndev)) {					\
+-		if ((ret = can_set_##_func(ndev, val)) == 0)		\
++		ret = can_set_##_func(ndev, val);			\
++		if (ret == 0)						\
+ 			ret = count;					\
+ 	}								\
+ 	rtnl_unlock();							\
+@@ -229,7 +230,7 @@
+ 	int ret = -EINVAL;						\
+ 	read_lock(&amp;dev_base_lock);					\
+ 	if (dev_isalive(ndev)) {					\
+-	        ret= snprintf(buf, PAGE_SIZE, &quot;%d\n&quot;,			\
++		ret = snprintf(buf, PAGE_SIZE, &quot;%d\n&quot;,			\
+ 			      priv-&gt;can_stats._name);			\
+ 	}								\
+ 	read_unlock(&amp;dev_base_lock);					\
+@@ -238,12 +239,12 @@
+ static DEVICE_ATTR(_name, S_IRUGO, can_stats_show_##_name, NULL)
+ 
+ #define CAN_CREATE_FILE(_dev, _name)					\
+-        if (device_create_file(&amp;_dev-&gt;dev, &amp;dev_attr_##_name))		\
++	if (device_create_file(&amp;_dev-&gt;dev, &amp;dev_attr_##_name))		\
+ 		dev_err(ND2D(_dev),					\
+ 			&quot;Couldn't create device file for ##_name\n&quot;)
+ 
+ #define CAN_REMOVE_FILE(_dev, _name)					\
+-        device_remove_file(&amp;_dev-&gt;dev, &amp;dev_attr_##_name)		\
++	device_remove_file(&amp;_dev-&gt;dev, &amp;dev_attr_##_name)		\
+ 
+ CAN_STATS_ATTR(error_warning);
+ CAN_STATS_ATTR(error_passive);
+@@ -262,7 +263,8 @@
+ 
+ 	rtnl_lock();
+ 	if (dev_isalive(ndev)) {
+-		if (!(ret = can_restart_now(ndev)))
++		ret = can_restart_now(ndev);
++		if (!ret)
+ 			ret = count;
+ 	}
+ 	rtnl_unlock();
+@@ -320,7 +322,7 @@
+ 			ret += sprintf(buf + ret, &quot;\n&quot;);
+ 	}
+ 	read_unlock(&amp;dev_base_lock);
+-        return ret;
++	return ret;
+ }
+ 
+ static ssize_t can_store_ctrlmode(struct device *dev,
+@@ -338,7 +340,8 @@
+ 
+ 	rtnl_lock();
+ 	if (dev_isalive(ndev) &amp;&amp; count) {
+-		if (!(ret = can_set_ctrlmode(ndev, ctrlmode)))
++		ret = can_set_ctrlmode(ndev, ctrlmode);
++		if (!ret)
+ 			ret = count;
+ 	}
+ 	rtnl_unlock();
+@@ -374,7 +377,7 @@
+ 			ret = snprintf(buf, PAGE_SIZE, &quot;undefined\n&quot;);
+ 	}
+ 	read_unlock(&amp;dev_base_lock);
+-        return ret;
++	return ret;
+ }
+ 
+ static ssize_t can_store_custombittime(struct device *dev,
+@@ -387,6 +390,7 @@
+ 	int ret = -EINVAL;
+ 
+ 	if (!strncmp(buf, &quot;std&quot;, 3)) {
++
+ 		if (sscanf(buf + 4, &quot;%i %i %i %i %i %i&quot;,
+ 			   val, val + 1, val + 2, val + 3,
+ 			   val + 4, val + 5) == 6) {
+@@ -398,19 +402,22 @@
+ 			bt.std.sjw = val[4];
+ 			bt.std.sam = val[5];
+ 		}
+-	}
+-	else if (!strncmp(buf, &quot;btr&quot;, 3)) {
++
++	} else if (!strncmp(buf, &quot;btr&quot;, 3)) {
++
+ 		if (sscanf(buf + 4, &quot;%i %i&quot;, val, val + 1) == 2) {
+ 			bt.type = CAN_BITTIME_BTR;
+ 			bt.btr.btr0 = val[0];
+ 			bt.btr.btr1 = val[1];
+ 		}
++
+ 	} else
+ 		goto out;
+ 
+ 	rtnl_lock();
+ 	if (dev_isalive(ndev)) {
+-		if (!(ret = can_set_custombittime(ndev, &amp;bt)))
++		ret = can_set_custombittime(ndev, &amp;bt);
++		if (!ret)
+ 			ret = count;
+ 	}
+ 	rtnl_unlock();
+@@ -422,19 +429,19 @@
+ 		   can_show_custombittime, can_store_custombittime);
+ 
+ static struct attribute *can_stats_attrs[] = {
+-        &amp;dev_attr_error_warning.attr,
+-        &amp;dev_attr_error_passive.attr,
+-        &amp;dev_attr_bus_error.attr,
+-        &amp;dev_attr_arbitration_lost.attr,
+-        &amp;dev_attr_data_overrun.attr,
+-        &amp;dev_attr_wakeup.attr,
+-        &amp;dev_attr_restarts.attr,
++	&amp;dev_attr_error_warning.attr,
++	&amp;dev_attr_error_passive.attr,
++	&amp;dev_attr_bus_error.attr,
++	&amp;dev_attr_arbitration_lost.attr,
++	&amp;dev_attr_data_overrun.attr,
++	&amp;dev_attr_wakeup.attr,
++	&amp;dev_attr_restarts.attr,
+ 	NULL
+ };
+ 
+ static struct attribute_group can_stats_group = {
+-        .name = &quot;can_statistics&quot;,
+-        .attrs = can_stats_attrs,
++	.name = &quot;can_statistics&quot;,
++	.attrs = can_stats_attrs,
+ };
+ 
+ void can_create_sysfs(struct net_device *dev)
+@@ -450,11 +457,11 @@
+ 	CAN_CREATE_FILE(dev, can_clock);
+ 	CAN_CREATE_FILE(dev, can_echo);
+ 
+-        err = sysfs_create_group(&amp;(dev-&gt;dev.kobj), &amp;can_stats_group);
+-        if (err) {
++	err = sysfs_create_group(&amp;(dev-&gt;dev.kobj), &amp;can_stats_group);
++	if (err) {
+ 		printk(KERN_EMERG
+ 		       &quot;couldn't create sysfs group for CAN stats\n&quot;);
+-        }
++	}
+ }
+ 
+ void can_remove_sysfs(struct net_device *dev)
+@@ -467,7 +474,7 @@
+ 	CAN_REMOVE_FILE(dev, can_clock);
+ 	CAN_REMOVE_FILE(dev, can_echo);
+ 
+-        sysfs_remove_group(&amp;(dev-&gt;dev.kobj), &amp;can_stats_group);
++	sysfs_remove_group(&amp;(dev-&gt;dev.kobj), &amp;can_stats_group);
+ }
+ 
+ #endif /* CONFIG_SYSFS */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000742.html">r762 - in trunk/kernel/2.6: drivers/net/can include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000744.html">r764 - trunk/kernel/2.6/drivers/net/can/old/ccan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#743">[ date ]</a>
+              <a href="thread.html#743">[ thread ]</a>
+              <a href="subject.html#743">[ subject ]</a>
+              <a href="author.html#743">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

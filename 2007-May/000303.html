@@ -1,0 +1,206 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r319 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r319%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20hal%20i82527%20sja1000&In-Reply-To=%3C200705231413.l4NEDbST008278%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000302.html">
+   <LINK REL="Next"  HREF="000304.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r319 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r319%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20hal%20i82527%20sja1000&In-Reply-To=%3C200705231413.l4NEDbST008278%40sheep.berlios.de%3E"
+       TITLE="r319 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May 23 16:13:37 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000302.html">r318 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+</A></li>
+        <LI>Next message: <A HREF="000304.html">r320 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#303">[ date ]</a>
+              <a href="thread.html#303">[ thread ]</a>
+              <a href="subject.html#303">[ subject ]</a>
+              <a href="author.html#303">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-23 16:13:31 +0200 (Wed, 23 May 2007)
+New Revision: 319
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/hal/esdio.c
+   trunk/kernel/2.6/drivers/net/can/hal/gw2.c
+   trunk/kernel/2.6/drivers/net/can/hal/hal.h
+   trunk/kernel/2.6/drivers/net/can/hal/io.c
+   trunk/kernel/2.6/drivers/net/can/hal/iomem.c
+   trunk/kernel/2.6/drivers/net/can/hal/iomux.c
+   trunk/kernel/2.6/drivers/net/can/hal/pc7io.c
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+Log:
+Reverted introduction of the irq_handler pointer as it didn't solve the
+problem with parport support ... sorry.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/esdio.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/esdio.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/hal/esdio.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -53,7 +53,7 @@
+ int esd_cs_offset = 0;	//default for the sja1000 chip
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void *irq_handler) { return 0; }
++int hal_init(void) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/gw2.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/gw2.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/hal/gw2.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -54,7 +54,7 @@
+ #define ADDR_GAP 1
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void *irq_handler) { return 0; }
++int hal_init(void) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/hal.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/hal.h	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/hal/hal.h	2007-05-23 14:13:31 UTC (rev 319)
+@@ -56,7 +56,7 @@
+ /* general function prototypes for CAN HAL */
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void *irq_handler);
++int hal_init(void);
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void);
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/io.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/io.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/hal/io.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void *irq_handler) { return 0; }
++int hal_init(void) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/iomem.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/iomem.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/hal/iomem.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void *irq_handler) { return 0; }
++int hal_init(void) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/iomux.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/iomux.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/hal/iomux.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void *irq_handler) { return 0; }
++int hal_init(void) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/hal/pc7io.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/hal/pc7io.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -52,7 +52,7 @@
+ #include &quot;hal.h&quot;
+ 
+ /* init the HAL - call at driver module init */
+-int hal_init(void *irq_handler) { return 0; }
++int hal_init(void) { return 0; }
+ 
+ /* exit the HAL - call at driver module exit */
+ int hal_exit(void) { return 0; }
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -1174,7 +1174,7 @@
+ 		return -EBUSY;
+ 	}
+ 
+-	if ((ret = hal_init(can_interrupt)))
++	if ((ret = hal_init()))
+ 		return ret;
+ 
+ 	if ((ret = can_set_drv_name()))
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-23 13:56:13 UTC (rev 318)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-23 14:13:31 UTC (rev 319)
+@@ -1115,7 +1115,7 @@
+ 	int i, ret;
+ 	struct net_device *dev;
+ 
+-	if ((ret = hal_init(can_interrupt)))
++	if ((ret = hal_init()))
+ 		return ret;
+ 
+ 	if ((ret = can_set_drv_name()))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000302.html">r318 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+</A></li>
+	<LI>Next message: <A HREF="000304.html">r320 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#303">[ date ]</a>
+              <a href="thread.html#303">[ thread ]</a>
+              <a href="subject.html#303">[ subject ]</a>
+              <a href="author.html#303">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

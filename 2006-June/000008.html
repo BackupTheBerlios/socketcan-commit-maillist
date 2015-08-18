@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r31 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r31%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200606111841.k5BIfC2w024225%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000007.html">
+   <LINK REL="Next"  HREF="000009.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r31 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r31%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200606111841.k5BIfC2w024225%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r31 - trunk/kernel/2.4/can">thuermann at berlios.de
+       </A><BR>
+    <I>Sun Jun 11 20:41:12 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000007.html">[Socketcan-commit] r30 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000009.html">[Socketcan-commit] r32 - in trunk/kernel/2.6/drivers/net/can: . mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-06-11 20:41:06 +0200 (Sun, 11 Jun 2006)
+New Revision: 31
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/raw.c
+Log:
+apply patches from Marc for the 2.6 kernel to the 2.4 kernel.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2006-06-11 18:32:16 UTC (rev 30)
++++ trunk/kernel/2.4/can/af_can.c	2006-06-11 18:41:06 UTC (rev 31)
+@@ -208,7 +208,7 @@
+ void can_dev_register(struct net_device *dev,
+ 		      void (*func)(unsigned long msg, void *), void *data)
+ {
+-    struct notifier_list *p = kmalloc(GFP_KERNEL, sizeof(*p));
++    struct notifier_list *p = kmalloc(sizeof(*p), GFP_KERNEL);
+ 
+     DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+ 
+@@ -409,7 +409,7 @@
+ 
+     /* insert   (dev,canid,mask) -&gt; (func,data) */
+     if (!(p = kmalloc(sizeof(struct rcv_list), GFP_KERNEL)))
+-	return;
++	goto out;
+ 
+     p-&gt;can_id  = can_id;
+     p-&gt;mask    = mask;
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2006-06-11 18:32:16 UTC (rev 30)
++++ trunk/kernel/2.4/can/bcm.c	2006-06-11 18:41:06 UTC (rev 31)
+@@ -718,8 +718,10 @@
+ 		/* for the throttle functionality */
+ 
+ 		/* create array for received can_frames */
+-		if (!(op-&gt;last_frames = kmalloc(sizeof(struct can_frame), GFP_KERNEL)))
++		if (!(op-&gt;last_frames = kmalloc(sizeof(struct can_frame), GFP_KERNEL))) {
++		    kfree(op);
+ 		    return -ENOMEM;
++		}
+ 
+ 		/* clear received can_frames to indicate 'nothing received' */
+ 		memset(op-&gt;last_frames, 0, sizeof(struct can_frame));
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2006-06-11 18:32:16 UTC (rev 30)
++++ trunk/kernel/2.4/can/raw.c	2006-06-11 18:41:06 UTC (rev 31)
+@@ -471,6 +471,7 @@
+     skb = alloc_skb(size, GFP_KERNEL);
+     if ((err = memcpy_fromiovec(skb_put(skb, size), msg-&gt;msg_iov, size)) &lt; 0) {
+ 	kfree_skb(skb);
++	dev_put(dev);
+ 	return err;
+     }
+     skb-&gt;dev = dev;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000007.html">[Socketcan-commit] r30 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000009.html">[Socketcan-commit] r32 - in trunk/kernel/2.6/drivers/net/can: . mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

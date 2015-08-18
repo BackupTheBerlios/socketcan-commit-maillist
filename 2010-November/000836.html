@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1204 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1204%20-%20trunk/can-utils&In-Reply-To=%3C20101117115547.7E5444810E6%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000835.html">
+   <LINK REL="Next"  HREF="000837.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1204 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1204%20-%20trunk/can-utils&In-Reply-To=%3C20101117115547.7E5444810E6%40sheep.berlios.de%3E"
+       TITLE="r1204 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 17 12:55:47 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000835.html">r1203 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000837.html">r1205 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#836">[ date ]</a>
+              <a href="thread.html#836">[ thread ]</a>
+              <a href="subject.html#836">[ subject ]</a>
+              <a href="author.html#836">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-17 12:55:46 +0100 (Wed, 17 Nov 2010)
+New Revision: 1204
+
+Modified:
+   trunk/can-utils/slcan_attach.c
+Log:
+slcan_attach: Added new commandline option to specify the created netdevice name.
+
+
+Modified: trunk/can-utils/slcan_attach.c
+===================================================================
+--- trunk/can-utils/slcan_attach.c	2010-11-17 06:59:20 UTC (rev 1203)
++++ trunk/can-utils/slcan_attach.c	2010-11-17 11:55:46 UTC (rev 1204)
+@@ -65,10 +65,12 @@
+ 	fprintf(stderr, &quot;         -b &lt;btr&gt;   (set bit time register value)\n&quot;);
+ 	fprintf(stderr, &quot;         -d         (only detach line discipline)\n&quot;);
+ 	fprintf(stderr, &quot;         -w         (attach - wait for keypess - detach)\n&quot;);
++	fprintf(stderr, &quot;         -n &lt;name&gt;  (assign created netdevice name)\n&quot;);
+ 	fprintf(stderr, &quot;\nExamples:\n&quot;);
+ 	fprintf(stderr, &quot;slcan_attach -w -o -s6 -c /dev/ttyS1\n&quot;);
+ 	fprintf(stderr, &quot;slcan_attach /dev/ttyS1\n&quot;);
+ 	fprintf(stderr, &quot;slcan_attach -d /dev/ttyS1\n&quot;);
++	fprintf(stderr, &quot;slcan_attach -w -n can15 /dev/ttyS1\n&quot;);
+ 	fprintf(stderr, &quot;\n&quot;);
+ 	exit(1);
+ }
+@@ -85,9 +87,10 @@
+ 	char *btr = NULL;
+ 	char buf[IFNAMSIZ+1];
+ 	char *tty;
++	char *name = NULL;
+ 	int opt;
+ 
+-	while ((opt = getopt(argc, argv, &quot;l:dwocs:b:?&quot;)) != -1) {
++	while ((opt = getopt(argc, argv, &quot;l:dwocs:b:n:?&quot;)) != -1) {
+ 		switch (opt) {
+ 		case 'l':
+ 			fprintf(stderr, &quot;Ignored option '-l'\n&quot;);
+@@ -121,6 +124,12 @@
+ 				print_usage(argv[0]);
+ 			break;
+ 
++		case 'n':
++			name = optarg;
++			if (strlen(name) &gt; IFNAMSIZ-1)
++				print_usage(argv[0]);
++			break;
++
+ 		case '?':
+ 		default:
+ 			print_usage(argv[0]);
+@@ -155,16 +164,41 @@
+ 			write(fd, buf, strlen(buf));
+ 		}
+ 
++		/* set slcan line discipline on given tty */
+ 		if (ioctl (fd, TIOCSETD, &amp;ldisc) &lt; 0) {
+ 			perror(&quot;ioctl TIOCSETD&quot;);
+ 			exit(1);
+ 		}
+ 
++		/* retrieve the name of the created CAN netdevice */
+ 		if (ioctl (fd, SIOCGIFNAME, buf) &lt; 0) {
+ 			perror(&quot;ioctl SIOCGIFNAME&quot;);
+ 			exit(1);
+-		} else
+-			printf(&quot;attached tty %s to netdevice %s\n&quot;, tty, buf);
++		}
++
++		printf(&quot;attached tty %s to netdevice %s\n&quot;, tty, buf);
++
++		/* try to rename the created device if requested */
++		if (name) {
++			struct ifreq ifr;
++			int s = socket(PF_INET, SOCK_DGRAM, 0);
++ 
++			printf(&quot;rename netdevice %s to %s ... &quot;, buf, name);
++
++			if (s &lt; 0)
++				perror(&quot;socket for interface rename&quot;);
++			else {
++				strncpy (ifr.ifr_name, buf, IFNAMSIZ);
++				strncpy (ifr.ifr_newname, name, IFNAMSIZ);
++ 
++				if (ioctl(s, SIOCSIFNAME, &amp;ifr) &lt; 0)
++					printf(&quot;failed!\n&quot;);
++				else
++					printf(&quot;ok.\n&quot;);
++ 
++				close(s);
++			}
++		}
+ 	}
+ 
+ 	if (waitkey) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000835.html">r1203 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000837.html">r1205 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#836">[ date ]</a>
+              <a href="thread.html#836">[ thread ]</a>
+              <a href="subject.html#836">[ subject ]</a>
+              <a href="author.html#836">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

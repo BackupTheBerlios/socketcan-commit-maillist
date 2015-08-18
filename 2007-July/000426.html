@@ -1,0 +1,1182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r444 - in trunk: . kernel/2.6 kernel/2.6/drivers/net/can	kernel/2.6/drivers/net/can/ccan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r444%20-%20in%20trunk%3A%20.%20kernel/2.6%20kernel/2.6/drivers/net/can%0A%09kernel/2.6/drivers/net/can/ccan&In-Reply-To=%3C200707251146.l6PBkvw0029797%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000425.html">
+   <LINK REL="Next"  HREF="000427.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r444 - in trunk: . kernel/2.6 kernel/2.6/drivers/net/can	kernel/2.6/drivers/net/can/ccan</H1>
+    <B>skallweit at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r444%20-%20in%20trunk%3A%20.%20kernel/2.6%20kernel/2.6/drivers/net/can%0A%09kernel/2.6/drivers/net/can/ccan&In-Reply-To=%3C200707251146.l6PBkvw0029797%40sheep.berlios.de%3E"
+       TITLE="r444 - in trunk: . kernel/2.6 kernel/2.6/drivers/net/can	kernel/2.6/drivers/net/can/ccan">skallweit at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 25 13:46:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000425.html">r443 - in trunk: . kernel/2.6/drivers/net/can	kernel/2.6/drivers/net/can/i82527 kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000427.html">r445 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#426">[ date ]</a>
+              <a href="thread.html#426">[ thread ]</a>
+              <a href="subject.html#426">[ subject ]</a>
+              <a href="author.html#426">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: skallweit
+Date: 2007-07-25 13:46:56 +0200 (Wed, 25 Jul 2007)
+New Revision: 444
+
+Added:
+   trunk/kernel/2.6/drivers/net/can/ccan/
+   trunk/kernel/2.6/drivers/net/can/ccan/Makefile
+   trunk/kernel/2.6/drivers/net/can/ccan/ccan.c
+   trunk/kernel/2.6/drivers/net/can/ccan/ccan.h
+   trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c
+Modified:
+   trunk/FILES-2.6
+   trunk/FILES-2.6-ALL
+   trunk/kernel/2.6/Makefile
+   trunk/kernel/2.6/drivers/net/can/Kconfig
+   trunk/kernel/2.6/drivers/net/can/Makefile
+Log:
+- added a new kernel module for Bosch CCAN based CAN hardware
+- added a new kernel module for the Hynix/Magnachip H7202 chip using the CCAN module
+
+the following TODOs are still pending:
+
+- ccan_set_mode() and it's usage is incomplete and bogus.
+- ccan_set_bit_time() can be called when the device is active.
+- You already handle the state changes via interrupts. The common
+  variable priv-&gt;can.state should be set accordingly. ccan_get_state()
+  may then just return that value.
+- You already handle error interrupts. You should fill an error frame
+  and send it like a normal frame with the CAN_ERR_FLAG set. Have a look
+  to the  mscan driver or <A HREF="http://www.rts.uni-hannover.de/xenomai/lxr/source/ksrc/drivers/can/sja1000/rtcan_sja1000.c#156.">http://www.rts.uni-hannover.de/xenomai/lxr/source/ksrc/drivers/can/sja1000/rtcan_sja1000.c#156.</A>
+
+
+
+Modified: trunk/FILES-2.6
+===================================================================
+--- trunk/FILES-2.6	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/FILES-2.6	2007-07-25 11:46:56 UTC (rev 444)
+@@ -15,6 +15,10 @@
+ kernel/2.6/drivers/net/can/Kconfig.kernel Kconfig
+ kernel/2.6/drivers/net/can/Makefile.kernel Makefile
+ kernel/2.6/drivers/net/can/vcan.c
++#kernel/2.6/drivers/net/can/ccan/ccan.c
++#kernel/2.6/drivers/net/can/ccan/ccan.h
++#kernel/2.6/drivers/net/can/ccan/h7202_can.c
++#kernel/2.6/drivers/net/can/ccan/Makefile
+ #kernel/2.6/drivers/net/can/slcan.c
+ #kernel/2.6/drivers/net/can/mscan/Makefile
+ #kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+
+Modified: trunk/FILES-2.6-ALL
+===================================================================
+--- trunk/FILES-2.6-ALL	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/FILES-2.6-ALL	2007-07-25 11:46:56 UTC (rev 444)
+@@ -17,6 +17,10 @@
+ kernel/2.6/drivers/net/can/Makefile
+ kernel/2.6/drivers/net/can/vcan.c
+ kernel/2.6/drivers/net/can/slcan.c
++kernel/2.6/drivers/net/can/ccan/ccan.c
++kernel/2.6/drivers/net/can/ccan/ccan.h
++kernel/2.6/drivers/net/can/ccan/h7202_can.c
++kernel/2.6/drivers/net/can/ccan/Makefile
+ kernel/2.6/drivers/net/can/i82527/proc.c
+ kernel/2.6/drivers/net/can/i82527/i82527.c
+ kernel/2.6/drivers/net/can/i82527/i82527.h
+
+Modified: trunk/kernel/2.6/Makefile
+===================================================================
+--- trunk/kernel/2.6/Makefile	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/kernel/2.6/Makefile	2007-07-25 11:46:56 UTC (rev 444)
+@@ -7,6 +7,8 @@
+ export CONFIG_CAN_VCAN=m
+ export CONFIG_CAN_SJA1000=m
+ export CONFIG_CAN_I82527=m
++export CONFIG_CAN_CCAN=m
++export CONFIG_CAN_H7202=m
+ 
+ export CONFIG_CAN=m
+ export CONFIG_CAN_RAW=m
+
+Modified: trunk/kernel/2.6/drivers/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Kconfig	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/kernel/2.6/drivers/net/can/Kconfig	2007-07-25 11:46:56 UTC (rev 444)
+@@ -81,4 +81,17 @@
+ 	  This driver can also be built as a module.  If so, the module
+ 	  will be called mpc52xx_can.
+ 
++config CAN_CCAN
++	depends on CAN
++	tristate &quot;Bosch CCAN driver&quot;
++	---help---
++	  This is a driver for the Bosch CCAN controller found for example
++	  on the hynix h7202 chip.
++
++config CAN_H7202
++	tristate &quot;Hynix H7202 onboard CAN controller&quot;
++	depends on CAN_CCAN
++	---help---
++	  This is a driver for the hynix h7202 can controller.
++
+ endmenu
+
+Modified: trunk/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Makefile	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/kernel/2.6/drivers/net/can/Makefile	2007-07-25 11:46:56 UTC (rev 444)
+@@ -12,6 +12,8 @@
+ export CONFIG_CAN_VCAN=m
+ export CONFIG_CAN_SJA1000=m
+ export CONFIG_CAN_I82527=m
++export CONFIG_CAN_CCAN=m
++export CONFIG_CAN_H7202=m
+ 
+ modules modules_install clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) $@ TOPDIR=$(TOPDIR)
+@@ -25,5 +27,6 @@
+ obj-$(CONFIG_CAN_SJA1000)	+= sja1000/
+ obj-$(CONFIG_CAN_I82527)	+= i82527/
+ obj-$(CONFIG_CAN_MSCAN)		+= mscan/
++obj-$(CONFIG_CAN_CCAN)		+= ccan/
+ 
+ endif
+
+Added: trunk/kernel/2.6/drivers/net/can/ccan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/ccan/Makefile	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/kernel/2.6/drivers/net/can/ccan/Makefile	2007-07-25 11:46:56 UTC (rev 444)
+@@ -0,0 +1,59 @@
++#
++#  $Id: Makefile 438 2007-07-21 17:53:09Z hartkopp $
++#
++#  Copyright (c) 2007 intefo AG
++#  All rights reserved.
++#
++#  Redistribution and use in source and binary forms, with or without
++#  modification, are permitted provided that the following conditions
++#  are met:
++#  1. Redistributions of source code must retain the above copyright
++#     notice, this list of conditions, the following disclaimer and
++#     the referenced file 'COPYING'.
++#  2. Redistributions in binary form must reproduce the above copyright
++#     notice, this list of conditions and the following disclaimer in the
++#     documentation and/or other materials provided with the distribution.
++#  3. Neither the name of Volkswagen nor the names of its contributors
++#     may be used to endorse or promote products derived from this software
++#     without specific prior written permission.
++#
++#  Alternatively, provided that this notice is retained in full, this
++#  software may be distributed under the terms of the GNU General
++#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++#  file from the main directory of the linux kernel source.
++#
++#  The provided data structures and external interfaces from this code
++#  are not restricted to be used by modules with a GPL compatible license.
++#
++#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++#  DAMAGE.
++#
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++
++ifeq ($(KERNELRELEASE),)
++
++KERNELDIR := /lib/modules/$(shell uname -r)/build
++PWD       := $(shell pwd)
++TOPDIR    := $(PWD)/../../../..
++
++modules modules_install clean:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) $@ TOPDIR=$(TOPDIR)
++
++else
++
++include $(TOPDIR)/Makefile.common
++
++obj-$(CONFIG_CAN_CCAN)		+= ccan.o
++obj-$(CONFIG_CAN_H7202)		+= h7202_can.o
++
++endif
+
+Added: trunk/kernel/2.6/drivers/net/can/ccan/ccan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/ccan/ccan.c	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/kernel/2.6/drivers/net/can/ccan/ccan.c	2007-07-25 11:46:56 UTC (rev 444)
+@@ -0,0 +1,575 @@
++/*
++ * drivers/can/c_can.c
++ *
++ * Copyright (C) 2007
++ *
++ * - Sascha Hauer, Marc Kleine-Budde, Pengutronix
++ * - Simon Kallweit, intefo AG
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the version 2 of the GNU General Public License
++ * as published by the Free Software Foundation
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#ifdef CONFIG_CAN_DEBUG_DEVICES
++#define DBG(args...) printk(args)
++#else
++#define DBG(args...)
++#endif
++
++#include &lt;linux/kernel.h&gt;
++#include &lt;linux/version.h&gt;
++#include &lt;linux/module.h&gt;
++#include &lt;linux/interrupt.h&gt;
++#include &lt;linux/delay.h&gt;
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/if_arp.h&gt;
++#include &lt;linux/if_ether.h&gt;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/list.h&gt;
++#include &lt;linux/delay.h&gt;
++#include &lt;linux/workqueue.h&gt;
++#include &lt;asm/io.h&gt;
++
++#include &lt;linux/can/dev.h&gt;
++#include &lt;linux/can/error.h&gt;
++#include &quot;ccan.h&quot;
++
++static u32 ccan_read_reg32(struct net_device *dev, enum c_regs reg)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	
++	u32 val = priv-&gt;read_reg(dev, reg);
++	val |= ((u32) priv-&gt;read_reg(dev, reg + 2)) &lt;&lt; 16;
++
++	return val;
++}
++
++static void ccan_write_reg32(struct net_device *dev, enum c_regs reg, u32 val)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++
++	priv-&gt;write_reg(dev, reg, val &amp; 0xffff);
++	priv-&gt;write_reg(dev, reg + 2, val &gt;&gt; 16);
++}
++
++static inline void ccan_object_get(struct net_device *dev,
++				   int iface, int objno, int mask)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++
++	priv-&gt;write_reg(dev, CAN_IF_COMM(iface), mask);
++	priv-&gt;write_reg(dev, CAN_IF_COMR(iface), objno + 1);
++	while (priv-&gt;read_reg(dev, CAN_IF_COMR(iface)) &amp; IF_COMR_BUSY)
++		DBG(&quot;busy\n&quot;);
++}
++
++static inline void ccan_object_put(struct net_device *dev,
++				   int iface, int objno, int mask)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++
++	priv-&gt;write_reg(dev, CAN_IF_COMM(iface), IF_COMM_WR | mask);
++	priv-&gt;write_reg(dev, CAN_IF_COMR(iface), objno + 1);
++	while (priv-&gt;read_reg(dev, CAN_IF_COMR(iface)) &amp; IF_COMR_BUSY)
++		DBG(&quot;busy\n&quot;);
++}
++
++static int ccan_write_object(struct net_device *dev,
++			     int iface, struct can_frame *frame, int objno)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	unsigned int val;
++	
++	if (frame-&gt;can_id &amp; CAN_EFF_FLAG)
++		val = IF_ARB_MSGXTD | (frame-&gt;can_id &amp; CAN_EFF_MASK);
++	else
++		val = ((frame-&gt;can_id &amp; CAN_SFF_MASK) &lt;&lt; 18);
++
++	if (!(frame-&gt;can_id &amp; CAN_RTR_FLAG))
++		val |=  IF_ARB_TRANSMIT;
++
++	val |=  IF_ARB_MSGVAL;
++	ccan_write_reg32(dev, CAN_IF_ARB(iface), val);
++
++	memcpy(&amp;val, &amp;frame-&gt;data[0], 4);
++	ccan_write_reg32(dev, CAN_IF_DATAA(iface), val);
++	memcpy(&amp;val, &amp;frame-&gt;data[4], 4);
++	ccan_write_reg32(dev, CAN_IF_DATAB(iface), val);
++	priv-&gt;write_reg(dev, CAN_IF_MCONT(iface),
++			IF_MCONT_TXIE |	IF_MCONT_TXRQST | IF_MCONT_EOB |
++			(frame-&gt;can_dlc &amp; 0xf));
++
++	ccan_object_put(dev, 0, objno, IF_COMM_ALL);
++
++	return 0;
++}
++
++static int ccan_read_object(struct net_device *dev, int iface, int objno)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	unsigned int val, ctrl, data;
++	struct sk_buff *skb;
++	struct can_frame *frame;
++
++	skb = dev_alloc_skb(sizeof(struct can_frame));
++	skb-&gt;dev = dev;
++
++	ccan_object_get(dev, 0, objno, IF_COMM_ALL &amp; ~IF_COMM_TXRQST);
++#ifdef CCAN_DEBUG
++	priv-&gt;bufstat[objno]++;
++#endif
++	frame = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
++
++	ctrl = priv-&gt;read_reg(dev, CAN_IF_MCONT(iface));
++
++	if (ctrl &amp; IF_MCONT_MSGLST) {
++		priv-&gt;can.net_stats.rx_errors++;
++		DBG(&quot;%s: msg lost in buffer %d\n&quot;, __FUNCTION__, objno);
++	}
++
++	frame-&gt;can_dlc = ctrl &amp; 0xf;
++
++	val = ccan_read_reg32(dev, CAN_IF_ARB(iface));
++	
++	data = ccan_read_reg32(dev, CAN_IF_DATAA(iface));
++	memcpy(&amp;frame-&gt;data[0], &amp;data, 4);
++	data = ccan_read_reg32(dev, CAN_IF_DATAB(iface));
++	memcpy(&amp;frame-&gt;data[4], &amp;data, 4);
++
++	if (val &amp; IF_ARB_MSGXTD)
++		frame-&gt;can_id = (val &amp; CAN_EFF_MASK) | CAN_EFF_FLAG;
++	else
++		frame-&gt;can_id = (val &gt;&gt; 18) &amp; CAN_SFF_MASK;
++
++	if (val &amp; IF_ARB_TRANSMIT)
++		frame-&gt;can_id |= CAN_RTR_FLAG;
++
++	priv-&gt;write_reg(dev, CAN_IF_MCONT(iface), ctrl &amp;
++			~(IF_MCONT_MSGLST | IF_MCONT_INTPND | IF_MCONT_NEWDAT));
++
++	ccan_object_put(dev, 0, objno, IF_COMM_CONTROL);
++
++	skb-&gt;protocol = __constant_htons(ETH_P_CAN);
++	netif_rx(skb);
++
++	priv-&gt;can.net_stats.rx_packets++;
++	priv-&gt;can.net_stats.rx_bytes += frame-&gt;can_dlc;
++
++	return 0;
++}
++
++static int ccan_setup_receive_object(struct net_device *dev, int iface,
++				     int objno, unsigned int mask,
++				     unsigned int id, unsigned int mcont)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++
++	ccan_write_reg32(dev, CAN_IF_MASK(iface), mask);
++	ccan_write_reg32(dev, CAN_IF_ARB(iface), IF_ARB_MSGVAL | id);
++
++	priv-&gt;write_reg(dev, CAN_IF_MCONT(iface), mcont);
++
++	ccan_object_put(dev, 0, objno, IF_COMM_ALL &amp; ~IF_COMM_TXRQST);
++
++	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__, 
++		objno, ccan_read_reg32(dev, CAN_MSGVAL));
++		
++	return 0;
++}
++
++static int ccan_inval_object(struct net_device *dev, int iface, int objno)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++
++	ccan_write_reg32(dev, CAN_IF_ARB(iface), 0);
++	priv-&gt;write_reg(dev, CAN_IF_MCONT(iface), 0);
++	ccan_object_put(dev, 0, objno, IF_COMM_ARB | IF_COMM_CONTROL);
++
++	DBG(&quot;%s: obj no %d msgval: 0x%08x\n&quot;, __FUNCTION__, 
++		objno, ccan_read_reg32(dev, CAN_MSGVAL));
++		
++	return 0;
++}
++
++static int ccan_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	struct can_frame *frame = (struct can_frame *)skb-&gt;data;
++
++	spin_lock_irq(&amp;priv-&gt;can.irq_lock);
++
++	ccan_write_object(dev, 0, frame, priv-&gt;tx_object);
++#ifdef CCAN_DEBUG
++	priv-&gt;bufstat[priv-&gt;tx_object]++;
++#endif
++	priv-&gt;tx_object++;
++	if (priv-&gt;tx_object &gt; 5)
++		netif_stop_queue(dev);
++
++	spin_unlock_irq(&amp;priv-&gt;can.irq_lock);
++
++	priv-&gt;can.net_stats.tx_packets++;
++	priv-&gt;can.net_stats.tx_bytes += frame-&gt;can_dlc;
++
++	dev-&gt;trans_start = jiffies;
++	dev_kfree_skb(skb);
++
++	return 0;
++}
++
++static void ccan_tx_timeout(struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	
++	priv-&gt;can.net_stats.tx_errors++;
++}
++
++static int ccan_set_bit_time(struct net_device *dev, struct can_bittime *br)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	unsigned int reg_timing, ctrl_save;
++	u8 brp, sjw, tseg1, tseg2; 
++
++	if (br-&gt;type != CAN_BITTIME_STD)
++		return -EINVAL;
++
++	brp = br-&gt;std.brp - 1;
++	sjw = br-&gt;std.sjw - 1;
++	tseg1 = br-&gt;std.prop_seg + br-&gt;std.phase_seg1 - 1;
++	tseg2 = br-&gt;std.phase_seg2 - 1;
++
++	reg_timing = (brp &amp; BTR_BRP_MASK) |
++		     ((sjw &lt;&lt; BTR_SJW_SHIFT) &amp; BTR_SJW_MASK) |
++		     ((tseg1 &lt;&lt; BTR_TSEG1_SHIFT) &amp; BTR_TSEG1_MASK) |
++		     ((tseg2 &lt;&lt; BTR_TSEG2_SHIFT) &amp; BTR_TSEG2_MASK);
++		     
++	DBG(&quot;%s: brp = %d sjw = %d seg1 = %d seg2 = %d\n&quot;, __FUNCTION__, 
++		brp, sjw, tseg1, tseg2);
++	DBG(&quot;%s: setting BTR to %04x\n&quot;, __FUNCTION__, reg_timing);
++
++	spin_lock_irq(&amp;priv-&gt;can.irq_lock);
++
++	ctrl_save = priv-&gt;read_reg(dev, CAN_CONTROL);
++	priv-&gt;write_reg(dev, CAN_CONTROL,
++			ctrl_save | CONTROL_CCE | CONTROL_INIT);
++	priv-&gt;write_reg(dev, CAN_BTR, reg_timing);
++	priv-&gt;write_reg(dev, CAN_CONTROL, ctrl_save);
++
++	spin_unlock_irq(&amp;priv-&gt;can.irq_lock);
++	
++	return 0;
++}
++
++static int ccan_set_mode(struct net_device *dev, can_mode_t mode)
++{
++	switch (mode) {
++	case CAN_MODE_START:
++		DBG(&quot;%s: CAN_MODE_START requested\n&quot;, __FUNCTION__);
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
++
++static int ccan_get_state(struct net_device *dev, can_state_t *state)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	u32 reg_status;
++#ifdef CCAN_DEBUG
++	int i;
++#endif
++
++	reg_status = priv-&gt;read_reg(dev, CAN_STATUS);
++
++	if (reg_status &amp; STATUS_EPASS)
++		*state = CAN_STATE_BUS_PASSIVE;
++	else if (reg_status &amp; STATUS_EWARN)
++		*state = CAN_STATE_BUS_WARNING;
++	else if (reg_status &amp; STATUS_BOFF)
++		*state = CAN_STATE_BUS_OFF;
++	else
++		*state = CAN_STATE_ACTIVE;
++#ifdef CCAN_DEBUG
++	DBG(&quot;buffer statistic:\n&quot;);
++	for (i=0; i&lt;= MAX_OBJECT; i++)
++		DBG(&quot;%d: %d\n&quot;, i, priv-&gt;bufstat[i]);
++#endif
++	return 0;
++}
++
++static int ccan_do_status_irq(struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	int status, diff;
++
++	status = priv-&gt;read_reg(dev, CAN_STATUS);
++	status &amp;= ~(STATUS_TXOK | STATUS_RXOK);
++	diff = status ^ priv-&gt;last_status;
++
++	if (diff &amp; STATUS_EPASS) {
++		if (status &amp; STATUS_EPASS)
++			dev_info(ND2D(dev), &quot;entered error passive state\n&quot;);
++		else
++			dev_info(ND2D(dev), &quot;left error passive state\n&quot;);
++	}
++	if (diff &amp; STATUS_EWARN) {
++		if (status &amp; STATUS_EWARN)
++			dev_info(ND2D(dev), &quot;entered error warning state\n&quot;);
++		else
++			dev_info(ND2D(dev), &quot;left error warning state\n&quot;);
++	}
++	if (diff &amp; STATUS_BOFF) {
++		if (status &amp; STATUS_BOFF)
++			dev_info(ND2D(dev), &quot;entered busoff state\n&quot;);
++		else
++			dev_info(ND2D(dev), &quot;left busoff state\n&quot;);
++	}
++
++	if ( diff &amp; STATUS_LEC_MASK) {
++		switch (status &amp; STATUS_LEC_MASK) {
++		case LEC_STUFF_ERROR:
++			dev_info(ND2D(dev), &quot;suffing error\n&quot;);
++			break;
++		case LEC_FORM_ERROR:
++			dev_info(ND2D(dev), &quot;form error\n&quot;);
++			break;
++		case LEC_ACK_ERROR:
++			dev_info(ND2D(dev), &quot;ack error\n&quot;);
++			break;
++		case LEC_BIT1_ERROR:
++			dev_info(ND2D(dev), &quot;bit1 error\n&quot;);
++			break;
++		}
++	}
++
++	priv-&gt;write_reg(dev, CAN_STATUS, 0);
++	priv-&gt;last_status = status;
++	
++	return diff ? 1 : 0;
++}
++
++static void ccan_do_object_irq(struct net_device *dev, u16 irqstatus)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	int i;
++	u32 val;
++
++	if (irqstatus &gt; MAX_TRANSMIT_OBJECT) {
++		val = ccan_read_reg32(dev, CAN_NEWDAT);
++		while (val &amp; RECEIVE_OBJECT_BITS) {
++			for (i = MAX_TRANSMIT_OBJECT + 1; i &lt;= MAX_OBJECT; i++)
++				if (val &amp; (1&lt;&lt;i))
++					ccan_read_object(dev, 0, i);
++			val = ccan_read_reg32(dev, CAN_NEWDAT);
++		}
++	} else {
++		ccan_inval_object(dev, 0, irqstatus - 1);
++		val = ccan_read_reg32(dev, CAN_TXRQST);
++		if (!val) {
++			priv-&gt;tx_object = 0;
++			netif_wake_queue(dev);
++		}
++	}
++}
++
++static void do_statuspoll(struct work_struct *work)
++{
++	struct ccan_priv *priv = container_of(((struct delayed_work *) work), 
++					      struct ccan_priv, work);
++
++	priv-&gt;write_reg(priv-&gt;dev, CAN_CONTROL,
++			CONTROL_SIE | CONTROL_EIE | CONTROL_IE);
++}
++
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,19)
++static irqreturn_t ccan_isr(int irq, void *dev_id, struct pt_regs *regs)
++#else
++static irqreturn_t ccan_isr(int irq, void *dev_id)
++#endif
++{
++	struct net_device *dev = (struct net_device *) dev_id;
++	struct ccan_priv *priv = netdev_priv(dev);
++	u16 irqstatus;
++	unsigned long flags;
++	
++	spin_lock_irqsave(&amp;priv-&gt;can.irq_lock, flags);
++
++	irqstatus = priv-&gt;read_reg(dev, CAN_IR);
++	while (irqstatus) {
++		if (irqstatus == 0x8000) {
++			if (ccan_do_status_irq(dev)) {
++				/* The c_can core tends to flood us with
++				 * interrupts when certain error states don't
++				 * disappear. Disable interrupts and see if it's
++				 * getting better later. This is at least the
++				 * case on the Magnachip h7202.
++				 */
++				priv-&gt;write_reg(dev, CAN_CONTROL, CONTROL_EIE |
++						CONTROL_IE );
++				schedule_delayed_work(&amp;priv-&gt;work, HZ / 10);
++				goto exit;
++			}
++		} else {
++			ccan_do_object_irq(dev, irqstatus);
++		}
++		irqstatus = priv-&gt;read_reg(dev, CAN_IR);
++	}
++
++exit:
++	spin_unlock_irqrestore(&amp;priv-&gt;can.irq_lock, flags);
++
++	return IRQ_HANDLED;
++}
++
++static int ccan_open(struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,19)
++	if (request_irq(dev-&gt;irq, &amp;ccan_isr, 0, dev-&gt;name, dev)) {
++#else
++	if (request_irq(dev-&gt;irq, &amp;ccan_isr, 0, dev-&gt;name, dev)) {
++#endif
++		dev_err(ND2D(dev), &quot;failed to attach interrupt\n&quot;);
++		return -EAGAIN;
++	}
++
++	priv-&gt;write_reg(dev, CAN_CONTROL,
++			CONTROL_EIE | CONTROL_SIE | CONTROL_IE);
++
++	netif_wake_queue(dev);
++
++	return 0;
++}
++
++static int ccan_stop(struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	unsigned long flags;
++
++	netif_stop_queue(dev);
++
++	cancel_delayed_work(&amp;priv-&gt;work);
++	flush_scheduled_work();
++
++	/* mask all IRQs */
++	spin_lock_irqsave(&amp;priv-&gt;can.irq_lock, flags);
++	priv-&gt;write_reg(dev, CAN_CONTROL, 0);
++	spin_unlock_irqrestore(&amp;priv-&gt;can.irq_lock, flags);
++
++	free_irq(dev-&gt;irq, dev);
++
++	return 0;
++}
++
++static int ccan_chip_config(struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	struct can_bittime bit_time;
++	int ret, i;
++	
++	/* set bit timing */
++	bit_time.type = CAN_BITTIME_STD;
++	ret = can_calc_bit_time(&amp;priv-&gt;can, priv-&gt;can.baudrate, &amp;bit_time.std);
++	if (ret == 0)
++		ret = ccan_set_bit_time(dev, &amp;bit_time);
++	if (ret)
++		dev_err(ND2D(dev), &quot;failed to config bit timing\n&quot;);
++
++	/* setup message objects */
++	for(i = 0; i &lt;= MAX_OBJECT; i++)
++		ccan_inval_object(dev, 0, i);
++
++	for(i = MAX_TRANSMIT_OBJECT + 1; i &lt; MAX_OBJECT; i++)
++		ccan_setup_receive_object(dev, 0, i, 0, 0,
++					  IF_MCONT_RXIE | IF_MCONT_UMASK);
++					  
++	ccan_setup_receive_object(dev, 0, MAX_OBJECT, 0, 0, IF_MCONT_EOB |
++				  IF_MCONT_RXIE | IF_MCONT_UMASK);
++				  
++#ifdef CCAN_DEBUG
++	for(i = 0; i &lt;= MAX_OBJECT; i++)
++		priv-&gt;bufstat[i] = 0;
++#endif
++
++	return 0;
++}
++
++struct net_device *alloc_ccandev(int sizeof_priv)
++{
++	struct net_device *dev;
++	struct ccan_priv *priv;
++
++	dev = alloc_candev(sizeof_priv);
++	if(!dev)
++		return NULL;
++		
++	priv = netdev_priv(dev);
++
++	dev-&gt;open = ccan_open;
++	dev-&gt;stop = ccan_stop;
++	dev-&gt;hard_start_xmit = ccan_hard_start_xmit;
++	dev-&gt;tx_timeout = ccan_tx_timeout;
++
++	priv-&gt;can.baudrate = 500000;
++
++	priv-&gt;can.do_set_bit_time = ccan_set_bit_time;
++	priv-&gt;can.do_get_state = ccan_get_state;
++	priv-&gt;can.do_set_mode = ccan_set_mode;
++
++	priv-&gt;dev = dev;	
++	priv-&gt;tx_object = 0;
++
++	return dev;
++}
++EXPORT_SYMBOL(alloc_ccandev);
++
++void free_ccandev(struct net_device *dev)
++{
++	free_candev(dev);
++}
++EXPORT_SYMBOL(free_ccandev);
++
++int ccan_register(struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	
++	ccan_set_mode(dev, CAN_MODE_START);
++
++	ccan_chip_config(dev);
++	INIT_DELAYED_WORK(&amp;priv-&gt;work, do_statuspoll);
++	
++	return register_netdev(dev);	
++}
++EXPORT_SYMBOL(ccan_register);
++
++void ccan_unregister(struct net_device *dev)
++{
++	struct ccan_priv *priv = netdev_priv(dev);
++	
++	ccan_set_mode(dev, CAN_MODE_START);
++
++	cancel_delayed_work(&amp;priv-&gt;work);
++	flush_scheduled_work();
++
++	unregister_netdev(dev);
++}
++EXPORT_SYMBOL(ccan_unregister);
++
++
++MODULE_AUTHOR(&quot;Sascha Hauer &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">s.hauer at pengutronix.de</A>&gt;&quot;);
++MODULE_AUTHOR(&quot;Simon Kallweit &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">simon.kallweit at intefo.ch</A>&gt;&quot;);
++MODULE_LICENSE(&quot;GPL v2&quot;);
++MODULE_DESCRIPTION(&quot;CAN port driver for C_CAN based chips&quot;);
+
+Added: trunk/kernel/2.6/drivers/net/can/ccan/ccan.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/ccan/ccan.h	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/kernel/2.6/drivers/net/can/ccan/ccan.h	2007-07-25 11:46:56 UTC (rev 444)
+@@ -0,0 +1,140 @@
++/*
++ * drivers/can/c_can.h
++ *
++ * Copyright (C) 2007
++ *
++ * - Sascha Hauer, Marc Kleine-Budde, Pengutronix
++ * - Simon Kallweit, intefo AG
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the version 2 of the GNU General Public License
++ * as published by the Free Software Foundation
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#ifndef __CCAN_H__
++#define __CCAN_H__
++
++#include &lt;linux/can.h&gt;
++#include &lt;linux/platform_device.h&gt;
++
++#undef CCAN_DEBUG
++
++enum c_regs {
++	CAN_CONTROL = 0x00,
++	CAN_STATUS  = 0x02,
++	CAN_ERROR   = 0x04,
++	CAN_BTR     = 0x06,
++	CAN_IR      = 0x08,
++	CAN_TEST    = 0x0a,
++	CAN_BRP_EXT = 0x0c,
++	CAN_IF1     = 0x10,
++	CAN_IF2     = 0x40,
++	CAN_TXRQST  = 0x80, /* 32bit */
++	CAN_NEWDAT  = 0x90, /* 32bit */
++	CAN_INTPND  = 0xa0, /* 32bit */
++	CAN_MSGVAL  = 0xb0, /* 32bit */
++};
++
++#define CAN_IF_COMR(x)   (CAN_IF1 + (x) * 0x30 + 0x00)
++#define CAN_IF_COMM(x)   (CAN_IF1 + (x) * 0x30 + 0x02)
++#define CAN_IF_MASK(x)   (CAN_IF1 + (x) * 0x30 + 0x04)  /* 32bit */
++#define CAN_IF_ARB(x)    (CAN_IF1 + (x) * 0x30 + 0x08)  /* 32bit */
++#define CAN_IF_MCONT(x)  (CAN_IF1 + (x) * 0x30 + 0x0c)
++#define CAN_IF_DATAA(x)  (CAN_IF1 + (x) * 0x30 + 0x0e)  /* 32bit */
++#define CAN_IF_DATAB(x)  (CAN_IF1 + (x) * 0x30 + 0x12)  /* 32bit */
++
++#define CONTROL_TEST (1&lt;&lt;7)
++#define CONTROL_CCE  (1&lt;&lt;6)
++#define CONTROL_DAR  (1&lt;&lt;5)
++#define CONTROL_EIE  (1&lt;&lt;3)
++#define CONTROL_SIE  (1&lt;&lt;2)
++#define CONTROL_IE   (1&lt;&lt;1)
++#define CONTROL_INIT (1&lt;&lt;0)
++
++#define TEST_RX     (1&lt;&lt;7)
++#define TEST_TX1    (1&lt;&lt;6)
++#define TEST_TX2    (1&lt;&lt;5)
++#define TEST_LBACK  (1&lt;&lt;4)
++#define TEST_SILENT (1&lt;&lt;3)
++#define TEST_BASIC  (1&lt;&lt;2)
++
++#define STATUS_BOFF     (1&lt;&lt;7)
++#define STATUS_EWARN    (1&lt;&lt;6)
++#define STATUS_EPASS    (1&lt;&lt;5)
++#define STATUS_RXOK     (1&lt;&lt;4)
++#define STATUS_TXOK     (1&lt;&lt;3)
++#define STATUS_LEC_MASK (1&lt;&lt;2)
++#define LEC_STUFF_ERROR 1
++#define LEC_FORM_ERROR  2
++#define LEC_ACK_ERROR   3
++#define LEC_BIT1_ERROR  4
++
++#define BTR_BRP_MASK	0x3f
++#define BTR_BRP_SHIFT	0
++#define BTR_SJW_SHIFT	6
++#define BTR_SJW_MASK	(0x3 &lt;&lt; BTR_SJW_SHIFT)
++#define BTR_TSEG1_SHIFT	8
++#define BTR_TSEG1_MASK	(0xf &lt;&lt; BTR_TSEG1_SHIFT)
++#define BTR_TSEG2_SHIFT	12
++#define BTR_TSEG2_MASK	(0x7 &lt;&lt; BTR_TSEG2_SHIFT)
++
++#define IF_COMR_BUSY (1&lt;&lt;15)
++
++#define IF_COMM_WR          (1&lt;&lt;7)
++#define IF_COMM_MASK        (1&lt;&lt;6)
++#define IF_COMM_ARB         (1&lt;&lt;5)
++#define IF_COMM_CONTROL     (1&lt;&lt;4)
++#define IF_COMM_CLR_INT_PND (1&lt;&lt;3)
++#define IF_COMM_TXRQST      (1&lt;&lt;2)
++#define IF_COMM_DATAA       (1&lt;&lt;1)
++#define IF_COMM_DATAB       (1&lt;&lt;0)
++
++#define IF_COMM_ALL (IF_COMM_MASK | IF_COMM_ARB | IF_COMM_CONTROL | \
++		     IF_COMM_TXRQST | IF_COMM_DATAA | IF_COMM_DATAB)
++
++#define IF_ARB_MSGVAL   (1&lt;&lt;31)
++#define IF_ARB_MSGXTD   (1&lt;&lt;30)
++#define IF_ARB_TRANSMIT (1&lt;&lt;29)
++
++#define IF_MCONT_NEWDAT (1&lt;&lt;15)
++#define IF_MCONT_MSGLST (1&lt;&lt;14)
++#define IF_MCONT_INTPND (1&lt;&lt;13)
++#define IF_MCONT_UMASK  (1&lt;&lt;12)
++#define IF_MCONT_TXIE   (1&lt;&lt;11)
++#define IF_MCONT_RXIE   (1&lt;&lt;10)
++#define IF_MCONT_RMTEN  (1&lt;&lt;9)
++#define IF_MCONT_TXRQST (1&lt;&lt;8)
++#define IF_MCONT_EOB    (1&lt;&lt;7)
++
++#define MAX_OBJECT 31
++#define MAX_TRANSMIT_OBJECT 15
++#define RECEIVE_OBJECT_BITS 0xffff0000
++
++struct ccan_priv {
++	struct can_priv can;
++	struct net_device *dev;
++	int tx_object;
++	int last_status;
++	struct delayed_work work;
++	u16 (*read_reg)(struct net_device *dev, enum c_regs reg);
++	void (*write_reg)(struct net_device *dev, enum c_regs reg, u16 val);
++#ifdef CCAN_DEBUG
++	unsigned int bufstat[MAX_OBJECT + 1];
++#endif
++};
++
++extern struct net_device *alloc_ccandev(int sizeof_priv);
++extern void free_ccandev(struct net_device *dev);
++extern int ccan_register(struct net_device *dev);
++extern void ccan_unregister(struct net_device *dev);
++
++#endif /* __CCAN_H__ */
+
+Added: trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c	2007-07-25 11:41:27 UTC (rev 443)
++++ trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c	2007-07-25 11:46:56 UTC (rev 444)
+@@ -0,0 +1,200 @@
++/*
++ * drivers/can/h7202_can.c
++ *
++ * Copyright (C) 2007
++ *
++ * - Sascha Hauer, Marc Kleine-Budde, Pengutronix
++ * - Simon Kallweit, intefo AG
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the version 2 of the GNU General Public License
++ * as published by the Free Software Foundation
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include &lt;linux/kernel.h&gt;
++#include &lt;linux/module.h&gt;
++#include &lt;linux/interrupt.h&gt;
++#include &lt;linux/platform_device.h&gt;
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/dev.h&gt;
++#include &lt;asm/io.h&gt;
++#include &lt;asm/hardware.h&gt;
++
++#include &quot;ccan.h&quot;
++
++#define DRV_NAME      &quot;h7202can&quot;
++#define DELAY         5
++#define CAN_ENABLE    0x0e
++
++static u16 h7202can_read_reg(struct net_device *dev, enum c_regs reg)
++{
++	u16 val;
++	volatile int i;
++
++	/* The big kernel lock is used to prevent any other AMBA devices from
++	 * interfering with the current register read operation. The register
++	 * is read twice because of braindamaged hynix cpu.
++	 */ 
++	lock_kernel();
++	val = inw(dev-&gt;base_addr + (reg&lt;&lt;1));
++	for (i=0;i&lt;DELAY;i++);
++	val = inw(dev-&gt;base_addr + (reg&lt;&lt;1));
++	for (i=0;i&lt;DELAY;i++);
++	unlock_kernel();
++	
++	return val;
++}
++
++static void h7202can_write_reg(struct net_device *dev, enum c_regs reg, u16 val)
++{
++	volatile int i;
++
++	lock_kernel();
++	outw(val, dev-&gt;base_addr + (reg&lt;&lt;1));
++	for (i=0;i&lt;DELAY;i++);
++	unlock_kernel();
++}
++
++static int h7202can_drv_probe(struct platform_device *pdev)
++{
++	struct net_device *dev;
++	struct ccan_priv *priv;
++	struct resource *mem;
++	u32 mem_size;
++	int ret = -ENODEV;
++	
++	dev = alloc_ccandev(sizeof(struct ccan_priv));
++	if (!dev)
++		return -ENOMEM;
++		
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	dev-&gt;irq = platform_get_irq(pdev, 0);
++	if (!mem || !dev-&gt;irq)
++		goto req_error;
++
++	mem_size = mem-&gt;end - mem-&gt;start + 1;
++	if (!request_mem_region(mem-&gt;start, mem_size, pdev-&gt;dev.driver-&gt;name)) {
++		dev_err(&amp;pdev-&gt;dev, &quot;resource unavailable\n&quot;);
++		goto req_error;
++	}
++
++	SET_NETDEV_DEV(dev, &amp;pdev-&gt;dev);
++	SET_MODULE_OWNER(THIS_MODULE);
++
++	dev-&gt;base_addr = (unsigned long)ioremap_nocache(mem-&gt;start, mem_size);
++
++	if (!dev-&gt;base_addr) {
++		dev_err(&amp;pdev-&gt;dev, &quot;failed to map can port\n&quot;);
++		ret = -ENOMEM;
++		goto fail_map;
++	}
++
++	priv = netdev_priv(dev);
++	priv-&gt;can.can_sys_clock = 8000000;
++	priv-&gt;read_reg = h7202can_read_reg;
++	priv-&gt;write_reg = h7202can_write_reg;
++
++	platform_set_drvdata(pdev, dev);
++	
++	/* configure ports */
++	switch (mem-&gt;start) {
++	case CAN0_PHYS:
++		CPU_REG(GPIO_C_VIRT, GPIO_EN) &amp;= ~(3&lt;&lt;1);
++		CPU_REG(GPIO_C_VIRT, GPIO_DIR) &amp;= ~(1&lt;&lt;1);
++		CPU_REG(GPIO_C_VIRT, GPIO_DIR) |= (1&lt;&lt;2);
++		break;
++	case CAN1_PHYS:
++		CPU_REG(GPIO_E_VIRT, GPIO_EN) &amp;= ~(3&lt;&lt;16);
++		CPU_REG(GPIO_E_VIRT, GPIO_DIR) |= (1&lt;&lt;16);
++		CPU_REG(GPIO_E_VIRT, GPIO_DIR) &amp;= ~(1&lt;&lt;17);
++		break;
++	}
++
++	/* enable can */	
++	h7202can_write_reg(dev, CAN_ENABLE, 1);
++
++	ret = ccan_register(dev);
++	if (ret &gt;= 0) {
++		dev_info(&amp;pdev-&gt;dev, &quot;probe for a port 0x%lX done\n&quot;,
++			 dev-&gt;base_addr);
++		return ret;
++	}
++
++	iounmap((unsigned long *)dev-&gt;base_addr);
++fail_map:
++	release_mem_region(mem-&gt;start, mem_size);
++req_error:
++	free_ccandev(dev);
++	dev_err(&amp;pdev-&gt;dev, &quot;probe failed\n&quot;);
++	return ret;
++}
++
++static int h7202can_drv_remove(struct platform_device *pdev)
++{
++	struct net_device *dev = platform_get_drvdata(pdev);
++	struct resource *mem;
++
++	platform_set_drvdata(pdev, NULL);
++	ccan_unregister(dev);
++
++	iounmap((volatile void __iomem *)(dev-&gt;base_addr));
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	release_mem_region(mem-&gt;start, mem-&gt;end - mem-&gt;start + 1);
++	free_ccandev(dev);
++	return 0;
++}
++
++#ifdef CONFIG_PM
++static int h7202can_drv_suspend(struct platform_device *pdev,
++				pm_message_t state)
++{
++	return 0;
++}
++
++static int h7202can_drv_resume(struct platform_device *pdev)
++{
++	return 0;
++}
++#endif /* CONFIG_PM */
++
++static struct platform_driver h7202can_driver = {
++	.driver		= {
++		.name		= DRV_NAME,
++	},
++	.probe		= h7202can_drv_probe,
++	.remove		= h7202can_drv_remove,
++#ifdef CONFIG_PM
++	.suspend	= h7202can_drv_suspend,
++	.resume		= h7202can_drv_resume,
++#endif	/* CONFIG_PM */
++};
++
++static int __init h7202can_init(void)
++{
++	printk(KERN_INFO &quot;%s initializing\n&quot;, h7202can_driver.driver.name);
++	return platform_driver_register(&amp;h7202can_driver);
++}
++
++static void __exit h7202can_cleanup(void)
++{
++	platform_driver_unregister(&amp;h7202can_driver);
++	printk(KERN_INFO &quot;%s unloaded\n&quot;, h7202can_driver.driver.name);
++}
++
++module_init(h7202can_init);
++module_exit(h7202can_cleanup);
++
++MODULE_AUTHOR(&quot;Sascha Hauer &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">s.hauer at pengutronix.de</A>&gt;&quot;);
++MODULE_AUTHOR(&quot;Simon Kallweit &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">simon.kallweit at intefo.ch</A>&gt;&quot;);
++MODULE_LICENSE(&quot;GPL v2&quot;);
++MODULE_DESCRIPTION(&quot;CAN port driver Hynix H7202 processor&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000425.html">r443 - in trunk: . kernel/2.6/drivers/net/can	kernel/2.6/drivers/net/can/i82527 kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000427.html">r445 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#426">[ date ]</a>
+              <a href="thread.html#426">[ thread ]</a>
+              <a href="subject.html#426">[ subject ]</a>
+              <a href="author.html#426">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

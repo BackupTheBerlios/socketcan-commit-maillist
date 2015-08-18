@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r605 - in trunk/kernel/2.4/drivers/net/can: mscan sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r605%20-%20in%20trunk/kernel/2.4/drivers/net/can%3A%20mscan%20sja1000&In-Reply-To=%3C200712121200.lBCC0a3s005259%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000586.html">
+   <LINK REL="Next"  HREF="000588.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r605 - in trunk/kernel/2.4/drivers/net/can: mscan sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r605%20-%20in%20trunk/kernel/2.4/drivers/net/can%3A%20mscan%20sja1000&In-Reply-To=%3C200712121200.lBCC0a3s005259%40sheep.berlios.de%3E"
+       TITLE="r605 - in trunk/kernel/2.4/drivers/net/can: mscan sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 12 13:00:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000586.html">r604 - in trunk/kernel/2.4/drivers: . net/can
+</A></li>
+        <LI>Next message: <A HREF="000588.html">r606 - in trunk/kernel/2.4: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#587">[ date ]</a>
+              <a href="thread.html#587">[ thread ]</a>
+              <a href="subject.html#587">[ subject ]</a>
+              <a href="author.html#587">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-12 13:00:02 +0100 (Wed, 12 Dec 2007)
+New Revision: 605
+
+Modified:
+   trunk/kernel/2.4/drivers/net/can/mscan/Makefile
+   trunk/kernel/2.4/drivers/net/can/mscan/mscan_hw.c
+   trunk/kernel/2.4/drivers/net/can/mscan/mscan_net.c
+   trunk/kernel/2.4/drivers/net/can/mscan/mscan_proc.c
+   trunk/kernel/2.4/drivers/net/can/sja1000/Makefile
+   trunk/kernel/2.4/drivers/net/can/sja1000/isa.c
+   trunk/kernel/2.4/drivers/net/can/sja1000/proc.c
+   trunk/kernel/2.4/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.4/drivers/net/can/sja1000/trajet-gw2.c
+Log:
+Make old 2.4 drivers compile again.
+
+
+Modified: trunk/kernel/2.4/drivers/net/can/mscan/Makefile
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/mscan/Makefile	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/mscan/Makefile	2007-12-12 12:00:02 UTC (rev 605)
+@@ -40,12 +40,16 @@
+ #
+ #  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+-CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../can \
++KERNELDIR = /usr/src/linux
++
++CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../../../include \
+ 		-DMODULE $(DEBUG) -I$(KERNELDIR)/include \
+-		-fno-strict-aliasing
++		-fno-strict-aliasing \
++		-DETH_P_CAN=0x000C \
++		-DARPHRD_CAN=280 \
++		-DPF_CAN=29 \
++		-DAF_CAN=PF_CAN
+ 
+-KERNELDIR = /usr/src/linux
+-
+ TARGET = mscan.o
+ SRC    = mscan_net.c mscan_hw.c mscan_proc.c
+ 
+
+Modified: trunk/kernel/2.4/drivers/net/can/mscan/mscan_hw.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/mscan/mscan_hw.c	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/mscan/mscan_hw.c	2007-12-12 12:00:02 UTC (rev 605)
+@@ -57,8 +57,8 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/skbuff.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_ioctl.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt; /* for struct can_device_stats */
+ #include &lt;asm/mpc5xxx.h&gt;
+ #include &lt;asm/ppcboot.h&gt;
+ #include &quot;mscan.h&quot;
+
+Modified: trunk/kernel/2.4/drivers/net/can/mscan/mscan_net.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/mscan/mscan_net.c	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/mscan/mscan_net.c	2007-12-12 12:00:02 UTC (rev 605)
+@@ -62,13 +62,12 @@
+ #include &lt;linux/errno.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;asm/io.h&gt;
+-#include &quot;af_can.h&quot;
+ 
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/skbuff.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_ioctl.h&quot; /* for struct can_device_stats */
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt; /* for struct can_device_stats */
+ #include &lt;asm/mpc5xxx.h&gt;
+ #include &lt;asm/ppcboot.h&gt;
+ #include &quot;mscan.h&quot;
+
+Modified: trunk/kernel/2.4/drivers/net/can/mscan/mscan_proc.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/mscan/mscan_proc.c	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/mscan/mscan_proc.c	2007-12-12 12:00:02 UTC (rev 605)
+@@ -53,7 +53,8 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;asm/mpc5xxx.h&gt;
+ #include &lt;asm/ppcboot.h&gt;
+-#include &quot;can_ioctl.h&quot; /* for struct can_device_stats */
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt; /* for struct can_device_stats */
+ #include &quot;mscan.h&quot;
+ 
+ #define PROCBASE      &quot;net/drivers&quot; /* /proc/ ... */
+
+Modified: trunk/kernel/2.4/drivers/net/can/sja1000/Makefile
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/sja1000/Makefile	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/sja1000/Makefile	2007-12-12 12:00:02 UTC (rev 605)
+@@ -40,12 +40,16 @@
+ #
+ #  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+-CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../can \
++KERNELDIR = /usr/src/linux
++
++CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../../../include \
+ 		-DMODULE -I$(KERNELDIR)/include \
+-		-fno-strict-aliasing
++		-fno-strict-aliasing \
++		-DETH_P_CAN=0x000C \
++		-DARPHRD_CAN=280 \
++		-DPF_CAN=29 \
++		-DAF_CAN=PF_CAN
+ 
+-KERNELDIR = /usr/src/linux
+-
+ ISATARGET = sja1000-isa.o
+ ISASRC = isa.c sja1000.c proc.c
+ 
+
+Modified: trunk/kernel/2.4/drivers/net/can/sja1000/isa.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/sja1000/isa.c	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/sja1000/isa.c	2007-12-12 12:00:02 UTC (rev 605)
+@@ -60,8 +60,8 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;asm/io.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_ioctl.h&quot; /* for struct can_device_stats */
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt; /* for struct can_device_stats */
+ #include &quot;sja1000.h&quot;
+ 
+ #define MAX_CAN		8
+
+Modified: trunk/kernel/2.4/drivers/net/can/sja1000/proc.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/sja1000/proc.c	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/sja1000/proc.c	2007-12-12 12:00:02 UTC (rev 605)
+@@ -49,8 +49,8 @@
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_ioctl.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt; /* for struct can_device_stats */
+ #include &quot;sja1000.h&quot;
+ 
+ static struct proc_dir_entry *pde       = NULL;
+
+Modified: trunk/kernel/2.4/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/sja1000/sja1000.c	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/sja1000/sja1000.c	2007-12-12 12:00:02 UTC (rev 605)
+@@ -54,8 +54,8 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;asm/io.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_ioctl.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt;
+ #include &quot;sja1000.h&quot;
+ 
+ #define DEBUG
+
+Modified: trunk/kernel/2.4/drivers/net/can/sja1000/trajet-gw2.c
+===================================================================
+--- trunk/kernel/2.4/drivers/net/can/sja1000/trajet-gw2.c	2007-12-12 11:45:34 UTC (rev 604)
++++ trunk/kernel/2.4/drivers/net/can/sja1000/trajet-gw2.c	2007-12-12 12:00:02 UTC (rev 605)
+@@ -63,8 +63,8 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;asm/io.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_ioctl.h&quot; /* for struct can_device_stats */
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/ioctl.h&gt; /* for struct can_device_stats */
+ #include &quot;sja1000.h&quot;
+ 
+ #define MAX_CAN		8
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000586.html">r604 - in trunk/kernel/2.4/drivers: . net/can
+</A></li>
+	<LI>Next message: <A HREF="000588.html">r606 - in trunk/kernel/2.4: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#587">[ date ]</a>
+              <a href="thread.html#587">[ thread ]</a>
+              <a href="subject.html#587">[ subject ]</a>
+              <a href="author.html#587">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

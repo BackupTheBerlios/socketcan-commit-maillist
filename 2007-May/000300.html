@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r316 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r316%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200705230927.l4N9Ro7s028183%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000299.html">
+   <LINK REL="Next"  HREF="000301.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r316 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r316%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200705230927.l4N9Ro7s028183%40sheep.berlios.de%3E"
+       TITLE="r316 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed May 23 11:27:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000299.html">r315 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000301.html">r317 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#300">[ date ]</a>
+              <a href="thread.html#300">[ thread ]</a>
+              <a href="subject.html#300">[ subject ]</a>
+              <a href="author.html#300">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-05-23 11:27:48 +0200 (Wed, 23 May 2007)
+New Revision: 316
+
+Modified:
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+Further cleanup: use &quot;data&quot; argument to can_proc_read_rcvlist() function.
+
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-05-23 08:37:09 UTC (rev 315)
++++ trunk/kernel/2.6/net/can/proc.c	2007-05-23 09:27:48 UTC (rev 316)
+@@ -359,8 +359,9 @@
+ }
+ 
+ static int can_proc_read_rcvlist(char *page, char **start, off_t off,
+-				 int count, int *eof, void *data, int idx)
++				 int count, int *eof, void *data)
+ {
++	int idx = (int)data;
+ 	int len = 0;
+ 	struct dev_rcv_lists *d;
+ 	struct hlist_node *n;
+@@ -368,7 +369,6 @@
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot;\nreceive list '%s':\n&quot;, rx_list_name[idx]);
+ 
+-	/* find receive list for this device */
+ 	rcu_read_lock();
+ 	hlist_for_each_entry_rcu(d, n, &amp;rx_dev_list, list) {
+ 
+@@ -391,36 +391,6 @@
+ 	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_all(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	return can_proc_read_rcvlist(page, start, off, count, eof, data, RX_ALL);
+-}
+-
+-static int can_proc_read_rcvlist_fil(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	return can_proc_read_rcvlist(page, start, off, count, eof, data, RX_FIL);
+-}
+-
+-static int can_proc_read_rcvlist_inv(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	return can_proc_read_rcvlist(page, start, off, count, eof, data, RX_INV);
+-}
+-
+-static int can_proc_read_rcvlist_eff(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	return can_proc_read_rcvlist(page, start, off, count, eof, data, RX_EFF);
+-}
+-
+-static int can_proc_read_rcvlist_err(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	return can_proc_read_rcvlist(page, start, off, count, eof, data, RX_ERR);
+-}
+-
+ static int can_proc_read_rcvlist_sff(char *page, char **start, off_t off,
+ 				     int count, int *eof, void *data)
+ {
+@@ -432,7 +402,6 @@
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot;\nreceive list 'rx_sff':\n&quot;);
+ 
+-	/* find receive list for this device */
+ 	rcu_read_lock();
+ 	hlist_for_each_entry_rcu(d, n, &amp;rx_dev_list, list) {
+ 		int i, all_empty = 1;
+@@ -507,24 +476,24 @@
+ 	can_dir-&gt;owner = THIS_MODULE;
+ 
+ 	/* own procfs entries from the AF_CAN core */
+-	pde_version     = can_create_proc_readentry(CAN_PROC_VERSION,
+-					0644, can_proc_read_version, NULL);
+-	pde_stats       = can_create_proc_readentry(CAN_PROC_STATS,
+-					0644, can_proc_read_stats, NULL);
+-	pde_reset_stats = can_create_proc_readentry(CAN_PROC_RESET_STATS,
+-					0644, can_proc_read_reset_stats, NULL);
+-	pde_rcvlist_all = can_create_proc_readentry(CAN_PROC_RCVLIST_ALL,
+-					0644, can_proc_read_rcvlist_all, NULL);
+-	pde_rcvlist_fil = can_create_proc_readentry(CAN_PROC_RCVLIST_FIL,
+-					0644, can_proc_read_rcvlist_fil, NULL);
+-	pde_rcvlist_inv = can_create_proc_readentry(CAN_PROC_RCVLIST_INV,
+-					0644, can_proc_read_rcvlist_inv, NULL);
+-	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF,
+-					0644, can_proc_read_rcvlist_sff, NULL);
+-	pde_rcvlist_eff = can_create_proc_readentry(CAN_PROC_RCVLIST_EFF,
+-					0644, can_proc_read_rcvlist_eff, NULL);
+-	pde_rcvlist_err = can_create_proc_readentry(CAN_PROC_RCVLIST_ERR,
+-					0644, can_proc_read_rcvlist_err, NULL);
++	pde_version     = can_create_proc_readentry(CAN_PROC_VERSION, 0644,
++					can_proc_read_version, NULL);
++	pde_stats       = can_create_proc_readentry(CAN_PROC_STATS, 0644,
++					can_proc_read_stats, NULL);
++	pde_reset_stats = can_create_proc_readentry(CAN_PROC_RESET_STATS, 0644,
++					can_proc_read_reset_stats, NULL);
++	pde_rcvlist_err = can_create_proc_readentry(CAN_PROC_RCVLIST_ERR, 0644,
++					can_proc_read_rcvlist, (void*)RX_ERR);
++	pde_rcvlist_all = can_create_proc_readentry(CAN_PROC_RCVLIST_ALL, 0644,
++					can_proc_read_rcvlist, (void*)RX_ALL);
++	pde_rcvlist_fil = can_create_proc_readentry(CAN_PROC_RCVLIST_FIL, 0644,
++					can_proc_read_rcvlist, (void*)RX_FIL);
++	pde_rcvlist_inv = can_create_proc_readentry(CAN_PROC_RCVLIST_INV, 0644,
++					can_proc_read_rcvlist, (void*)RX_INV);
++	pde_rcvlist_eff = can_create_proc_readentry(CAN_PROC_RCVLIST_EFF, 0644,
++					can_proc_read_rcvlist, (void*)RX_EFF);
++	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF, 0644,
++					can_proc_read_rcvlist_sff, NULL);
+ }
+ 
+ /*
+@@ -541,6 +510,9 @@
+ 	if (pde_reset_stats)
+ 		can_remove_proc_readentry(CAN_PROC_RESET_STATS);
+ 
++	if (pde_rcvlist_err)
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_ERR);
++
+ 	if (pde_rcvlist_all)
+ 		can_remove_proc_readentry(CAN_PROC_RCVLIST_ALL);
+ 
+@@ -550,14 +522,11 @@
+ 	if (pde_rcvlist_inv)
+ 		can_remove_proc_readentry(CAN_PROC_RCVLIST_INV);
+ 
+-	if (pde_rcvlist_sff)
+-		can_remove_proc_readentry(CAN_PROC_RCVLIST_SFF);
+-
+ 	if (pde_rcvlist_eff)
+ 		can_remove_proc_readentry(CAN_PROC_RCVLIST_EFF);
+ 
+-	if (pde_rcvlist_err)
+-		can_remove_proc_readentry(CAN_PROC_RCVLIST_ERR);
++	if (pde_rcvlist_sff)
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_SFF);
+ 
+ 	if (can_dir)
+ 		remove_proc_entry(CAN_PROC_DIR, NULL);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000299.html">r315 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000301.html">r317 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#300">[ date ]</a>
+              <a href="thread.html#300">[ thread ]</a>
+              <a href="subject.html#300">[ subject ]</a>
+              <a href="author.html#300">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

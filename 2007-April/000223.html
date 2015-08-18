@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r239 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r239%20-%20trunk&In-Reply-To=%3C200704240609.l3O69med016199%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000222.html">
+   <LINK REL="Next"  HREF="000224.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r239 - trunk</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r239%20-%20trunk&In-Reply-To=%3C200704240609.l3O69med016199%40sheep.berlios.de%3E"
+       TITLE="r239 - trunk">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 24 08:09:48 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000222.html">r238 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000224.html">r240 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#223">[ date ]</a>
+              <a href="thread.html#223">[ thread ]</a>
+              <a href="subject.html#223">[ subject ]</a>
+              <a href="author.html#223">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-24 08:09:48 +0200 (Tue, 24 Apr 2007)
+New Revision: 239
+
+Modified:
+   trunk/kv
+Log:
+Added comment for script usage. Added debug parameter '-d' in synopsis.
+
+
+Modified: trunk/kv
+===================================================================
+--- trunk/kv	2007-04-24 05:56:43 UTC (rev 238)
++++ trunk/kv	2007-04-24 06:09:48 UTC (rev 239)
+@@ -6,8 +6,12 @@
+ # eliminate all occurences of #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(...)
+ # and likewise for &lt;=, &gt;, and &gt;=.
+ #
+-# Call as kv &lt;version&gt; &lt;file&gt; where &lt;version&gt; is the kernel version you
++# Call as kv [-d] &lt;version&gt; &lt;file&gt; where &lt;version&gt; is the kernel version you
+ # want the code to be generated for.  The result will be output on stdout.
++#
++# Examples:
++#   kv 020618 raw.c    (prints the raw.c file for Kernel 2.6.18 to stdout)
++#   kv -d 020621 raw.c (analogue for 2.6.21 with debug info of script actions)
+ 
+ require(&quot;getopts.pl&quot;);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000222.html">r238 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000224.html">r240 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#223">[ date ]</a>
+              <a href="thread.html#223">[ thread ]</a>
+              <a href="subject.html#223">[ subject ]</a>
+              <a href="author.html#223">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

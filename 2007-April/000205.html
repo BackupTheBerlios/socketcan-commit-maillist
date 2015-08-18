@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r221 - in trunk/kernel/2.6: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r221%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200704190622.l3J6MqS6017252%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000204.html">
+   <LINK REL="Next"  HREF="000206.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r221 - in trunk/kernel/2.6: drivers/net/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r221%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200704190622.l3J6MqS6017252%40sheep.berlios.de%3E"
+       TITLE="r221 - in trunk/kernel/2.6: drivers/net/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 19 08:22:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000204.html">r220 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000206.html">r222 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#205">[ date ]</a>
+              <a href="thread.html#205">[ thread ]</a>
+              <a href="subject.html#205">[ subject ]</a>
+              <a href="author.html#205">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-19 08:22:49 +0200 (Thu, 19 Apr 2007)
+New Revision: 221
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+The new mkpatch script removes the trailing blank lines after a
+#if LINUX_VERSION_CODE ... 
+Added some blank lines to get a better linespacing in the (patched) code.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2007-04-19 06:05:08 UTC (rev 220)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2007-04-19 06:22:49 UTC (rev 221)
+@@ -506,6 +506,7 @@
+ 	return 65536;  /* We can handle an infinite amount of data. :-) */
+ }
+ #endif
++
+ /*
+  * Handle the 'receiver data ready' interrupt.
+  * This function is called by the 'tty_io' module in the kernel when
+@@ -711,6 +712,7 @@
+ 	if (tty-&gt;driver-&gt;flush_buffer)
+ 		tty-&gt;driver-&gt;flush_buffer(tty);
+ #endif
++
+ 	if (!test_bit(SLF_INUSE, &amp;sl-&gt;flags)) {
+ 		/* Perform the low-level SLCAN initialization. */
+ 		sl-&gt;rcount   = 0;
+@@ -724,9 +726,11 @@
+ 
+ 	/* Done.  We have linked the TTY line to a channel. */
+ 	rtnl_unlock();
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,16)
+ 	tty-&gt;receive_room = 65536;	/* We don't flow control */
+ #endif
++
+ 	return sl-&gt;dev-&gt;base_addr;
+ 
+ err_free_chan:
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-04-19 06:05:08 UTC (rev 220)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-04-19 06:22:49 UTC (rev 221)
+@@ -74,6 +74,7 @@
+ #define DBG_FRAME(args...)
+ #define DBG_SKB(skb)
+ #endif
++
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static void *kzalloc(size_t size, unsigned int __nocast flags)
+ {
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-19 06:05:08 UTC (rev 220)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-19 06:22:49 UTC (rev 221)
+@@ -160,6 +160,7 @@
+ extern struct timer_list stattimer; /* timer for statistics update */
+ extern struct s_stats  stats;       /* packet statistics */
+ extern struct s_pstats pstats;      /* receive list statistics */
++
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static void *kzalloc(size_t size, unsigned int __nocast flags)
+ {
+@@ -274,6 +275,7 @@
+ 	if (err &lt; 0)
+ 		return err;
+ #endif
++
+ 	proto_tab[proto] = cp;
+ 
+ 	/* use generic ioctl function if the module doesn't bring its own */
+@@ -454,6 +456,7 @@
+ 	}
+ 	sk_set_owner(sk, proto_tab[protocol]-&gt;owner);
+ #endif
++
+ 	sock_init_data(sock, sk);
+ 	sk-&gt;sk_destruct = can_sock_destruct;
+ 
+@@ -462,9 +465,11 @@
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ 	if (sk-&gt;sk_prot-&gt;init)
+ 		ret = sk-&gt;sk_prot-&gt;init(sk);
++
+ #else
+ 	if (cp-&gt;init)
+ 		ret = cp-&gt;init(sk);
++
+ #endif
+ 
+ 	if (ret) {
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-04-19 06:05:08 UTC (rev 220)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-04-19 06:22:49 UTC (rev 221)
+@@ -229,6 +229,7 @@
+ 	.init       = bcm_init,
+ };
+ #endif
++
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static void *kzalloc(size_t size, unsigned int __nocast flags)
+ {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000204.html">r220 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000206.html">r222 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#205">[ date ]</a>
+              <a href="thread.html#205">[ thread ]</a>
+              <a href="subject.html#205">[ subject ]</a>
+              <a href="author.html#205">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

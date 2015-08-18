@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r811 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r811%20-%20trunk/can-utils&In-Reply-To=%3C200807241303.m6OD3JwB019371%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000790.html">
+   <LINK REL="Next"  HREF="000792.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r811 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r811%20-%20trunk/can-utils&In-Reply-To=%3C200807241303.m6OD3JwB019371%40sheep.berlios.de%3E"
+       TITLE="r811 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 24 15:03:19 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000790.html">r810 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000792.html">r812 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#791">[ date ]</a>
+              <a href="thread.html#791">[ thread ]</a>
+              <a href="subject.html#791">[ subject ]</a>
+              <a href="author.html#791">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-07-24 15:03:18 +0200 (Thu, 24 Jul 2008)
+New Revision: 811
+
+Modified:
+   trunk/can-utils/canplayer.c
+Log:
+Support for comment lines in the logfile:
+'#' at the beginning of a line marks comment lines.
+
+
+Modified: trunk/can-utils/canplayer.c
+===================================================================
+--- trunk/can-utils/canplayer.c	2008-07-10 11:01:37 UTC (rev 810)
++++ trunk/can-utils/canplayer.c	2008-07-24 13:03:18 UTC (rev 811)
+@@ -64,6 +64,7 @@
+ #define DEFAULT_LOOPS 1 /* only one replay */
+ #define CHANNELS 20   /* anyone using more than 20 CAN interfaces at a time? */
+ #define BUFSZ 100     /* for one line in the logfile */
++#define COMMENT '#'
+ 
+ struct assignment {
+ 	char txif[IFNAMSIZ];
+@@ -98,6 +99,8 @@
+ 		&quot;vcan2 )\n&quot;);
+ 	fprintf(stderr, &quot;No assignments =&gt; send frames to the interface(s) they &quot;
+ 		&quot;had been received from.\n\n&quot;);
++	fprintf(stderr, &quot;Lines in the logfile beginning with '%c' are ignored.&quot;
++		&quot;\n\n&quot;, COMMENT);
+ }
+ 
+ /* copied from /usr/src/linux/include/linux/time.h ...
+@@ -241,6 +244,7 @@
+ 	int assignments; /* assignments defined on the commandline */
+ 	int txidx;       /* sendto() interface index */
+ 	int eof, nbytes, i, j;
++	char *fret;
+ 
+ 	while ((opt = getopt(argc, argv, &quot;I:l:tg:s:xv&quot;)) != -1) {
+ 		switch (opt) {
+@@ -365,7 +369,11 @@
+ 		if (verbose &gt; 1) /* use -v -v to see this */
+ 			printf (&quot;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; start reading file. remaining loops = %d\n&quot;, loops);
+ 
+-		if (!fgets(buf, BUFSZ-1, infile)) /* read first frame from logfile */
++		/* read first non-comment frame from logfile */
++		while ((fret = fgets(buf, BUFSZ-1, infile)) != NULL &amp;&amp; buf[0] == COMMENT)
++			;
++
++		if (!fret)
+ 			goto out; /* nothing to read */
+ 
+ 		eof = 0;
+@@ -427,8 +435,11 @@
+ 					}
+ 				}
+ 
+-				/* read next frame from logfile */
+-				if (!fgets(buf, BUFSZ-1, infile)) {
++				/* read next non-comment frame from logfile */
++				while ((fret = fgets(buf, BUFSZ-1, infile)) != NULL &amp;&amp; buf[0] == COMMENT)
++					;
++
++				if (!fret) {
+ 					eof = 1; /* this file is completely processed */
+ 					break;
+ 				}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000790.html">r810 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000792.html">r812 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#791">[ date ]</a>
+              <a href="thread.html#791">[ thread ]</a>
+              <a href="subject.html#791">[ subject ]</a>
+              <a href="author.html#791">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

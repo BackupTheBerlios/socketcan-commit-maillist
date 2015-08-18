@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r610 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r610%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712121354.lBCDshkM018225%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000591.html">
+   <LINK REL="Next"  HREF="000593.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r610 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r610%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712121354.lBCDshkM018225%40sheep.berlios.de%3E"
+       TITLE="r610 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 12 14:54:43 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000591.html">r609 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000593.html">r611 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#592">[ date ]</a>
+              <a href="thread.html#592">[ thread ]</a>
+              <a href="subject.html#592">[ subject ]</a>
+              <a href="author.html#592">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-12 14:54:42 +0100 (Wed, 12 Dec 2007)
+New Revision: 610
+
+Modified:
+   trunk/kernel/2.4/net/can/compat.h
+Log:
+removed unsupported __nocast directive.
+
+
+Modified: trunk/kernel/2.4/net/can/compat.h
+===================================================================
+--- trunk/kernel/2.4/net/can/compat.h	2007-12-12 13:15:17 UTC (rev 609)
++++ trunk/kernel/2.4/net/can/compat.h	2007-12-12 13:54:42 UTC (rev 610)
+@@ -5,7 +5,7 @@
+ #ifndef CAN_COMPAT_H
+ #define CAN_COMPAT_H
+ 
+-static inline void *kzalloc(size_t size, unsigned int __nocast flags)
++static inline void *kzalloc(size_t size, unsigned int flags)
+ {
+ 	void *ret = kmalloc(size, flags);
+ 	if (ret)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000591.html">r609 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000593.html">r611 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#592">[ date ]</a>
+              <a href="thread.html#592">[ thread ]</a>
+              <a href="subject.html#592">[ subject ]</a>
+              <a href="author.html#592">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

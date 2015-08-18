@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r802 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r802%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200807010916.m619GZC2031894%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000781.html">
+   <LINK REL="Next"  HREF="000783.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r802 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r802%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200807010916.m619GZC2031894%40sheep.berlios.de%3E"
+       TITLE="r802 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul  1 11:16:35 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000781.html">r801 - trunk/test
+</A></li>
+        <LI>Next message: <A HREF="000783.html">r803 - in trunk/kernel/2.6/drivers/net/can: . softing
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#782">[ date ]</a>
+              <a href="thread.html#782">[ thread ]</a>
+              <a href="subject.html#782">[ subject ]</a>
+              <a href="author.html#782">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-07-01 11:16:34 +0200 (Tue, 01 Jul 2008)
+New Revision: 802
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Removed spaces after type casts. Fixed typo.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2008-07-01 08:51:21 UTC (rev 801)
++++ trunk/kernel/2.6/net/can/af_can.c	2008-07-01 09:16:34 UTC (rev 802)
+@@ -273,7 +273,7 @@
+ int can_send(struct sk_buff *skb, int loop)
+ {
+ 	struct sk_buff *newskb = NULL;
+-	struct can_frame *cf = (struct can_frame *) skb-&gt;data;
++	struct can_frame *cf = (struct can_frame *)skb-&gt;data;
+ 	int err;
+ 
+ 	if (skb-&gt;len != sizeof(struct can_frame) || cf-&gt;can_dlc &gt; 8) {
+@@ -688,7 +688,7 @@
+ #endif
+ {
+ 	struct dev_rcv_lists *d;
+-	struct can_frame *cf = (struct can_frame *) skb-&gt;data;
++	struct can_frame *cf = (struct can_frame *)skb-&gt;data;
+ 	int matches;
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,26)
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2008-07-01 08:51:21 UTC (rev 801)
++++ trunk/kernel/2.6/net/can/bcm.c	2008-07-01 09:16:34 UTC (rev 802)
+@@ -379,9 +379,9 @@
+ 	if (head-&gt;nframes) {
+ 		/* can_frames starting here */
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,22)
+-		firstframe = (struct can_frame *) skb_tail_pointer(skb);
++		firstframe = (struct can_frame *)skb_tail_pointer(skb);
+ #else
+-		firstframe = (struct can_frame *) skb-&gt;tail;
++		firstframe = (struct can_frame *)skb-&gt;tail;
+ #endif
+ 
+ 		memcpy(skb_put(skb, datalen), frames, datalen);
+@@ -1552,7 +1552,7 @@
+ 		break;
+ 
+ 	case TX_SEND:
+-		/* we need at exactly one can_frame behind the msg head */
++		/* we need exactly one can_frame behind the msg head */
+ 		if ((msg_head.nframes != 1) || (size != CFSIZ + MHSIZ))
+ 			ret = -EINVAL;
+ 		else
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000781.html">r801 - trunk/test
+</A></li>
+	<LI>Next message: <A HREF="000783.html">r803 - in trunk/kernel/2.6/drivers/net/can: . softing
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#782">[ date ]</a>
+              <a href="thread.html#782">[ thread ]</a>
+              <a href="subject.html#782">[ subject ]</a>
+              <a href="author.html#782">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r326 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r326%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706042030.l54KUvQq006345%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000308.html">
+   <LINK REL="Next"  HREF="000310.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r326 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r326%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706042030.l54KUvQq006345%40sheep.berlios.de%3E"
+       TITLE="r326 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun  4 22:30:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000308.html">r325 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000310.html">r327 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#309">[ date ]</a>
+              <a href="thread.html#309">[ thread ]</a>
+              <a href="subject.html#309">[ subject ]</a>
+              <a href="author.html#309">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-06-04 22:30:56 +0200 (Mon, 04 Jun 2007)
+New Revision: 326
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Set skb-&gt;protocol on CAN frames sent from can_send().
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-06-04 13:15:14 UTC (rev 325)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-06-04 20:30:56 UTC (rev 326)
+@@ -265,6 +265,8 @@
+ 		return -EPERM;
+ 	}
+ 
++	skb-&gt;protocol = htons(ETH_P_CAN);
++
+ 	if (loop) {
+ 		/* local loopback of sent CAN frames (default) */
+ 
+@@ -282,7 +284,6 @@
+ 			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+ 
+ 			/* perform the local loopback here */
+-			newskb-&gt;protocol  = htons(ETH_P_CAN);
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 			netif_rx(newskb);
+ 		}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000308.html">r325 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000310.html">r327 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#309">[ date ]</a>
+              <a href="thread.html#309">[ thread ]</a>
+              <a href="subject.html#309">[ subject ]</a>
+              <a href="author.html#309">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

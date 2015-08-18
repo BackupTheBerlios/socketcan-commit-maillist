@@ -1,0 +1,317 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r119 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r119%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200612071620.kB7GKKOw027927%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000102.html">
+   <LINK REL="Next"  HREF="000104.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r119 - trunk/kernel/2.4/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r119%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200612071620.kB7GKKOw027927%40sheep.berlios.de%3E"
+       TITLE="r119 - trunk/kernel/2.4/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  7 17:20:20 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000102.html">r118 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000104.html">r120 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#103">[ date ]</a>
+              <a href="thread.html#103">[ thread ]</a>
+              <a href="subject.html#103">[ subject ]</a>
+              <a href="author.html#103">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-12-07 17:20:18 +0100 (Thu, 07 Dec 2006)
+New Revision: 119
+
+Modified:
+   trunk/kernel/2.4/can/bcm.c
+Log:
+backported broadcast manager (BCM) changes from 2.6 socketcan tree.
+
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2006-12-07 13:13:20 UTC (rev 118)
++++ trunk/kernel/2.4/can/bcm.c	2006-12-07 16:20:18 UTC (rev 119)
+@@ -74,6 +74,7 @@
+ #define RX_RECV    0x40 /* received data for this element */
+ #define RX_THR     0x80 /* this element has not been sent due to throttle functionality */
+ #define BCM_CAN_DLC_MASK 0x0F /* clean flags by masking with BCM_CAN_DLC_MASK */
++#define BCM_RX_REGMASK (CAN_EFF_MASK | CAN_EFF_FLAG | CAN_RTR_FLAG)
+ 
+ #define NAME &quot;Broadcast Manager (BCM) for LLCF&quot;
+ #define IDENT &quot;bcm&quot;
+@@ -105,12 +106,11 @@
+ struct bcm_user_data {
+ 	struct bcm_op *rx_ops;
+ 	struct bcm_op *tx_ops;
++	unsigned long dropped_usr_msgs;
+ 	struct proc_dir_entry *bcm_proc_read;
+ 	char procname [9];
+ };
+ 
+-#define bcm_sk(sk) ((struct bcm_user_data *)(sk)-&gt;user_data)
+-
+ static struct proc_dir_entry *proc_dir = NULL;
+ static int bcm_read_proc(char *page, char **start, off_t off,
+ 			 int count, int *eof, void *data);
+@@ -172,6 +172,8 @@
+ #define BCM_CAP CAP_NET_RAW
+ #endif
+ 
++#define bcm_sk(sk) ((struct bcm_user_data *)(sk)-&gt;user_data)
++
+ static struct can_proto bcm_can_proto = {
+ 	.type       = SOCK_DGRAM,
+ 	.protocol   = CAN_BCM,
+@@ -187,7 +189,7 @@
+ 
+ 	can_proto_register(&amp;bcm_can_proto);
+ 
+-	/* create /proc/can/bcm directory */
++	/* create /proc/net/can/bcm directory */
+ 	proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
+ 
+ 	if (proc_dir)
+@@ -250,7 +252,7 @@
+ 			if (sk-&gt;bound_dev_if) {
+ 				struct net_device *dev = dev_get_by_index(sk-&gt;bound_dev_if);
+ 				if (dev) {
+-					can_rx_unregister(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op);
++					can_rx_unregister(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op);
+ 					dev_put(dev);
+ 				}
+ 			} else
+@@ -264,6 +266,7 @@
+ 		}
+ 
+ 		kfree (ud);
++		sk-&gt;user_data = NULL;
+ 	}
+ 
+ 	if (sk-&gt;bound_dev_if) {
+@@ -288,11 +291,15 @@
+ 	struct net_device *dev;
+ 	struct bcm_user_data *ud;
+ 
++	/* create struct for BCM-specific data for this socket */
++	if (!(ud = kmalloc(sizeof(struct bcm_user_data), GFP_KERNEL)))
++		return -ENOMEM;
++
+ 	/* bind a device to this socket */
+-
+ 	dev = dev_get_by_index(addr-&gt;can_ifindex);
+ 	if (!dev) {
+ 		DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
++		kfree(ud);
+ 		return -ENODEV;
+ 	}
+ 	sk-&gt;bound_dev_if = dev-&gt;ifindex;
+@@ -301,15 +308,11 @@
+ 
+ 	DBG(&quot;socket %p to device %s (idx %d)\n&quot;, sock, dev-&gt;name, dev-&gt;ifindex);
+ 
+-	/* create struct for BCM-specific data for this socket */
+-
+-	if (!(ud = kmalloc(sizeof(struct bcm_user_data), GFP_KERNEL)))
+-		return -ENOMEM;
+-
+ 	/* intitial BCM operations */
+ 	ud-&gt;tx_ops = NULL;
+ 	ud-&gt;rx_ops = NULL;
+ 	ud-&gt;bcm_proc_read = NULL;
++	ud-&gt;dropped_usr_msgs = 0;
+ 
+ 	sk-&gt;user_data = ud;
+ 
+@@ -333,6 +336,7 @@
+ 	MOD_INC_USE_COUNT;
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,&quot;&gt;&gt;&gt; ud %p&quot;, ud);
++	len += snprintf(page + len, PAGE_SIZE - len,&quot; / dropped %lu&quot;, ud-&gt;dropped_usr_msgs);
+ 
+ 	if (ud-&gt;rx_ops) {
+ 		if (ud-&gt;rx_ops-&gt;sk-&gt;bound_dev_if)
+@@ -355,7 +359,7 @@
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot; &lt;&lt;&lt;\n&quot;);
+ 
+-	for (op = ud-&gt;rx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
++	for (op = ud-&gt;rx_ops; op; op = op-&gt;next) {
+ 
+ 		unsigned long reduction;
+ 
+@@ -379,11 +383,14 @@
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;%s%ld%%\n&quot;,
+ 				(reduction == 100)?&quot;near &quot;:&quot;&quot;, reduction);
+ 
+-		if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
++		if (len &gt;= PAGE_SIZE - 100) {
++			/* mark output cut off */
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
++			break;
++		}
+ 	}
+ 
+-	for (op = ud-&gt;tx_ops; op &amp;&amp; (len &lt; PAGE_SIZE - 100); op = op-&gt;next) {
++	for (op = ud-&gt;tx_ops; op; op = op-&gt;next) {
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;tx_op: %03X [%d] &quot;,
+ 				op-&gt;can_id, op-&gt;nframes);
+@@ -395,8 +402,11 @@
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;# sent %ld\n&quot;, op-&gt;frames_abs);
+ 
+-		if (len &gt; PAGE_SIZE - 100) /* 100 Bytes before end of buffer */
+-			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;); /* mark output cutted off */
++		if (len &gt;= PAGE_SIZE - 100) {
++			/* mark output cut off */
++			len += snprintf(page + len, PAGE_SIZE - len, &quot;(..)\n&quot;);
++			break;
++		}
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -473,7 +483,12 @@
+ 			}
+ 
+ 			for (i = 0; i &lt; msg_head.nframes; i++) {
+-				memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
++				if ((err = memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame))) &lt; 0) {
++					kfree(op-&gt;frames);
++					kfree(op);
++					return err;
++				}
++
+ 				if (msg_head.flags &amp; TX_CP_CAN_ID)
+ 					op-&gt;frames[i].can_id = msg_head.can_id; /* copy can_id into frame */
+ 			}
+@@ -649,9 +664,12 @@
+ 		skb = alloc_skb(sizeof(struct can_frame), GFP_KERNEL);
+ 
+ 		if (!skb)
+-			break;
++			return -ENOMEM;
+ 
+-		memcpy_fromiovec(skb_put(skb, sizeof(struct can_frame)), msg-&gt;msg_iov, sizeof(struct can_frame));
++		if ((err = memcpy_fromiovec(skb_put(skb, sizeof(struct can_frame)), msg-&gt;msg_iov, sizeof(struct can_frame))) &lt; 0) {
++			kfree_skb(skb);
++			return err;
++		}
+ 
+ 		DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;,
+ 			  (struct can_frame *)skb-&gt;data);
+@@ -659,7 +677,8 @@
+ 
+ 		if (dev) {
+ 			skb-&gt;dev = dev;
+-			can_send(skb, 1);
++			skb-&gt;sk  = sk;
++			can_send(skb, 1); /* send with loopback */
+ 			dev_put(dev);
+ 		}
+ 
+@@ -715,7 +734,11 @@
+ 				}
+ 
+ 				for (i = 0; i &lt; msg_head.nframes; i++)
+-					memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame));
++					if ((err = memcpy_fromiovec((unsigned char*)&amp;op-&gt;frames[i], msg-&gt;msg_iov, sizeof(struct can_frame))) &lt; 0) {
++						kfree(op-&gt;frames);
++						kfree(op);
++						return err;
++					}
+ 
+ 				/* create array for received can_frames */
+ 				if (!(op-&gt;last_frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
+@@ -870,7 +893,7 @@
+ 			DBG(&quot;RX_SETUP: can_rx_register() for can_id &lt;%03X&gt;. rx_op is (%p)\n&quot;, op-&gt;can_id, op);
+ 
+ 			if (dev) {
+-				can_rx_register(dev, op-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, op, IDENT);
++				can_rx_register(dev, op-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, op, IDENT);
+ 				dev_put(dev);
+ 			}
+ 		}
+@@ -1260,7 +1283,8 @@
+ 
+ 		if (dev) {
+ 			skb-&gt;dev = dev;
+-			can_send(skb, 1);
++			skb-&gt;sk = op-&gt;sk;
++			can_send(skb, 1); /* send with loopback */
+ 			dev_put(dev);
+ 		}
+ 	}
+@@ -1289,6 +1313,9 @@
+ 
+ 	skb = alloc_skb(sizeof(*head) + datalen,
+ 			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
++	if (!skb)
++		return;
++
+ 	memcpy(skb_put(skb, sizeof(*head)), head, sizeof(*head));
+ 	firstframe = (struct can_frame *) skb-&gt;tail; /* can_frames starting here */
+ 
+@@ -1306,8 +1333,10 @@
+ 			firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
+ 	}
+ 	if ((err = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
++		struct bcm_user_data *ud = bcm_sk(sk);
+ 		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
+ 		kfree_skb(skb);
++		ud-&gt;dropped_usr_msgs++; /* don't care about overflows */
+ 	}
+ }
+ 
+@@ -1334,7 +1363,7 @@
+ 			if (p-&gt;sk-&gt;bound_dev_if) {
+ 				struct net_device *dev = dev_get_by_index(p-&gt;sk-&gt;bound_dev_if);
+ 				if (dev) {
+-					can_rx_unregister(dev, p-&gt;can_id, 0xFFFFFFFFU, bcm_rx_handler, p);
++					can_rx_unregister(dev, p-&gt;can_id, BCM_RX_REGMASK, bcm_rx_handler, p);
+ 					dev_put(dev);
+ 				}
+ 			} else
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000102.html">r118 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000104.html">r120 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#103">[ date ]</a>
+              <a href="thread.html#103">[ thread ]</a>
+              <a href="subject.html#103">[ subject ]</a>
+              <a href="author.html#103">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

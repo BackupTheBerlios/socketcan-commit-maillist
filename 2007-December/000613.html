@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r631 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r631%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712170749.lBH7n683004931%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000612.html">
+   <LINK REL="Next"  HREF="000614.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r631 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r631%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712170749.lBH7n683004931%40sheep.berlios.de%3E"
+       TITLE="r631 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 17 08:49:06 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000612.html">r630 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000614.html">r632 - in trunk/kernel/2.4: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#613">[ date ]</a>
+              <a href="thread.html#613">[ thread ]</a>
+              <a href="subject.html#613">[ subject ]</a>
+              <a href="author.html#613">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-17 08:49:05 +0100 (Mon, 17 Dec 2007)
+New Revision: 631
+
+Modified:
+   trunk/kernel/2.4/net/can/proc.c
+Log:
+cosmetics.
+
+
+Modified: trunk/kernel/2.4/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/net/can/proc.c	2007-12-17 07:41:56 UTC (rev 630)
++++ trunk/kernel/2.4/net/can/proc.c	2007-12-17 07:49:05 UTC (rev 631)
+@@ -44,6 +44,7 @@
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/can/core.h&gt;
++
+ #include &quot;af_can.h&quot;
+ #include &quot;compat.h&quot;
+ 
+@@ -203,7 +204,7 @@
+ 	struct receiver *r;
+ 
+ 	for (r = rx_list; r; r = r-&gt;next) {
+-		char *fmt = r-&gt;can_id &amp; CAN_EFF_FLAG ? /* EFF &amp; CAN_ID_ALL */
++		char *fmt = (r-&gt;can_id &amp; CAN_EFF_FLAG)?
+ 			&quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+ 			&quot;   %-5s     %03X    %08x  %08lx  %08lx  %8ld  %s\n&quot;;
+ 
+@@ -297,6 +298,7 @@
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 	}
++
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld current receive list entries (CRCV)\n&quot;,
+ 			can_pstats.rcv_entries);
+@@ -479,7 +481,7 @@
+ 	can_dir = proc_mkdir(&quot;can&quot;, proc_net);
+ 
+ 	if (!can_dir) {
+-		printk(KERN_INFO &quot;can: failed to create /proc/net/can. &quot;
++		printk(KERN_INFO &quot;can: failed to create /proc/net/can . &quot;
+ 		       &quot;CONFIG_PROC_FS missing?\n&quot;);
+ 		return;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000612.html">r630 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000614.html">r632 - in trunk/kernel/2.4: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#613">[ date ]</a>
+              <a href="thread.html#613">[ thread ]</a>
+              <a href="subject.html#613">[ subject ]</a>
+              <a href="author.html#613">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

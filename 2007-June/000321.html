@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r338 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r338%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706111959.l5BJxD5L019107%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000320.html">
+   <LINK REL="Next"  HREF="000322.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r338 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r338%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706111959.l5BJxD5L019107%40sheep.berlios.de%3E"
+       TITLE="r338 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun 11 21:59:13 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000320.html">r337 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000322.html">r339 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#321">[ date ]</a>
+              <a href="thread.html#321">[ thread ]</a>
+              <a href="subject.html#321">[ subject ]</a>
+              <a href="author.html#321">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-11 21:59:11 +0200 (Mon, 11 Jun 2007)
+New Revision: 338
+
+Modified:
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Added error handling in raw_setsockopt().
+
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-06-11 19:28:56 UTC (rev 337)
++++ trunk/kernel/2.6/net/can/raw.c	2007-06-11 19:59:11 UTC (rev 338)
+@@ -374,7 +374,7 @@
+ 	struct can_filter sfilter;         /* single filter */
+ 	can_err_mask_t err_mask = 0;
+ 	int count = 0;
+-	int err;
++	int err = 0;
+ 
+ 	if (level != SOL_CAN_RAW)
+ 		return -EINVAL;
+@@ -425,7 +425,7 @@
+ 		ro-&gt;filter = filter;
+ 		ro-&gt;count  = count;
+ 		if (ro-&gt;bound)
+-			raw_add_filters(ro-&gt;ifindex, sk);
++			err = raw_add_filters(ro-&gt;ifindex, sk);
+ 
+ 		release_sock(sk);
+ 
+@@ -450,9 +450,9 @@
+ 		/* add new error mask */
+ 		ro-&gt;err_mask = err_mask;
+ 		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-			can_rx_register(ro-&gt;ifindex, 0,
+-					ro-&gt;err_mask | CAN_ERR_FLAG,
+-					raw_rcv, sk, IDENT);
++			err = can_rx_register(ro-&gt;ifindex, 0,
++					      ro-&gt;err_mask | CAN_ERR_FLAG,
++					      raw_rcv, sk, IDENT);
+ 		break;
+ 
+ 	case CAN_RAW_LOOPBACK:
+@@ -478,7 +478,7 @@
+ 	default:
+ 		return -ENOPROTOOPT;
+ 	}
+-	return 0;
++	return err;
+ }
+ 
+ static int raw_getsockopt(struct socket *sock, int level, int optname,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000320.html">r337 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000322.html">r339 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#321">[ date ]</a>
+              <a href="thread.html#321">[ thread ]</a>
+              <a href="subject.html#321">[ subject ]</a>
+              <a href="author.html#321">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

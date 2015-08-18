@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r728 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r728%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200805061401.m46E1PDw031193%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000709.html">
+   <LINK REL="Next"  HREF="000711.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r728 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r728%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200805061401.m46E1PDw031193%40sheep.berlios.de%3E"
+       TITLE="r728 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue May  6 16:01:25 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000709.html">r727 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000711.html">r729 - trunk/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#710">[ date ]</a>
+              <a href="thread.html#710">[ thread ]</a>
+              <a href="subject.html#710">[ subject ]</a>
+              <a href="author.html#710">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-06 16:01:24 +0200 (Tue, 06 May 2008)
+New Revision: 728
+
+Modified:
+   trunk/kernel/2.4/net/can/af_can.c
+Log:
+Updated changes in rev727 to Kernel 2.4 path.
+
+
+Modified: trunk/kernel/2.4/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/net/can/af_can.c	2008-05-06 08:12:59 UTC (rev 727)
++++ trunk/kernel/2.4/net/can/af_can.c	2008-05-06 14:01:24 UTC (rev 728)
+@@ -198,6 +198,7 @@
+  */
+ int can_send(struct sk_buff *skb, int loop)
+ {
++	struct sk_buff *newskb = NULL;
+ 	int err;
+ 
+ 	if (skb-&gt;dev-&gt;type != ARPHRD_CAN) {
+@@ -236,8 +237,7 @@
+ 			 * If the interface is not capable to do loopback
+ 			 * itself, we do it here.
+ 			 */
+-			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+-
++			newskb = skb_clone(skb, GFP_ATOMIC);
+ 			if (!newskb) {
+ 				kfree_skb(skb);
+ 				return -ENOMEM;
+@@ -246,7 +246,6 @@
+ 			newskb-&gt;sk = skb-&gt;sk;
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ 			newskb-&gt;pkt_type = PACKET_BROADCAST;
+-			netif_rx(newskb);
+ 		}
+ 	} else {
+ 		/* indication for the CAN driver: no loopback required */
+@@ -258,11 +257,20 @@
+ 	if (err &gt; 0)
+ 		err = net_xmit_errno(err);
+ 
++	if (err) {
++		if (newskb)
++			kfree_skb(newskb);
++		return err;
++	}
++
++	if (newskb)
++		netif_rx(newskb);
++
+ 	/* update statistics */
+ 	can_stats.tx_frames++;
+ 	can_stats.tx_frames_delta++;
+ 
+-	return err;
++	return 0;
+ }
+ EXPORT_SYMBOL(can_send);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000709.html">r727 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000711.html">r729 - trunk/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#710">[ date ]</a>
+              <a href="thread.html#710">[ thread ]</a>
+              <a href="subject.html#710">[ subject ]</a>
+              <a href="author.html#710">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

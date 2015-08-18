@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r520 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r520%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200710042103.l94L3oje013520%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000501.html">
+   <LINK REL="Next"  HREF="000503.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r520 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r520%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200710042103.l94L3oje013520%40sheep.berlios.de%3E"
+       TITLE="r520 - in trunk/kernel/2.6: include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Oct  4 23:03:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000501.html">r519 - trunk/kernel/2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000503.html">r521 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#502">[ date ]</a>
+              <a href="thread.html#502">[ thread ]</a>
+              <a href="subject.html#502">[ subject ]</a>
+              <a href="author.html#502">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-10-04 23:03:46 +0200 (Thu, 04 Oct 2007)
+New Revision: 520
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Remove unnecessary includes of poll.h.
+Rename debug to {can,raw,bcm}_debug respectively.
+Change DBG() macros to work with {can,raw,bcm}_debug instead of debug.
+Use module_param_named() instead of module_param().
+Change prefix for can-core debug messages from &quot;can-core&quot; to &quot;can&quot;.
+Remove definitions of IDENT macro, use that value directly.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-10-04 17:32:31 UTC (rev 519)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-10-04 21:03:46 UTC (rev 520)
+@@ -72,10 +72,11 @@
+ #ifdef CONFIG_CAN_DEBUG_CORE
+ extern void can_debug_skb(struct sk_buff *skb);
+ extern void can_debug_cframe(const char *msg, struct can_frame *cframe);
+-#define DBG(fmt, args...)  (debug &amp; 1 ? printk(KERN_DEBUG &quot;can-&quot; IDENT \
+-					&quot; %s: &quot; fmt, __func__, ##args) : 0)
+-#define DBG_FRAME(fmt, cf) (debug &amp; 2 ? can_debug_cframe(fmt, cf) : 0)
+-#define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
++#define DBG(fmt, args...)  (DBG_VAR &amp; 1 ? printk( \
++					KERN_DEBUG DBG_PREFIX &quot; %s: &quot; fmt, \
++					__func__, ##args) : 0)
++#define DBG_FRAME(fmt, cf) (DBG_VAR &amp; 2 ? can_debug_cframe(fmt, cf) : 0)
++#define DBG_SKB(skb)       (DBG_VAR &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+ #define DBG(fmt, args...)
+ #define DBG_FRAME(fmt, cf)
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-10-04 17:32:31 UTC (rev 519)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-10-04 21:03:46 UTC (rev 520)
+@@ -73,7 +73,6 @@
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define IDENT &quot;core&quot;
+ static __initdata const char banner[] = KERN_INFO
+ 	&quot;can: controller area network core (&quot; CAN_VERSION_STRING &quot;)\n&quot;;
+ 
+@@ -89,8 +88,10 @@
+ MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug __read_mostly;
+-module_param(debug, int, S_IRUGO);
++#define DBG_PREFIX &quot;can&quot;
++#define DBG_VAR    can_debug
++static int can_debug __read_mostly;
++module_param_named(debug, can_debug, int, S_IRUGO);
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+@@ -714,7 +715,7 @@
+ 	DBG(&quot;received skbuff on device %s, ptype %04x\n&quot;,
+ 	    dev-&gt;name, ntohs(pt-&gt;type));
+ 	DBG_SKB(skb);
+-	DBG_FRAME(&quot;af_can: can_rcv: received CAN frame&quot;,
++	DBG_FRAME(&quot;can: can_rcv: received CAN frame&quot;,
+ 		  (struct can_frame *)skb-&gt;data);
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-10-04 17:32:31 UTC (rev 519)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-10-04 21:03:46 UTC (rev 520)
+@@ -47,7 +47,6 @@
+ #include &lt;linux/list.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ #include &lt;linux/uio.h&gt;
+-#include &lt;linux/poll.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/socket.h&gt;
+@@ -73,7 +72,6 @@
+ #define REGMASK(id) ((id &amp; CAN_RTR_FLAG) | ((id &amp; CAN_EFF_FLAG) ? \
+ 			(CAN_EFF_MASK | CAN_EFF_FLAG) : CAN_SFF_MASK))
+ 
+-#define IDENT &quot;bcm&quot;
+ #define CAN_BCM_VERSION CAN_VERSION
+ static __initdata const char banner[] = KERN_INFO
+ 	&quot;can: broadcast manager protocol (rev &quot; CAN_BCM_VERSION &quot;)\n&quot;;
+@@ -83,8 +81,10 @@
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug;
+-module_param(debug, int, S_IRUGO);
++#define DBG_PREFIX &quot;can-bcm&quot;
++#define DBG_VAR    bcm_debug
++static int bcm_debug;
++module_param_named(debug, bcm_debug, int, S_IRUGO);
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+@@ -1349,7 +1349,7 @@
+ 				err = can_rx_register(dev, op-&gt;can_id,
+ 						      REGMASK(op-&gt;can_id),
+ 						      bcm_rx_handler, op,
+-						      IDENT);
++						      &quot;bcm&quot;);
+ 
+ 				op-&gt;rx_reg_dev = dev;
+ 				dev_put(dev);
+@@ -1358,7 +1358,7 @@
+ 		} else
+ 			err = can_rx_register(NULL, op-&gt;can_id,
+ 					      REGMASK(op-&gt;can_id),
+-					      bcm_rx_handler, op, IDENT);
++					      bcm_rx_handler, op, &quot;bcm&quot;);
+ 		if (err) {
+ 			/* this bcm rx op is broken -&gt; remove it */
+ 			list_del(&amp;op-&gt;list);
+@@ -1853,9 +1853,9 @@
+ 
+ 	/* create /proc/net/can-bcm directory */
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+-	proc_dir = proc_mkdir(&quot;can-&quot;IDENT, init_net.proc_net);
++	proc_dir = proc_mkdir(&quot;can-bcm&quot;, init_net.proc_net);
+ #else
+-	proc_dir = proc_mkdir(&quot;can-&quot;IDENT, proc_net);
++	proc_dir = proc_mkdir(&quot;can-bcm&quot;, proc_net);
+ #endif
+ 
+ 	if (proc_dir)
+@@ -1870,9 +1870,9 @@
+ 
+ 	if (proc_dir)
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+-		proc_net_remove(&amp;init_net, &quot;can-&quot;IDENT);
++		proc_net_remove(&amp;init_net, &quot;can-bcm&quot;);
+ #else
+-		proc_net_remove(&quot;can-&quot;IDENT);
++		proc_net_remove(&quot;can-bcm&quot;);
+ #endif
+ }
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-10-04 17:32:31 UTC (rev 519)
++++ trunk/kernel/2.6/net/can/raw.c	2007-10-04 21:03:46 UTC (rev 520)
+@@ -45,7 +45,6 @@
+ #include &lt;linux/version.h&gt;
+ #include &lt;linux/init.h&gt;
+ #include &lt;linux/uio.h&gt;
+-#include &lt;linux/poll.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/socket.h&gt;
+@@ -62,7 +61,6 @@
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define IDENT &quot;raw&quot;
+ #define CAN_RAW_VERSION CAN_VERSION
+ static __initdata const char banner[] =
+ 	KERN_INFO &quot;can: raw protocol (rev &quot; CAN_RAW_VERSION &quot;)\n&quot;;
+@@ -72,8 +70,10 @@
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug;
+-module_param(debug, int, S_IRUGO);
++#define DBG_PREFIX &quot;can-raw&quot;
++#define DBG_VAR    raw_debug
++static int raw_debug;
++module_param_named(debug, raw_debug, int, S_IRUGO);
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+@@ -169,7 +169,7 @@
+ 
+ 		err = can_rx_register(dev, filter[i].can_id,
+ 				      filter[i].can_mask,
+-				      raw_rcv, sk, IDENT);
++				      raw_rcv, sk, &quot;raw&quot;);
+ 
+ 		if (err) {
+ 			/* clean up successfully registered filters */
+@@ -191,7 +191,7 @@
+ 
+ 	if (err_mask)
+ 		err = can_rx_register(dev, 0, err_mask | CAN_ERR_FLAG,
+-				      raw_rcv, sk, IDENT);
++				      raw_rcv, sk, &quot;raw&quot;);
+ 
+ 	return err;
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000501.html">r519 - trunk/kernel/2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000503.html">r521 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#502">[ date ]</a>
+              <a href="thread.html#502">[ thread ]</a>
+              <a href="subject.html#502">[ subject ]</a>
+              <a href="author.html#502">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

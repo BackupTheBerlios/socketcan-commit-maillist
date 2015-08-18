@@ -1,0 +1,312 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r203 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r203%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20hal%20i82527&In-Reply-To=%3C200704101329.l3ADTfmY006363%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000187.html">
+   <LINK REL="Next"  HREF="000189.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r203 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r203%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20hal%20i82527&In-Reply-To=%3C200704101329.l3ADTfmY006363%40sheep.berlios.de%3E"
+       TITLE="r203 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 10 15:29:41 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000187.html">r202 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+        <LI>Next message: <A HREF="000189.html">r204 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#188">[ date ]</a>
+              <a href="thread.html#188">[ thread ]</a>
+              <a href="subject.html#188">[ subject ]</a>
+              <a href="author.html#188">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-10 15:29:36 +0200 (Tue, 10 Apr 2007)
+New Revision: 203
+
+Modified:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomem.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h
+Log:
+Added command line parameter force_dmc to force the devision of the memory
+clock in the case of critical chip register access.
+Fixed BTR calculation so that speed-values can be used.
+Changed the default speed to 500 kBit/s.
+Changed some defaults in iomem.c (for Eurotech ser1274 board)
+Fixed word to byte access in iomem.c
+Cosmetics.
+
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomem.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomem.c	2007-04-10 06:47:02 UTC (rev 202)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomem.c	2007-04-10 13:29:36 UTC (rev 203)
+@@ -65,11 +65,12 @@
+ {
+ 	extern unsigned long base[];
+ 	extern unsigned int  irq[];
+-	extern unsigned int  speed[];
+ 
+-	base[0]		= 0xda000UL;
+-	irq[0]		= 9;
+-	speed[0]	= 500;
++	base[0]		= 0xd8000UL;
++	irq[0]		= 5;
++
++	base[1]		= 0xd8100UL;
++	irq[1]		= 15;
+ }
+ 
+ /* request controller register access space */
+@@ -121,7 +122,7 @@
+ 	static u8 val;
+ 	void __iomem *addr = (void __iomem *)base + reg;
+ 
+-	val = (u8)readw(addr);
++	val = (u8)readb(addr);
+ 	rmb();
+ 
+         return val;
+@@ -132,7 +133,7 @@
+ 
+ 	void __iomem *addr = (void __iomem *)base + reg;
+ 
+-	writew(val, addr);
++	writeb(val, addr);
+ 	wmb();
+ }
+ 
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-04-10 06:47:02 UTC (rev 202)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-04-10 13:29:36 UTC (rev 203)
+@@ -85,8 +85,8 @@
+ char drv_name[DRV_NAME_LEN] = &quot;undefined&quot;;
+ 
+ /* driver and version information */
+-static const char *drv_version	= &quot;0.0.1&quot;;
+-static const char *drv_reldate	= &quot;2007-03-27&quot;;
++static const char *drv_version	= &quot;0.0.2&quot;;
++static const char *drv_reldate	= &quot;2007-05-10&quot;;
+ 
+ /* array of all can chips */
+ struct net_device *can_dev[MAXDEV];
+@@ -96,13 +96,14 @@
+ unsigned long rbase[MAXDEV]	= { 0 }; /* (remapped) device address */
+ unsigned int  irq[MAXDEV]	= { 0 };
+ 
+-unsigned int speed[MAXDEV]	= { 0 };
++unsigned int speed[MAXDEV]	= { DEFAULT_SPEED, DEFAULT_SPEED };
+ unsigned int btr[MAXDEV]	= { 0 };
+ unsigned int bcr[MAXDEV]	= { 0 }; /* bus configuration register */
+ unsigned int cdv[MAXDEV]	= { 0 }; /* CLKOUT clock divider */
+ 
+ static int rx_probe[MAXDEV]	= { 0 };
+ static int clk			= DEFAULT_HW_CLK;
++static int force_dmc		= DEFAULT_FORCE_DMC;
+ static int debug		= 0;
+ static int restart_ms		= 100;
+ 
+@@ -126,6 +127,7 @@
+ module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
+ 
+ module_param(clk, int, 0);
++module_param(force_dmc, int, 0);
+ module_param(debug, int, 0);
+ module_param(restart_ms, int, 0);
+ 
+@@ -201,6 +203,10 @@
+ 	else if (clk &gt; 8000000) /* 8MHz &lt; clk &lt;= 10MHz */
+ 		dmc = iCPU_DMC; /* devide memory clock */
+ 
++	/* devide memory clock even if it's not needed (regarding the spec) */
++	if (force_dmc)
++		dmc = iCPU_DMC;
++
+ 	for (i = 0; base[i]; i++) {
+ 		int clkout;
+ 		u8 clockdiv;
+@@ -221,6 +227,17 @@
+ 		// Enable configuration, put chip in bus-off, disable ints
+ 		CANout(rbase[i], controlReg, iCTL_CCE | iCTL_INI);
+ 
++		// Configure cpu interface / CLKOUT disable
++		CANout(rbase[i], cpuInterfaceReg,(dsc | dmc));
++
++		if (!i82527_probe_chip(rbase[i])) {
++			printk(KERN_ERR &quot;%s: probably missing controller&quot;
++			       &quot; hardware\n&quot;, drv_name);
++			hal_release_region(i, I82527_IO_SIZE);
++			i82527_exit_module();
++			return -ENODEV;
++		}
++
+ 		/* CLKOUT devider and slew rate calculation */
+ 		if ((cdv[i] &lt; 0) || (cdv[i] &gt; 14)) {
+ 			printk(KERN_WARNING &quot;%s: adjusted cdv[%d]=%d to 0.\n&quot;,
+@@ -241,19 +258,11 @@
+ 		// Set CLKOUT devider and slew rates
+ 		CANout(rbase[i], clkOutReg, clockdiv);
+ 
+-		// Configure cpu interface
++		// Configure cpu interface / CLKOUT enable
+ 		CANout(rbase[i], cpuInterfaceReg,(dsc | dmc | iCPU_CEN));
+ 
+ 		CANout(rbase[i], busConfigReg, bcr[i]);
+ 
+-		if (!i82527_probe_chip(rbase[i])) {
+-			printk(KERN_ERR &quot;%s: probably missing controller&quot;
+-			       &quot; hardware\n&quot;, drv_name);
+-			hal_release_region(i, I82527_IO_SIZE);
+-			i82527_exit_module();
+-			return -ENODEV;
+-		}
+-
+ 		dev = can_create_netdev(i, I82527_IO_SIZE);
+ 
+ 		if (dev != NULL) {
+@@ -336,8 +345,6 @@
+ 	if (dsc) /* devide system clock */
+ 		clock &gt;&gt;= 1; /* calculate BTR with this value */
+ 
+-	clock &gt;&gt;= 1; /* ???? */
+-
+ 	for (tseg = (0 + 0 + 2) * 2;
+ 	     tseg &lt;= (MAX_TSEG2 + MAX_TSEG1 + 2) * 2 + 1;
+ 	     tseg++) {
+@@ -397,7 +404,8 @@
+  * If the highest bit of mask or code is set OR the value is bigger than
+  * 0x7FF (11 bit), an extended mask is assumed.
+  */
+-int i82527_set_mask(struct net_device *dev, unsigned int code, unsigned int mask)
++int i82527_set_mask(struct net_device *dev,
++		    unsigned int code, unsigned int mask)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+ 	unsigned long base = dev-&gt;base_addr;
+@@ -579,7 +587,7 @@
+ 	CANout(base, globalMaskExtendedReg[2], 0);
+ 	CANout(base, globalMaskExtendedReg[3], 0);
+ 	// Set message 15 mask, we are not using it, only standard mask is used
+-	// We set all bits to one because this mask is anded with the global mask.
++	// We set all bits to one because this mask is anded w. the global mask
+ 	CANout(base, message15MaskReg[0], 0xFF);
+ 	CANout(base, message15MaskReg[1], 0xFF);
+ 	CANout(base, message15MaskReg[2], 0xFF);
+@@ -686,7 +694,8 @@
+ 	int	i;
+ 
+ 	if ((CANin(base, message1Reg.msgCtrl1Reg) &amp; TXRQ_UNC) == TXRQ_SET) {
+-		printk(KERN_ERR &quot;%s: %s: TX register is occupied!\n&quot;, dev-&gt;name, drv_name);
++		printk(KERN_ERR &quot;%s: %s: TX register is occupied!\n&quot;,
++		       dev-&gt;name, drv_name);
+ 		return 0;
+ 	}
+ 
+@@ -731,7 +740,8 @@
+ 	CANout(base, message1Reg.msgCtrl1Reg,
+ 	       (RMPD_RES | TXRQ_SET | CPUU_RES | NEWD_UNC));
+ 
+-	// HM: We had some cases of repeated IRQs, so make sure the INT is acknowledged
++	// HM: We had some cases of repeated IRQs
++	// so make sure the INT is acknowledged
+ 	// I know it's already further up, but doing again fixed the issue
+ 	CANout(base, message1Reg.msgCtrl0Reg,
+ 	       (MVAL_UNC | TXIE_UNC | RXIE_UNC | INTPD_RES));
+@@ -989,7 +999,9 @@
+ 				priv-&gt;can_stats.bus_error++;
+ 
+ 				// Clear init flag and reenable interrupts
+-				flags = CANin(base, controlReg) | ( iCTL_IE | iCTL_EIE );
++				flags = CANin(base, controlReg) |
++					( iCTL_IE | iCTL_EIE );
++
+ 				flags &amp;= ~iCTL_INI; // Reset init flag
+ 				CANout(base, controlReg, flags);
+ 			}
+@@ -1005,7 +1017,8 @@
+ 					priv-&gt;can_stats.data_overrun++;
+ 
+ 				can_rx(dev);
+-				ctl1reg = CANin(base, message15Reg.msgCtrl1Reg);
++				ctl1reg = CANin(base,
++						message15Reg.msgCtrl1Reg);
+ 			}
+ 
+ 			if (priv-&gt;state == STATE_PROBE) {
+@@ -1022,7 +1035,8 @@
+ 			// Nothing more to send, switch off interrupts
+ 			CANout(base, message1Reg.msgCtrl0Reg,
+ 			       (MVAL_RES | TXIE_RES | RXIE_RES | INTPD_RES));
+-			// We had some cases of repeated IRQ, so make sure the INT is acknowledged
++			// We had some cases of repeated IRQ
++			// so make sure the INT is acknowledged
+ 			CANout(base, message1Reg.msgCtrl0Reg,
+ 			       (MVAL_UNC | TXIE_UNC | RXIE_UNC | INTPD_RES));
+ 
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-04-10 06:47:02 UTC (rev 202)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-04-10 13:29:36 UTC (rev 203)
+@@ -62,7 +62,8 @@
+ #define PROCBASE          &quot;driver&quot; /* /proc/ ... */
+ 
+ #define DEFAULT_HW_CLK	16000000
+-#define DEFAULT_SPEED	100 /* kBit/s */
++#define DEFAULT_SPEED	500 /* kBit/s */
++#define DEFAULT_FORCE_DMC 0 /* for critical register access, e.g. ser1274 */
+ 
+ #define CAN_NETDEV_NAME	&quot;can%d&quot;
+ 
+@@ -73,7 +74,7 @@
+ /* bus timing */
+ #define MAX_TSEG1	15
+ #define MAX_TSEG2	 7
+-#define SAMPLE_POINT	75
++#define SAMPLE_POINT	62
+ #define JUMPWIDTH     0x40
+ 
+ typedef struct canmessage {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000187.html">r202 - branches/ha/candrv/kernel/2.6/drivers/net/can/i82527
+</A></li>
+	<LI>Next message: <A HREF="000189.html">r204 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#188">[ date ]</a>
+              <a href="thread.html#188">[ thread ]</a>
+              <a href="subject.html#188">[ subject ]</a>
+              <a href="author.html#188">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

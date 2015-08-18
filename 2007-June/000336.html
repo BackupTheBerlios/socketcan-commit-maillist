@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r353 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r353%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706140607.l5E67WLX004394%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000335.html">
+   <LINK REL="Next"  HREF="000337.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r353 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r353%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706140607.l5E67WLX004394%40sheep.berlios.de%3E"
+       TITLE="r353 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 14 08:07:32 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000335.html">r352 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000337.html">r354 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-14 08:07:30 +0200 (Thu, 14 Jun 2007)
+New Revision: 353
+
+Modified:
+   branches/ha/locktest/net/can/af_can.c
+Log:
+moved check for interface 'down' before checking loopback.
+
+
+Modified: branches/ha/locktest/net/can/af_can.c
+===================================================================
+--- branches/ha/locktest/net/can/af_can.c	2007-06-13 13:03:36 UTC (rev 352)
++++ branches/ha/locktest/net/can/af_can.c	2007-06-14 06:07:30 UTC (rev 353)
+@@ -254,6 +254,9 @@
+ 		return -EPERM;
+ 	}
+ 
++	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
++		return -ENETDOWN;
++
+ 	skb-&gt;protocol = htons(ETH_P_CAN);
+ 
+ 	if (loop) {
+@@ -287,9 +290,6 @@
+ 		skb-&gt;pkt_type = PACKET_HOST;
+ 	}
+ 
+-	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
+-		return -ENETDOWN;
+-
+ 	/* send to netdevice */
+ 	err = dev_queue_xmit(skb);
+ 	if (err &gt; 0)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000335.html">r352 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000337.html">r354 - trunk/test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,446 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r653 - in branches/cannetdriver26: drivers/net/can/sja1000	include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r653%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/sja1000%0A%09include/linux/can%20net/can&In-Reply-To=%3C200801091135.m09BZsSF029500%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000634.html">
+   <LINK REL="Next"  HREF="000636.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r653 - in branches/cannetdriver26: drivers/net/can/sja1000	include/linux/can net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r653%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/sja1000%0A%09include/linux/can%20net/can&In-Reply-To=%3C200801091135.m09BZsSF029500%40sheep.berlios.de%3E"
+       TITLE="r653 - in branches/cannetdriver26: drivers/net/can/sja1000	include/linux/can net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:35:54 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000634.html">r652 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000636.html">r654 - in branches/cannetdriver26/drivers/net/can: . sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#635">[ date ]</a>
+              <a href="thread.html#635">[ thread ]</a>
+              <a href="subject.html#635">[ subject ]</a>
+              <a href="author.html#635">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:35:49 +0100 (Wed, 09 Jan 2008)
+New Revision: 653
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+   branches/cannetdriver26/include/linux/can/dev.h
+   branches/cannetdriver26/net/can/dev.c
+Log:
+Add common local skb echo interface
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:35:24 UTC (rev 652)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-09 11:35:49 UTC (rev 653)
+@@ -89,7 +89,7 @@
+ #endif
+ 
+ /* driver and version information */
+-static const char *drv_name = &quot;SJA1000DEV&quot;;
++static const char *drv_name = &quot;SJA1000&quot;;
+ static const char *drv_version = &quot;0.2.0&quot;;
+ static const char *drv_reldate = &quot;2007-10-25&quot;;
+ 
+@@ -149,21 +149,7 @@
+ MODULE_PARM_DESC(echo, &quot;Echo sent frames. (default 1)&quot;);
+ MODULE_PARM_DESC(restart_ms, &quot;Restart time after bus-off in ms(default 0)&quot;);
+ 
+-/*
+- * CAN network devices *should* support a local echo functionality
+- * (see Documentation/networking/can.txt). To test the handling of CAN
+- * interfaces that do not support the local echo both driver types are
+- * implemented inside this sja1000 driver. In the case that the driver does
+- * not support the echo the IFF_ECHO remains clear in dev-&gt;flags.
+- * This causes the PF_CAN core to perform the echo as a fallback solution.
+- */
+ 
+-/* function declarations */
+-
+-static void chipset_init(struct net_device *dev, int wake);
+-static void chipset_init_trx(struct net_device *dev);
+-int set_reset_mode(struct net_device *dev);
+-
+ static int sja1000_probe_chip(struct net_device *dev)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+@@ -242,6 +228,25 @@
+ 
+ }
+ 
++static void sja1000_start(struct net_device *dev)
++{
++	struct sja1000_priv *priv = netdev_priv(dev);
++
++	iDBG(KERN_INFO &quot;%s: %s()\n&quot;, dev-&gt;name, __FUNCTION__);
++
++	/* leave reset mode */
++	if (priv-&gt;can.state != CAN_STATE_STOPPED)
++		set_reset_mode(dev);
++
++	/* Clear error counters and error code capture */
++	priv-&gt;write_reg(dev, REG_TXERR, 0x0);
++	priv-&gt;write_reg(dev, REG_RXERR, 0x0);
++	priv-&gt;read_reg(dev, REG_ECC);
++
++	/* leave reset mode */
++	set_normal_mode(dev);
++}
++
+ static int sja1000_set_mode(struct net_device *dev, can_mode_t mode)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+@@ -251,7 +256,10 @@
+ 		DBG(&quot;%s: CAN_MODE_START requested\n&quot;, __FUNCTION__);
+ 		if (!priv-&gt;open_time)
+ 			return -EINVAL;
+-		chipset_init_trx(dev);
++
++		sja1000_start(dev);
++		if (netif_queue_stopped(dev))
++			netif_wake_queue(dev);
+ 		break;
+ 
+ 	default:
+@@ -340,7 +348,7 @@
+  *   - enable interrupts
+  *   - start operating mode
+  */
+-static void chipset_init_regs(struct net_device *dev)
++static void chipset_init(struct net_device *dev)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+ 	struct can_bittime bt;
+@@ -372,40 +380,6 @@
+ 	priv-&gt;write_reg(dev, REG_OCR, priv-&gt;ocr | OCR_MODE_NORMAL);
+ }
+ 
+-static void chipset_init(struct net_device *dev, int wake)
+-{
+-	struct sja1000_priv *priv = netdev_priv(dev);
+-
+-	chipset_init_trx(dev);
+-
+-	if ((wake) &amp;&amp; netif_queue_stopped(dev)) {
+-		if (priv-&gt;echo_skb) {	/* pending echo? */
+-			kfree_skb(priv-&gt;echo_skb);
+-			priv-&gt;echo_skb = NULL;
+-		}
+-		netif_wake_queue(dev);
+-	}
+-}
+-
+-static void chipset_init_trx(struct net_device *dev)
+-{
+-	struct sja1000_priv *priv = netdev_priv(dev);
+-
+-	iDBG(KERN_INFO &quot;%s: %s()\n&quot;, dev-&gt;name, __FUNCTION__);
+-
+-	/* leave reset mode */
+-	if (priv-&gt;can.state != CAN_STATE_STOPPED)
+-		set_reset_mode(dev);
+-
+-	/* Clear error counters and error code capture */
+-	priv-&gt;write_reg(dev, REG_TXERR, 0x0);
+-	priv-&gt;write_reg(dev, REG_RXERR, 0x0);
+-	priv-&gt;read_reg(dev, REG_ECC);
+-
+-	/* leave reset mode */
+-	set_normal_mode(dev);
+-}
+-
+ /*
+  * transmit a CAN message
+  * message layout in the sk_buff should be like this:
+@@ -421,7 +395,6 @@
+ 	uint8_t dlc;
+ 	canid_t id;
+ 	uint8_t dreg;
+-	int loop;
+ 	int i;
+ 
+ 	netif_stop_queue(dev);
+@@ -457,50 +430,7 @@
+ 
+ 	dev-&gt;trans_start = jiffies;
+ 
+-	/* set flag whether this packet has to be looped back */
+-	loop = skb-&gt;pkt_type == PACKET_LOOPBACK;
+-
+-	if (!echo || !loop) {
+-		kfree_skb(skb);
+-		return 0;
+-	}
+-
+-	if (!priv-&gt;echo_skb) {
+-		struct sock *srcsk = skb-&gt;sk;
+-
+-		if (atomic_read(&amp;skb-&gt;users) != 1) {
+-			struct sk_buff *old_skb = skb;
+-
+-			skb = skb_clone(old_skb, GFP_ATOMIC);
+-			DBG(KERN_INFO &quot;%s: %s: freeing old skbuff %p, &quot;
+-			    &quot;using new skbuff %p\n&quot;,
+-			    dev-&gt;name, __FUNCTION__, old_skb, skb);
+-			kfree_skb(old_skb);
+-			if (!skb) {
+-				return 0;
+-			}
+-		} else
+-			skb_orphan(skb);
+-
+-		skb-&gt;sk = srcsk;
+-
+-		/* make settings for echo to reduce code in irq context */
+-		skb-&gt;protocol = htons(ETH_P_CAN);
+-		skb-&gt;pkt_type = PACKET_BROADCAST;
+-		skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+-		skb-&gt;dev = dev;
+-
+-		/* save this skb for tx interrupt echo handling */
+-		priv-&gt;echo_skb = skb;
+-
+-	} else {
+-		/* locking problem with netif_stop_queue() ?? */
+-		printk(KERN_ERR &quot;%s: %s: occupied echo_skb!\n&quot;,
+-		       dev-&gt;name, __FUNCTION__);
+-		kfree_skb(skb);
+-	}
+-
+-	return 0;
++	return can_put_echo_skb(skb, dev, 0);
+ }
+ 
+ static void sja1000_rx(struct net_device *dev)
+@@ -738,23 +668,16 @@
+ 		if (isrc &amp; IRQ_TI) {
+ 			/* transmission complete interrupt */
+ 			stats-&gt;tx_packets++;
+-
+-			if (echo &amp;&amp; priv-&gt;echo_skb) {
+-				netif_rx(priv-&gt;echo_skb);
+-				priv-&gt;echo_skb = NULL;
+-			}
+-
++			can_get_echo_skb(dev, 0);
+ 			netif_wake_queue(dev);
+ 		}
+ 		if (isrc &amp; IRQ_RI) {
+ 			/* receive interrupt */
+-
+ 			while (status &amp; SR_RBS) {
+ 				sja1000_rx(dev);
+ 				status = priv-&gt;read_reg(dev, REG_SR);
+ 			}
+ 		}
+-
+ 		if (isrc &amp; (IRQ_DOI | IRQ_EI | IRQ_BEI | IRQ_EPI | IRQ_ALI)) {
+ 			/* error interrupt */
+ 			if (sja1000_err(dev, isrc, status, n))
+@@ -796,8 +719,8 @@
+ 	memset(&amp;priv-&gt;can.net_stats, 0, sizeof(priv-&gt;can.net_stats));
+ #endif
+ 
+-	/* init chip */
+-	chipset_init(dev, 0);
++	/* init and start chi */
++	sja1000_start(dev);
+ 	priv-&gt;open_time = jiffies;
+ 
+ 	netif_start_queue(dev);
+@@ -874,7 +797,7 @@
+ 	}
+ 
+ 	set_reset_mode(dev);
+-	chipset_init_regs(dev);
++	chipset_init(dev);
+ 	return 0;
+ }
+ EXPORT_SYMBOL(register_sja1000dev);
+
+Modified: branches/cannetdriver26/include/linux/can/dev.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:35:24 UTC (rev 652)
++++ branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:35:49 UTC (rev 653)
+@@ -17,6 +17,8 @@
+ #include &lt;linux/can/error.h&gt;
+ #include &lt;linux/can/ioctl.h&gt;
+ 
++#define CAN_ECHO_SKB_MAX  4
++
+ struct can_priv {
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ 	struct net_device_stats net_stats;
+@@ -54,6 +56,9 @@
+ 	int restart_ms;
+ 	struct timer_list timer;
+ 
++	int echo;
++	struct sk_buff *echo_skb[CAN_ECHO_SKB_MAX];
++
+ 	int (*do_set_bittime)(struct net_device * dev,
+ 			      struct can_bittime * br);
+ 	int (*do_get_state)(struct net_device * dev, u32* state);
+@@ -78,4 +83,9 @@
+ 
+ void can_close_cleanup(struct net_device *dev);
+ 
++int can_put_echo_skb(struct sk_buff *skb, struct net_device *dev, int idx);
++void can_get_echo_skb(struct net_device *dev, int idx);
++
++void can_close_cleanup(struct net_device *dev);
++
+ #endif /* CAN_DEVICE_H */
+
+Modified: branches/cannetdriver26/net/can/dev.c
+===================================================================
+--- branches/cannetdriver26/net/can/dev.c	2008-01-09 11:35:24 UTC (rev 652)
++++ branches/cannetdriver26/net/can/dev.c	2008-01-09 11:35:49 UTC (rev 653)
+@@ -221,6 +221,87 @@
+ EXPORT_SYMBOL(free_candev);
+ 
+ /*
++ * Local echo of CAN messages
++ *
++ * CAN network devices *should* support a local echo functionality
++ * (see Documentation/networking/can.txt). To test the handling of CAN
++ * interfaces that do not support the local echo both driver types are
++ * implemented. In the case that the driver does not support the echo
++ * the IFF_ECHO remains clear in dev-&gt;flags. This causes the PF_CAN core
++ * to perform the echo as a fallback solution.
++ */
++
++void can_flush_echo_skb(struct net_device *dev)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	int i;
++
++	for (i = 0; i &gt; CAN_ECHO_SKB_MAX; i++) {
++		if (priv-&gt;echo_skb[i]) {
++			kfree_skb(priv-&gt;echo_skb[i]);
++			priv-&gt;echo_skb[i] = NULL;
++		}
++	}
++}
++
++int can_put_echo_skb(struct sk_buff *skb, struct net_device *dev, int idx)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	/* set flag whether this packet has to be looped back */
++	if (!priv-&gt;echo || skb-&gt;pkt_type != PACKET_LOOPBACK) {
++		kfree_skb(skb);
++		return 0;
++	}
++
++	if (!priv-&gt;echo_skb[idx]) {
++		struct sock *srcsk = skb-&gt;sk;
++
++		if (atomic_read(&amp;skb-&gt;users) != 1) {
++			struct sk_buff *old_skb = skb;
++
++			skb = skb_clone(old_skb, GFP_ATOMIC);
++			kfree_skb(old_skb);
++			if (!skb) {
++				return 0;
++			}
++		} else
++			skb_orphan(skb);
++
++		skb-&gt;sk = srcsk;
++
++		/* make settings for echo to reduce code in irq context */
++		skb-&gt;protocol = htons(ETH_P_CAN);
++		skb-&gt;pkt_type = PACKET_BROADCAST;
++		skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++		skb-&gt;dev = dev;
++
++		/* save this skb for tx interrupt echo handling */
++		priv-&gt;echo_skb[idx] = skb;
++
++	} else {
++		/* locking problem with netif_stop_queue() ?? */
++		printk(KERN_ERR &quot;%s: %s: occupied echo_skb!\n&quot;,
++		       dev-&gt;name, __FUNCTION__);
++		kfree_skb(skb);
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL(can_put_echo_skb);
++
++void can_get_echo_skb(struct net_device *dev, int idx)
++{
++	struct can_priv *priv = netdev_priv(dev);
++
++	if (priv-&gt;echo &amp;&amp; priv-&gt;echo_skb[idx]) {
++		netif_rx(priv-&gt;echo_skb[idx]);
++		priv-&gt;echo_skb[idx] = NULL;
++	}
++}
++EXPORT_SYMBOL(can_get_echo_skb);
++
++/*
+  * CAN bus-off handling
+  * FIXME: we need some synchronization
+  */
+@@ -238,6 +319,8 @@
+ 		priv-&gt;timer.expires = 0; /* mark inactive timer */
+ 	}
+ 
++	can_flush_echo_skb(dev);
++
+ 	if ((err = priv-&gt;do_set_mode(dev, CAN_MODE_START)))
+ 		return err;
+ 
+@@ -300,6 +383,8 @@
+ 		del_timer(&amp;priv-&gt;timer);
+ 		priv-&gt;timer.expires = 0;
+ 	}
++
++	can_flush_echo_skb(dev);
+ }
+ EXPORT_SYMBOL(can_close_cleanup);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000634.html">r652 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000636.html">r654 - in branches/cannetdriver26/drivers/net/can: . sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#635">[ date ]</a>
+              <a href="thread.html#635">[ thread ]</a>
+              <a href="subject.html#635">[ subject ]</a>
+              <a href="author.html#635">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

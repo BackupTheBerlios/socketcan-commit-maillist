@@ -1,0 +1,2435 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r391 - in trunk/patch-series: . 2.6.22-rc5-git5
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r391%20-%20in%20trunk/patch-series%3A%20.%202.6.22-rc5-git5&In-Reply-To=%3C200706220339.l5M3dbJF001570%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000373.html">
+   <LINK REL="Next"  HREF="000375.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r391 - in trunk/patch-series: . 2.6.22-rc5-git5</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r391%20-%20in%20trunk/patch-series%3A%20.%202.6.22-rc5-git5&In-Reply-To=%3C200706220339.l5M3dbJF001570%40sheep.berlios.de%3E"
+       TITLE="r391 - in trunk/patch-series: . 2.6.22-rc5-git5">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 22 05:39:37 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000373.html">r390 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000375.html">r392 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#374">[ date ]</a>
+              <a href="thread.html#374">[ thread ]</a>
+              <a href="subject.html#374">[ subject ]</a>
+              <a href="author.html#374">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-06-22 05:39:34 +0200 (Fri, 22 Jun 2007)
+New Revision: 391
+
+Added:
+   trunk/patch-series/2.6.22-rc5-git5/
+Removed:
+   trunk/patch-series/2.6.22-rc3/
+Modified:
+   trunk/patch-series/2.6.22-rc5-git5/01-can-proto-numbers.diff
+   trunk/patch-series/2.6.22-rc5-git5/02-can-core.diff
+   trunk/patch-series/2.6.22-rc5-git5/03-can-raw-proto.diff
+   trunk/patch-series/2.6.22-rc5-git5/04-can-bcm-proto.diff
+   trunk/patch-series/2.6.22-rc5-git5/05-can-vcan-driver.diff
+   trunk/patch-series/2.6.22-rc5-git5/06-can-maintainers.diff
+   trunk/patch-series/2.6.22-rc5-git5/07-can-doc.diff
+   trunk/patch-series/2.6.22-rc5-git5/intro
+Log:
+Update patch series to r390 and rebase it to linux-2.6.22-rc5-git5.
+
+
+Copied: trunk/patch-series/2.6.22-rc5-git5 (from rev 390, trunk/patch-series/2.6.22-rc3)
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/01-can-proto-numbers.diff
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/01-can-proto-numbers.diff	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/01-can-proto-numbers.diff	2007-06-22 03:39:34 UTC (rev 391)
+@@ -16,10 +16,10 @@
+  net/core/sock.c          |    4 ++--
+  5 files changed, 8 insertions(+), 3 deletions(-)
+ 
+-Index: linux-2.6.22-rc3/include/linux/if_arp.h
++Index: linux-2.6.22-rc5/include/linux/if_arp.h
+ ===================================================================
+---- linux-2.6.22-rc3.orig/include/linux/if_arp.h	2007-05-29 10:03:02.%N +0200
+-+++ linux-2.6.22-rc3/include/linux/if_arp.h	2007-05-29 10:03:24.%N +0200
++--- linux-2.6.22-rc5.orig/include/linux/if_arp.h	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/include/linux/if_arp.h	2007-06-20 14:11:00.000000000 +0200
+ @@ -52,6 +52,7 @@
+  #define ARPHRD_ROSE	270
+  #define ARPHRD_X25	271		/* CCITT X.25			*/
+@@ -28,10 +28,10 @@
+  #define ARPHRD_PPP	512
+  #define ARPHRD_CISCO	513		/* Cisco HDLC	 		*/
+  #define ARPHRD_HDLC	ARPHRD_CISCO
+-Index: linux-2.6.22-rc3/include/linux/if_ether.h
++Index: linux-2.6.22-rc5/include/linux/if_ether.h
+ ===================================================================
+---- linux-2.6.22-rc3.orig/include/linux/if_ether.h	2007-05-29 10:03:02.%N +0200
+-+++ linux-2.6.22-rc3/include/linux/if_ether.h	2007-05-29 10:03:24.%N +0200
++--- linux-2.6.22-rc5.orig/include/linux/if_ether.h	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/include/linux/if_ether.h	2007-06-20 14:11:00.000000000 +0200
+ @@ -90,6 +90,7 @@
+  #define ETH_P_WAN_PPP   0x0007          /* Dummy type for WAN PPP frames*/
+  #define ETH_P_PPP_MP    0x0008          /* Dummy type for PPP MP frames */
+@@ -40,10 +40,10 @@
+  #define ETH_P_PPPTALK	0x0010		/* Dummy type for Atalk over PPP*/
+  #define ETH_P_TR_802_2	0x0011		/* 802.2 frames 		*/
+  #define ETH_P_MOBITEX	0x0015		/* Mobitex (<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kaz at cafe.net</A>)	*/
+-Index: linux-2.6.22-rc3/include/linux/socket.h
++Index: linux-2.6.22-rc5/include/linux/socket.h
+ ===================================================================
+---- linux-2.6.22-rc3.orig/include/linux/socket.h	2007-05-29 10:03:02.%N +0200
+-+++ linux-2.6.22-rc3/include/linux/socket.h	2007-05-29 10:03:24.%N +0200
++--- linux-2.6.22-rc5.orig/include/linux/socket.h	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/include/linux/socket.h	2007-06-20 14:11:00.000000000 +0200
+ @@ -185,6 +185,7 @@
+  #define AF_PPPOX	24	/* PPPoX sockets		*/
+  #define AF_WANPIPE	25	/* Wanpipe API Sockets */
+@@ -60,10 +60,10 @@
+  #define PF_TIPC		AF_TIPC
+  #define PF_BLUETOOTH	AF_BLUETOOTH
+  #define PF_IUCV		AF_IUCV
+-Index: linux-2.6.22-rc3/include/linux/tty.h
++Index: linux-2.6.22-rc5/include/linux/tty.h
+ ===================================================================
+---- linux-2.6.22-rc3.orig/include/linux/tty.h	2007-05-29 10:03:02.%N +0200
+-+++ linux-2.6.22-rc3/include/linux/tty.h	2007-05-29 10:03:24.%N +0200
++--- linux-2.6.22-rc5.orig/include/linux/tty.h	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/include/linux/tty.h	2007-06-20 14:11:00.000000000 +0200
+ @@ -24,7 +24,7 @@
+  #define NR_PTYS	CONFIG_LEGACY_PTY_COUNT   /* Number of legacy ptys */
+  #define NR_UNIX98_PTY_DEFAULT	4096      /* Default maximum for Unix98 ptys */
+@@ -81,10 +81,10 @@
+  
+  /*
+   * This character is the same as _POSIX_VDISABLE: it cannot be used as
+-Index: linux-2.6.22-rc3/net/core/sock.c
++Index: linux-2.6.22-rc5/net/core/sock.c
+ ===================================================================
+---- linux-2.6.22-rc3.orig/net/core/sock.c	2007-05-27 07:40:22.%N +0200
+-+++ linux-2.6.22-rc3/net/core/sock.c	2007-05-29 10:08:43.%N +0200
++--- linux-2.6.22-rc5.orig/net/core/sock.c	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/net/core/sock.c	2007-06-20 14:11:00.000000000 +0200
+ @@ -153,7 +153,7 @@
+    &quot;sk_lock-AF_ASH&quot;   , &quot;sk_lock-AF_ECONET&quot;   , &quot;sk_lock-AF_ATMSVC&quot;   ,
+    &quot;sk_lock-21&quot;       , &quot;sk_lock-AF_SNA&quot;      , &quot;sk_lock-AF_IRDA&quot;     ,
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/02-can-core.diff
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/02-can-core.diff	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/02-can-core.diff	2007-06-22 03:39:34 UTC (rev 391)
+@@ -10,21 +10,21 @@
+ 
+ ---
+  include/linux/can.h       |   98 ++++
+- include/linux/can/core.h  |   88 +++
++ include/linux/can/core.h  |   80 +++
+  include/linux/can/error.h |   95 ++++
+  net/Kconfig               |    1 
+  net/Makefile              |    1 
+  net/can/Kconfig           |   25 +
+  net/can/Makefile          |    6 
+- net/can/af_can.c          | 1070 ++++++++++++++++++++++++++++++++++++++++++++++
+- net/can/af_can.h          |  120 +++++
+- net/can/proc.c            |  530 ++++++++++++++++++++++
+- 10 files changed, 2034 insertions(+)
++ net/can/af_can.c          |  997 ++++++++++++++++++++++++++++++++++++++++++++++
++ net/can/af_can.h          |  121 +++++
++ net/can/proc.c            |  530 ++++++++++++++++++++++++
++ 10 files changed, 1954 insertions(+)
+ 
+-Index: linux-2.6.22-rc3/include/linux/can.h
++Index: linux-2.6.22-rc5-git5/include/linux/can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/include/linux/can.h	2007-05-29 10:14:54.%N +0200
+++++ linux-2.6.22-rc5-git5/include/linux/can.h	2007-06-21 14:03:14.000000000 +0200
+ @@ -0,0 +1,98 @@
+ +/*
+ + * linux/can.h
+@@ -124,11 +124,11 @@
+ +#define CAN_INV_FILTER 0x20000000U /* to be set in can_filter.can_id */
+ +
+ +#endif /* CAN_H */
+-Index: linux-2.6.22-rc3/include/linux/can/core.h
++Index: linux-2.6.22-rc5-git5/include/linux/can/core.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/include/linux/can/core.h	2007-05-29 10:14:54.%N +0200
+-@@ -0,0 +1,88 @@
+++++ linux-2.6.22-rc5-git5/include/linux/can/core.h	2007-06-21 14:03:14.000000000 +0200
++@@ -0,0 +1,80 @@
+ +/*
+ + * linux/can/core.h
+ + *
+@@ -150,7 +150,7 @@
+ +#include &lt;linux/skbuff.h&gt;
+ +#include &lt;linux/netdevice.h&gt;
+ +
+-+#define CAN_VERSION &quot;20070523&quot;
+++#define CAN_VERSION &quot;20070619&quot;
+ +
+ +/* increment this number each time you change some user-space interface */
+ +#define CAN_ABI_VERSION &quot;8&quot;
+@@ -192,14 +192,6 @@
+ +			     void (*func)(struct sk_buff *, void *),
+ +			     void *data);
+ +
+-+extern int can_dev_register(struct net_device *dev,
+-+			    void (*func)(unsigned long msg, void *),
+-+			    void *data);
+-+
+-+extern int can_dev_unregister(struct net_device *dev,
+-+			      void (*func)(unsigned long msg, void *),
+-+			      void *data);
+-+
+ +extern int can_send(struct sk_buff *skb, int loop);
+ +
+ +#ifdef CONFIG_CAN_DEBUG_CORE
+@@ -217,10 +209,10 @@
+ +#endif
+ +
+ +#endif /* CAN_CORE_H */
+-Index: linux-2.6.22-rc3/net/Kconfig
++Index: linux-2.6.22-rc5-git5/net/Kconfig
+ ===================================================================
+---- linux-2.6.22-rc3.orig/net/Kconfig	2007-05-29 10:03:02.%N +0200
+-+++ linux-2.6.22-rc3/net/Kconfig	2007-05-29 10:14:54.%N +0200
++--- linux-2.6.22-rc5-git5.orig/net/Kconfig	2007-06-21 14:02:05.000000000 +0200
+++++ linux-2.6.22-rc5-git5/net/Kconfig	2007-06-21 14:03:14.000000000 +0200
+ @@ -210,6 +210,7 @@
+  endmenu
+  
+@@ -229,10 +221,10 @@
+  source &quot;net/irda/Kconfig&quot;
+  source &quot;net/bluetooth/Kconfig&quot;
+  source &quot;net/rxrpc/Kconfig&quot;
+-Index: linux-2.6.22-rc3/net/Makefile
++Index: linux-2.6.22-rc5-git5/net/Makefile
+ ===================================================================
+---- linux-2.6.22-rc3.orig/net/Makefile	2007-05-29 10:03:02.%N +0200
+-+++ linux-2.6.22-rc3/net/Makefile	2007-05-29 10:14:54.%N +0200
++--- linux-2.6.22-rc5-git5.orig/net/Makefile	2007-06-21 14:02:05.000000000 +0200
+++++ linux-2.6.22-rc5-git5/net/Makefile	2007-06-21 14:03:14.000000000 +0200
+ @@ -34,6 +34,7 @@
+  obj-$(CONFIG_NETROM)		+= netrom/
+  obj-$(CONFIG_ROSE)		+= rose/
+@@ -241,10 +233,10 @@
+  obj-$(CONFIG_IRDA)		+= irda/
+  obj-$(CONFIG_BT)		+= bluetooth/
+  obj-$(CONFIG_SUNRPC)		+= sunrpc/
+-Index: linux-2.6.22-rc3/net/can/Kconfig
++Index: linux-2.6.22-rc5-git5/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/net/can/Kconfig	2007-05-30 12:38:26.%N +0200
+++++ linux-2.6.22-rc5-git5/net/can/Kconfig	2007-06-21 15:34:24.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +#
+ +# Controller Area Network (CAN) network layer core configuration
+@@ -271,10 +263,10 @@
+ +	  Say Y here if you want the CAN core to produce a bunch of debug
+ +	  messages to the system log.  Select this if you are having a
+ +	  problem with CAN support and want to see more of what is going on.
+-Index: linux-2.6.22-rc3/net/can/Makefile
++Index: linux-2.6.22-rc5-git5/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/net/can/Makefile	2007-05-30 12:38:26.%N +0200
+++++ linux-2.6.22-rc5-git5/net/can/Makefile	2007-06-21 15:34:24.000000000 +0200
+ @@ -0,0 +1,6 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network core.
+@@ -282,11 +274,11 @@
+ +
+ +obj-$(CONFIG_CAN)	+= can.o
+ +can-objs		:= af_can.o proc.o
+-Index: linux-2.6.22-rc3/net/can/af_can.c
++Index: linux-2.6.22-rc5-git5/net/can/af_can.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/net/can/af_can.c	2007-05-29 10:14:54.%N +0200
+-@@ -0,0 +1,1070 @@
+++++ linux-2.6.22-rc5-git5/net/can/af_can.c	2007-06-21 15:34:35.000000000 +0200
++@@ -0,0 +1,997 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+ + *            (used by different CAN protocol modules)
+@@ -353,9 +345,8 @@
+ +#include &quot;af_can.h&quot;
+ +
+ +#define IDENT &quot;core&quot;
+-+static __initdata const char banner[] =
+-+	KERN_INFO &quot;can: controller area network core # &quot;
+-+	CAN_VERSION_STRING &quot;\n&quot;;
+++static __initdata const char banner[] = KERN_INFO
+++	&quot;can: controller area network core (&quot; CAN_VERSION_STRING &quot;)\n&quot;;
+ +
+ +MODULE_DESCRIPTION(&quot;Controller Area Network PF_CAN core&quot;);
+ +MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -374,16 +365,6 @@
+ +MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ +#endif
+ +
+-+struct notifier {
+-+	struct list_head list;
+-+	struct net_device *dev;
+-+	void (*func)(unsigned long msg, void *data);
+-+	void *data;
+-+};
+-+
+-+static LIST_HEAD(notifier_list);
+-+static DEFINE_RWLOCK(notifier_lock);
+-+
+ +HLIST_HEAD(rx_dev_list);
+ +static struct dev_rcv_lists rx_alldev_list;
+ +static DEFINE_SPINLOCK(rcv_lists_lock);
+@@ -445,7 +426,8 @@
+ +		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+ +		ret = request_module(module_name);
+ +
+-+		/* In case of error we only print a message but don't
+++		/*
+++		 * In case of error we only print a message but don't
+ +		 * return the error code immediately.  Below we will
+ +		 * return -EPROTONOSUPPORT
+ +		 */
+@@ -501,10 +483,10 @@
+ + *  0 on success
+ + *  -ENETDOWN when the selected interface is down
+ + *  -ENOBUFS on full driver queue (see net_xmit_errno())
+++ *  -ENOMEM when local loopback failed at calling skb_clone()
+ + */
+ +int can_send(struct sk_buff *skb, int loop)
+ +{
+-+	struct sock **tx_sk = (struct sock **)skb-&gt;cb;
+ +	int err;
+ +
+ +	if (skb-&gt;dev-&gt;type != ARPHRD_CAN) {
+@@ -512,35 +494,51 @@
+ +		return -EPERM;
+ +	}
+ +
+++	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP)) {
+++		kfree_skb(skb);
+++		return -ENETDOWN;
+++	}
+++
+++	skb-&gt;protocol = htons(ETH_P_CAN);
+++
+ +	if (loop) {
+-+		/* local loopback of sent CAN frames (default) */
+++		/* local loopback of sent CAN frames */
+ +
+ +		/* indication for the CAN driver: do loopback */
+-+		*tx_sk = skb-&gt;sk;
+++		skb-&gt;pkt_type = PACKET_LOOPBACK;
+ +
+ +		/*
+-+		 * The reference to the originating sock may be also required
+-+		 * by the receiving socket to indicate (and ignore) his own
+-+		 * sent data. Example: can_raw sockopt CAN_RAW_RECV_OWN_MSGS
+++		 * The reference to the originating sock may be required
+++		 * by the receiving socket to check whether the frame is
+++		 * its own. Example: can_raw sockopt CAN_RAW_RECV_OWN_MSGS
+++		 * Therefore we have to ensure that skb-&gt;sk remains the
+++		 * reference to the originating sock by restoring skb-&gt;sk
+++		 * after each skb_clone() or skb_orphan() usage.
+ +		 */
+ +
+-+		/* interface not capabable to do the loopback itself? */
+ +		if (!(skb-&gt;dev-&gt;flags &amp; IFF_LOOPBACK)) {
+++			/*
+++			 * If the interface is not capable to do loopback
+++			 * itself, we do it here.
+++			 */
+ +			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+ +
+-+			/* perform the local loopback here */
+-+			newskb-&gt;protocol  = htons(ETH_P_CAN);
+++			if (!newskb) {
+++				kfree_skb(skb);
+++				return -ENOMEM;
+++			}
+++
+++			newskb-&gt;sk = skb-&gt;sk;
+++			newskb-&gt;iif = 0;
+ +			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+++			newskb-&gt;pkt_type = PACKET_BROADCAST;
+ +			netif_rx(newskb);
+ +		}
+ +	} else {
+ +		/* indication for the CAN driver: no loopback required */
+-+		*tx_sk = NULL;
+++		skb-&gt;pkt_type = PACKET_HOST;
+ +	}
+ +
+-+	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
+-+		return -ENETDOWN;
+-+
+ +	/* send to netdevice */
+ +	err = dev_queue_xmit(skb);
+ +	if (err &gt; 0)
+@@ -662,8 +660,8 @@
+ +
+ +	/* insert new receiver  (dev,canid,mask) -&gt; (func,data) */
+ +
+-+	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
+-+	    dev, can_id, mask, func, data, ident);
+++	DBG(&quot;dev %p (%s), id %03X, mask %03X, callback %p, data %p, &quot;
+++	    &quot;ident %s\n&quot;, dev, DNAME(dev), can_id, mask, func, data, ident);
+ +
+ +	r = kmem_cache_alloc(rcv_cache, GFP_KERNEL);
+ +	if (!r)
+@@ -701,35 +699,14 @@
+ +}
+ +EXPORT_SYMBOL(can_rx_register);
+ +
+-+static void can_rx_delete_list(struct hlist_head *rl)
+-+{
+-+	struct receiver *r;
+-+	struct hlist_node *n;
+-+
+-+	hlist_for_each_entry_rcu(r, n, rl, list) {
+-+		hlist_del_rcu(&amp;r-&gt;list);
+-+		kmem_cache_free(rcv_cache, r);
+-+	}
+-+}
+-+
+ +/*
+ + * can_rx_delete_device - rcu callback for dev_rcv_lists structure removal
+ + */
+ +static void can_rx_delete_device(struct rcu_head *rp)
+ +{
+ +	struct dev_rcv_lists *d = container_of(rp, struct dev_rcv_lists, rcu);
+-+	int i;
+ +
+-+	/* remove all receivers hooked at this netdevice */
+-+	can_rx_delete_list(&amp;d-&gt;rx[RX_ERR]);
+-+	can_rx_delete_list(&amp;d-&gt;rx[RX_ALL]);
+-+	can_rx_delete_list(&amp;d-&gt;rx[RX_FIL]);
+-+	can_rx_delete_list(&amp;d-&gt;rx[RX_INV]);
+-+	can_rx_delete_list(&amp;d-&gt;rx[RX_EFF]);
+-+
+-+	for (i = 0; i &lt; 2048; i++)
+-+		can_rx_delete_list(&amp;d-&gt;rx_sff[i]);
+-+
+++	DBG(&quot;removing dev_rcv_list at %p\n&quot;, d);
+ +	kfree(d);
+ +}
+ +
+@@ -740,6 +717,7 @@
+ +{
+ +	struct receiver *r = container_of(rp, struct receiver, rcu);
+ +
+++	DBG(&quot;removing receiver at %p\n&quot;, r);
+ +	kmem_cache_free(rcv_cache, r);
+ +}
+ +
+@@ -768,8 +746,8 @@
+ +	struct dev_rcv_lists *d;
+ +	int ret = 0;
+ +
+-+	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p\n&quot;,
+-+	    dev, can_id, mask, func, data);
+++	DBG(&quot;dev %p (%s), id %03X, mask %03X, callback %p, data %p\n&quot;,
+++	    dev, DNAME(dev), can_id, mask, func, data);
+ +
+ +	spin_lock_bh(&amp;rcv_lists_lock);
+ +
+@@ -806,6 +784,7 @@
+ +		    &quot;dev %s, id %03X, mask %03X\n&quot;, DNAME(dev), can_id, mask);
+ +		ret = -EINVAL;
+ +		r = NULL;
+++		d = NULL;
+ +		goto out;
+ +	}
+ +
+@@ -815,6 +794,14 @@
+ +	if (pstats.rcv_entries &gt; 0)
+ +		pstats.rcv_entries--;
+ +
+++	/* remove device structure requested by NETDEV_UNREGISTER */
+++	if (d-&gt;remove_on_zero_entries &amp;&amp; !d-&gt;entries) {
+++		DBG(&quot;removing dev_rcv_list for %s on zero entries\n&quot;,
+++		    dev-&gt;name);
+++		hlist_del_rcu(&amp;d-&gt;list);
+++	} else
+++		d = NULL;
+++
+ + out:
+ +	spin_unlock_bh(&amp;rcv_lists_lock);
+ +
+@@ -822,6 +809,10 @@
+ +	if (r)
+ +		call_rcu(&amp;r-&gt;rcu, can_rx_delete_receiver);
+ +
+++	/* schedule the device structure for deletion */
+++	if (d)
+++		call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
+++
+ +	return ret;
+ +}
+ +EXPORT_SYMBOL(can_rx_unregister);
+@@ -832,6 +823,8 @@
+ +
+ +	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ +	if (clone) {
+++		clone-&gt;sk  = skb-&gt;sk;
+++		clone-&gt;iif = skb-&gt;iif;
+ +		r-&gt;func(clone, r-&gt;data);
+ +		r-&gt;matches++;
+ +	}
+@@ -952,105 +945,6 @@
+ +}
+ +
+ +/*
+-+ * af_can debugging stuff
+-+ */
+-+
+-+#ifdef CONFIG_CAN_DEBUG_CORE
+-+
+-+#define DBG_BSIZE 1024
+-+
+-+/**
+-+ * can_debug_cframe - print CAN frame
+-+ * @msg: pointer to message printed before the given CAN frame
+-+ * @cf: pointer to CAN frame
+-+ */
+-+void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+-+{
+-+	va_list ap;
+-+	int len;
+-+	int dlc, i;
+-+	char *buf;
+-+
+-+	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
+-+	if (!buf)
+-+		return;
+-+
+-+	len = sprintf(buf, KERN_DEBUG);
+-+	va_start(ap, cf);
+-+	len += snprintf(buf + len, DBG_BSIZE - 64, msg, ap);
+-+	buf[len++] = ':';
+-+	buf[len++] = ' ';
+-+	va_end(ap);
+-+
+-+	dlc = cf-&gt;can_dlc;
+-+	if (dlc &gt; 8)
+-+		dlc = 8;
+-+
+-+	if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
+-+		len += sprintf(buf + len, &quot;&lt;%08X&gt; [%X] &quot;,
+-+			       cf-&gt;can_id &amp; CAN_EFF_MASK, dlc);
+-+	else
+-+		len += sprintf(buf + len, &quot;&lt;%03X&gt; [%X] &quot;,
+-+			       cf-&gt;can_id &amp; CAN_SFF_MASK, dlc);
+-+
+-+	for (i = 0; i &lt; dlc; i++)
+-+		len += sprintf(buf + len, &quot;%02X &quot;, cf-&gt;data[i]);
+-+
+-+	if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
+-+		len += sprintf(buf + len, &quot;(RTR)&quot;);
+-+
+-+	buf[len++] = '\n';
+-+	buf[len]   = '\0';
+-+	printk(buf);
+-+	kfree(buf);
+-+}
+-+EXPORT_SYMBOL(can_debug_cframe);
+-+
+-+/**
+-+ * can_debug_skb - print socket buffer content to kernel log
+-+ * @skb: pointer to socket buffer
+-+ */
+-+void can_debug_skb(struct sk_buff *skb)
+-+{
+-+	int len, nbytes, i;
+-+	char *buf;
+-+
+-+	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
+-+	if (!buf)
+-+		return;
+-+
+-+	len = sprintf(buf,
+-+		      KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
+-+		      KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
+-+		      &quot;h,d,t,e,l: %p %+d %+d %+d, %d&quot;,
+-+		      skb, skb-&gt;dev ? skb-&gt;dev-&gt;ifindex : -1,
+-+		      ntohs(skb-&gt;protocol),
+-+		      atomic_read(&amp;skb-&gt;users),
+-+		      atomic_read(&amp;(skb_shinfo(skb)-&gt;dataref)),
+-+		      skb_shinfo(skb)-&gt;nr_frags,
+-+		      skb-&gt;head, skb-&gt;data - skb-&gt;head,
+-+		      skb-&gt;tail - skb-&gt;head, skb-&gt;end - skb-&gt;head, skb-&gt;len);
+-+	nbytes = skb-&gt;end - skb-&gt;head;
+-+	for (i = 0; i &lt; nbytes; i++) {
+-+		if (i % 16 == 0)
+-+			len += sprintf(buf + len, &quot;\n&quot; KERN_DEBUG &quot;  &quot;);
+-+		if (len &lt; DBG_BSIZE - 16) {
+-+			len += sprintf(buf + len, &quot; %02x&quot;, skb-&gt;head[i]);
+-+		} else {
+-+			len += sprintf(buf + len, &quot;...&quot;);
+-+			break;
+-+		}
+-+	}
+-+	buf[len++] = '\n';
+-+	buf[len]   = '\0';
+-+	printk(buf);
+-+	kfree(buf);
+-+}
+-+EXPORT_SYMBOL(can_debug_skb);
+-+
+-+#endif
+-+
+-+/*
+ + * af_can protocol functions
+ + */
+ +
+@@ -1070,13 +964,13 @@
+ +	int err = 0;
+ +
+ +	if (proto &lt; 0 || proto &gt;= CAN_NPROTO) {
+-+		printk(KERN_ERR &quot;can: protocol number %d out &quot;
+-+		       &quot;of range\n&quot;, proto);
+++		printk(KERN_ERR &quot;can: protocol number %d out of range\n&quot;,
+++		       proto);
+ +		return -EINVAL;
+ +	}
+ +	if (proto_tab[proto]) {
+-+		printk(KERN_ERR &quot;can: protocol %d already &quot;
+-+		       &quot;registered\n&quot;, proto);
+++		printk(KERN_ERR &quot;can: protocol %d already registered\n&quot;,
+++		       proto);
+ +		return -EBUSY;
+ +	}
+ +
+@@ -1117,91 +1011,17 @@
+ +}
+ +EXPORT_SYMBOL(can_proto_unregister);
+ +
+-+/**
+-+ * can_dev_register - subscribe notifier for CAN device status changes
+-+ * @dev: pointer to netdevice
+-+ * @func: callback function on status change
+-+ * @data: returned parameter for callback function
+-+ *
+-+ * Description:
+-+ *  Invokes the callback function with the status 'msg' and the given
+-+ *  parameter 'data' on a status change of the given CAN network device.
+-+ *
+-+ * Return:
+-+ *  0 on success
+-+ *  -ENOMEM on missing mem to create subscription entry
+-+ *  -ENODEV unknown device
+++/*
+++ * af_can notifier to create/remove CAN netdevice specific structs
+ + */
+-+int can_dev_register(struct net_device *dev,
+-+		     void (*func)(unsigned long msg, void *), void *data)
+++static int can_notifier(struct notifier_block *nb, unsigned long msg,
+++			void *data)
+ +{
+-+	struct notifier *n;
+-+
+-+	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+-+
+-+	if (!dev || dev-&gt;type != ARPHRD_CAN)
+-+		return -ENODEV;
+-+
+-+	n = kmalloc(sizeof(*n), GFP_KERNEL);
+-+	if (!n)
+-+		return -ENOMEM;
+-+
+-+	n-&gt;dev  = dev;
+-+	n-&gt;func = func;
+-+	n-&gt;data = data;
+-+
+-+	write_lock(&amp;notifier_lock);
+-+	list_add(&amp;n-&gt;list, &amp;notifier_list);
+-+	write_unlock(&amp;notifier_lock);
+-+
+-+	return 0;
+-+}
+-+EXPORT_SYMBOL(can_dev_register);
+-+
+-+/**
+-+ * can_dev_unregister - unsubscribe notifier for CAN device status changes
+-+ * @dev: pointer to netdevice
+-+ * @func: callback function on filter match
+-+ * @data: returned parameter for callback function
+-+ *
+-+ * Description:
+-+ *  Removes subscription entry depending on given (subscription) values.
+-+ *
+-+ * Return:
+-+ *  0 on success
+-+ *  -EINVAL on missing subscription entry
+-+ */
+-+int can_dev_unregister(struct net_device *dev,
+-+		       void (*func)(unsigned long msg, void *), void *data)
+-+{
+-+	struct notifier *n, *next;
+-+	int ret = -EINVAL;
+-+
+-+	DBG(&quot;called for %s\n&quot;, dev-&gt;name);
+-+
+-+	write_lock(&amp;notifier_lock);
+-+	list_for_each_entry_safe(n, next, &amp;notifier_list, list) {
+-+		if (n-&gt;dev == dev &amp;&amp; n-&gt;func == func &amp;&amp; n-&gt;data == data) {
+-+			list_del(&amp;n-&gt;list);
+-+			kfree(n);
+-+			ret = 0;
+-+			break;
+-+		}
+-+	}
+-+	write_unlock(&amp;notifier_lock);
+-+
+-+	return ret;
+-+}
+-+EXPORT_SYMBOL(can_dev_unregister);
+-+
+-+static int can_notifier(struct notifier_block *nb,
+-+			unsigned long msg, void *data)
+-+{
+ +	struct net_device *dev = (struct net_device *)data;
+-+	struct notifier *n;
+ +	struct dev_rcv_lists *d;
+ +
+-+	DBG(&quot;called for %s, msg = %lu\n&quot;, dev-&gt;name, msg);
+++	DBG(&quot;msg %ld for dev %p (%s idx %d)\n&quot;,
+++	    msg, dev, dev-&gt;name, dev-&gt;ifindex);
+ +
+ +	if (dev-&gt;type != ARPHRD_CAN)
+ +		return NOTIFY_DONE;
+@@ -1224,8 +1044,8 @@
+ +		d = kzalloc(sizeof(*d),
+ +			    in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+ +		if (!d) {
+-+			printk(KERN_ERR &quot;can: allocation of receive &quot;
+-+			       &quot;list failed\n&quot;);
+++			printk(KERN_ERR
+++			       &quot;can: allocation of receive list failed\n&quot;);
+ +			return NOTIFY_DONE;
+ +		}
+ +		d-&gt;dev = dev;
+@@ -1240,9 +1060,16 @@
+ +		spin_lock_bh(&amp;rcv_lists_lock);
+ +
+ +		d = find_dev_rcv_lists(dev);
+-+		if (d)
+-+			hlist_del_rcu(&amp;d-&gt;list);
+-+		else
+++		if (d) {
+++			DBG(&quot;remove dev_rcv_list for %s (%d entries)\n&quot;,
+++			    dev-&gt;name, d-&gt;entries);
+++
+++			if (d-&gt;entries) {
+++				d-&gt;remove_on_zero_entries = 1;
+++				d = NULL;
+++			} else
+++				hlist_del_rcu(&amp;d-&gt;list);
+++		} else
+ +			printk(KERN_ERR &quot;can: notifier: receive list not &quot;
+ +			       &quot;found for dev %s\n&quot;, dev-&gt;name);
+ +
+@@ -1254,17 +1081,109 @@
+ +		break;
+ +	}
+ +
+-+	read_lock(&amp;notifier_lock);
+-+	list_for_each_entry(n, &amp;notifier_list, list) {
+-+		if (n-&gt;dev == dev)
+-+			n-&gt;func(msg, n-&gt;data);
+-+	}
+-+	read_unlock(&amp;notifier_lock);
+-+
+ +	return NOTIFY_DONE;
+ +}
+ +
+ +/*
+++ * af_can debugging stuff
+++ */
+++
+++#ifdef CONFIG_CAN_DEBUG_CORE
+++
+++#define DBG_BSIZE 1024
+++
+++/**
+++ * can_debug_cframe - print CAN frame
+++ * @msg: pointer to message printed before the given CAN frame
+++ * @cf: pointer to CAN frame
+++ */
+++void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+++{
+++	va_list ap;
+++	int len;
+++	int dlc, i;
+++	char *buf;
+++
+++	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
+++	if (!buf)
+++		return;
+++
+++	len = sprintf(buf, KERN_DEBUG);
+++	va_start(ap, cf);
+++	len += snprintf(buf + len, DBG_BSIZE - 64, msg, ap);
+++	buf[len++] = ':';
+++	buf[len++] = ' ';
+++	va_end(ap);
+++
+++	dlc = cf-&gt;can_dlc;
+++	if (dlc &gt; 8)
+++		dlc = 8;
+++
+++	if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
+++		len += sprintf(buf + len, &quot;&lt;%08X&gt; [%X] &quot;,
+++			       cf-&gt;can_id &amp; CAN_EFF_MASK, dlc);
+++	else
+++		len += sprintf(buf + len, &quot;&lt;%03X&gt; [%X] &quot;,
+++			       cf-&gt;can_id &amp; CAN_SFF_MASK, dlc);
+++
+++	for (i = 0; i &lt; dlc; i++)
+++		len += sprintf(buf + len, &quot;%02X &quot;, cf-&gt;data[i]);
+++
+++	if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
+++		len += sprintf(buf + len, &quot;(RTR)&quot;);
+++
+++	buf[len++] = '\n';
+++	buf[len]   = '\0';
+++	printk(buf);
+++	kfree(buf);
+++}
+++EXPORT_SYMBOL(can_debug_cframe);
+++
+++/**
+++ * can_debug_skb - print socket buffer content to kernel log
+++ * @skb: pointer to socket buffer
+++ */
+++void can_debug_skb(struct sk_buff *skb)
+++{
+++	int len, nbytes, i;
+++	char *buf;
+++
+++	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
+++	if (!buf)
+++		return;
+++
+++	len = sprintf(buf,
+++		      KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
+++		      KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
+++		      &quot;h,d,t,e,l: %p %+d %+d %+d, %d&quot;,
+++		      skb, skb-&gt;dev ? skb-&gt;dev-&gt;ifindex : -1,
+++		      ntohs(skb-&gt;protocol),
+++		      atomic_read(&amp;skb-&gt;users),
+++		      atomic_read(&amp;(skb_shinfo(skb)-&gt;dataref)),
+++		      skb_shinfo(skb)-&gt;nr_frags,
+++		      skb-&gt;head, skb-&gt;data - skb-&gt;head,
+++		      skb-&gt;tail - skb-&gt;head, skb-&gt;end - skb-&gt;head, skb-&gt;len);
+++	nbytes = skb-&gt;end - skb-&gt;head;
+++	for (i = 0; i &lt; nbytes; i++) {
+++		if (i % 16 == 0)
+++			len += sprintf(buf + len, &quot;\n&quot; KERN_DEBUG &quot;  &quot;);
+++		if (len &lt; DBG_BSIZE - 16) {
+++			len += sprintf(buf + len, &quot; %02x&quot;, skb-&gt;head[i]);
+++		} else {
+++			len += sprintf(buf + len, &quot;...&quot;);
+++			break;
+++		}
+++	}
+++	buf[len++] = '\n';
+++	buf[len]   = '\0';
+++	printk(buf);
+++	kfree(buf);
+++}
+++EXPORT_SYMBOL(can_debug_skb);
+++
+++#endif
+++
+++/*
+ + * af_can module init/exit functions
+ + */
+ +
+@@ -1295,7 +1214,7 @@
+ +		return -ENOMEM;
+ +
+ +	/*
+-+	 * Insert struct dev_rcv_lists for reception on all devices.
+++	 * Insert rx_alldev_list for reception on all devices.
+ +	 * This struct is zero initialized which is correct for the
+ +	 * embedded hlist heads, the dev pointer, and the entries counter.
+ +	 */
+@@ -1357,11 +1276,11 @@
+ +
+ +module_init(can_init);
+ +module_exit(can_exit);
+-Index: linux-2.6.22-rc3/net/can/af_can.h
++Index: linux-2.6.22-rc5-git5/net/can/af_can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/net/can/af_can.h	2007-05-29 10:14:54.%N +0200
+-@@ -0,0 +1,120 @@
+++++ linux-2.6.22-rc5-git5/net/can/af_can.h	2007-06-21 14:03:14.000000000 +0200
++@@ -0,0 +1,121 @@
+ +/*
+ + * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+ + * All rights reserved.
+@@ -1434,6 +1353,7 @@
+ +	struct net_device *dev;
+ +	struct hlist_head rx[RX_MAX];
+ +	struct hlist_head rx_sff[0x800];
+++	int remove_on_zero_entries;
+ +	int entries;
+ +};
+ +
+@@ -1482,10 +1402,10 @@
+ +extern struct hlist_head rx_dev_list;	/* rx dispatcher structures */
+ +
+ +#endif /* AF_CAN_H */
+-Index: linux-2.6.22-rc3/net/can/proc.c
++Index: linux-2.6.22-rc5-git5/net/can/proc.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/net/can/proc.c	2007-05-29 10:14:54.%N +0200
+++++ linux-2.6.22-rc5-git5/net/can/proc.c	2007-06-21 14:03:14.000000000 +0200
+ @@ -0,0 +1,530 @@
+ +/*
+ + * proc.c - procfs support for Protocol family CAN core module
+@@ -2017,10 +1937,10 @@
+ +	if (can_dir)
+ +		remove_proc_entry(CAN_PROC_DIR, NULL);
+ +}
+-Index: linux-2.6.22-rc3/include/linux/can/error.h
++Index: linux-2.6.22-rc5-git5/include/linux/can/error.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/include/linux/can/error.h	2007-05-30 12:42:27.%N +0200
+++++ linux-2.6.22-rc5-git5/include/linux/can/error.h	2007-06-21 14:03:14.000000000 +0200
+ @@ -0,0 +1,95 @@
+ +/*
+ + * linux/can/error.h
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/03-can-raw-proto.diff
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/03-can-raw-proto.diff	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/03-can-raw-proto.diff	2007-06-22 03:39:34 UTC (rev 391)
+@@ -7,16 +7,16 @@
+ Signed-Off-By: Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;
+ 
+ ---
+- include/linux/can/raw.h |   31 ++
++ include/linux/can/raw.h |   31 +
+  net/can/Kconfig         |   26 +
+  net/can/Makefile        |    3 
+- net/can/raw.c           |  703 ++++++++++++++++++++++++++++++++++++++++++++++++
+- 4 files changed, 763 insertions(+)
++ net/can/raw.c           |  751 ++++++++++++++++++++++++++++++++++++++++++++++++
++ 4 files changed, 811 insertions(+)
+ 
+-Index: linux-2.6.22-rc2-git3/include/linux/can/raw.h
++Index: linux-2.6.22-rc5-git5/include/linux/can/raw.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc2-git3/include/linux/can/raw.h	2007-05-23 12:25:52.%N +0200
+++++ linux-2.6.22-rc5-git5/include/linux/can/raw.h	2007-06-21 14:05:26.000000000 +0200
+ @@ -0,0 +1,31 @@
+ +/*
+ + * linux/can/raw.h
+@@ -49,10 +49,10 @@
+ +};
+ +
+ +#endif
+-Index: linux-2.6.22-rc2-git3/net/can/Kconfig
++Index: linux-2.6.22-rc5-git5/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/net/can/Kconfig	2007-05-23 12:25:51.%N +0200
+-+++ linux-2.6.22-rc2-git3/net/can/Kconfig	2007-05-23 12:25:52.%N +0200
++--- linux-2.6.22-rc5-git5.orig/net/can/Kconfig	2007-06-21 14:03:50.000000000 +0200
+++++ linux-2.6.22-rc5-git5/net/can/Kconfig	2007-06-21 14:05:26.000000000 +0200
+ @@ -16,6 +16,32 @@
+  	  If you want CAN support, you should say Y here and also to the
+  	  specific driver for your controller(s) below.
+@@ -86,10 +86,10 @@
+  config CAN_DEBUG_CORE
+  	bool &quot;CAN Core debugging messages&quot;
+  	depends on CAN
+-Index: linux-2.6.22-rc2-git3/net/can/Makefile
++Index: linux-2.6.22-rc5-git5/net/can/Makefile
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/net/can/Makefile	2007-05-23 12:25:51.%N +0200
+-+++ linux-2.6.22-rc2-git3/net/can/Makefile	2007-05-23 12:25:52.%N +0200
++--- linux-2.6.22-rc5-git5.orig/net/can/Makefile	2007-06-21 14:03:50.000000000 +0200
+++++ linux-2.6.22-rc5-git5/net/can/Makefile	2007-06-21 14:05:26.000000000 +0200
+ @@ -4,3 +4,6 @@
+  
+  obj-$(CONFIG_CAN)	+= can.o
+@@ -97,11 +97,11 @@
+ +
+ +obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+ +can-raw-objs		:= raw.o
+-Index: linux-2.6.22-rc2-git3/net/can/raw.c
++Index: linux-2.6.22-rc5-git5/net/can/raw.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc2-git3/net/can/raw.c	2007-05-23 12:25:52.%N +0200
+-@@ -0,0 +1,703 @@
+++++ linux-2.6.22-rc5-git5/net/can/raw.c	2007-06-21 14:05:42.000000000 +0200
++@@ -0,0 +1,751 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+ + *
+@@ -160,7 +160,7 @@
+ +#define IDENT &quot;raw&quot;
+ +#define CAN_RAW_VERSION CAN_VERSION
+ +static __initdata const char banner[] =
+-+	KERN_INFO &quot;can: raw protocol # rev &quot; CAN_RAW_VERSION &quot;\n&quot;;
+++	KERN_INFO &quot;can: raw protocol (rev &quot; CAN_RAW_VERSION &quot;)\n&quot;;
+ +
+ +MODULE_DESCRIPTION(&quot;PF_CAN raw protocol&quot;);
+ +MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -190,56 +190,28 @@
+ + * storing the single filter in dfilter, to avoid using dynamic memory.
+ + */
+ +
+-+struct raw_opt {
+++struct raw_sock {
+++	struct sock sk;
+ +	int bound;
+ +	int ifindex;
+++	struct notifier_block notifier;
+ +	int loopback;
+ +	int recv_own_msgs;
+ +	int count;                 /* number of active filters */
+ +	struct can_filter dfilter; /* default/single filter */
+ +	struct can_filter *filter; /* pointer to filter(s) */
+ +	can_err_mask_t err_mask;
+-+	spinlock_t lock;
+ +};
+ +
+-+struct raw_sock {
+-+	struct sock    sk;
+-+	struct raw_opt opt;
+-+};
+-+
+-+static inline struct raw_opt *raw_sk(const struct sock *sk)
+++static inline struct raw_sock *raw_sk(const struct sock *sk)
+ +{
+-+	return &amp;((struct raw_sock *)sk)-&gt;opt;
+++	return (struct raw_sock *)sk;
+ +}
+ +
+-+static void raw_notifier(unsigned long msg, void *data)
+-+{
+-+	struct sock *sk = (struct sock *)data;
+-+	struct raw_opt *ro = raw_sk(sk);
+-+
+-+	DBG(&quot;called for sock %p\n&quot;, sk);
+-+
+-+	switch (msg) {
+-+
+-+	case NETDEV_UNREGISTER:
+-+		spin_lock(&amp;ro-&gt;lock);
+-+		ro-&gt;ifindex = 0;
+-+		ro-&gt;bound   = 0;
+-+		spin_unlock(&amp;ro-&gt;lock);
+-+		/* fallthrough */
+-+	case NETDEV_DOWN:
+-+		sk-&gt;sk_err = ENETDOWN;
+-+		if (!sock_flag(sk, SOCK_DEAD))
+-+			sk-&gt;sk_error_report(sk);
+-+		break;
+-+	}
+-+}
+-+
+ +static void raw_rcv(struct sk_buff *skb, void *data)
+ +{
+ +	struct sock *sk = (struct sock*)data;
+-+	struct raw_opt *ro = raw_sk(sk);
+-+	struct sockaddr_can *addr;
+++	struct raw_sock *ro = raw_sk(sk);
+ +	int error;
+ +
+ +	DBG(&quot;received skbuff %p, sk %p\n&quot;, skb, sk);
+@@ -247,18 +219,13 @@
+ +
+ +	if (!ro-&gt;recv_own_msgs) {
+ +		/* check the received tx sock reference */
+-+		if (*(struct sock **)skb-&gt;cb == sk) {
+++		if (skb-&gt;sk == sk) {
+ +			DBG(&quot;trashed own tx msg\n&quot;);
+ +			kfree_skb(skb);
+ +			return;
+ +		}
+ +	}
+ +
+-+	addr = (struct sockaddr_can *)skb-&gt;cb;
+-+	memset(addr, 0, sizeof(*addr));
+-+	addr-&gt;can_family  = AF_CAN;
+-+	addr-&gt;can_ifindex = skb-&gt;dev-&gt;ifindex;
+-+
+ +	error = sock_queue_rcv_skb(sk, skb);
+ +	if (error &lt; 0) {
+ +		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, error);
+@@ -267,41 +234,111 @@
+ +	}
+ +}
+ +
+-+static void raw_add_filters(struct net_device *dev, struct sock *sk)
+++static void raw_enable_filters(struct net_device *dev, struct sock *sk)
+ +{
+-+	struct raw_opt *ro = raw_sk(sk);
+++	struct raw_sock *ro = raw_sk(sk);
+ +	struct can_filter *filter = ro-&gt;filter;
+ +	int i;
+ +
+ +	for (i = 0; i &lt; ro-&gt;count; i++) {
+-+		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
+-+				raw_rcv, sk, IDENT);
+ +		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+ +		    filter[i].can_id, filter[i].can_mask,
+ +		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+++
+++		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
+++				raw_rcv, sk, IDENT);
+ +	}
+ +}
+ +
+-+static void raw_remove_filters(struct net_device *dev, struct sock *sk)
+++static void raw_enable_errfilter(struct net_device *dev, struct sock *sk)
+ +{
+-+	struct raw_opt *ro = raw_sk(sk);
+++	struct raw_sock *ro = raw_sk(sk);
+++
+++	if (ro-&gt;err_mask)
+++		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+++				raw_rcv, sk, IDENT);
+++}
+++
+++static void raw_disable_filters(struct net_device *dev, struct sock *sk)
+++{
+++	struct raw_sock *ro = raw_sk(sk);
+ +	struct can_filter *filter = ro-&gt;filter;
+ +	int i;
+ +
+ +	for (i = 0; i &lt; ro-&gt;count; i++) {
+-+		can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
+-+				  raw_rcv, sk);
+ +		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+ +		    filter[i].can_id, filter[i].can_mask,
+ +		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+++
+++		can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
+++				  raw_rcv, sk);
+ +	}
+ +}
+ +
+++static void raw_disable_errfilter(struct net_device *dev, struct sock *sk)
+++{
+++	struct raw_sock *ro = raw_sk(sk);
+++
+++	if (ro-&gt;err_mask)
+++		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+++				  raw_rcv, sk);
+++}
+++
+++static int raw_notifier(struct notifier_block *nb,
+++			unsigned long msg, void *data)
+++{
+++	struct net_device *dev = (struct net_device *)data;
+++	struct raw_sock *ro = container_of(nb, struct raw_sock, notifier);
+++	struct sock *sk = &amp;ro-&gt;sk;
+++
+++	DBG(&quot;msg %ld for dev %p (%s idx %d) sk %p ro-&gt;ifindex %d\n&quot;,
+++	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, ro-&gt;ifindex);
+++
+++	if (dev-&gt;type != ARPHRD_CAN)
+++		return NOTIFY_DONE;
+++
+++	if (ro-&gt;ifindex != dev-&gt;ifindex)
+++		return NOTIFY_DONE;
+++
+++	switch (msg) {
+++
+++	case NETDEV_UNREGISTER:
+++		lock_sock(sk);
+++		/* remove current filters &amp; unregister */
+++		if (ro-&gt;bound) {
+++			raw_disable_filters(dev, sk);
+++			raw_disable_errfilter(dev, sk);
+++		}
+++
+++		if (ro-&gt;count &gt; 1)
+++			kfree(ro-&gt;filter);
+++
+++		ro-&gt;ifindex = 0;
+++		ro-&gt;bound   = 0;
+++		ro-&gt;count   = 0;
+++		release_sock(sk);
+++
+++		sk-&gt;sk_err = ENODEV;
+++		if (!sock_flag(sk, SOCK_DEAD))
+++			sk-&gt;sk_error_report(sk);
+++		break;
+++
+++	case NETDEV_DOWN:
+++		sk-&gt;sk_err = ENETDOWN;
+++		if (!sock_flag(sk, SOCK_DEAD))
+++			sk-&gt;sk_error_report(sk);
+++		break;
+++	}
+++
+++	return NOTIFY_DONE;
+++}
+++
+ +static int raw_init(struct sock *sk)
+ +{
+-+	struct raw_opt *ro = raw_sk(sk);
+++	struct raw_sock *ro = raw_sk(sk);
+ +
+ +	ro-&gt;bound            = 0;
+++	ro-&gt;ifindex          = 0;
+ +
+ +	/* set default filter to single entry dfilter */
+ +	ro-&gt;dfilter.can_id   = 0;
+@@ -313,42 +350,49 @@
+ +	ro-&gt;loopback         = 1;
+ +	ro-&gt;recv_own_msgs    = 0;
+ +
+-+	spin_lock_init(&amp;ro-&gt;lock);
+++	/* set notifier */
+++	ro-&gt;notifier.notifier_call = raw_notifier;
+ +
+++	register_netdevice_notifier(&amp;ro-&gt;notifier);
+++
+ +	return 0;
+ +}
+ +
+ +static int raw_release(struct socket *sock)
+ +{
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct raw_opt *ro = raw_sk(sk);
+-+	struct net_device *dev = NULL;
+++	struct raw_sock *ro = raw_sk(sk);
+ +
+ +	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+ +	    atomic_read(&amp;sk-&gt;sk_refcnt));
+ +
+-+	spin_lock(&amp;ro-&gt;lock);
+-+	if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+-+		dev = dev_get_by_index(ro-&gt;ifindex);
+-+	spin_unlock(&amp;ro-&gt;lock);
+++	unregister_netdevice_notifier(&amp;ro-&gt;notifier);
+ +
+++	lock_sock(sk);
+++
+ +	/* remove current filters &amp; unregister */
+-+	if (ro-&gt;bound)
+-+		raw_remove_filters(dev, sk);
+++	if (ro-&gt;bound) {
+++		if (ro-&gt;ifindex) {
+++			struct net_device *dev = dev_get_by_index(ro-&gt;ifindex);
+++			if (dev) {
+++				raw_disable_filters(dev, sk);
+++				raw_disable_errfilter(dev, sk);
+++				dev_put(dev);
+++			}
+++		} else {
+++			raw_disable_filters(NULL, sk);
+++			raw_disable_errfilter(NULL, sk);
+++		}
+++	}
+ +
+ +	if (ro-&gt;count &gt; 1)
+ +		kfree(ro-&gt;filter);
+ +
+-+	/* remove current error mask */
+-+	if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-+		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-+				  raw_rcv, sk);
+++	ro-&gt;ifindex = 0;
+++	ro-&gt;bound   = 0;
+++	ro-&gt;count   = 0;
+ +
+-+	if (dev) {
+-+		can_dev_unregister(dev, raw_notifier, sk);
+-+		dev_put(dev);
+-+	}
+-+
+++	release_sock(sk);
+ +	sock_put(sk);
+ +
+ +	return 0;
+@@ -358,9 +402,9 @@
+ +{
+ +	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct raw_opt *ro = raw_sk(sk);
+-+	struct net_device *dev;
+++	struct raw_sock *ro = raw_sk(sk);
+ +	int err = 0;
+++	int notify_enetdown = 0;
+ +
+ +	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+ +
+@@ -368,72 +412,67 @@
+ +		return -EINVAL;
+ +
+ +	lock_sock(sk);
+-+	spin_lock(&amp;ro-&gt;lock);
+ +
+ +	if (ro-&gt;bound) {
+-+		/* remove current bindings / notifier */
+++		/* unregister current filters for this device */
+ +		if (ro-&gt;ifindex) {
+-+			dev = dev_get_by_index(ro-&gt;ifindex);
+-+			if (!dev) {
+-+				DBG(&quot;could not find device %d\n&quot;,
+-+				    addr-&gt;can_ifindex);
+-+				err = -ENODEV;
+-+				goto out;
+++			struct net_device *dev = dev_get_by_index(ro-&gt;ifindex);
+++			if (dev) {
+++				raw_disable_filters(dev, sk);
+++				raw_disable_errfilter(dev, sk);
+++				dev_put(dev);
+ +			}
+-+			if (!(dev-&gt;flags &amp; IFF_UP)) {
+-+				sk-&gt;sk_err = ENETDOWN;
+-+				if (!sock_flag(sk, SOCK_DEAD))
+-+					sk-&gt;sk_error_report(sk);
+-+				goto out;
+-+			}
+-+			can_dev_unregister(dev, raw_notifier, sk);
+-+		} else
+-+			dev = NULL;
+++			ro-&gt;ifindex = 0;
+ +
+-+		/* unregister current filters for this device */
+-+		raw_remove_filters(dev, sk);
+++		} else {
+++			raw_disable_filters(NULL, sk);
+++			raw_disable_errfilter(NULL, sk);
+++		}
+ +
+-+		if (dev)
+-+			dev_put(dev);
+-+
+ +		ro-&gt;bound = 0;
+ +	}
+ +
+ +	if (addr-&gt;can_ifindex) {
+-+		dev = dev_get_by_index(addr-&gt;can_ifindex);
+++		struct net_device *dev = dev_get_by_index(addr-&gt;can_ifindex);
+ +		if (!dev) {
+ +			DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
+ +			err = -ENODEV;
+ +			goto out;
+ +		}
+-+		if (!(dev-&gt;flags &amp; IFF_UP)) {
+-+			sk-&gt;sk_err = ENETDOWN;
+-+			if (!sock_flag(sk, SOCK_DEAD))
+-+				sk-&gt;sk_error_report(sk);
+++		if (dev-&gt;type != ARPHRD_CAN) {
+++			DBG(&quot;device %d no CAN device\n&quot;, addr-&gt;can_ifindex);
+++			dev_put(dev);
+++			err = -ENODEV;
+ +			goto out;
+ +		}
+-+		can_dev_register(dev, raw_notifier, sk);
+-+	} else
+-+		dev = NULL;
+++		if (!(dev-&gt;flags &amp; IFF_UP))
+++			notify_enetdown = 1;
+ +
+-+	ro-&gt;ifindex = addr-&gt;can_ifindex;
+++		ro-&gt;ifindex = dev-&gt;ifindex;
+ +
+-+	/* filters set by default/setsockopt */
+-+	raw_add_filters(dev, sk);
+++		/* filters set by default/setsockopt */
+++		raw_enable_filters(dev, sk);
+++		raw_enable_errfilter(dev, sk);
+++		dev_put(dev);
+ +
+-+	/* error frame filter set by setsockopt */
+-+	if (ro-&gt;err_mask)
+-+		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-+				raw_rcv, sk, IDENT);
+++	} else {
+++		ro-&gt;ifindex = 0;
+ +
+++		/* filters set by default/setsockopt */
+++		raw_enable_filters(NULL, sk);
+++		raw_enable_errfilter(NULL, sk);
+++	}
+++
+ +	ro-&gt;bound = 1;
+ +
+ + out:
+-+	spin_unlock(&amp;ro-&gt;lock);
+ +	release_sock(sk);
+ +
+-+	if (dev)
+-+		dev_put(dev);
+++	if (notify_enetdown) {
+++		sk-&gt;sk_err = ENETDOWN;
+++		if (!sock_flag(sk, SOCK_DEAD))
+++			sk-&gt;sk_error_report(sk);
+++	}
+ +
+ +	return err;
+ +}
+@@ -443,13 +482,14 @@
+ +{
+ +	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct raw_opt *ro = raw_sk(sk);
+++	struct raw_sock *ro = raw_sk(sk);
+ +
+ +	if (peer)
+ +		return -EOPNOTSUPP;
+ +
+ +	addr-&gt;can_family  = AF_CAN;
+ +	addr-&gt;can_ifindex = ro-&gt;ifindex;
+++
+ +	*len = sizeof(*addr);
+ +
+ +	return 0;
+@@ -470,7 +510,7 @@
+ +			  char __user *optval, int optlen)
+ +{
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct raw_opt *ro = raw_sk(sk);
+++	struct raw_sock *ro = raw_sk(sk);
+ +	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
+ +	struct can_filter sfilter;         /* single filter */
+ +	struct net_device *dev = NULL;
+@@ -510,14 +550,12 @@
+ +
+ +		lock_sock(sk);
+ +
+-+		spin_lock(&amp;ro-&gt;lock);
+ +		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+ +			dev = dev_get_by_index(ro-&gt;ifindex);
+-+		spin_unlock(&amp;ro-&gt;lock);
+ +
+ +		/* remove current filters &amp; unregister */
+ +		if (ro-&gt;bound)
+-+			raw_remove_filters(dev, sk);
+++			raw_disable_filters(dev, sk);
+ +
+ +		if (ro-&gt;count &gt; 1)
+ +			kfree(ro-&gt;filter);
+@@ -532,7 +570,7 @@
+ +		ro-&gt;filter = filter;
+ +		ro-&gt;count  = count;
+ +		if (ro-&gt;bound)
+-+			raw_add_filters(dev, sk);
+++			raw_enable_filters(dev, sk);
+ +
+ +		if (dev)
+ +			dev_put(dev);
+@@ -551,23 +589,26 @@
+ +
+ +		err_mask &amp;= CAN_ERR_MASK;
+ +
+++		lock_sock(sk);
+++
+ +		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+ +			dev = dev_get_by_index(ro-&gt;ifindex);
+ +
+ +		/* remove current error mask */
+-+		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-+			can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-+					  raw_rcv, sk);
+++		if (ro-&gt;bound)
+++			raw_disable_errfilter(dev, sk);
+ +
+-+		/* add new error mask */
+ +		ro-&gt;err_mask = err_mask;
+-+		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-+			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-+					raw_rcv, sk, IDENT);
+ +
+++		/* add new error mask */
+++		if (ro-&gt;bound)
+++			raw_enable_errfilter(dev, sk);
+++
+ +		if (dev)
+ +			dev_put(dev);
+ +
+++		release_sock(sk);
+++
+ +		break;
+ +
+ +	case CAN_RAW_LOOPBACK:
+@@ -600,11 +641,10 @@
+ +			  char __user *optval, int __user *optlen)
+ +{
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct raw_opt *ro = raw_sk(sk);
+-+	struct can_filter *filter = ro-&gt;filter;
+-+	int count = ro-&gt;count;
+++	struct raw_sock *ro = raw_sk(sk);
+ +	int len;
+-+	void *val = NULL;
+++	void *val;
+++	int err = 0;
+ +
+ +	if (level != SOL_CAN_RAW)
+ +		return -EINVAL;
+@@ -616,15 +656,20 @@
+ +	switch (optname) {
+ +
+ +	case CAN_RAW_FILTER:
+-+		if (count &amp;&amp; filter) {
+-+			int filter_size = count * sizeof(struct can_filter);
+-+			if (len &gt; filter_size)
+-+				len = filter_size;
+-+			val = filter;
+++		lock_sock(sk);
+++		if (ro-&gt;count &gt; 0) {
+++			int fsize = ro-&gt;count * sizeof(struct can_filter);
+++			if (len &gt; fsize)
+++				len = fsize;
+++			err = copy_to_user(optval, ro-&gt;filter, len);
+ +		} else
+ +			len = 0;
+-+		break;
+++		release_sock(sk);
+ +
+++		if (!err)
+++			err = put_user(len, optlen);
+++		return err;
+++
+ +	case CAN_RAW_ERR_FILTER:
+ +		if (len &gt; sizeof(can_err_mask_t))
+ +			len = sizeof(can_err_mask_t);
+@@ -658,7 +703,7 @@
+ +		       struct msghdr *msg, size_t size)
+ +{
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct raw_opt *ro = raw_sk(sk);
+++	struct raw_sock *ro = raw_sk(sk);
+ +	struct sk_buff *skb;
+ +	struct net_device *dev;
+ +	int ifindex;
+@@ -745,8 +790,11 @@
+ +	sock_recv_timestamp(msg, sk, skb);
+ +
+ +	if (msg-&gt;msg_name) {
+-+		msg-&gt;msg_namelen = sizeof(struct sockaddr_can);
+-+		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+++		struct sockaddr_can *addr = msg-&gt;msg_name;
+++		msg-&gt;msg_namelen = sizeof(*addr);
+++		memset(addr, 0, sizeof(*addr));
+++		addr-&gt;can_family  = AF_CAN;
+++		addr-&gt;can_ifindex = skb-&gt;iif;
+ +	}
+ +
+ +	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/04-can-bcm-proto.diff
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/04-can-bcm-proto.diff	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/04-can-bcm-proto.diff	2007-06-22 03:39:34 UTC (rev 391)
+@@ -10,13 +10,13 @@
+  include/linux/can/bcm.h |   65 +
+  net/can/Kconfig         |   28 
+  net/can/Makefile        |    3 
+- net/can/bcm.c           | 1671 ++++++++++++++++++++++++++++++++++++++++++++++++
+- 4 files changed, 1767 insertions(+)
++ net/can/bcm.c           | 1750 ++++++++++++++++++++++++++++++++++++++++++++++++
++ 4 files changed, 1846 insertions(+)
+ 
+-Index: linux-2.6.22-rc2-git3/include/linux/can/bcm.h
++Index: linux-2.6.22-rc5-git5/include/linux/can/bcm.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc2-git3/include/linux/can/bcm.h	2007-05-23 12:25:52.%N +0200
+++++ linux-2.6.22-rc5-git5/include/linux/can/bcm.h	2007-06-21 14:08:38.000000000 +0200
+ @@ -0,0 +1,65 @@
+ +/*
+ + * linux/can/bcm.h
+@@ -83,10 +83,10 @@
+ +#define RX_RTR_FRAME        0x0400
+ +
+ +#endif /* CAN_BCM_H */
+-Index: linux-2.6.22-rc2-git3/net/can/Kconfig
++Index: linux-2.6.22-rc5-git5/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/net/can/Kconfig	2007-05-23 12:25:52.%N +0200
+-+++ linux-2.6.22-rc2-git3/net/can/Kconfig	2007-05-23 12:25:52.%N +0200
++--- linux-2.6.22-rc5-git5.orig/net/can/Kconfig	2007-06-21 14:05:26.000000000 +0200
+++++ linux-2.6.22-rc5-git5/net/can/Kconfig	2007-06-21 14:08:38.000000000 +0200
+ @@ -42,6 +42,34 @@
+  	  Say Y here if you want non-root users to be able to access CAN_RAW
+  	  sockets.
+@@ -122,10 +122,10 @@
+  config CAN_DEBUG_CORE
+  	bool &quot;CAN Core debugging messages&quot;
+  	depends on CAN
+-Index: linux-2.6.22-rc2-git3/net/can/Makefile
++Index: linux-2.6.22-rc5-git5/net/can/Makefile
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/net/can/Makefile	2007-05-23 12:25:52.%N +0200
+-+++ linux-2.6.22-rc2-git3/net/can/Makefile	2007-05-23 12:25:52.%N +0200
++--- linux-2.6.22-rc5-git5.orig/net/can/Makefile	2007-06-21 14:05:26.000000000 +0200
+++++ linux-2.6.22-rc5-git5/net/can/Makefile	2007-06-21 14:08:38.000000000 +0200
+ @@ -7,3 +7,6 @@
+  
+  obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+@@ -133,11 +133,11 @@
+ +
+ +obj-$(CONFIG_CAN_BCM)	+= can-bcm.o
+ +can-bcm-objs		:= bcm.o
+-Index: linux-2.6.22-rc2-git3/net/can/bcm.c
++Index: linux-2.6.22-rc5-git5/net/can/bcm.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc2-git3/net/can/bcm.c	2007-05-23 12:25:52.%N +0200
+-@@ -0,0 +1,1671 @@
+++++ linux-2.6.22-rc5-git5/net/can/bcm.c	2007-06-21 14:08:51.000000000 +0200
++@@ -0,0 +1,1750 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+ + *
+@@ -205,7 +205,7 @@
+ +#define IDENT &quot;bcm&quot;
+ +#define CAN_BCM_VERSION CAN_VERSION
+ +static __initdata const char banner[] = KERN_INFO
+-+	&quot;can: broadcast manager protocol # rev &quot; CAN_BCM_VERSION &quot;\n&quot;;
+++	&quot;can: broadcast manager protocol (rev &quot; CAN_BCM_VERSION &quot;)\n&quot;;
+ +
+ +MODULE_DESCRIPTION(&quot;PF_CAN broadcast manager protocol&quot;);
+ +MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -232,7 +232,7 @@
+ +	unsigned long frames_abs, frames_filtered;
+ +	struct timer_list timer, thrtimer;
+ +	struct timeval ival1, ival2;
+-+	struct timeval rx_stamp;
+++	ktime_t rx_stamp;
+ +	int rx_ifindex;
+ +	int count;
+ +	int nframes;
+@@ -242,18 +242,9 @@
+ +	struct can_frame sframe;
+ +	struct can_frame last_sframe;
+ +	struct sock *sk;
+++	struct net_device *rx_reg_dev;
+ +};
+ +
+-+struct bcm_opt {
+-+	int bound;
+-+	int ifindex;
+-+	struct list_head rx_ops;
+-+	struct list_head tx_ops;
+-+	unsigned long dropped_usr_msgs;
+-+	struct proc_dir_entry *bcm_proc_read;
+-+	char procname [9]; /* pointer printed in ASCII with \0 */
+-+};
+-+
+ +static struct proc_dir_entry *proc_dir = NULL;
+ +
+ +#ifdef CONFIG_CAN_BCM_USER
+@@ -263,13 +254,20 @@
+ +#endif
+ +
+ +struct bcm_sock {
+-+	struct sock    sk;
+-+	struct bcm_opt opt;
+++	struct sock sk;
+++	int bound;
+++	int ifindex;
+++	struct notifier_block notifier;
+++	struct list_head rx_ops;
+++	struct list_head tx_ops;
+++	unsigned long dropped_usr_msgs;
+++	struct proc_dir_entry *bcm_proc_read;
+++	char procname [9]; /* pointer printed in ASCII with \0 */
+ +};
+ +
+-+static inline struct bcm_opt *bcm_sk(const struct sock *sk)
+++static inline struct bcm_sock *bcm_sk(const struct sock *sk)
+ +{
+-+	return &amp;((struct bcm_sock *)sk)-&gt;opt;
+++	return (struct bcm_sock *)sk;
+ +}
+ +
+ +#define CFSIZ sizeof(struct can_frame)
+@@ -331,7 +329,7 @@
+ +{
+ +	int len = 0;
+ +	struct sock *sk = (struct sock *)data;
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	struct bcm_sock *bo = bcm_sk(sk);
+ +	struct bcm_op *op;
+ +
+ +	len += snprintf(page + len, PAGE_SIZE - len, &quot;&gt;&gt;&gt; socket %p&quot;,
+@@ -464,13 +462,12 @@
+ + *                    (consisting of bcm_msg_head + x CAN frames)
+ + */
+ +static void bcm_send_to_user(struct bcm_op *op, struct bcm_msg_head *head,
+-+			     struct can_frame *frames, struct timeval *tv)
+++			     struct can_frame *frames, int has_timestamp)
+ +{
+ +	struct sk_buff *skb;
+ +	struct can_frame *firstframe;
+ +	struct sock *sk = op-&gt;sk;
+ +	int datalen = head-&gt;nframes * CFSIZ;
+-+	struct sockaddr_can *addr;
+ +	int err;
+ +
+ +	skb = alloc_skb(sizeof(*head) + datalen,
+@@ -483,14 +480,14 @@
+ +	/* can_frames starting here */
+ +	firstframe = (struct can_frame *) skb-&gt;tail;
+ +
+-+	if (tv)
+-+		skb_set_timestamp(skb, tv); /* restore timestamp */
+ +
+-+	addr = (struct sockaddr_can *)skb-&gt;cb;
+-+	memset(addr, 0, sizeof(*addr));
+-+	addr-&gt;can_family  = AF_CAN;
+++	if (has_timestamp) {
+++		/* restore rx timestamp */
+++		skb-&gt;tstamp = op-&gt;rx_stamp;
+++	}
+++
+ +	/* restore originator for recvfrom() */
+-+	addr-&gt;can_ifindex = op-&gt;rx_ifindex;
+++	skb-&gt;iif = op-&gt;rx_ifindex;
+ +
+ +	if (head-&gt;nframes) {
+ +		memcpy(skb_put(skb, datalen), frames, datalen);
+@@ -507,7 +504,7 @@
+ +
+ +	err = sock_queue_rcv_skb(sk, skb);
+ +	if (err &lt; 0) {
+-+		struct bcm_opt *bo = bcm_sk(sk);
+++		struct bcm_sock *bo = bcm_sk(sk);
+ +
+ +		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
+ +		kfree_skb(skb);
+@@ -543,7 +540,7 @@
+ +			msg_head.can_id  = op-&gt;can_id;
+ +			msg_head.nframes = 0;
+ +
+-+			bcm_send_to_user(op, &amp;msg_head, NULL, NULL);
+++			bcm_send_to_user(op, &amp;msg_head, NULL, 0);
+ +		}
+ +	}
+ +
+@@ -611,7 +608,7 @@
+ +	head.can_id  = op-&gt;can_id;
+ +	head.nframes = 1;
+ +
+-+	bcm_send_to_user(op, &amp;head, data, &amp;op-&gt;rx_stamp);
+++	bcm_send_to_user(op, &amp;head, data, 1);
+ +}
+ +
+ +/*
+@@ -741,7 +738,7 @@
+ +	msg_head.can_id  = op-&gt;can_id;
+ +	msg_head.nframes = 0;
+ +
+-+	bcm_send_to_user(op, &amp;msg_head, NULL, NULL);
+++	bcm_send_to_user(op, &amp;msg_head, NULL, 0);
+ +
+ +	/* no restart of the timer is done here! */
+ +
+@@ -805,7 +802,7 @@
+ +	if (skb-&gt;len == sizeof(rxframe)) {
+ +		memcpy(&amp;rxframe, skb-&gt;data, sizeof(rxframe));
+ +		/* save rx timestamp */
+-+		skb_get_timestamp(skb, &amp;op-&gt;rx_stamp);
+++		op-&gt;rx_stamp = skb-&gt;tstamp;
+ +		/* save originator for recvfrom() */
+ +		op-&gt;rx_ifindex = skb-&gt;dev-&gt;ifindex;
+ +		/* update statistics */
+@@ -908,6 +905,19 @@
+ +	return;
+ +}
+ +
+++static void bcm_rx_unreg(struct net_device *dev, struct bcm_op *op)
+++{
+++	if (op-&gt;rx_reg_dev == dev) {
+++		can_rx_unregister(dev, op-&gt;can_id, REGMASK(op-&gt;can_id),
+++				  bcm_rx_handler, op);
+++
+++		/* mark as removed subscription */
+++		op-&gt;rx_reg_dev = NULL;
+++	} else
+++		printk(KERN_ERR &quot;can-bcm: bcm_rx_unreg: registered device &quot;
+++		       &quot;mismatch %p %p\n&quot;, op-&gt;rx_reg_dev, dev);
+++}
+++
+ +/*
+ + * bcm_delete_rx_op - find and remove a rx op (returns number of removed ops)
+ + */
+@@ -926,16 +936,20 @@
+ +			 * thing to do here.
+ +			 */
+ +			if (op-&gt;ifindex) {
+-+				struct net_device *dev =
+-+					dev_get_by_index(op-&gt;ifindex);
+++				/*
+++				 * Only remove subscriptions that had not
+++				 * been removed due to NETDEV_UNREGISTER
+++				 * in bcm_notifier()
+++				 */
+++				if (op-&gt;rx_reg_dev) {
+++					struct net_device *dev;
+ +
+-+				if (dev) {
+-+					can_rx_unregister(dev, op-&gt;can_id,
+-+							  REGMASK(op-&gt;can_id),
+-+							  bcm_rx_handler, op);
+-+					dev_put(dev);
+++					dev = dev_get_by_index(op-&gt;ifindex);
+++					if (dev) {
+++						bcm_rx_unreg(dev, op);
+++						dev_put(dev);
+++					}
+ +				}
+-+
+ +			} else
+ +				can_rx_unregister(NULL, op-&gt;can_id,
+ +						  REGMASK(op-&gt;can_id),
+@@ -993,7 +1007,7 @@
+ +	msg_head-&gt;ival2   = op-&gt;ival2;
+ +	msg_head-&gt;nframes = op-&gt;nframes;
+ +
+-+	bcm_send_to_user(op, msg_head, op-&gt;frames, NULL);
+++	bcm_send_to_user(op, msg_head, op-&gt;frames, 0);
+ +
+ +	return MHSIZ;
+ +}
+@@ -1004,7 +1018,7 @@
+ +static int bcm_tx_setup(struct bcm_msg_head *msg_head, struct msghdr *msg,
+ +			int ifindex, struct sock *sk)
+ +{
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	struct bcm_sock *bo = bcm_sk(sk);
+ +	struct bcm_op *op;
+ +	int i, err;
+ +
+@@ -1185,7 +1199,7 @@
+ +static int bcm_rx_setup(struct bcm_msg_head *msg_head, struct msghdr *msg,
+ +			int ifindex, struct sock *sk)
+ +{
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	struct bcm_sock *bo = bcm_sk(sk);
+ +	struct bcm_op *op;
+ +	int do_rx_register;
+ +	int err;
+@@ -1396,6 +1410,7 @@
+ +				can_rx_register(dev, op-&gt;can_id,
+ +						REGMASK(op-&gt;can_id),
+ +						bcm_rx_handler, op, IDENT);
+++				op-&gt;rx_reg_dev = dev;
+ +				dev_put(dev);
+ +			}
+ +
+@@ -1456,7 +1471,7 @@
+ +		       struct msghdr *msg, size_t size)
+ +{
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	struct bcm_sock *bo = bcm_sk(sk);
+ +	int ifindex = bo-&gt;ifindex; /* default ifindex for this bcm_op */
+ +	struct bcm_msg_head msg_head;
+ +	int ret; /* read bytes or error codes as return value */
+@@ -1478,9 +1493,21 @@
+ +
+ +		ifindex = addr-&gt;can_ifindex; /* ifindex from sendto() */
+ +
+-+		if (ifindex &amp;&amp; !dev_get_by_index(ifindex)) {
+-+			DBG(&quot;device %d not found\n&quot;, ifindex);
+-+			return -ENODEV;
+++		if (ifindex) {
+++			struct net_device *dev = dev_get_by_index(ifindex);
+++
+++			if (!dev) {
+++				DBG(&quot;device %d not found\n&quot;, ifindex);
+++				return -ENODEV;
+++			}
+++
+++			if (dev-&gt;type != ARPHRD_CAN) {
+++				DBG(&quot;device %d no CAN device\n&quot;, ifindex);
+++				dev_put(dev);
+++				return -ENODEV;
+++			}
+++
+++			dev_put(dev);
+ +		}
+ +	}
+ +
+@@ -1550,11 +1577,66 @@
+ +}
+ +
+ +/*
+++ * notification handler for netdevice status changes
+++ */
+++static int bcm_notifier(struct notifier_block *nb, unsigned long msg,
+++			void *data)
+++{
+++	struct net_device *dev = (struct net_device *)data;
+++	struct bcm_sock *bo = container_of(nb, struct bcm_sock, notifier);
+++	struct sock *sk = &amp;bo-&gt;sk;
+++	struct bcm_op *op;
+++	int notify_enodev = 0;
+++
+++	DBG(&quot;msg %ld for dev %p (%s idx %d) sk %p bo-&gt;ifindex %d\n&quot;,
+++	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, bo-&gt;ifindex);
+++
+++	if (dev-&gt;type != ARPHRD_CAN)
+++		return NOTIFY_DONE;
+++
+++	switch (msg) {
+++
+++	case NETDEV_UNREGISTER:
+++		lock_sock(sk);
+++
+++		/* remove device specific receive entries */
+++		list_for_each_entry(op, &amp;bo-&gt;rx_ops, list)
+++			if (op-&gt;rx_reg_dev == dev)
+++				bcm_rx_unreg(dev, op);
+++
+++		/* remove device reference, if this is our bound device */
+++		if (bo-&gt;bound &amp;&amp; bo-&gt;ifindex == dev-&gt;ifindex) {
+++			bo-&gt;bound   = 0;
+++			bo-&gt;ifindex = 0;
+++			notify_enodev = 1;
+++		}
+++
+++		release_sock(sk);
+++
+++		if (notify_enodev) {
+++			sk-&gt;sk_err = ENODEV;
+++			if (!sock_flag(sk, SOCK_DEAD))
+++				sk-&gt;sk_error_report(sk);
+++		}
+++		break;
+++
+++	case NETDEV_DOWN:
+++		if (bo-&gt;bound &amp;&amp; bo-&gt;ifindex == dev-&gt;ifindex) {
+++			sk-&gt;sk_err = ENETDOWN;
+++			if (!sock_flag(sk, SOCK_DEAD))
+++				sk-&gt;sk_error_report(sk);
+++		}
+++	}
+++
+++	return NOTIFY_DONE;
+++}
+++
+++/*
+ + * initial settings for all BCM sockets to be set at socket creation time
+ + */
+ +static int bcm_init(struct sock *sk)
+ +{
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	struct bcm_sock *bo = bcm_sk(sk);
+ +
+ +	bo-&gt;bound            = 0;
+ +	bo-&gt;ifindex          = 0;
+@@ -1564,30 +1646,12 @@
+ +	INIT_LIST_HEAD(&amp;bo-&gt;tx_ops);
+ +	INIT_LIST_HEAD(&amp;bo-&gt;rx_ops);
+ +
+-+	return 0;
+-+}
+++	/* set notifier */
+++	bo-&gt;notifier.notifier_call = bcm_notifier;
+ +
+-+/*
+-+ * notification handler for netdevice status changes
+-+ */
+-+static void bcm_notifier(unsigned long msg, void *data)
+-+{
+-+	struct sock *sk = (struct sock *)data;
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	register_netdevice_notifier(&amp;bo-&gt;notifier);
+ +
+-+	DBG(&quot;called for sock %p\n&quot;, sk);
+-+
+-+	switch (msg) {
+-+
+-+	case NETDEV_UNREGISTER:
+-+		bo-&gt;bound   = 0;
+-+		bo-&gt;ifindex = 0;
+-+		/* fallthrough */
+-+	case NETDEV_DOWN:
+-+		sk-&gt;sk_err = ENETDOWN;
+-+		if (!sock_flag(sk, SOCK_DEAD))
+-+			sk-&gt;sk_error_report(sk);
+-+	}
+++	return 0;
+ +}
+ +
+ +/*
+@@ -1596,13 +1660,17 @@
+ +static int bcm_release(struct socket *sock)
+ +{
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	struct bcm_sock *bo = bcm_sk(sk);
+ +	struct bcm_op *op, *next;
+ +
+ +	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+ +
+ +	/* remove bcm_ops, timer, rx_unregister(), etc. */
+ +
+++	unregister_netdevice_notifier(&amp;bo-&gt;notifier);
+++
+++	lock_sock(sk);
+++
+ +	list_for_each_entry_safe(op, next, &amp;bo-&gt;tx_ops, list) {
+ +		DBG(&quot;removing tx_op %p for can_id %03X\n&quot;, op, op-&gt;can_id);
+ +		bcm_remove_op(op);
+@@ -1616,15 +1684,20 @@
+ +		 * can_rx_unregister() is always a save thing to do here.
+ +		 */
+ +		if (op-&gt;ifindex) {
+-+			struct net_device *dev = dev_get_by_index(op-&gt;ifindex);
+++			/*
+++			 * Only remove subscriptions that had not
+++			 * been removed due to NETDEV_UNREGISTER
+++			 * in bcm_notifier()
+++			 */
+++			if (op-&gt;rx_reg_dev) {
+++				struct net_device *dev;
+ +
+-+			if (dev) {
+-+				can_rx_unregister(dev, op-&gt;can_id,
+-+						  REGMASK(op-&gt;can_id),
+-+						  bcm_rx_handler, op);
+-+				dev_put(dev);
+++				dev = dev_get_by_index(op-&gt;ifindex);
+++				if (dev) {
+++					bcm_rx_unreg(dev, op);
+++					dev_put(dev);
+++				}
+ +			}
+-+
+ +		} else
+ +			can_rx_unregister(NULL, op-&gt;can_id,
+ +					  REGMASK(op-&gt;can_id),
+@@ -1637,16 +1710,13 @@
+ +	if (proc_dir &amp;&amp; bo-&gt;bcm_proc_read)
+ +		remove_proc_entry(bo-&gt;procname, proc_dir);
+ +
+-+	/* remove device notifier */
+-+	if (bo-&gt;ifindex) {
+-+		struct net_device *dev = dev_get_by_index(bo-&gt;ifindex);
+-+
+-+		if (dev) {
+-+			can_dev_unregister(dev, bcm_notifier, sk);
+-+			dev_put(dev);
+-+		}
+++	/* remove device reference */
+++	if (bo-&gt;bound) {
+++		bo-&gt;bound   = 0;
+++		bo-&gt;ifindex = 0;
+ +	}
+ +
+++	release_sock(sk);
+ +	sock_put(sk);
+ +
+ +	return 0;
+@@ -1657,7 +1727,7 @@
+ +{
+ +	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ +	struct sock *sk = sock-&gt;sk;
+-+	struct bcm_opt *bo = bcm_sk(sk);
+++	struct bcm_sock *bo = bcm_sk(sk);
+ +
+ +	if (bo-&gt;bound)
+ +		return -EISCONN;
+@@ -1671,15 +1741,21 @@
+ +			    addr-&gt;can_ifindex);
+ +			return -ENODEV;
+ +		}
+++
+++		if (dev-&gt;type != ARPHRD_CAN) {
+++			DBG(&quot;device %d no CAN device\n&quot;, addr-&gt;can_ifindex);
+++			dev_put(dev);
+++			return -ENODEV;
+++		}
+++
+ +		bo-&gt;ifindex = dev-&gt;ifindex;
+-+		can_dev_register(dev, bcm_notifier, sk); /* register notif. */
+ +		dev_put(dev);
+ +
+ +		DBG(&quot;socket %p bound to device %s (idx %d)\n&quot;,
+ +		    sock, dev-&gt;name, dev-&gt;ifindex);
+ +
+ +	} else {
+-+		/* no notifier for ifindex = 0 ('any' CAN device) */
+++		/* no interface reference for ifindex = 0 ('any' CAN device) */
+ +		bo-&gt;ifindex = 0;
+ +	}
+ +
+@@ -1728,8 +1804,11 @@
+ +	sock_recv_timestamp(msg, sk, skb);
+ +
+ +	if (msg-&gt;msg_name) {
+-+		msg-&gt;msg_namelen = sizeof(struct sockaddr_can);
+-+		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+++		struct sockaddr_can *addr = msg-&gt;msg_name;
+++		msg-&gt;msg_namelen = sizeof(*addr);
+++		memset(addr, 0, sizeof(*addr));
+++		addr-&gt;can_family  = AF_CAN;
+++		addr-&gt;can_ifindex = skb-&gt;iif;
+ +	}
+ +
+ +	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/05-can-vcan-driver.diff	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/05-can-vcan-driver.diff	2007-06-22 03:39:34 UTC (rev 391)
+@@ -10,16 +10,16 @@
+ 
+ ---
+  drivers/net/Makefile     |    1 
+- drivers/net/can/Kconfig  |   25 +++
++ drivers/net/can/Kconfig  |   25 ++++
+  drivers/net/can/Makefile |    5 
+- drivers/net/can/vcan.c   |  308 +++++++++++++++++++++++++++++++++++++++++++++++
++ drivers/net/can/vcan.c   |  287 +++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/Kconfig          |    3 
+- 5 files changed, 342 insertions(+)
++ 5 files changed, 321 insertions(+)
+ 
+-Index: linux-2.6.22-rc2-git3/drivers/net/Makefile
++Index: linux-2.6.22-rc5/drivers/net/Makefile
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/drivers/net/Makefile	2007-05-23 12:25:10.%N +0200
+-+++ linux-2.6.22-rc2-git3/drivers/net/Makefile	2007-05-23 12:25:53.%N +0200
++--- linux-2.6.22-rc5.orig/drivers/net/Makefile	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/drivers/net/Makefile	2007-06-20 14:11:19.000000000 +0200
+ @@ -8,6 +8,7 @@
+  obj-$(CONFIG_CHELSIO_T1) += chelsio/
+  obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+@@ -28,10 +28,10 @@
+  obj-$(CONFIG_BONDING) += bonding/
+  obj-$(CONFIG_ATL1) += atl1/
+  obj-$(CONFIG_GIANFAR) += gianfar_driver.o
+-Index: linux-2.6.22-rc2-git3/drivers/net/can/Kconfig
++Index: linux-2.6.22-rc5/drivers/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc2-git3/drivers/net/can/Kconfig	2007-05-23 12:25:53.%N +0200
+++++ linux-2.6.22-rc5/drivers/net/can/Kconfig	2007-06-20 14:11:19.000000000 +0200
+ @@ -0,0 +1,25 @@
+ +menu &quot;CAN Device Drivers&quot;
+ +	depends on CAN
+@@ -58,21 +58,21 @@
+ +	  on.
+ +
+ +endmenu
+-Index: linux-2.6.22-rc2-git3/drivers/net/can/Makefile
++Index: linux-2.6.22-rc5/drivers/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc2-git3/drivers/net/can/Makefile	2007-05-23 12:25:53.%N +0200
+++++ linux-2.6.22-rc5/drivers/net/can/Makefile	2007-06-20 14:11:19.000000000 +0200
+ @@ -0,0 +1,5 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network drivers.
+ +#
+ +
+ +obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+-Index: linux-2.6.22-rc2-git3/drivers/net/can/vcan.c
++Index: linux-2.6.22-rc5/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc2-git3/drivers/net/can/vcan.c	2007-05-23 12:25:53.%N +0200
+-@@ -0,0 +1,308 @@
+++++ linux-2.6.22-rc5/drivers/net/can/vcan.c	2007-06-20 14:11:19.000000000 +0200
++@@ -0,0 +1,287 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+ + *
+@@ -190,6 +190,7 @@
+ +	stats-&gt;rx_bytes += skb-&gt;len;
+ +
+ +	skb-&gt;protocol  = htons(ETH_P_CAN);
+++	skb-&gt;pkt_type  = PACKET_BROADCAST;
+ +	skb-&gt;dev       = dev;
+ +	skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ +
+@@ -208,8 +209,8 @@
+ +	stats-&gt;tx_packets++;
+ +	stats-&gt;tx_bytes += skb-&gt;len;
+ +
+-+	/* tx socket reference pointer: Loopback required if not NULL */
+-+	loop = *(struct sock **)skb-&gt;cb != NULL;
+++	/* set flag whether this packet has to be looped back */
+++	loop = skb-&gt;pkt_type == PACKET_LOOPBACK;
+ +
+ +	if (!loopback) {
+ +		/* no loopback handling available inside this driver */
+@@ -229,6 +230,8 @@
+ +	/* perform standard loopback handling for CAN network interfaces */
+ +
+ +	if (loop) {
+++		struct sock *srcsk = skb-&gt;sk;
+++
+ +		if (atomic_read(&amp;skb-&gt;users) != 1) {
+ +			struct sk_buff *old_skb = skb;
+ +
+@@ -243,6 +246,7 @@
+ +			skb_orphan(skb);
+ +
+ +		/* receive with packet counting */
+++		skb-&gt;sk = srcsk;
+ +		vcan_rx(skb, dev);
+ +	} else {
+ +		/* no looped packets =&gt; no counting */
+@@ -251,26 +255,6 @@
+ +	return 0;
+ +}
+ +
+-+static int vcan_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+-+{
+-+	return -EOPNOTSUPP;
+-+}
+-+
+-+static int vcan_rebuild_header(struct sk_buff *skb)
+-+{
+-+	DBG(&quot;skbuff %p\n&quot;, skb);
+-+	return 0;
+-+}
+-+
+-+static int vcan_header(struct sk_buff *skb, struct net_device *dev,
+-+		       unsigned short type, void *daddr, void *saddr,
+-+		       unsigned int len)
+-+{
+-+	DBG(&quot;skbuff %p, device %p\n&quot;, skb, dev);
+-+	return 0;
+-+}
+-+
+-+
+ +static struct net_device_stats *vcan_get_stats(struct net_device *dev)
+ +{
+ +	struct net_device_stats *stats = netdev_priv(dev);
+@@ -296,13 +280,8 @@
+ +
+ +	dev-&gt;open              = vcan_open;
+ +	dev-&gt;stop              = vcan_stop;
+-+	dev-&gt;set_config        = NULL;
+ +	dev-&gt;hard_start_xmit   = vcan_tx;
+-+	dev-&gt;do_ioctl          = vcan_ioctl;
+ +	dev-&gt;get_stats         = vcan_get_stats;
+-+	dev-&gt;hard_header       = vcan_header;
+-+	dev-&gt;rebuild_header    = vcan_rebuild_header;
+-+	dev-&gt;hard_header_cache = NULL;
+ +
+ +	SET_MODULE_OWNER(dev);
+ +}
+@@ -381,10 +360,10 @@
+ +
+ +module_init(vcan_init_module);
+ +module_exit(vcan_cleanup_module);
+-Index: linux-2.6.22-rc2-git3/net/can/Kconfig
++Index: linux-2.6.22-rc5/net/can/Kconfig
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/net/can/Kconfig	2007-05-23 12:25:52.%N +0200
+-+++ linux-2.6.22-rc2-git3/net/can/Kconfig	2007-05-23 12:25:53.%N +0200
++--- linux-2.6.22-rc5.orig/net/can/Kconfig	2007-06-20 14:11:13.000000000 +0200
+++++ linux-2.6.22-rc5/net/can/Kconfig	2007-06-20 14:11:19.000000000 +0200
+ @@ -77,3 +77,6 @@
+  	  Say Y here if you want the CAN core to produce a bunch of debug
+  	  messages to the system log.  Select this if you are having a
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/06-can-maintainers.diff
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/06-can-maintainers.diff	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/06-can-maintainers.diff	2007-06-22 03:39:34 UTC (rev 391)
+@@ -11,10 +11,10 @@
+  MAINTAINERS |    9 +++++++++
+  2 files changed, 25 insertions(+)
+ 
+-Index: linux-2.6.22-rc2-git3/CREDITS
++Index: linux-2.6.22-rc5/CREDITS
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/CREDITS	2007-05-27 07:40:05.%N +0200
+-+++ linux-2.6.22-rc2-git3/CREDITS	2007-05-27 07:41:06.%N +0200
++--- linux-2.6.22-rc5.orig/CREDITS	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/CREDITS	2007-06-20 14:11:27.000000000 +0200
+ @@ -1330,6 +1330,14 @@
+  S: 5623 HZ Eindhoven
+  S: The Netherlands
+@@ -45,11 +45,11 @@
+  N: Jon Tombs
+  E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">jon at gte.esi.us.es</A>
+  W: <A HREF="http://www.esi.us.es/~jon">http://www.esi.us.es/~jon</A>
+-Index: linux-2.6.22-rc2-git3/MAINTAINERS
++Index: linux-2.6.22-rc5/MAINTAINERS
+ ===================================================================
+---- linux-2.6.22-rc2-git3.orig/MAINTAINERS	2007-05-27 07:40:05.%N +0200
+-+++ linux-2.6.22-rc2-git3/MAINTAINERS	2007-05-27 07:41:06.%N +0200
+-@@ -943,6 +943,15 @@
++--- linux-2.6.22-rc5.orig/MAINTAINERS	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/MAINTAINERS	2007-06-20 14:11:27.000000000 +0200
++@@ -951,6 +951,15 @@
+  L:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">video4linux-list at redhat.com</A>
+  S:	Maintained
+  
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/07-can-doc.diff
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/07-can-doc.diff	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/07-can-doc.diff	2007-06-22 03:39:34 UTC (rev 391)
+@@ -11,10 +11,10 @@
+  Documentation/networking/can.txt  |  635 ++++++++++++++++++++++++++++++++++++++
+  2 files changed, 637 insertions(+)
+ 
+-Index: linux-2.6.22-rc3/Documentation/networking/can.txt
++Index: linux-2.6.22-rc5/Documentation/networking/can.txt
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ linux-2.6.22-rc3/Documentation/networking/can.txt	2007-05-29 10:14:54.%N +0200
+++++ linux-2.6.22-rc5/Documentation/networking/can.txt	2007-06-20 14:11:31.000000000 +0200
+ @@ -0,0 +1,635 @@
+ +============================================================================
+ +
+@@ -651,10 +651,10 @@
+ +  Klaus Hitschler (PEAK driver integration)
+ +  Uwe Koppe (CAN netdevices with PF_PACKET approach)
+ +  Michael Schulze (driver layer loopback requirement, RT CAN drivers review)
+-Index: linux-2.6.22-rc3/Documentation/networking/00-INDEX
++Index: linux-2.6.22-rc5/Documentation/networking/00-INDEX
+ ===================================================================
+---- linux-2.6.22-rc3.orig/Documentation/networking/00-INDEX	2007-04-26 05:08:32.%N +0200
+-+++ linux-2.6.22-rc3/Documentation/networking/00-INDEX	2007-05-30 12:37:31.%N +0200
++--- linux-2.6.22-rc5.orig/Documentation/networking/00-INDEX	2007-06-20 14:10:41.000000000 +0200
+++++ linux-2.6.22-rc5/Documentation/networking/00-INDEX	2007-06-20 14:11:31.000000000 +0200
+ @@ -26,6 +26,8 @@
+  	- info on the driver for Baycom style amateur radio modems
+  bridge.txt
+
+Modified: trunk/patch-series/2.6.22-rc5-git5/intro
+===================================================================
+--- trunk/patch-series/2.6.22-rc3/intro	2007-06-21 16:43:42 UTC (rev 390)
++++ trunk/patch-series/2.6.22-rc5-git5/intro	2007-06-22 03:39:34 UTC (rev 391)
+@@ -1,26 +1,54 @@
+ SUBJECT
+-CAN: Add new PF_CAN protocol family, SVN r322
++CAN: Add new PF_CAN protocol family, try #3
+ ESUBJECT
+ 
+-This patch series applies against linux-2.6.22-rc3 and is derived from
+-Subversion revision r322 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+-It adds a new protocol family to Linux for communication on the CAN
+-(Controller Area Network) using the socket API.
++Hello Dave,
+ 
+-The current implementation supports two protocols in the family, a raw
+-protocol for sending and receiving raw CAN frames, and a broadcast
+-manager protocol, which effeciently handles periodically sent
+-broadcast messages, which are typical in CAN environments.
++this is the third post of the patch series that adds the PF_CAN
++protocol family for the Controller Area Network.
+ 
+-There is also a virtual CAN network driver which only loops back sent
+-CAN frames.  Drivers for real CAN hardware are also being worked on
+-and are nearly complete.  These will be released later, or you can find
+-them in the subversion repository at
+-<A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++Since our last post we have changed the code quite a lot:
+ 
+-Additional information about the concepts of the CAN protocol family
+-can be found in the file Documentation/networking/can.txt, added by
+-patch 7/7.
++* Use sbk-&gt;sk and skb-&gt;pkt_type instead of skb-&gt;cb to pass loopback
++  flags and originating socket down to the driver and back to the
++  receiving socket.  Thanks to Patrick McHardy for pointing out our
++  wrong use of sbk-&gt;cb.
+ 
+-Userspace tools (can-utils) and test suites for the different CAN
+-protocols can also be found in the subversion repository.
++* Use skb-&gt;iif instead of skb-&gt;cb to pass receiving interface from
++  raw_rcv() and bcm_rcv() up to raw_recvmsg() and bcm_recvmsg().
++  
++* Set skb-&gt;protocol when sending CAN frames to netdevices.
++
++* Removed struct raw_opt and struct bcm_opt and integrated these
++  directly into struct raw_sock and bcm_sock resp., like most other
++  proto implementations do.
++
++* We have found and fixed race conditions between raw_bind(),
++  raw_{set,get}sockopt() and raw_notifier().  This resulted in
++  - complete removal of our own notifier list infrastructure in
++    af_can.c.  raw.c and bcm.c now use normal netdevice notifiers.
++  - removal of ro-&gt;lock spinlock.  We use lock_sock(sk) now.
++  - changed deletion of dev_rcv_lists, which are now marked for
++    deletion in the netdevice notifier in af_can.c and are actually
++    deleted when all entries have been deleted using can_rx_unregister().
++
++* Follow changes in 2.6.22 (e.g. ktime_t timestamps in skb).
++
++* Removed obsolete code from vcan.c, as pointed out by Stephen Hemminger.
++
++This patch series applies against linux-2.6.22-rc5-git5 and is derived from
++Subversion revision r390 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++It can be found in the directory
++<A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
++
++This patch doesn't touch anything in the kernel except for the allocation
++of a couple of numbers for protocol, arp hw type, and a line discipline.
++
++Please consider this patch series for integration into your tree.
++
++Thanks very much for your work!
++
++Best regards,
++
++Urs Thuermann
++Oliver Hartkopp
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000373.html">r390 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000375.html">r392 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#374">[ date ]</a>
+              <a href="thread.html#374">[ thread ]</a>
+              <a href="subject.html#374">[ subject ]</a>
+              <a href="author.html#374">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

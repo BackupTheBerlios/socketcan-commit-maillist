@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1192 - trunk/test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1192%20-%20trunk/test&In-Reply-To=%3C20100729094410.268B0480BEA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000823.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1192 - trunk/test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1192%20-%20trunk/test&In-Reply-To=%3C20100729094410.268B0480BEA%40sheep.berlios.de%3E"
+       TITLE="r1192 - trunk/test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 29 11:44:10 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000823.html">r1191 - trunk/test
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#824">[ date ]</a>
+              <a href="thread.html#824">[ thread ]</a>
+              <a href="subject.html#824">[ subject ]</a>
+              <a href="author.html#824">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-07-29 11:44:09 +0200 (Thu, 29 Jul 2010)
+New Revision: 1192
+
+Modified:
+   trunk/test/tst-rcv-own-msgs.c
+Log:
+Added mandatory commandline option to specify the CAN network device.
+
+
+Modified: trunk/test/tst-rcv-own-msgs.c
+===================================================================
+--- trunk/test/tst-rcv-own-msgs.c	2010-07-29 09:11:12 UTC (rev 1191)
++++ trunk/test/tst-rcv-own-msgs.c	2010-07-29 09:44:09 UTC (rev 1192)
+@@ -141,10 +141,15 @@
+ 	int s, t;
+ 	struct sockaddr_can addr;
+ 	struct ifreq ifr;
+-	int ifindex;
+ 	int i = 0;
+ 
+ 
++	/* check command line options */
++	if (argc != 2) {
++		fprintf(stderr, &quot;Usage: %s &lt;device&gt;\n&quot;, argv[0]);
++		return 1;
++	}
++
+ 	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
+ 		perror(&quot;socket&quot;);
+ 		return 1;
+@@ -154,12 +159,13 @@
+ 		return 1;
+ 	}
+ 
+-	strcpy(ifr.ifr_name, &quot;vcan0&quot;);
+-	ioctl(s, SIOCGIFINDEX, &amp;ifr);
+-	ifindex = ifr.ifr_ifindex;
+-
++	strcpy(ifr.ifr_name, argv[1]);
++	if (ioctl(s, SIOCGIFINDEX, &amp;ifr) &lt; 0) {
++		perror(&quot;SIOCGIFINDEX&quot;);
++		return 1;
++	}
++	addr.can_ifindex = ifr.ifr_ifindex;
+ 	addr.can_family = AF_CAN;
+-	addr.can_ifindex = ifindex;
+ 
+ 	if (bind(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+ 		perror(&quot;bind&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000823.html">r1191 - trunk/test
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#824">[ date ]</a>
+              <a href="thread.html#824">[ thread ]</a>
+              <a href="subject.html#824">[ subject ]</a>
+              <a href="author.html#824">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

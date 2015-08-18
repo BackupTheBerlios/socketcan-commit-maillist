@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r183 - trunk/kernel/2.4/drivers/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r183%20-%20trunk/kernel/2.4/drivers/mscan&In-Reply-To=%3C200703122033.l2CKXijA000193%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000165.html">
+   <LINK REL="Next"  HREF="000167.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r183 - trunk/kernel/2.4/drivers/mscan</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r183%20-%20trunk/kernel/2.4/drivers/mscan&In-Reply-To=%3C200703122033.l2CKXijA000193%40sheep.berlios.de%3E"
+       TITLE="r183 - trunk/kernel/2.4/drivers/mscan">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar 12 21:33:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000165.html">r182 - trunk/patches/linux-2.6.21-rc3
+</A></li>
+        <LI>Next message: <A HREF="000167.html">r184 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-12 21:33:38 +0100 (Mon, 12 Mar 2007)
+New Revision: 183
+
+Modified:
+   trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+Log:
+Applied patch from Eberhard Stoll to fix MSCAN TX timeout problems:
+---
+Now it uses only one tx buffer, all others are unused. 
+For me this seems to be the best way, especially after i read the new 
+RevB ERRATA sheet. Purging the pending can frame is done via CANTARQ
+register.
+---
+Tnx to Eberhard for the contribution!
+
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2007-03-09 16:35:09 UTC (rev 182)
++++ trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2007-03-12 20:33:38 UTC (rev 183)
+@@ -273,28 +273,16 @@
+     struct can_frame *cf = (struct can_frame*)skb-&gt;data;
+     uint8_t dlc;
+     canid_t id;
+-    int	i, buf;
++    int i;
+ 
+     netif_stop_queue(dev);
+ 
+     dlc = cf-&gt;can_dlc;
+     id  = cf-&gt;can_id;
+ 
+-    /* Find an empty buffer */
+-    for (buf = 0; buf &lt; 3; buf++) {
+-	if (regs-&gt;cantflg &amp; (1 &lt;&lt; buf))
+-	    break; /* Buffer # buf is free */
+-    }
++    /* always use buffer 0 */
++    regs-&gt;cantbsel = 1;
+ 
+-    if (buf == 3) {
+-	/* No buffer is available */
+-	printk(KERN_ERR &quot;%s: %s: no buffer is available\n&quot;, DRV_NAME, __FUNCTION__);
+-	return 0;
+-    }
+-
+-    /* Select the buffer we've found */
+-    regs-&gt;cantbsel = 1 &lt;&lt; buf;
+-
+     if (id &amp; CAN_EFF_FLAG) {
+ 
+ 	regs-&gt;cantxfg.idr[0]  = (id &amp; 0x1fe00000) &gt;&gt; 21;
+@@ -326,10 +314,10 @@
+     regs-&gt;cantxfg.tbpr = 0;
+ 
+     /* Trigger transmission */
+-    regs-&gt;cantflg = (1 &lt;&lt; buf);
++    regs-&gt;cantflg = 1;
+ 
+     /* Enable interrupt */
+-    regs-&gt;cantier |= (1 &lt;&lt; buf);
++    regs-&gt;cantier |= 1;
+ 
+     priv-&gt;stats.tx_bytes += dlc;
+ 
+@@ -343,9 +331,11 @@
+ static void mscan_tx_timeout(struct net_device *dev)
+ {
+     struct can_priv *priv = (struct can_priv*)dev-&gt;priv;
++    struct mpc5xxx_mscan *regs = priv-&gt;regs;
+ 
++    /* abort transmission (generates TX interrupt for netif_wake_queue()) */
++    regs-&gt;cantarq |= MPC5xxx_MSCAN_ABTRQ0;
+     priv-&gt;stats.tx_errors++;
+-    netif_wake_queue(dev);
+ }
+ 
+ static void mscan_rx(struct net_device *dev)
+@@ -449,12 +439,15 @@
+ 	    DRV_NAME, dev-&gt;name, r_status, t_status);
+ 
+     if (t_status &amp; MPC5xxx_MSCAN_TXE) {
+-	/* transmission complete interrupt */
++	/* transmission complete/aborted interrupt */
+ 
++	if (!(mscan_regs-&gt;cantaak &amp; MPC5xxx_MSCAN_ABTAK0)){
++	    priv-&gt;stats.tx_packets++;
++	}
++	
+ 	/* Disable transmit interrupt here or it will constantly be pending */
+ 	mscan_regs-&gt;cantier &amp;= ~MPC5xxx_MSCAN_TXIE;
+ 
+-	priv-&gt;stats.tx_packets++;
+ 	netif_wake_queue(dev);
+     }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000165.html">r182 - trunk/patches/linux-2.6.21-rc3
+</A></li>
+	<LI>Next message: <A HREF="000167.html">r184 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

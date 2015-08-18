@@ -1,0 +1,699 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r194 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r194%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20hal%20sja1000&In-Reply-To=%3C200703271325.l2RDPu5M006267%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000178.html">
+   <LINK REL="Next"  HREF="000180.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r194 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal sja1000</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r194%20-%20in%20branches/ha/candrv/kernel/2.6/drivers/net/can%3A%20hal%20sja1000&In-Reply-To=%3C200703271325.l2RDPu5M006267%40sheep.berlios.de%3E"
+       TITLE="r194 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal sja1000">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Mar 27 15:25:56 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000178.html">r193 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . sja1000
+</A></li>
+        <LI>Next message: <A HREF="000180.html">r195 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-03-27 15:25:34 +0200 (Tue, 27 Mar 2007)
+New Revision: 194
+
+Added:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/hal/gw2.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/hal/io.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomem.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomux.c
+Removed:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/gw2.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/io.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomem.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomux.c
+Modified:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/Makefile
+Log:
+Move hal code into its own directory.
+
+
+Copied: branches/ha/candrv/kernel/2.6/drivers/net/can/hal/gw2.c (from rev 193, branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/gw2.c)
+
+Copied: branches/ha/candrv/kernel/2.6/drivers/net/can/hal/io.c (from rev 193, branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/io.c)
+
+Copied: branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomem.c (from rev 193, branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomem.c)
+
+Copied: branches/ha/candrv/kernel/2.6/drivers/net/can/hal/iomux.c (from rev 193, branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomux.c)
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/Makefile
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/Makefile	2007-03-26 14:15:07 UTC (rev 193)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/Makefile	2007-03-27 13:25:34 UTC (rev 194)
+@@ -61,9 +61,9 @@
+ 
+ obj-m := sja1000-io.o sja1000-iomem.o sja1000-iomux.o sja1000-gw2.o
+ 
+-sja1000-io-objs    := io.o    sja1000.o proc.o
+-sja1000-iomem-objs := iomem.o sja1000.o proc.o
+-sja1000-iomux-objs := iomux.o sja1000.o proc.o
+-sja1000-gw2-objs   := gw2.o   sja1000.o proc.o
++sja1000-io-objs    := sja1000.o proc.o ../hal/io.o
++sja1000-iomem-objs := sja1000.o proc.o ../hal/iomem.o
++sja1000-iomux-objs := sja1000.o proc.o ../hal/iomux.o
++sja1000-gw2-objs   := sja1000.o proc.o ../hal/gw2.o
+ 
+ endif
+
+Deleted: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/gw2.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/gw2.c	2007-03-26 14:15:07 UTC (rev 193)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/gw2.c	2007-03-27 13:25:34 UTC (rev 194)
+@@ -1,164 +0,0 @@
+-/*
+- * gw2.c - Trajet GW2 register access CAN hardware abstraction layer
+- *
+- * $Id$
+- *
+- * Inspired by the OCAN driver <A HREF="http://ar.linux.it/software/#ocan">http://ar.linux.it/software/#ocan</A>
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions, the following disclaimer and
+- *    the referenced file 'COPYING'.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+- * file from the main directory of the linux kernel source.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/ioport.h&gt;
+-#include &lt;asm/io.h&gt;
+-#include &quot;hal.h&quot;
+-
+-#define ADDR_GAP 1
+-
+-/* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
+-
+-/* exit the HAL - call at driver module exit */
+-int hal_exit(void) { return 0; }
+-
+-/* get name of this CAN HAL */
+-char *hal_name(void) { return &quot;gw2&quot;; }
+-
+-/* fill arrays base[] and irq[] with HAL specific defaults */
+-void hal_use_defaults(void)
+-{
+-	extern unsigned long base[];
+-	extern unsigned int  irq[];
+-	extern unsigned int  speed[];
+-
+-	base[0]		= 0xF0100200UL;
+-	irq[0]		= 26;
+-	speed[0]	= 500;
+-
+-	base[1]		= 0xF0100300UL;
+-	irq[1]		= 26;
+-	speed[1]	= 100;
+-
+-	base[2]		= 0xF0100400UL;
+-	irq[2]		= 26;
+-	speed[2]	= 100;
+-
+-	base[3]		= 0xF0100500UL;
+-	irq[3]		= 26;
+-	speed[3]	= 500;
+-}
+-
+-/* request controller register access space */
+-int hal_request_region(int dev_num,
+-		       unsigned int num_regs,
+-		       char *drv_name)
+-{
+-	extern unsigned long base[];
+-	extern unsigned long rbase[];
+-
+-	unsigned int gw2_regs = num_regs * (ADDR_GAP + 1);
+-
+-	/* creating the region for IOMEM is pretty easy */
+-	if (!request_mem_region(base[dev_num], gw2_regs, drv_name))
+-		return 0; /* failed */
+-
+-	/* set device base_addr */
+-	rbase[dev_num] = (unsigned long)ioremap(base[dev_num], gw2_regs);
+-
+-	if (rbase[dev_num])
+-		return 1; /* success */
+-
+-	/* cleanup due to failed ioremap() */
+-	release_mem_region(base[dev_num], gw2_regs);
+-	return 0; /* failed */
+-}
+-
+-/* release controller register access space */
+-void hal_release_region(int dev_num,
+-			unsigned int num_regs)
+-{
+-	extern unsigned long base[];
+-	extern unsigned long rbase[];
+-
+-	unsigned int gw2_regs = num_regs * (ADDR_GAP + 1);
+-
+-	iounmap((void *)rbase[dev_num]);
+-	release_mem_region(base[dev_num], gw2_regs);
+-}
+-
+-/* enable non controller hardware (e.g. irq routing, etc.) */
+-int hw_attach(int dev_num) { return 0; }
+-
+-/* disable non controller hardware (e.g. irq routing, etc.) */
+-int hw_detach(int dev_num) { return 0; }
+-
+-/* reset controller hardware (with specific non controller hardware) */
+-int hw_reset_dev(int dev_num) { return 0; }
+-
+-/* read from controller register */
+-u8 hw_readreg(unsigned long base, int reg) {
+-
+-	static u8 val;
+-	void __iomem *addr = (void __iomem *)base +
+-		reg * (ADDR_GAP + 1) + ADDR_GAP;
+-
+-	val = (u8)readw(addr);
+-	rmb();
+-
+-        return val;
+-}
+-
+-/* write to controller register */
+-void hw_writereg(unsigned long base, int reg, u8 val) {
+-
+-	void __iomem *addr = (void __iomem *)base +
+-		reg * (ADDR_GAP + 1) + ADDR_GAP;
+-
+-	writew(val, addr);
+-	wmb();
+-}
+-
+-/* hardware specific work to do at start of irq handler */
+-void hw_preirq(struct net_device *dev) { return; }
+-
+-/* hardware specific work to do at end of irq handler */
+-void hw_postirq(struct net_device *dev) { return; }
+-
+
+Deleted: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/io.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/io.c	2007-03-26 14:15:07 UTC (rev 193)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/io.c	2007-03-27 13:25:34 UTC (rev 194)
+@@ -1,129 +0,0 @@
+-/*
+- * io.c - linear register access CAN hardware abstraction layer
+- *
+- * $Id$
+- *
+- * Inspired by the OCAN driver <A HREF="http://ar.linux.it/software/#ocan">http://ar.linux.it/software/#ocan</A>
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions, the following disclaimer and
+- *    the referenced file 'COPYING'.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+- * file from the main directory of the linux kernel source.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/ioport.h&gt;
+-#include &lt;asm/io.h&gt;
+-#include &quot;hal.h&quot;
+-
+-/* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
+-
+-/* exit the HAL - call at driver module exit */
+-int hal_exit(void) { return 0; }
+-
+-/* get name of this CAN HAL */
+-char *hal_name(void) { return &quot;io&quot;; }
+-
+-/* fill arrays base[] and irq[] with HAL specific defaults */
+-void hal_use_defaults(void)
+-{
+-	extern unsigned long base[];
+-	extern unsigned int  irq[];
+-	extern unsigned int  speed[];
+-
+-	base[0]		= 0x2C0UL;
+-	irq[0]		= 10;
+-	speed[0]	= 500;
+-
+-	base[1]		= 0x320UL;
+-	irq[1]		= 5;
+-	speed[1]	= 100;
+-}
+-
+-/* request controller register access space */
+-int hal_request_region(int dev_num,
+-		       unsigned int num_regs,
+-		       char *drv_name)
+-{
+-	extern unsigned long base[];
+-	extern unsigned long rbase[];
+-
+-	/* set for device base_addr */
+-	rbase[dev_num] = base[dev_num];
+-
+-	/* creating the region for IO is pretty easy */
+-	return (request_region(base[dev_num], num_regs, drv_name))? 1 : 0;
+-}
+-
+-/* release controller register access space */
+-void hal_release_region(int dev_num,
+-			unsigned int num_regs)
+-{
+-	extern unsigned long base[];
+-
+-	release_region(base[dev_num], num_regs);
+-}
+-
+-/* enable non controller hardware (e.g. irq routing, etc.) */
+-int hw_attach(int dev_num) { return 0; }
+-
+-/* disable non controller hardware (e.g. irq routing, etc.) */
+-int hw_detach(int dev_num) { return 0; }
+-
+-/* reset controller hardware (with specific non controller hardware) */
+-int hw_reset_dev(int dev_num) { return 0; }
+-
+-/* read from controller register */
+-u8 hw_readreg(unsigned long base, int reg) {
+-
+-	return inb(base + reg);
+-}
+-
+-/* write to controller register */
+-void hw_writereg(unsigned long base, int reg, u8 val) {
+-
+-	outb(val, base + reg);
+-}
+-
+-/* hardware specific work to do at start of irq handler */
+-void hw_preirq(struct net_device *dev) { return; }
+-
+-/* hardware specific work to do at end of irq handler */
+-void hw_postirq(struct net_device *dev) { return; }
+-
+
+Deleted: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomem.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomem.c	2007-03-26 14:15:07 UTC (rev 193)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomem.c	2007-03-27 13:25:34 UTC (rev 194)
+@@ -1,144 +0,0 @@
+-/*
+- * iomem.c - linear register access CAN hardware abstraction layer
+- *
+- * $Id$
+- *
+- * Inspired by the OCAN driver <A HREF="http://ar.linux.it/software/#ocan">http://ar.linux.it/software/#ocan</A>
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions, the following disclaimer and
+- *    the referenced file 'COPYING'.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+- * file from the main directory of the linux kernel source.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/ioport.h&gt;
+-#include &lt;asm/io.h&gt;
+-#include &quot;hal.h&quot;
+-
+-/* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
+-
+-/* exit the HAL - call at driver module exit */
+-int hal_exit(void) { return 0; }
+-
+-/* get name of this CAN HAL */
+-char *hal_name(void) { return &quot;iomem&quot;; }
+-
+-/* fill arrays base[] and irq[] with HAL specific defaults */
+-void hal_use_defaults(void)
+-{
+-	extern unsigned long base[];
+-	extern unsigned int  irq[];
+-	extern unsigned int  speed[];
+-
+-	base[0]		= 0xda000UL;
+-	irq[0]		= 9;
+-	speed[0]	= 500;
+-}
+-
+-/* request controller register access space */
+-int hal_request_region(int dev_num,
+-		       unsigned int num_regs,
+-		       char *drv_name)
+-{
+-	extern unsigned long base[];
+-	extern unsigned long rbase[];
+-
+-	/* creating the region for IOMEM is pretty easy */
+-	if (!request_mem_region(base[dev_num], num_regs, drv_name))
+-		return 0; /* failed */
+-
+-	/* set device base_addr */
+-	rbase[dev_num] = (unsigned long)ioremap(base[dev_num], num_regs);
+-
+-	if (rbase[dev_num])
+-		return 1; /* success */
+-
+-	/* cleanup due to failed ioremap() */
+-	release_mem_region(base[dev_num], num_regs);
+-	return 0; /* failed */
+-}
+-
+-/* release controller register access space */
+-void hal_release_region(int dev_num,
+-			unsigned int num_regs)
+-{
+-	extern unsigned long base[];
+-	extern unsigned long rbase[];
+-
+-	iounmap((void *)rbase[dev_num]);
+-	release_mem_region(base[dev_num], num_regs);
+-}
+-
+-/* enable non controller hardware (e.g. irq routing, etc.) */
+-int hw_attach(int dev_num) { return 0; }
+-
+-/* disable non controller hardware (e.g. irq routing, etc.) */
+-int hw_detach(int dev_num) { return 0; }
+-
+-/* reset controller hardware (with specific non controller hardware) */
+-int hw_reset_dev(int dev_num) { return 0; }
+-
+-/* read from controller register */
+-u8 hw_readreg(unsigned long base, int reg) {
+-
+-	static u8 val;
+-	void __iomem *addr = (void __iomem *)base + reg;
+-
+-	val = (u8)readw(addr);
+-	rmb();
+-
+-        return val;
+-}
+-
+-/* write to controller register */
+-void hw_writereg(unsigned long base, int reg, u8 val) {
+-
+-	void __iomem *addr = (void __iomem *)base + reg;
+-
+-	writew(val, addr);
+-	wmb();
+-}
+-
+-/* hardware specific work to do at start of irq handler */
+-void hw_preirq(struct net_device *dev) { return; }
+-
+-/* hardware specific work to do at end of irq handler */
+-void hw_postirq(struct net_device *dev) { return; }
+-
+
+Deleted: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomux.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomux.c	2007-03-26 14:15:07 UTC (rev 193)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/iomux.c	2007-03-27 13:25:34 UTC (rev 194)
+@@ -1,130 +0,0 @@
+-/*
+- * iomux.c - multiplex register access CAN hardware abstraction layer
+- *
+- * $Id$
+- *
+- * Inspired by the OCAN driver <A HREF="http://ar.linux.it/software/#ocan">http://ar.linux.it/software/#ocan</A>
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions, the following disclaimer and
+- *    the referenced file 'COPYING'.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+- * file from the main directory of the linux kernel source.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/ioport.h&gt;
+-#include &lt;asm/io.h&gt;
+-#include &quot;hal.h&quot;
+-
+-/* init the HAL - call at driver module init */
+-int hal_init(void) { return 0; }
+-
+-/* exit the HAL - call at driver module exit */
+-int hal_exit(void) { return 0; }
+-
+-/* get name of this CAN HAL */
+-char *hal_name(void) { return &quot;iomux&quot;; }
+-
+-/* fill arrays base[] and irq[] with HAL specific defaults */
+-void hal_use_defaults(void)
+-{
+-	extern unsigned long base[];
+-	extern unsigned int  irq[];
+-	extern unsigned int  speed[];
+-
+-	base[0]		= 0x300UL;
+-	irq[0]		= 5;
+-	speed[0]	= 500;
+-}
+-
+-/* request controller register access space */
+-int hal_request_region(int dev_num,
+-		       unsigned int num_regs,
+-		       char *drv_name)
+-{
+-	extern unsigned long base[];
+-	extern unsigned long rbase[];
+-
+-	/* set for device base_addr */
+-	rbase[dev_num] = base[dev_num];
+-
+-	/* ignore num_regs and create the 2 register region:  */
+-	/* address register = base / data register = base + 1 */
+-	return (request_region(base[dev_num], 2, drv_name))? 1 : 0;
+-}
+-
+-/* release controller register access space */
+-void hal_release_region(int dev_num,
+-			unsigned int num_regs)
+-{
+-	extern unsigned long base[];
+-
+-	/* ignore num_regs and create the 2 register region:  */
+-	/* address register = base / data register = base + 1 */
+-	release_region(base[dev_num], 2);
+-}
+-
+-/* enable non controller hardware (e.g. irq routing, etc.) */
+-int hw_attach(int dev_num) { return 0; }
+-
+-/* disable non controller hardware (e.g. irq routing, etc.) */
+-int hw_detach(int dev_num) { return 0; }
+-
+-/* reset controller hardware (with specific non controller hardware) */
+-int hw_reset_dev(int dev_num) { return 0; }
+-
+-/* read from controller register */
+-u8 hw_readreg(unsigned long base, int reg) {
+-
+-	outb(reg, base);	/* address */
+-	return inb(base + 1);	/* data */
+-}
+-
+-/* write to controller register */
+-void hw_writereg(unsigned long base, int reg, u8 val) {
+-
+-	outb(reg, base);	/* address */
+-	outb(val, base + 1);	/* data */
+-}
+-
+-/* hardware specific work to do at start of irq handler */
+-void hw_preirq(struct net_device *dev) { return; }
+-
+-/* hardware specific work to do at end of irq handler */
+-void hw_postirq(struct net_device *dev) { return; }
+-
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000178.html">r193 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . sja1000
+</A></li>
+	<LI>Next message: <A HREF="000180.html">r195 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

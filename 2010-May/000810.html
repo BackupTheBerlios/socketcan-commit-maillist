@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1178 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1178%20-%20trunk/can-utils&In-Reply-To=%3C201005141243.o4EChhTN009602%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000809.html">
+   <LINK REL="Next"  HREF="000811.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1178 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1178%20-%20trunk/can-utils&In-Reply-To=%3C201005141243.o4EChhTN009602%40sheep.berlios.de%3E"
+       TITLE="r1178 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri May 14 14:43:43 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000809.html">r1177 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000811.html">r1179 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#810">[ date ]</a>
+              <a href="thread.html#810">[ thread ]</a>
+              <a href="subject.html#810">[ subject ]</a>
+              <a href="author.html#810">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-05-14 14:43:42 +0200 (Fri, 14 May 2010)
+New Revision: 1178
+
+Modified:
+   trunk/can-utils/.gitignore
+   trunk/can-utils/GNUmakefile.am
+Log:
+Added isotpserver in autotool config file and gitignore
+
+
+Modified: trunk/can-utils/.gitignore
+===================================================================
+--- trunk/can-utils/.gitignore	2010-05-14 12:03:32 UTC (rev 1177)
++++ trunk/can-utils/.gitignore	2010-05-14 12:43:42 UTC (rev 1178)
+@@ -35,6 +35,7 @@
+ /isotpdump
+ /isotprecv
+ /isotpsend
++/isotpserver
+ /isotpsniffer
+ /isotptun
+ /log2asc
+
+Modified: trunk/can-utils/GNUmakefile.am
+===================================================================
+--- trunk/can-utils/GNUmakefile.am	2010-05-14 12:03:32 UTC (rev 1177)
++++ trunk/can-utils/GNUmakefile.am	2010-05-14 12:43:42 UTC (rev 1178)
+@@ -46,6 +46,7 @@
+ 	isotpdump \
+ 	isotprecv \
+ 	isotpsend \
++	isotpserver \
+ 	isotpsniffer \
+ 	isotptun
+ endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000809.html">r1177 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000811.html">r1179 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#810">[ date ]</a>
+              <a href="thread.html#810">[ thread ]</a>
+              <a href="subject.html#810">[ subject ]</a>
+              <a href="author.html#810">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,2939 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r63 - in branches/ut/hlist: can-utils doc kernel/2.4/can	kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r63%20-%20in%20branches/ut/hlist%3A%20can-utils%20doc%20kernel/2.4/can%0A%09kernel/2.4/drivers/mscan%20kernel/2.4/drivers/sja1000%0A%09kernel/2.6/drivers/net/can%20kernel/2.6/drivers/net/can/mscan%0A%09kernel/2.6/drivers/net/can/sja1000%20kernel/2.6/include/linux/can%20test&In-Reply-To=%3C200608301008.k7UA8UOQ002389%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000041.html">
+   <LINK REL="Next"  HREF="000043.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r63 - in branches/ut/hlist: can-utils doc kernel/2.4/can	kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can test</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r63%20-%20in%20branches/ut/hlist%3A%20can-utils%20doc%20kernel/2.4/can%0A%09kernel/2.4/drivers/mscan%20kernel/2.4/drivers/sja1000%0A%09kernel/2.6/drivers/net/can%20kernel/2.6/drivers/net/can/mscan%0A%09kernel/2.6/drivers/net/can/sja1000%20kernel/2.6/include/linux/can%20test&In-Reply-To=%3C200608301008.k7UA8UOQ002389%40sheep.berlios.de%3E"
+       TITLE="r63 - in branches/ut/hlist: can-utils doc kernel/2.4/can	kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/mscan	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can test">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Aug 30 12:08:30 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000041.html">r62 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000043.html">r64 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-08-30 12:08:14 +0200 (Wed, 30 Aug 2006)
+New Revision: 63
+
+Added:
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/mem.c
+   branches/ut/hlist/kernel/2.6/include/linux/can/version.h
+Removed:
+   branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.h
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/version.h
+Modified:
+   branches/ut/hlist/can-utils/Makefile
+   branches/ut/hlist/can-utils/can-sniffer.c
+   branches/ut/hlist/can-utils/candump.c
+   branches/ut/hlist/can-utils/terminal.h
+   branches/ut/hlist/doc/Makefile
+   branches/ut/hlist/doc/legal.tex
+   branches/ut/hlist/doc/llcf-api.tex
+   branches/ut/hlist/doc/procfs.tex
+   branches/ut/hlist/kernel/2.4/can/Makefile
+   branches/ut/hlist/kernel/2.4/can/af_can.c
+   branches/ut/hlist/kernel/2.4/can/af_can.h
+   branches/ut/hlist/kernel/2.4/can/bcm.c
+   branches/ut/hlist/kernel/2.4/can/bcm.h
+   branches/ut/hlist/kernel/2.4/can/can.h
+   branches/ut/hlist/kernel/2.4/can/can_error.h
+   branches/ut/hlist/kernel/2.4/can/can_ioctl.h
+   branches/ut/hlist/kernel/2.4/can/proc.c
+   branches/ut/hlist/kernel/2.4/can/raw.c
+   branches/ut/hlist/kernel/2.4/can/raw.h
+   branches/ut/hlist/kernel/2.4/can/vcan.c
+   branches/ut/hlist/kernel/2.4/can/version.h
+   branches/ut/hlist/kernel/2.4/drivers/mscan/Makefile
+   branches/ut/hlist/kernel/2.4/drivers/mscan/mscan.h
+   branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_hw.c
+   branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_net.c
+   branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_proc.c
+   branches/ut/hlist/kernel/2.4/drivers/sja1000/Makefile
+   branches/ut/hlist/kernel/2.4/drivers/sja1000/isa.c
+   branches/ut/hlist/kernel/2.4/drivers/sja1000/proc.c
+   branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.c
+   branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.h
+   branches/ut/hlist/kernel/2.4/drivers/sja1000/trajet-gw2.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/Makefile
+   branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/Makefile
+   branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mscan.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/Makefile
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/isa.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/proc.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+   branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+   branches/ut/hlist/kernel/2.6/drivers/net/can/vcan.c
+   branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h
+   branches/ut/hlist/kernel/2.6/include/linux/can/bcm.h
+   branches/ut/hlist/kernel/2.6/include/linux/can/can.h
+   branches/ut/hlist/kernel/2.6/include/linux/can/can_error.h
+   branches/ut/hlist/kernel/2.6/include/linux/can/can_ioctl.h
+   branches/ut/hlist/kernel/2.6/include/linux/can/raw.h
+   branches/ut/hlist/test/Makefile
+   branches/ut/hlist/test/canecho.c
+   branches/ut/hlist/test/tst-bcm-cycle.c
+   branches/ut/hlist/test/tst-bcm-filter.c
+   branches/ut/hlist/test/tst-bcm-rtr.c
+   branches/ut/hlist/test/tst-bcm-single.c
+   branches/ut/hlist/test/tst-bcm-throttle.c
+   branches/ut/hlist/test/tst-bcm-tx_read.c
+   branches/ut/hlist/test/tst-err.c
+   branches/ut/hlist/test/tst-proc.c
+   branches/ut/hlist/test/tst-raw-filter.c
+   branches/ut/hlist/test/tst-raw-sendto.c
+   branches/ut/hlist/test/tst-raw.c
+Log:
+oops, last check-in was from wrong subdir.  merge in the rest of the changes between r42:61.
+
+
+Modified: branches/ut/hlist/can-utils/Makefile
+===================================================================
+--- branches/ut/hlist/can-utils/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/can-utils/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,28 +38,16 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.4/can -fno-strict-aliasing
+ 
+-PROGRAMS_GPL = 	candump		\
+-		can-sniffer
++PROGRAMS = candump can-sniffer
+ 
+-PROGRAMS_VW = 	tpdump		\
+-		tp20-sniffer	\
+-		mcnet-vit-emu	\
+-		mcnet-sniffer	\
+-		pq35speed
++all: $(PROGRAMS)
+ 
+-default: all-gpl
+-
+-all: all-gpl all-vw
+-
+-all-gpl: $(PROGRAMS_GPL)
+-all-vw:  $(PROGRAMS_VW)
+-
+ clean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW)
++	rm -f $(PROGRAMS)
+ 
+ distclean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW) *~
++	rm -f $(PROGRAMS) *~
+
+Modified: branches/ut/hlist/can-utils/can-sniffer.c
+===================================================================
+--- branches/ut/hlist/can-utils/can-sniffer.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/can-utils/can-sniffer.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/can-utils/candump.c
+===================================================================
+--- branches/ut/hlist/can-utils/candump.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/can-utils/candump.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/can-utils/terminal.h
+===================================================================
+--- branches/ut/hlist/can-utils/terminal.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/can-utils/terminal.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/doc/Makefile
+===================================================================
+--- branches/ut/hlist/doc/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/doc/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -10,7 +10,7 @@
+ #  Copyright (c) 2005 Volkswagen Group Electronic Research
+ #  38436 Wolfsburg, GERMANY
+ #
+-#  contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>
++#  contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>
+ #
+ #  Idea, Design, Implementation:
+ #  Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;
+
+Modified: branches/ut/hlist/doc/legal.tex
+===================================================================
+--- branches/ut/hlist/doc/legal.tex	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/doc/legal.tex	2006-08-30 10:08:14 UTC (rev 63)
+@@ -49,7 +49,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ \end{code}
+
+Modified: branches/ut/hlist/doc/llcf-api.tex
+===================================================================
+--- branches/ut/hlist/doc/llcf-api.tex	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/doc/llcf-api.tex	2006-08-30 10:08:14 UTC (rev 63)
+@@ -75,7 +75,7 @@
+ der Volkswagen AG eine besondere EMail-Adresse eingerichtet, auf der
+ die Autoren erreichbar sind:\\
+ 
+-{\Large \tt contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>}\\
++{\Large \tt contact email: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>}\\
+ 
+ Postadresse:\\
+ Volkswagen AG\\
+
+Modified: branches/ut/hlist/doc/procfs.tex
+===================================================================
+--- branches/ut/hlist/doc/procfs.tex	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/doc/procfs.tex	2006-08-30 10:08:14 UTC (rev 63)
+@@ -8,14 +8,14 @@
+ und Informationen &#252;ber interne Strukturen und Stati in lesbarer Form zur
+ Verf&#252;gung. Die Informationen k&#246;nnen vom Benutzer beispielsweise mit\\
+ 
+-\verb+cat /proc/sys/net/can/stats+\\
++\verb+cat /proc/net/can/stats+\\
+ 
+ abgefragt werden. Im Folgenden werden die einzelnen Eintr&#228;ge erl&#228;utert.
+ 
+-\subsection{Versionsinformation /proc/sys/net/can/version}
++\subsection{Versionsinformation /proc/net/can/version}
+ 
+ Die \LL-Versionsinformationen k&#246;nnen f&#252;r eine Anwendung z.B. durch das
+-&#214;ffnen der Datei \verb+/proc/sys/net/can/version+ ausgelesen werden. Dazu werden
++&#214;ffnen der Datei \verb+/proc/net/can/version+ ausgelesen werden. Dazu werden
+ die ersten 6 Zeichen in einen Puffer kopiert und mit 
+ \verb+ llcf_version_code = strtoul(mybuffer, (char **)NULL, 16);+
+ in den LLCF\_VERSION\_CODE &#252;berf&#252;hrt. Der LLCF\_VERSION\_CODE wird
+@@ -26,11 +26,11 @@
+ berechnet.
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/version 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/version 
+ 010000 [ Volkswagen AG - Low Level CAN Framework (LLCF) v1.0.0-rc1 ]
+ \end{code}
+ 
+-\subsection{Statistiken /proc/sys/net/can/stats}
++\subsection{Statistiken /proc/net/can/stats}
+ 
+ &#220;ber die angebotenen Statistiken kann man sich &#252;ber das aktuelle
+ Datenaufkommen informieren und wie beispielsweise der Anteil der von
+@@ -40,7 +40,7 @@
+ Die Informationen werden mit dem Start des \LL\ jede Sekunde aktualisiert.
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/stats 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/stats 
+ 
+       811 transmitted frames (TXF)
+    319427 received frames (RXF)
+@@ -62,7 +62,7 @@
+         6 maximum receive list entries (MRCV)
+ 
+ \end{code}
+-\subsection{Zur&#252;cksetzen von Statistiken /proc/sys/net/can/reset\_stats}
++\subsection{Zur&#252;cksetzen von Statistiken /proc/net/can/reset\_stats}
+ 
+ Das Zur&#252;cksetzen der statistischen Informationen kann durch interne
+ &#220;berl&#228;ufe von Z&#228;hlern oder vom Benutzer selbst initiiert werden. &#220;ber
+@@ -71,9 +71,9 @@
+ einem laufenden System bez&#252;glich der obigen Ausgabe der Statistiken
+ gut zu erkennen.
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/reset_stats 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/reset_stats 
+ LLCF statistic reset #1 done.
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/stats 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/stats 
+ 
+        31 transmitted frames (TXF)
+      2585 received frames (RXF)
+@@ -155,7 +155,7 @@
+ Vereinfachung folgendes eingeben:
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/rcvlist_*
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/rcvlist_*
+ 
+ receive list 'rx_all':
+   device   can_id   can_mask  function  userdata   matches  ident
+@@ -194,7 +194,7 @@
+ Es geht nat&#252;rlich auch so:
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/rcvlist_sff
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/rcvlist_sff
+ 
+ receive list 'rx_sff':
+   (can1: no entry)
+
+Modified: branches/ut/hlist/kernel/2.4/can/Makefile
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -DMODULE $(DEBUG) \
+
+Modified: branches/ut/hlist/kernel/2.4/can/af_can.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/af_can.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/af_can.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -76,8 +76,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;CAN %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;CAN %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+@@ -539,7 +539,7 @@
+ 	p-&gt;matches++;    /* update specific statistics */
+     }
+ }
+-    
++
+ static int can_rcv_filter(struct rcv_dev_list *q, struct sk_buff *skb)
+ {
+     struct rcv_list *p;
+@@ -641,7 +641,7 @@
+ 	    }
+ 
+ 	if (p &amp;&amp; !p-&gt;dev) {
+-	    DBG(&quot;reactivating rcv_dev_list for %s\n&quot;, dev-&gt;name); 
++	    DBG(&quot;reactivating rcv_dev_list for %s\n&quot;, dev-&gt;name);
+ 	    p-&gt;dev = dev;
+ 	}
+     }
+@@ -719,7 +719,7 @@
+     int len;
+     int dlc, i;
+     char buf[1024];
+-    
++
+     len = sprintf(buf, KERN_DEBUG);
+     va_start(ap, cf);
+     len += snprintf(buf + len, sizeof(buf) - 64, msg, ap);
+
+Modified: branches/ut/hlist/kernel/2.4/can/af_can.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/af_can.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/af_can.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -61,17 +61,20 @@
+ 
+ #include &quot;can.h&quot;
+ 
+-#define PF_CAN       30
+-#define AF_CAN       PF_CAN
++/* CAN socket protocol family definition */
++/* to be moved to include/linux/socket.h */
++#define PF_CAN		29	/* Controller Area Network      */
++#define AF_CAN		PF_CAN
+ 
+-#define CAN_TP16     1
+-#define CAN_TP20     2
+-#define CAN_RAW      3
+-#define CAN_BCM      4
+-#define CAN_MCNET    5
+-#define CAN_ISOTP    6
+-#define CAN_BAP      7
+-#define CAN_MAX      8
++/* particular protocols of the protocol family PF_CAN */
++#define CAN_RAW		1 /* RAW sockets */
++#define CAN_BCM		2 /* Broadcast Manager */
++#define CAN_TP16	3 /* VAG Transport Protocol v1.6 */
++#define CAN_TP20	4 /* VAG Transport Protocol v2.0 */
++#define CAN_MCNET	5 /* Bosch MCNet */
++#define CAN_ISOTP	6 /* ISO 15765-2 Transport Protocol */
++#define CAN_BAP		7 /* VAG Bedien- und Anzeigeprotokoll */
++#define CAN_MAX		8
+ 
+ #define SOL_CAN_BASE 100
+ 
+@@ -96,7 +99,7 @@
+ 
+ #ifdef __KERNEL__
+ 
+-#define CAN_PROC_DIR &quot;sys/net/can&quot; /* /proc/... */
++#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+ 
+ void can_proto_register(int proto, struct proto_ops *ops);
+ void can_proto_unregister(int proto);
+
+Modified: branches/ut/hlist/kernel/2.4/can/bcm.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/bcm.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/bcm.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -60,8 +60,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;BCM %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;BCM %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+@@ -450,7 +450,7 @@
+ 
+ 	    /* create array for can_frames and copy the data */
+ 	    if (!(op-&gt;frames = kmalloc(msg_head.nframes * sizeof(struct can_frame), GFP_KERNEL))) {
+-	        kfree(op);
++		kfree(op);
+ 		return -ENOMEM;
+ 	    }
+ 
+@@ -624,9 +624,9 @@
+ 	{
+ 	    struct sk_buff *skb;
+ 	    struct net_device *dev;
+-	    
++
+ 	    /* just copy and send one can_frame */
+-	    
++
+ 	    if (msg_head.nframes &lt; 1) /* we need at least one can_frame */
+ 		return -EINVAL;
+ 
+@@ -637,7 +637,7 @@
+ 
+ 	    memcpy_fromiovec(skb_put(skb, sizeof(struct can_frame)), msg-&gt;msg_iov, sizeof(struct can_frame));
+ 
+-	    DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;, 
++	    DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;,
+ 		      (struct can_frame *)skb-&gt;data);
+ 	    dev = dev_get_by_index(sk-&gt;bound_dev_if);
+ 
+@@ -737,7 +737,7 @@
+ 
+ 	    op-&gt;thrtimer.function = bcm_rx_thr_handler; /* handler for RX_CHANGED throttle timeouts */
+ 	    op-&gt;thrtimer.data = (unsigned long)op; /* timer.data points to this op-structure */
+- 	    op-&gt;thrtimer.expires = 0; /* mark disabled timer */
++	    op-&gt;thrtimer.expires = 0; /* mark disabled timer */
+ 
+ 	    /* add this bcm_op to the list of the tx_ops */
+ 	    bcm_insert_op(&amp;ud-&gt;rx_ops, op);
+@@ -1292,7 +1292,7 @@
+ 	/* for internal purposes. This is only relevant for updates that */
+ 	/* are generated by the BCM, where nframes is 1                  */
+ 	if (head-&gt;nframes == 1)
+-       	    firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
++	    firstframe-&gt;can_dlc &amp;= BCM_CAN_DLC_MASK;
+     }
+     if ((err = sock_queue_rcv_skb(sk, skb)) &lt; 0) {
+ 	DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
+
+Modified: branches/ut/hlist/kernel/2.4/can/bcm.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/bcm.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/bcm.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/kernel/2.4/can/can.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/can.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/can.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -52,8 +52,15 @@
+ 
+ #include &lt;linux/types.h&gt;
+ 
+-#define ETH_P_CAN    0x000c
++/* controller area network (CAN) kernel definitions */
+ 
++/* ethernet protocol identifier */
++#define ETH_P_CAN	0x000C	/* to be moved to include/linux/if_ether.h */
++
++/* ARP protocol identifier (dummy type for non ARP hardware) */
++#define ARPHRD_CAN	804	/* to be moved to include/linux/if_arp.h */
++
++
+ /* special address description flags for the CAN_ID */
+ #define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+ #define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+@@ -66,9 +73,9 @@
+ typedef __u32 canid_t;
+ 
+ struct can_frame {
+-    canid_t can_id;      /* 32 bit CAN_ID + EFF/RTR flags */
+-    __u8    can_dlc;     /* data length code: 0 .. 8 */
+-    __u8    data[8] __attribute__ ((aligned(8)));
++	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
++	__u8    can_dlc; /* data length code: 0 .. 8 */
++	__u8    data[8] __attribute__ ((aligned(8)));
+ };
+ 
+ #endif /* CAN_H */
+
+Modified: branches/ut/hlist/kernel/2.4/can/can_error.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/can_error.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/can_error.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -53,19 +53,21 @@
+ #define CAN_ERR_DLC 8 /* dlc for error frames */
+ 
+ /* error class (mask) in can_id */
+-#define CAN_ERR_BUSOFF       0x00000001U /* bus off */
+-#define CAN_ERR_TX_TIMEOUT   0x00000002U /* TX timeout (netdevice driver) */
+-#define CAN_ERR_ACK          0x00000004U /* received no ACK on transmission */
+-#define CAN_ERR_LOSTARB      0x00000008U /* lost arbitration    / data[0]    */
+-#define CAN_ERR_CRTL         0x00000010U /* controller problems / data[1]    */
+-#define CAN_ERR_PROT         0x00000020U /* protocol violations / data[2..3] */
+-#define CAN_ERR_TRX          0x00000040U /* transceiver status  / data[4]    */
++#define CAN_ERR_TX_TIMEOUT   0x00000001U /* TX timeout (by netdevice driver) */
++#define CAN_ERR_LOSTARB      0x00000002U /* lost arbitration    / data[0]    */
++#define CAN_ERR_CRTL         0x00000004U /* controller problems / data[1]    */
++#define CAN_ERR_PROT         0x00000008U /* protocol violations / data[2..3] */
++#define CAN_ERR_TRX          0x00000010U /* transceiver status  / data[4]    */
++#define CAN_ERR_ACK          0x00000020U /* received no ACK on transmission */
++#define CAN_ERR_BUSOFF       0x00000040U /* bus off */
++#define CAN_ERR_BUSERROR     0x00000080U /* bus error (may flood!) */
++#define CAN_ERR_RESTARTED    0x00000100U /* controller restarted */
+ 
+ #define CAN_ERR_MASK         0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
+ 
+ /* arbitration lost in bit ... / data[0] */
+ #define CAN_ERR_LOSTARB_UNSPEC   0x00 /* unspecified */
+-                                      /* else bit number in bitstream */
++				      /* else bit number in bitstream */
+ 
+ /* error status of CAN-controller / data[1] */
+ #define CAN_ERR_CRTL_UNSPEC      0x00 /* unspecified */
+@@ -73,6 +75,10 @@
+ #define CAN_ERR_CRTL_TX_OVERFLOW 0x02 /* TX buffer overflow */
+ #define CAN_ERR_CRTL_RX_WARNING  0x04 /* reached warning level for RX errors */
+ #define CAN_ERR_CRTL_TX_WARNING  0x08 /* reached warning level for TX errors */
++#define CAN_ERR_CRTL_RX_PASSIVE  0x10 /* reached error passive status RX */
++#define CAN_ERR_CRTL_TX_PASSIVE  0x20 /* reached error passive status TX */
++				      /* (at least one error counter exceeds */
++				      /* the protocol-defined level of 127)  */
+ 
+ /* error in CAN protocol (type) / data[2] */
+ #define CAN_ERR_PROT_UNSPEC      0x00 /* unspecified */
+
+Modified: branches/ut/hlist/kernel/2.4/can/can_ioctl.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/can_ioctl.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/can_ioctl.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -87,10 +87,10 @@
+ 
+ /* filter modes (may vary due to controller specific capabilities) */
+ #define FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
+-#define FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */  
++#define FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
+ #define FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
+ 
+-                              /* filters 3 - 31 currently undefined */
++			      /* filters 3 - 31 currently undefined */
+ 
+ #define FILTER_MAX         31 /* max. filter type value */
+ 
+
+Modified: branches/ut/hlist/kernel/2.4/can/proc.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/proc.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/proc.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -193,7 +193,7 @@
+ 	char *fmt = p-&gt;can_id &amp; CAN_EFF_FLAG ? /* EFF &amp; CAN_ID_ALL */
+ 	    &quot;   %-5s  %08X  %08x  %08x  %08x  %8ld  %s\n&quot; :
+ 	    &quot;   %-5s     %03X    %08x  %08x  %08x  %8ld  %s\n&quot;;
+-	
++
+ 	len += snprintf(page + len, PAGE_SIZE - len, fmt,
+ 			dev-&gt;name, p-&gt;can_id, p-&gt;mask, (unsigned int)p-&gt;func,
+ 			(unsigned int)p-&gt;data, p-&gt;matches, p-&gt;ident);
+@@ -414,7 +414,7 @@
+ 		all_empty = 0;
+ 		break;
+ 	    }
+-	
++
+ 	if (!all_empty) {
+ 	    len = can_print_recv_banner(page, len);
+ 	    for(i = 0; i &lt; 0x800; i++) {
+
+Modified: branches/ut/hlist/kernel/2.4/can/raw.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/raw.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/raw.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -70,8 +70,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;RAW %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;RAW %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+ #define DBG(args...)
+@@ -253,7 +253,7 @@
+ 
+     if (peer)
+ 	return -EOPNOTSUPP;
+-	
++
+     addr-&gt;can_family  = AF_CAN;
+     addr-&gt;can_ifindex = canraw_sk(sk)-&gt;ifindex;
+     *len = sizeof(*addr);
+@@ -307,7 +307,7 @@
+ 
+ 	    if (canraw_sk(sk)-&gt;bound)
+ 		raw_remove_filters(dev, sk);
+-	    
++
+ 	    kfree(canraw_sk(sk)-&gt;filter);
+ 	    canraw_sk(sk)-&gt;count = 0;
+ 	    canraw_sk(sk)-&gt;filter = NULL;
+
+Modified: branches/ut/hlist/kernel/2.4/can/raw.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/raw.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/raw.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -55,7 +55,9 @@
+ 
+ #define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
+ 
+-#define CAN_RAW_FILTER     1
+-#define CAN_RAW_ERR_FILTER 2
++#define CAN_RAW_FILTER        1
++#define CAN_RAW_ERR_FILTER    2
++#define CAN_RAW_LOOPBACK      3
++#define CAN_RAW_RECV_OWN_MSGS 4
+ 
+ #endif
+
+Modified: branches/ut/hlist/kernel/2.4/can/vcan.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/vcan.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/vcan.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -64,8 +64,8 @@
+ MODULE_PARM(debug, &quot;1i&quot;);
+ static int debug = 0;
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+
+Modified: branches/ut/hlist/kernel/2.4/can/version.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/can/version.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/can/version.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/mscan/Makefile
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/mscan/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/mscan/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../can \
+ 		-DMODULE $(DEBUG) -I$(KERNELDIR)/include \
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/mscan/mscan.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/mscan/mscan.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/mscan/mscan.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -57,7 +57,7 @@
+ 
+ #define DEFAULT_KBIT_PER_SEC 500
+ #define MSCAN_DEFAULT_CLOCK  132000000
+-#define TX_TIMEOUT           (HZ/20) /* 50ms */ 
++#define TX_TIMEOUT           (HZ/20) /* 50ms */
+ 
+ /* private data structure */
+ 
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_hw.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_hw.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_hw.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -90,7 +90,7 @@
+ {
+     struct can_priv *priv = (struct can_priv*)dev-&gt;priv;
+     struct mpc5xxx_mscan *regs = priv-&gt;regs;
+-	
++
+     if (priv-&gt;state == STATE_UNINITIALIZED) /* no bla bla when restarting the device */
+ 	printk(KERN_INFO &quot;%s: setting BTR0=%02X BTR1=%02X\n&quot;,
+ 	       dev-&gt;name, btr0, btr1);
+@@ -200,7 +200,7 @@
+ 
+     return 0;
+ }
+-	
++
+ static int set_normal_mode(struct net_device *dev)
+ {
+     struct can_priv *priv = (struct can_priv*)dev-&gt;priv;
+@@ -365,7 +365,7 @@
+     }
+     skb-&gt;dev = dev;
+     skb-&gt;protocol = htons(ETH_P_CAN);
+-    
++
+     if (regs-&gt;canrxfg.idr[1] &amp; BUFFER_EXTENDED) {
+ 	/* extended frame format (EFF) */
+ 
+@@ -374,7 +374,7 @@
+ 	    |((regs-&gt;canrxfg.idr[1] &amp; 0x07) &lt;&lt; 15)
+ 	    |(regs-&gt;canrxfg.idr[4] &lt;&lt; 7)
+ 	    |(regs-&gt;canrxfg.idr[5] &gt;&gt; 1);
+-	
++
+ 	id |= CAN_EFF_FLAG;
+ 
+ 	if (regs-&gt;canrxfg.idr[5] &amp; BUFFER_EXT_RTR)
+@@ -422,7 +422,7 @@
+ {
+     if (!netif_running(dev))
+ 	return -EINVAL;
+-    
++
+     switch (cmd) {
+     case SIOCSRATE:
+ 	;
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_net.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_net.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_net.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -150,7 +150,7 @@
+ 	    gpio-&gt;port_config |= 0x00000010;   // set PSC2 function to CAN
+ 	}
+ 	else if(!strncmp(pins,&quot;i2c1/tmr01&quot;,11))
+-	    gpio-&gt;port_config |= 0x10000000;  // set ALT for CAN, leave PSC2 untouched 
++	    gpio-&gt;port_config |= 0x10000000;  // set ALT for CAN, leave PSC2 untouched
+ 	else
+ 	    printk(KERN_ERR &quot;\n!!!Invalid kernel module parameter \&quot;%s\&quot; ignored.&quot;
+ 		   &quot; Use \&quot;psc2\&quot; or \&quot;i2c1/tmr01\&quot;\n&quot;, pins);
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_proc.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_proc.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/mscan/mscan_proc.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -44,7 +44,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -66,12 +66,12 @@
+ #define DEV_PORT_REGS_U8(reg) &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int) (regs-&gt;reg)
+ 
+ #define GPIO_REG_U32(reg)  &quot; &quot; #reg &quot; 0x%08X\n&quot;, 0xFFFFFFFF &amp; (int)(gpio-&gt;reg)
+-#define GPIO_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(gpio-&gt;reg) 
+-#define GPIO_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(gpio-&gt;reg) 
++#define GPIO_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(gpio-&gt;reg)
++#define GPIO_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(gpio-&gt;reg)
+ 
+ #define CDM_REG_U32(reg)  &quot; &quot; #reg &quot; 0x%08X\n&quot;, 0xFFFFFFFF &amp; (int)(cdm-&gt;reg)
+-#define CDM_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(cdm-&gt;reg) 
+-#define CDM_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(cdm-&gt;reg) 
++#define CDM_REG_U16(reg)  &quot; &quot; #reg &quot; 0x%04X\n&quot;, 0xFFFF &amp; (int)(cdm-&gt;reg)
++#define CDM_REG_U8(reg)   &quot; &quot; #reg &quot; 0x%02X\n&quot;, 0xFF &amp; (int)(cdm-&gt;reg)
+ 
+ extern struct net_device *can_dev[];
+ 
+@@ -140,7 +140,7 @@
+     const u8 canctl1_listen = 0x08;
+     const u8 canctl1_wump   = 0x20;
+     const u8 canctl1_slpak  = 0x40;
+-    const u8 canctl1_initak = 0x80; 
++    const u8 canctl1_initak = 0x80;
+ 
+     MOD_INC_USE_COUNT;
+ 
+@@ -150,8 +150,8 @@
+ 	    priv = (struct can_priv*)can_dev[i]-&gt;priv;
+ 	    regs = priv-&gt;regs;
+ 
+-	    len += sprintf(page + len, &quot;\n&quot;); 
+-	    len += sprintf(page + len, &quot;----------- MSCAN MODULE %s --------------\n&quot;, dev-&gt;name); 
++	    len += sprintf(page + len, &quot;\n&quot;);
++	    len += sprintf(page + len, &quot;----------- MSCAN MODULE %s --------------\n&quot;, dev-&gt;name);
+ 	    len += sprintf(page + len, DEV_PORT_REGS_U8( canctl0 ) );
+ 	    len += sprintf(page + len, DEV_PORT_REGS_U8( canctl1 ) );
+ 	    len += sprintf(page + len, DEV_PORT_REGS_U8( canbtr0 ) );
+@@ -197,7 +197,7 @@
+ 	    len += sprintf(page + len, &quot; Synchronized Status : %s\n&quot;, canctl0 &amp; canctl0_synch ? &quot;Not synchronized&quot; : &quot;Synchronized&quot;);
+ 
+ 	    len += sprintf(page + len, &quot; MSCAN Clock : %u (use clk=&lt;value&gt; as kernel module parameter)\n&quot;,priv-&gt;clk);
+-	    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;); 
++	    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;);
+ 	}
+     }
+ 
+@@ -215,7 +215,7 @@
+ 
+     MOD_INC_USE_COUNT;
+ 
+-    len += sprintf(page + len, &quot;\n--------------- GPIO MODULE -----------------\n&quot;); 
++    len += sprintf(page + len, &quot;\n--------------- GPIO MODULE -----------------\n&quot;);
+     len += sprintf(page + len, GPIO_REG_U32( port_config ) );
+     len += sprintf(page + len, GPIO_REG_U32( simple_gpioe ) );
+     len += sprintf(page + len, GPIO_REG_U32( simple_ode ) );
+@@ -239,12 +239,12 @@
+     if (gpio-&gt;port_config &amp; 0x10000000)
+ 	len += sprintf(page + len, &quot; CAN1 on I2C1 Pins, CAN2 on TMR0/1 Pins\n&quot;);
+     else
+-        if (((gpio-&gt;port_config &amp; 0x00000030)&gt;&gt;4) == 1)
++	if (((gpio-&gt;port_config &amp; 0x00000030)&gt;&gt;4) == 1)
+ 	    len += sprintf(page + len, &quot; CAN1&amp;2 on PSC2 Pins\n&quot;);
+ 	else
+ 	    len += sprintf(page + len, &quot; CAN1&amp;2 not routed to any IO Pin.\n&quot;);
+ 
+-    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;); 
++    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;);
+ 
+     MOD_DEC_USE_COUNT;
+ 
+@@ -259,7 +259,7 @@
+ 
+     MOD_INC_USE_COUNT;
+ 
+-    len += sprintf(page + len, &quot;\n--------------- CDM MODULE ------------------\n&quot;); 
++    len += sprintf(page + len, &quot;\n--------------- CDM MODULE ------------------\n&quot;);
+     len += sprintf(page + len, CDM_REG_U32 ( jtag_id ) );
+     len += sprintf(page + len, CDM_REG_U32 ( rstcfg ) );
+     len += sprintf(page + len, CDM_REG_U32 ( breadcrumb ) );
+@@ -299,18 +299,18 @@
+ 
+     len += sprintf(page + len,           &quot; System Clock (@ XTAL 27.0   33.0 MHz)\n&quot;);
+     switch (((cdm-&gt;rstcfg)&gt;&gt;6) &amp; 0x3) { // sys_pll_cfg[0:1]
+-	case 0: len += sprintf(page + len, &quot;                      432    528  MHz\n&quot;);break; 
++	case 0: len += sprintf(page + len, &quot;                      432    528  MHz\n&quot;);break;
+ 	case 1: len += sprintf(page + len, &quot;                      324    396  MHz\n&quot;); break;
+-	case 2: len += sprintf(page + len, &quot;                     (486    528  MHz, invalid)\n&quot;);break; 
+-	case 3: len += sprintf(page + len, &quot;                      324    396  MHz\n&quot;);break; 
++	case 2: len += sprintf(page + len, &quot;                     (486    528  MHz, invalid)\n&quot;);break;
++	case 3: len += sprintf(page + len, &quot;                      324    396  MHz\n&quot;);break;
+     }
+ 
+     len += sprintf(page + len, &quot; XLB Clock  = %s System Clock \n&quot;, cdm-&gt;xlb_clk_sel ? &quot;1/4&quot; : &quot;1/8&quot;);
+     len += sprintf(page + len, &quot; IPB Clock  = 1/%i System Clock \n&quot;, 0x4&lt;&lt;(((cdm-&gt;xlb_clk_sel?1:0) + (cdm-&gt;ipg_clk_sel?1:0))));
+     len += sprintf(page + len, &quot; PCI Clock  = 1/%i System Clock \n&quot;, 0x8&lt;&lt;(((cdm-&gt;xlb_clk_sel?1:0) + (cdm-&gt;pci_clk_sel?1:0))));
+-  
+-    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;); 
+ 
++    len += sprintf(page + len, &quot;---------------------------------------------\n&quot;);
++
+     MOD_DEC_USE_COUNT;
+ 
+     *eof = 1;
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/sja1000/Makefile
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/sja1000/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/sja1000/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -I../../can \
+ 		-DMODULE -I$(KERNELDIR)/include \
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/sja1000/isa.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/sja1000/isa.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/sja1000/isa.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/sja1000/proc.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/sja1000/proc.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/sja1000/proc.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -84,7 +84,7 @@
+ 					priv-&gt;can_stats.wakeup,
+ 					priv-&gt;can_stats.bus_error,
+ 					priv-&gt;can_stats.error_passive,
+-				       	priv-&gt;can_stats.arbitration_lost,
++					priv-&gt;can_stats.arbitration_lost,
+ 					priv-&gt;can_stats.restarts,
+ 					priv-&gt;clock,
+ 					priv-&gt;speed
+@@ -183,8 +183,8 @@
+ 			priv = netdev_priv(can_dev[i]);
+ 			if ((priv-&gt;state != STATE_UNINITIALIZED) &amp;&amp; (priv-&gt;state != STATE_RESET_MODE)) {
+ 				len += snprintf(page + len, PAGE_SIZE - len, &quot;%s &quot;, dev-&gt;name);
+-                                dev-&gt;stop(dev);
+-                                dev-&gt;open(dev);
++				dev-&gt;stop(dev);
++				dev-&gt;open(dev);
+ 				/* count number of restarts */
+ 				priv-&gt;can_stats.restarts++;
+ 
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -130,7 +130,7 @@
+ static void set_btr(struct net_device *dev, int btr0, int btr1)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) /* no bla bla when restarting the device */
+ 		printk(KERN_INFO &quot;%s: setting BTR0=%02X BTR1=%02X\n&quot;,
+ 		       dev-&gt;name, btr0, btr1);
+@@ -234,7 +234,7 @@
+ 	return 1;
+ 
+ }
+-	
++
+ static int set_normal_mode(struct net_device *dev)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+@@ -490,7 +490,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -506,7 +506,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -603,7 +603,7 @@
+ 	struct can_priv *priv = netdev_priv(dev);
+ 	uint8_t isrc, status, ecc, alc;
+ 	int n = 0;
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) {
+ 		printk(KERN_ERR &quot;%s: %s: uninitialized controller!\n&quot;, dev-&gt;name, __FUNCTION__);
+ 		chipset_init(dev, 1); /* this should be possible at this stage */
+@@ -677,7 +677,7 @@
+ 			     (ecc &amp; ECC_DIR) ? &quot;RX&quot; : &quot;TX&quot;,
+ 			     ecc_types[ecc &gt;&gt; ECC_ERR],
+ 			     ecc_errors[ecc &amp; ECC_SEG]);
+-			
++
+ 			/* when the bus errors flood the system, restart the controller */
+ 			if (priv-&gt;can_stats.bus_error_at_init + MAX_BUS_ERRORS &lt; priv-&gt;can_stats.bus_error) {
+ 				iDBG(KERN_INFO &quot;%s: heavy bus errors, restarting device\n&quot;, dev-&gt;name);
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.h
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/sja1000/sja1000.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -57,8 +57,8 @@
+ 
+ #define DEFAULT_SPEED	100 /* kBit/s */
+ 
+-#define TX_TIMEOUT	(HZ/20) /* 50ms */ 
+-#define RESTART_MS      100 	/* restart chip on persistent errors in 100ms */
++#define TX_TIMEOUT	(HZ/20) /* 50ms */
++#define RESTART_MS      100     /* restart chip on persistent errors in 100ms */
+ #define MAX_BUS_ERRORS  200     /* prevent from flooding bus error interrupts */
+ 
+ /* SJA1000 registers - manual section 6.4 (Pelican Mode) */
+@@ -175,7 +175,7 @@
+ 	int			speed;
+ 	int			btr;
+ 	int			rx_probe;
+-        struct timer_list       timer;
++	struct timer_list       timer;
+ 	uint8_t			(*reg_read)(struct net_device *dev, int reg);
+ 	void			(*reg_write)(struct net_device *dev, int reg, uint8_t val);
+ 	struct can_device_stats	can_stats;
+
+Modified: branches/ut/hlist/kernel/2.4/drivers/sja1000/trajet-gw2.c
+===================================================================
+--- branches/ut/hlist/kernel/2.4/drivers/sja1000/trajet-gw2.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.4/drivers/sja1000/trajet-gw2.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -8,18 +8,34 @@
+ KERNELDIR = /usr/src/linux
+ PWD       = $(shell pwd)
+ 
+-default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
++all: vcan sja1000 mscan
+ 
++vcan:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_VCAN=m modules
++
++sja1000:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_SJA1000=m modules
++
++mscan:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_CAN_MSCAN=m modules
++
+ clean:
+ 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+ 
++.PHONY: clean all vcan sja1000 mscan
++
+ else
+ 
++CPPFLAGS	+= -Idrivers/net -Inet
++AFLAGS		+= -Idrivers/net -Inet
++CFLAGS		+= -Idrivers/net -Inet
++
+ ifneq ($(KBUILD_EXTMOD),)
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../include
++EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include
+ endif
+ 
+-obj-m := vcan.o
++obj-$(CONFIG_CAN_VCAN)		+= vcan.o
++obj-$(CONFIG_CAN_SJA1000)	+= sja1000/
++obj-$(CONFIG_CAN_MSCAN)		+= mscan/
+ 
+ endif
+
+Deleted: branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -1,298 +0,0 @@
+-/*
+- * $Id$
+- *
+- * Copyright (C) 2005 Marc Kleine-Budde, Pengutronix
+- * Copyright (C) 2006 Andrey Volkov, Varma Electronics
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the version 2 of the GNU General Public License
+- * as published by the Free Software Foundation
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+- */
+-
+-#include &lt;linux/module.h&gt;
+-#include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/if_arp.h&gt;
+-#include &lt;linux/can/can.h&gt;
+-#include &lt;can/can_device.h&gt;
+-
+-/*
+- Abstract:
+-	Baud rate calculated with next formula:
+-	baud = frq/(brp*(1 + prop_seg+ phase_seg1 + phase_seg2))
+-
+-	This calc function based on work of Florian Hartwich and Armin Bassemi
+-	&quot;The Configuration of the CAN Bit Timing&quot;
+-	(<A HREF="http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf">http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf</A>)
+-
+- Parameters:
+-  [in]
+-    bit_time_nsec - expected bit time in nanosecs
+-
+-  [out]
+-	bit_time	- calculated time segments, for meaning of
+-				  each field read CAN standart.
+-*/
+-
+-#define DEFAULT_MAX_BRP			64U
+-#define DEFAULT_MAX_SJW			4U
+-
+-/* All below values in tq units */
+-#define MAX_BIT_TIME	25U
+-#define MIN_BIT_TIME	8U
+-#define MAX_PROP_SEG	8U
+-#define MAX_PHASE_SEG1	8U
+-#define MAX_PHASE_SEG2	8U
+-
+-int can_calc_bit_time(struct can_device *can, u32 baudrate,
+-					  struct can_bittime_std *bit_time)
+-{
+-	int best_error = -1; /* Ariphmetic error */
+-	int df, best_df = -1; /* oscillator's tolerance range, greater is better*/
+-	u32 quanta;	/*in tq units*/
+-	u32 brp, phase_seg1, phase_seg2, sjw, prop_seg;
+-	u32 brp_min, brp_max, brp_expected;
+-	u64 tmp;
+-
+-	/* baudrate range [1baud,1Mbaud] */
+-	if (baudrate == 0 || baudrate &gt; 1000000UL)
+-		return -EINVAL;
+-
+-	tmp = (u64)can-&gt;can_sys_clock*1000;
+-	do_div(tmp, baudrate);
+-	brp_expected = (u32)tmp;
+-
+-	brp_min = brp_expected/(1000*MAX_BIT_TIME);
+-	if(brp_min == 0)
+-		brp_min = 1;
+-	if(brp_min &gt; can-&gt;max_brp)
+-		return -ERANGE;
+-
+-	brp_max = (brp_expected+500*MIN_BIT_TIME)/(1000*MIN_BIT_TIME);
+-	if(brp_max == 0)
+-		brp_max = 1;
+-	if(brp_max &gt; can-&gt;max_brp)
+-		brp_max = can-&gt;max_brp;
+-
+-	for(brp = brp_min; brp &lt;= brp_max; brp++)
+-	{
+-		quanta = brp_expected/(brp*1000);
+-		if(quanta&lt;MAX_BIT_TIME &amp;&amp; quanta*brp*1000 != brp_expected)
+-			quanta++;
+-		if(quanta&lt;MIN_BIT_TIME || quanta&gt;MAX_BIT_TIME)
+-			continue;
+-
+-		phase_seg2 = min( (quanta-3)/2, MAX_PHASE_SEG2);
+-		for(sjw = can-&gt;max_sjw; sjw &gt; 0; sjw--)
+-		{
+-			for(; phase_seg2&gt;sjw; phase_seg2--)
+-			{
+-				u32 err1, err2;
+-				phase_seg1 = (phase_seg2%2)?phase_seg2-1:phase_seg2;
+-				prop_seg = quanta-1-phase_seg2-phase_seg1;
+-				/* FIXME: support of longer lines (i.e. bigger prop_seg)
+-				is more prefered than support of cheap oscillators
+-				(i.e. bigger df/phase_seg1/phase_seg2)
+-				*/
+-				if( prop_seg &lt; phase_seg1)
+-						continue;
+-				if( prop_seg &gt; MAX_PROP_SEG )
+-						goto next_brp;
+-
+-				err1 = phase_seg1*brp*500*1000/
+-					   (13*brp_expected-phase_seg2*brp*1000);
+-				err2 = sjw*brp*50*1000/brp_expected;
+-
+-				df = min(err1,err2);
+-				if(df&gt;=best_df) {
+-					unsigned error = abs(brp_expected*10/
+-							   (brp*(1+prop_seg+phase_seg1+phase_seg2))-10000);
+-
+-					if( error &gt; 10 || error &gt; best_error )
+-						continue;
+-
+-					if( error == best_error &amp;&amp; prop_seg &lt; bit_time-&gt;prop_seg )
+-						continue;
+-
+-					best_error = error;
+-					best_df = df;
+-					bit_time-&gt;brp = brp;
+-					bit_time-&gt;prop_seg = prop_seg;
+-					bit_time-&gt;phase_seg1 = phase_seg1;
+-					bit_time-&gt;phase_seg2 = phase_seg2;
+-					bit_time-&gt;sjw = sjw;
+-					bit_time-&gt;sam = ( bit_time-&gt;phase_seg1 &gt; 3 )? 1 : 0;
+-				}
+-			}
+-		}
+-	next_brp:	;
+-	}
+-
+-	if( best_error &lt; 0 )
+-		return -EDOM;
+-	return 0;
+-}
+-EXPORT_SYMBOL(can_calc_bit_time);
+-
+-static struct net_device_stats *can_get_stats(struct net_device *dev)
+-{
+-	return &amp;ND2CAN(dev)-&gt;net_stats;
+-}
+-
+-static int can_ioctl(struct net_device *ndev, struct ifreq *ifr, int cmd)
+-{
+-	struct can_device *can = ND2CAN(ndev);
+-	struct can_bittime	*bt = (struct can_bittime *)&amp;ifr-&gt;ifr_ifru;
+-	int ret = -EOPNOTSUPP;
+-	ulong *baudrate = (ulong *)&amp;ifr-&gt;ifr_ifru;
+-
+-	dev_dbg(ND2D(ndev), &quot;(%s) 0x%08x %p\n&quot;, __FUNCTION__, cmd, &amp;ifr-&gt;ifr_ifru);
+-
+-	switch (cmd) {
+-	case SIOCSCANBAUDRATE:
+-	   if (can-&gt;do_set_bit_time) {
+-			struct can_bittime bit_time;
+-			ret = can_calc_bit_time(can, *baudrate, &amp;bit_time.std);
+-			if (ret != 0)
+-				break;
+-			bit_time.type = CAN_BITTIME_STD;
+-			ret = can-&gt;do_set_bit_time(can, &amp;bit_time);
+-			if ( !ret ) {
+-				can-&gt;baudrate = *baudrate;
+-				can-&gt;bit_time = bit_time;
+-			}
+-		}
+-		break;
+-	case SIOCGCANBAUDRATE:
+-	    *baudrate = can-&gt;baudrate;
+-		ret = 0;
+-		break;
+-	case SIOCSCANCUSTOMBITTIME:
+-		if (can-&gt;do_set_bit_time) {
+-			ret = can-&gt;do_set_bit_time(can, bt);
+-			if ( !ret ) {
+-				can-&gt;bit_time = *bt;
+-				if (bt-&gt;type == CAN_BITTIME_STD &amp;&amp; bt-&gt;std.brp) {
+-				  can-&gt;baudrate = can-&gt;can_sys_clock/(bt-&gt;std.brp*
+-				  (1+bt-&gt;std.prop_seg+bt-&gt;std.phase_seg1+bt-&gt;std.phase_seg2));
+-				}
+-				else
+-					can-&gt;baudrate = CAN_BAUDRATE_UNKNOWN;
+-			}
+-		}
+-		break;
+-	case SIOCGCANCUSTOMBITTIME:
+-		*bt = can-&gt;bit_time;
+-		ret = 0;
+-		break;
+-	case SIOCSCANMODE:
+-		if (can-&gt;do_set_mode) {
+-			can_mode_t mode = *((can_mode_t *)(&amp;ifr-&gt;ifr_ifru));
+-			if ( mode == CAN_MODE_START &amp;&amp;
+-				can-&gt;baudrate == CAN_BAUDRATE_UNCONFIGURED) {
+-				dev_info(ND2D(ndev), &quot;Impossible to start on UNKNOWN speed\n&quot;);
+-				ret = EINVAL;
+-			}
+-			else
+-				return can-&gt;do_set_mode(can, mode);
+-		}
+-		break;
+-	case SIOCGCANMODE:
+-	   	*((can_mode_t *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;mode;
+-		ret = 0;
+-		break;
+-	case SIOCSCANCTRLMODE:
+-		if (can-&gt;do_set_ctrlmode) {
+-			can_ctrlmode_t ctrlmode = *((can_ctrlmode_t *)(&amp;ifr-&gt;ifr_ifru));
+-			return can-&gt;do_set_ctrlmode(can, ctrlmode);
+-		}
+-		break;
+-	case SIOCGCANCTRLMODE:
+-	   	*((can_ctrlmode_t *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;ctrlmode;
+-		ret = 0;
+-		break;
+-	case SIOCSCANFILTER:
+-		break;
+-	case SIOCGCANFILTER:
+-		break;
+-	case SIOCGCANSTATE:
+-		if(can-&gt;do_get_state)
+-			return can-&gt;do_get_state(can, (can_state_t *)(&amp;ifr-&gt;ifr_ifru));
+-		break;
+-	case SIOCGCANSTATS:
+-		*((struct can_device_stats *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;can_stats;
+-		ret = 0;
+-		break;
+-	}
+-
+-  return ret;
+-}
+-
+-static void can_setup(struct net_device *dev)
+-{
+-	dev-&gt;type = ARPHRD_CAN;
+-
+-	dev-&gt;change_mtu			= NULL;
+-	dev-&gt;hard_header		= NULL;
+-	dev-&gt;rebuild_header		= NULL;
+-	dev-&gt;set_mac_address		= NULL;
+-	dev-&gt;hard_header_cache		= NULL;
+-	dev-&gt;header_cache_update	= NULL;
+-	dev-&gt;hard_header_parse		= NULL;
+-
+-	dev-&gt;hard_header_len = 0;
+-
+-	dev-&gt;get_stats	= can_get_stats;
+-	dev-&gt;mtu		= sizeof(struct can_frame);
+-	dev-&gt;do_ioctl   = can_ioctl;
+-	dev-&gt;addr_len	= 0;
+-	dev-&gt;tx_queue_len	= 10;
+-
+-	/* New-style flags. */
+-	dev-&gt;flags		= IFF_NOARP;
+-	dev-&gt;features  	= NETIF_F_NO_CSUM;
+-}
+-
+-/*
+- * Funciton  alloc_candev
+- * 	Allocates and sets up an CAN device in a manner similar to
+- * 	alloc_etherdev.
+- */
+-struct can_device *alloc_candev(int sizeof_priv)
+-{
+-  struct net_device *ndev;
+-  struct can_device *can;
+-
+-  ndev = alloc_netdev(sizeof_priv+sizeof(struct can_device),
+-  					  &quot;can%d&quot;, can_setup);
+-  if(!ndev)
+-		return NULL;
+-
+-  can = netdev_priv(ndev);
+-
+-  can-&gt;net_dev = ndev;
+-  if(sizeof_priv)
+-	  can-&gt;priv = &amp;can[1];
+-
+-  can-&gt;baudrate = CAN_BAUDRATE_UNCONFIGURED;
+-  can-&gt;max_brp = DEFAULT_MAX_BRP;
+-  can-&gt;max_sjw = DEFAULT_MAX_SJW;
+-  spin_lock_init(&amp;can-&gt;irq_lock);
+-
+-  return can;
+-}
+-EXPORT_SYMBOL(alloc_candev);
+-
+-void free_candev(struct can_device *can)
+-{
+-	free_netdev(can-&gt;net_dev);
+-}
+-EXPORT_SYMBOL(free_candev);
+
+Deleted: branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/can_device.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -1,86 +0,0 @@
+-/*
+- * $Id$
+- *
+- * DESCRIPTION:
+- *	Contains defenition of can_device type and all kernel-only
+- *  stuff related with it
+- *
+- * AUTHOR:
+- *  Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;
+- *
+- * COPYRIGHT:
+- *  2006, Varma Electronics Oy
+- *
+- * LICENCE:
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License as published by
+- *  the Free Software Foundation; either version 2 of the License, or
+- *  (at your option) any later version.
+- *
+- *  This program is distributed in the hope that it will be useful,
+- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *  GNU General Public License for more details.
+- *
+- *  You should have received a copy of the GNU General Public License
+- *  along with this program; if not, write to the Free Software
+- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+- *
+- */
+-
+-#ifndef __CAN_DEVICE_H__
+-#define __CAN_DEVICE_H__
+-
+-#include &lt;linux/can/can_error.h&gt;
+-#include &lt;linux/can/can_ioctl.h&gt;
+-
+-struct can_device {
+-	struct net_device_stats net_stats;
+-	struct net_device 		*net_dev;
+-
+-	struct can_device_stats can_stats;
+-
+-	/* can-bus oscillator frequency, in Hz,
+-	   BE CAREFUL! SOME CONTROLLERS (LIKE SJA1000)
+-	   FOOLISH ABOUT THIS FRQ (for sja1000 as ex. this
+-	   clock must be xtal clock divided by 2). */
+-	u32	can_sys_clock;
+-
+-	/* by default max_brp is equal 64,
+-	   but for a Freescale TouCAN, as ex., it can be 255*/
+-	u32	max_brp;
+-	/* For the mostly all controllers, max_sjw is equal 4, but
+-	   some, hmm, CAN implementations hardwared it to 1 */
+-	u8	max_sjw;
+-
+-	u32	baudrate;	/* in bauds */
+-	struct can_bittime	bit_time;
+-
+-	spinlock_t irq_lock;
+-	/* Please hold this lock when touching net_stats/can_stats*/
+-	spinlock_t stats_lock;
+-
+-	can_state_t state;
+-	can_mode_t  mode;
+-	can_ctrlmode_t ctrlmode;
+-
+-	int	(*do_set_bit_time)(struct can_device *dev, struct can_bittime *br);
+-	int (*do_get_state)(struct can_device *dev,	can_state_t *state);
+-	int (*do_set_mode)(struct can_device *dev, can_mode_t mode);
+-	int	(*do_set_ctrlmode)(struct can_device *dev, can_ctrlmode_t ctrlmode);
+-	int (*do_get_ctrlmode)(struct can_device *dev, can_ctrlmode_t *ctrlmode);
+-
+-	void *priv;
+-};
+-
+-#define ND2D(_ndev)		(_ndev-&gt;class_dev.dev)
+-#define CAN2ND(can)		((can)-&gt;net_dev)
+-#define ND2CAN(ndev)	((struct can_device *)netdev_priv(ndev))
+-
+-struct can_device *alloc_candev(int sizeof_priv);
+-void free_candev(struct can_device *);
+-
+-int can_calc_bit_time(struct can_device *can, u32 baudrate,
+-					  struct can_bittime_std *bit_time);
+-
+-#endif /* __CAN_DEVICE_H__ */
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/Makefile
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -5,5 +5,6 @@
+ #
+ #
+ 
+-obj-$(CONFIG_CAN_MSCAN)		+= mscan.o
+ obj-$(CONFIG_CAN_MPC52XX)	+= mpc52xx_can.o
++
++mpc52xx_can-objs	:= mscan.o
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -136,7 +136,7 @@
+ 
+ void __exit mpc52xx_can_exit(void)
+ {
+- 	platform_driver_unregister(&amp;mpc52xx_can_driver);
++	platform_driver_unregister(&amp;mpc52xx_can_driver);
+ 	printk(KERN_INFO &quot;%s unloaded\n&quot;, mpc52xx_can_driver.driver.name);
+ }
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -118,7 +118,7 @@
+ 					break;
+ 			}
+ 			if(i&gt;255)
+-			   ret=-ENODEV;
++				ret=-ENODEV;
+ 		}
+ 
+ 		if ( !ret &amp;&amp; (mode &amp; MSCAN_CSWAI) )
+@@ -127,18 +127,18 @@
+ 	} else  {
+ 		canctl1 = in_8(&amp;regs-&gt;canctl1);
+ 		if ( canctl1 &amp; (MSCAN_SLPAK | MSCAN_INITAK) ) {
+-		 out_8(&amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) &amp;
+-		 		 	  ~(MSCAN_SLPRQ | MSCAN_INITRQ));
+-		  for (i = 0; i &lt; 255; i++ ) {
+-			canctl1 = in_8(&amp;regs-&gt;canctl1);
+-		    if ( (canctl1 &amp; (MSCAN_INITAK | MSCAN_SLPAK)) ==0 )
+-		  		break;
+-		  }
+-		  if(i&gt;255)
+-		    ret=-ENODEV;
++			out_8(&amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) &amp;
++			      ~(MSCAN_SLPRQ | MSCAN_INITRQ));
++			for (i = 0; i &lt; 255; i++ ) {
++				canctl1 = in_8(&amp;regs-&gt;canctl1);
++				if ( (canctl1 &amp; (MSCAN_INITAK | MSCAN_SLPAK)) ==0 )
++					break;
++			}
++			if(i&gt;255)
++				ret=-ENODEV;
+ 		}
+ 	}
+-  return ret;
++	return ret;
+ }
+ 
+ static void mscan_push_state(struct can_device *can, struct mscan_state *state)
+@@ -325,7 +325,7 @@
+ 	int i;
+ 
+ 	while ( npackets &lt; quota &amp;&amp;
+- 	( (canrflg = in_8(&amp;regs-&gt;canrflg)) &amp; (MSCAN_RXF | MSCAN_ERR_IF) )) {
++	( (canrflg = in_8(&amp;regs-&gt;canrflg)) &amp; (MSCAN_RXF | MSCAN_ERR_IF) )) {
+ 
+ 		skb = dev_alloc_skb(sizeof(struct can_frame));
+ 		if (!skb) {
+@@ -366,11 +366,11 @@
+ 
+ 			dev_dbg(ND2D(ndev), &quot;received pkt: id: %u dlc: %u data: &quot;,
+ 				frame-&gt;can_id,frame-&gt;can_dlc);
+-		#ifdef DEBUG
++#ifdef DEBUG
+ 			for(i=0; i&lt;frame-&gt;can_dlc &amp;&amp; !(frame-&gt;can_id &amp; CAN_FLAG_RTR ); i++)
+-				printk( &quot;%2x &quot;,frame-&gt;payload.data[i]);
++				printk( &quot;%2x &quot;,frame-&gt;data[i]);
+ 			printk(&quot;\n&quot;);
+-		#endif
++#endif
+ 
+ 			out_8(&amp;regs-&gt;canrflg, MSCAN_RXF);
+ 			ndev-&gt;last_rx = jiffies;
+@@ -555,47 +555,46 @@
+ 
+ static int mscan_open(struct net_device *ndev)
+ {
+-  int ret = 0;
+-  struct can_device *can = ND2CAN(ndev);
+-  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
+-  struct mscan_priv *priv = can-&gt;priv;
++	int ret = 0;
++	struct can_device *can = ND2CAN(ndev);
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	struct mscan_priv *priv = can-&gt;priv;
+ 
+-  if((ret =
+-  		  request_irq(ndev-&gt;irq, mscan_isr, SA_SHIRQ, ndev-&gt;name, ndev)) &lt; 0) {
+-   	printk(KERN_ERR &quot;%s - failed to attach interrupt\n&quot;, ndev-&gt;name);
+-   	return ret;
+-  }
++	if((ret = request_irq(ndev-&gt;irq, mscan_isr, SA_SHIRQ, ndev-&gt;name, ndev)) &lt; 0) {
++		printk(KERN_ERR &quot;%s - failed to attach interrupt\n&quot;, ndev-&gt;name);
++		return ret;
++	}
+ 
+-  INIT_LIST_HEAD(&amp;priv-&gt;tx_head);
+-  /* acceptance mask/acceptance code (accept everything) */
+-  out_be16(&amp;regs-&gt;canidar1_0, 0);
+-  out_be16(&amp;regs-&gt;canidar3_2, 0);
+-  out_be16(&amp;regs-&gt;canidar5_4, 0);
+-  out_be16(&amp;regs-&gt;canidar7_6, 0);
++	INIT_LIST_HEAD(&amp;priv-&gt;tx_head);
++	/* acceptance mask/acceptance code (accept everything) */
++	out_be16(&amp;regs-&gt;canidar1_0, 0);
++	out_be16(&amp;regs-&gt;canidar3_2, 0);
++	out_be16(&amp;regs-&gt;canidar5_4, 0);
++	out_be16(&amp;regs-&gt;canidar7_6, 0);
+ 
+-  out_be16(&amp;regs-&gt;canidmr1_0, 0xffff);
+-  out_be16(&amp;regs-&gt;canidmr3_2, 0xffff);
+-  out_be16(&amp;regs-&gt;canidmr5_4, 0xffff);
+-  out_be16(&amp;regs-&gt;canidmr7_6, 0xffff);
+-  /* Two 32 bit Acceptance Filters */
+-  out_8(&amp;regs-&gt;canidac, MSCAN_AF_32BIT);
++	out_be16(&amp;regs-&gt;canidmr1_0, 0xffff);
++	out_be16(&amp;regs-&gt;canidmr3_2, 0xffff);
++	out_be16(&amp;regs-&gt;canidmr5_4, 0xffff);
++	out_be16(&amp;regs-&gt;canidmr7_6, 0xffff);
++	/* Two 32 bit Acceptance Filters */
++	out_8(&amp;regs-&gt;canidac, MSCAN_AF_32BIT);
+ 
+-  out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_LISTEN);
+-  mscan_set_mode( can, MSCAN_NORMAL_MODE);
++	out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_LISTEN);
++	mscan_set_mode( can, MSCAN_NORMAL_MODE);
+ 
+-  priv-&gt;shadow_statflg = in_8(&amp;regs-&gt;canrflg) &amp; MSCAN_STAT_MSK;
+-  priv-&gt;cur_pri = 0;
+-  priv-&gt;tx_active = 0;
++	priv-&gt;shadow_statflg = in_8(&amp;regs-&gt;canrflg) &amp; MSCAN_STAT_MSK;
++	priv-&gt;cur_pri = 0;
++	priv-&gt;tx_active = 0;
+ 
+-  out_8(&amp;regs-&gt;cantier, 0);
+-  /* Enable receive interrupts. */
+-  out_8(&amp;regs-&gt;canrier, MSCAN_OVRIE | MSCAN_RXFIE | MSCAN_CSCIE |
+-				  		MSCAN_RSTATE1 | MSCAN_RSTATE0 |
+-						MSCAN_TSTATE1 | MSCAN_TSTATE0);
++	out_8(&amp;regs-&gt;cantier, 0);
++	/* Enable receive interrupts. */
++	out_8(&amp;regs-&gt;canrier, MSCAN_OVRIE | MSCAN_RXFIE | MSCAN_CSCIE |
++	      MSCAN_RSTATE1 | MSCAN_RSTATE0 |
++	      MSCAN_TSTATE1 | MSCAN_TSTATE0);
+ 
+-  netif_start_queue(ndev);
++	netif_start_queue(ndev);
+ 
+- return 0;
++	return 0;
+ }
+ 
+ static int mscan_close(struct net_device *ndev)
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/Makefile
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ ifeq ($(KERNELRELEASE),)
+ 
+@@ -58,8 +58,9 @@
+ EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../../include
+ endif
+ 
+-obj-m := sja1000-isa.o sja1000-gw2.o
++obj-m := sja1000-isa.o sja1000-gw2.o sja1000-mem.o
+ 
++sja1000-mem-objs := mem.o        sja1000.o proc.o
+ sja1000-isa-objs := isa.o        sja1000.o proc.o
+ sja1000-gw2-objs := trajet-gw2.o sja1000.o proc.o
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/isa.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/isa.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/isa.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -99,7 +99,22 @@
+ /* array of all can chips */
+ static struct net_device	*can_dev[MAX_CAN];
+ 
++static int base_addr_n;
++static int irq_n;
++static int speed_n;
++static int btr_n;
++static int rx_probe_n;
+ 
++module_param_array(base_addr, int, &amp;base_addr_n, 0);
++module_param_array(irq, int, &amp;irq_n, 0);
++module_param_array(speed, int, &amp;speed_n, 0);
++module_param_array(btr, int, &amp;btr_n, 0);
++module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
++
++module_param(clk, int, 0);
++module_param(debug, int, 0);
++module_param(restart_ms, int, 0);
++
+ /* special functions to access the chips registers */
+ static uint8_t reg_read(struct net_device *dev, int reg)
+ {
+@@ -111,15 +126,6 @@
+ 	outb(val, dev-&gt;base_addr + reg);
+ }
+ 
+-MODULE_PARM(base_addr, &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(irq,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(speed,     &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(btr,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(rx_probe,  &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(clk, &quot;i&quot;);
+-MODULE_PARM(debug, &quot;i&quot;);
+-MODULE_PARM(restart_ms, &quot;i&quot;);
+-
+ static struct net_device* sja1000_isa_probe(uint32_t base, int irq, int speed,
+ 					    int btr, int rx_probe, int clk,
+ 					    int debug, int restart_ms)
+@@ -187,7 +193,7 @@
+ 			struct can_priv *priv = netdev_priv(can_dev[i]);
+ 			unregister_netdev(can_dev[i]);
+ 			del_timer(&amp;priv-&gt;timer);
+-			release_region(base_addr[i], SJA1000_IO_SIZE_ISA);
++			release_region(base_addr[i], SJA1000_IO_SIZE_BASIC);
+ 			free_netdev(can_dev[i]);
+ 		}
+ 	}
+@@ -213,7 +219,7 @@
+ 	for (i = 0; base_addr[i]; i++) {
+ 		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%X ...\n&quot;,
+ 		       chip_name, chip_name, base_addr[i]);
+-		if (!request_region(base_addr[i], SJA1000_IO_SIZE_ISA, chip_name)) {
++		if (!request_region(base_addr[i], SJA1000_IO_SIZE_BASIC, chip_name)) {
+ 			printk(KERN_ERR &quot;%s: memory already in use\n&quot;, chip_name);
+ 			sja1000_isa_cleanup_module();
+ 			return -EBUSY;
+@@ -225,7 +231,7 @@
+ 			sja1000_proc_init(drv_name, can_dev, MAX_CAN);
+ 		} else {
+ 			can_dev[i] = NULL;
+-			release_region(base_addr[i], SJA1000_IO_SIZE_ISA);
++			release_region(base_addr[i], SJA1000_IO_SIZE_BASIC);
+ 		}
+ 	}
+ 	return 0;
+
+Copied: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/mem.c (from rev 61, trunk/kernel/2.6/drivers/net/can/sja1000/mem.c)
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/proc.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/proc.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/proc.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -40,7 +40,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -83,7 +83,7 @@
+ 					priv-&gt;can_stats.wakeup,
+ 					priv-&gt;can_stats.bus_error,
+ 					priv-&gt;can_stats.error_passive,
+-				       	priv-&gt;can_stats.arbitration_lost,
++					priv-&gt;can_stats.arbitration_lost,
+ 					priv-&gt;can_stats.restarts,
+ 					priv-&gt;clock,
+ 					priv-&gt;speed
+@@ -185,8 +185,8 @@
+ 			    &amp;&amp; (priv-&gt;state != STATE_RESET_MODE)) {
+ 				len += snprintf(page + len, PAGE_SIZE - len,
+ 						&quot;%s &quot;, dev-&gt;name);
+-                                dev-&gt;stop(dev);
+-                                dev-&gt;open(dev);
++				dev-&gt;stop(dev);
++				dev-&gt;open(dev);
+ 				/* count number of restarts */
+ 				priv-&gt;can_stats.restarts++;
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -43,12 +43,12 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
++#include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+-
+ #include &lt;linux/ioport.h&gt;
+ #include &lt;linux/slab.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+@@ -59,9 +59,7 @@
+ #include &lt;linux/can/can_ioctl.h&gt;
+ #include &quot;sja1000.h&quot;
+ 
+-#define DEBUG
+-
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ #define DBG(args...)   ((priv-&gt;debug &gt; 0) ? printk(args) : 0)
+ #define iDBG(args...)  ((priv-&gt;debug &gt; 1) ? printk(args) : 0)  /* logging in interrupt context */
+ #define iiDBG(args...) ((priv-&gt;debug &gt; 2) ? printk(args) : 0)  /* logging in interrupt context */
+@@ -71,9 +69,7 @@
+ #define iiDBG(args...)
+ #endif
+ 
+-
+-static const char *chip_name	= SJA1000_CHIP_NAME;
+-
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ static const char *ecc_errors[] = {
+ 	NULL,
+ 	NULL,
+@@ -115,6 +111,7 @@
+ 	&quot;stuff error&quot;,
+ 	&quot;other type of error&quot;
+ };
++#endif
+ 
+ /* declarations */
+ 
+@@ -130,7 +127,7 @@
+ static void set_btr(struct net_device *dev, int btr0, int btr1)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) /* no bla bla when restarting the device */
+ 		printk(KERN_INFO &quot;%s: setting BTR0=%02X BTR1=%02X\n&quot;,
+ 		       dev-&gt;name, btr0, btr1);
+@@ -234,20 +231,22 @@
+ 	return 1;
+ 
+ }
+-	
++
+ static int set_normal_mode(struct net_device *dev)
+ {
+-	struct can_priv *priv = netdev_priv(dev);
+ 	unsigned char status = REG_READ(REG_MOD);
+ 	int i;
+ 
+ 	for (i = 0; i &lt; 10; i++) {
+ 		/* check reset bit */
+ 		if ((status &amp; MOD_RM) == 0) {
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ 			if (i &gt; 1) {
++				struct can_priv *priv = netdev_priv(dev);
+ 				iDBG(KERN_INFO &quot;%s: %s looped %d times\n&quot;,
+ 				     dev-&gt;name, __FUNCTION__, i);
+ 			}
++#endif
+ 			return 0;
+ 		}
+ 
+@@ -262,17 +261,19 @@
+ 
+ static int set_listen_mode(struct net_device *dev)
+ {
+-	struct can_priv *priv = netdev_priv(dev);
+ 	unsigned char status = REG_READ(REG_MOD);
+ 	int i;
+ 
+ 	for (i = 0; i &lt; 10; i++) {
+ 		/* check reset mode bit */
+ 		if ((status &amp; MOD_RM) == 0) {
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ 			if (i &gt; 1) {
++				struct can_priv *priv = netdev_priv(dev);
+ 				iDBG(KERN_INFO &quot;%s: %s looped %d times\n&quot;,
+ 				     dev-&gt;name, __FUNCTION__, i);
+ 			}
++#endif
+ 			return 0;
+ 		}
+ 
+@@ -490,7 +491,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -506,7 +507,7 @@
+ 
+ 		/* count number of restarts */
+ 		priv-&gt;can_stats.restarts++;
+-	
++
+ 		chipset_init(dev, 1);
+ 	}
+ }
+@@ -584,10 +585,10 @@
+ 		return -EINVAL;
+ 
+ 	switch (cmd) {
+-	case SIOCSRATE:
++	case SIOCSCANBAUDRATE:
+ 		;
+ 		return 0;
+-	case SIOCGRATE:
++	case SIOCGCANBAUDRATE:
+ 		;
+ 		return 0;
+ 	}
+@@ -603,7 +604,7 @@
+ 	struct can_priv *priv = netdev_priv(dev);
+ 	uint8_t isrc, status, ecc, alc;
+ 	int n = 0;
+-	
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) {
+ 		printk(KERN_ERR &quot;%s: %s: uninitialized controller!\n&quot;, dev-&gt;name, __FUNCTION__);
+ 		chipset_init(dev, 1); /* this should be possible at this stage */
+@@ -677,7 +678,7 @@
+ 			     (ecc &amp; ECC_DIR) ? &quot;RX&quot; : &quot;TX&quot;,
+ 			     ecc_types[ecc &gt;&gt; ECC_ERR],
+ 			     ecc_errors[ecc &amp; ECC_SEG]);
+-			
++
+ 			/* when the bus errors flood the system, restart the controller */
+ 			if (priv-&gt;can_stats.bus_error_at_init + MAX_BUS_ERRORS &lt; priv-&gt;can_stats.bus_error) {
+ 				iDBG(KERN_INFO &quot;%s: heavy bus errors, restarting device\n&quot;, dev-&gt;name);
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -53,12 +53,10 @@
+ #define SJA1000_IO_SIZE_BASIC   0x20
+ #define SJA1000_IO_SIZE_PELICAN 0x80
+ 
+-#define SJA1000_IO_SIZE_ISA     0x20
+-
+ #define DEFAULT_SPEED	100 /* kBit/s */
+ 
+-#define TX_TIMEOUT	(HZ/20) /* 50ms */ 
+-#define RESTART_MS      100 	/* restart chip on persistent errors in 100ms */
++#define TX_TIMEOUT	(HZ/20) /* 50ms */
++#define RESTART_MS      100     /* restart chip on persistent errors in 100ms */
+ #define MAX_BUS_ERRORS  200     /* prevent from flooding bus error interrupts */
+ 
+ /* SJA1000 registers - manual section 6.4 (Pelican Mode) */
+@@ -172,7 +170,7 @@
+ 	int			speed;
+ 	int			btr;
+ 	int			rx_probe;
+-        struct timer_list       timer;
++	struct timer_list       timer;
+ 	uint8_t			(*reg_read)(struct net_device *dev, int reg);
+ 	void			(*reg_write)(struct net_device *dev, int reg, uint8_t val);
+ 	struct can_device_stats	can_stats;
+@@ -191,4 +189,6 @@
+ void sja1000_proc_init(const char *drv_name, struct net_device **dev, int max);
+ void sja1000_proc_delete(const char *drv_name);
+ 
++int set_reset_mode(struct net_device *dev);
++
+ #endif /* __SJA1000_H__ */
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/trajet-gw2.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -43,7 +43,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -79,8 +79,8 @@
+ 
+ /* driver and version information */
+ static const char *drv_name	= DRV_NAME;
+-static const char *drv_version	= &quot;0.0.11&quot;;
+-static const char *drv_reldate	= &quot;2005-10-11&quot;;
++static const char *drv_version	= &quot;0.0.12&quot;;
++static const char *drv_reldate	= &quot;2005-08-22&quot;;
+ static const char *chip_name	= SJA1000_CHIP_NAME;
+ 
+ MODULE_AUTHOR(&quot;Matthias Brukner &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">M.Brukner at trajet.de</A>&gt;&quot;);
+@@ -111,13 +111,29 @@
+ /* array of all can chips */
+ static struct net_device	*can_dev[MAX_CAN];
+ 
++static int base_addr_n;
++static int irq_n;
++static int speed_n;
++static int btr_n;
++static int rx_probe_n;
+ 
++module_param_array(base_addr, int, &amp;base_addr_n, 0);
++module_param_array(irq, int, &amp;irq_n, 0);
++module_param_array(speed, int, &amp;speed_n, 0);
++module_param_array(btr, int, &amp;btr_n, 0);
++module_param_array(rx_probe, int, &amp;rx_probe_n, 0);
++
++module_param(clk, int, 0);
++module_param(debug, int, 0);
++module_param(restart_ms, int, 0);
++
+ /* special functions to access the chips registers */
+ static uint8_t reg_read(struct net_device *dev, int reg)
+ {
+ 	static uint8_t val;
++	void __iomem *addr = (void __iomem *)dev-&gt;base_addr + reg * (ADDR_GAP + 1) + ADDR_GAP;
+ 
+-	val = (uint8_t)readw(dev-&gt;base_addr + reg * (ADDR_GAP + 1) + ADDR_GAP);
++	val = (uint8_t)readw(addr);
+ 	rmb();
+ 
+ 	return val;
+@@ -125,19 +141,12 @@
+ 
+ static void reg_write(struct net_device *dev, int reg, uint8_t val)
+ {
+-	writew(val, dev-&gt;base_addr + reg * 2 + 1);
++	void __iomem *addr = (void __iomem *)dev-&gt;base_addr + reg * (ADDR_GAP + 1) + ADDR_GAP;
++
++	writew(val, addr);
+ 	wmb();
+ }
+ 
+-MODULE_PARM(base_addr, &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(irq,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(speed,     &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(btr,       &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(rx_probe,  &quot;1-&quot; __MODULE_STRING(MAX_CAN)&quot;i&quot;);
+-MODULE_PARM(clk, &quot;i&quot;);
+-MODULE_PARM(debug, &quot;i&quot;);
+-MODULE_PARM(restart_ms, &quot;i&quot;);
+-
+ static struct net_device* sja1000_gw2_probe(uint32_t base, int irq, int speed,
+ 					    int btr, int rx_probe, int clk,
+ 					    int debug, int restart_ms)
+@@ -205,7 +214,7 @@
+ 			struct can_priv *priv = netdev_priv(can_dev[i]);
+ 			unregister_netdev(can_dev[i]);
+ 			del_timer(&amp;priv-&gt;timer);
+-			iounmap((void*)can_dev[i]-&gt;base_addr);
++			iounmap((void __iomem *)can_dev[i]-&gt;base_addr);
+ 			release_mem_region(base_addr[i], RSIZE);
+ 			free_netdev(can_dev[i]);
+ 		}
+@@ -216,8 +225,6 @@
+ static __init int sja1000_gw2_init_module(void)
+ {
+ 	int i;
+-	struct net_device *dev;
+-	void *base;
+ 
+ 	if (clk &lt; 1000 ) /* MHz command line value */
+ 		clk *= 1000000;
+@@ -231,6 +238,10 @@
+ 	       chip_name, clk/1000000, clk%1000000, restart_ms, debug);
+ 
+ 	for (i = 0; base_addr[i]; i++) {
++
++		struct net_device *dev = NULL;
++		void *base;
++
+ 		printk(KERN_DEBUG &quot;%s: checking for %s on address 0x%X ...\n&quot;,
+ 		       chip_name, chip_name, base_addr[i]);
+ 		if (!request_mem_region(base_addr[i], RSIZE, chip_name)) {
+@@ -238,8 +249,11 @@
+ 			sja1000_gw2_cleanup_module();
+ 			return -EBUSY;
+ 		}
++
+ 		base = ioremap(base_addr[i], RSIZE);
+-		dev = sja1000_gw2_probe((uint32_t)base, irq[i], speed[i], btr[i], rx_probe[i], clk, debug, restart_ms);
++		if (base)
++			dev = sja1000_gw2_probe((uint32_t)base, irq[i], speed[i], btr[i], rx_probe[i], clk, debug, restart_ms);
++
+ 		if (dev != NULL) {
+ 			can_dev[i] = dev;
+ 			sja1000_proc_init(drv_name, can_dev, MAX_CAN);
+
+Deleted: branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/version.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/version.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/sja1000/version.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -1,72 +0,0 @@
+-/*
+- * version.h
+- *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions, the following disclaimer and
+- *    the referenced file 'COPYING'.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
+- * file from the main directory of the linux kernel source.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
+- *
+- */
+-
+-#ifndef VERSION_H
+-#define VERSION_H
+-
+-#define RCSID(s) asm(&quot;.section .rodata.str1.1,\&quot;aMS\&quot;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">, at progbits</A>,1\n\t&quot; \
+-		     &quot;.string \&quot;&quot; s &quot;\&quot;\n\t.previous\n&quot;)
+-
+-RCSID(&quot;$Id$&quot;);
+-
+-#define MAJORVERSION 2
+-#define MINORVERSION 0
+-#define PATCHLEVEL   0
+-#define EXTRAVERSION &quot;-pre2&quot;
+-
+-#define LLCF_VERSION_CODE (((MAJORVERSION) &lt;&lt; 16) + ((MINORVERSION) &lt;&lt; 8) \
+-				+ (PATCHLEVEL))
+-
+-/* stringification:  these are the usual macros to stringify with macro
+-   expansion.   The str() macro does the expansion, the xstr() macro is
+-   for the actual stringification.
+-*/
+-#define str(arg) xstr(arg)
+-#define xstr(arg) #arg
+-
+-#define VERSION str(MAJORVERSION) &quot;.&quot; str(MINORVERSION) &quot;.&quot; str(PATCHLEVEL) \
+-	EXTRAVERSION
+-#define BANNER(name) KERN_INFO name &quot; v&quot; VERSION &quot;\n&quot;
+-
+-#endif /* VERSION_H */
+
+Modified: branches/ut/hlist/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/drivers/net/can/vcan.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/drivers/net/can/vcan.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,17 +38,18 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
++#include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+ 
+-#include &lt;net/can/af_can.h&gt;
+-#include &lt;net/can/version.h&gt;
++#include &lt;linux/can/af_can.h&gt;
++#include &lt;linux/can/version.h&gt;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+@@ -60,12 +61,12 @@
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+-#ifdef DEBUG
++#ifdef CONFIG_CAN_DEBUG_DEVICES
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+-	                       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
+-			        printk(args)) : 0)
++			       (printk(KERN_DEBUG &quot;VCAN %s: &quot;, __func__), \
++				printk(args)) : 0)
+ #define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+ #define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+ #else
+@@ -216,7 +217,7 @@
+ 		if (!(vcan_devs[i] = alloc_netdev(sizeof(struct net_device_stats),
+ 						  &quot;vcan%d&quot;, vcan_init)))
+ 			printk(KERN_ERR &quot;vcan: error allocating net_device\n&quot;);
+-		else if (result = register_netdev(vcan_devs[i])) {
++		else if ((result = register_netdev(vcan_devs[i])) &lt; 0) {
+ 			printk(KERN_ERR &quot;vcan: error %d registering interface %s\n&quot;,
+ 			       result, vcan_devs[i]-&gt;name);
+ 			free_netdev(vcan_devs[i]);
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -96,7 +96,7 @@
+ 
+ #ifdef __KERNEL__
+ 
+-#define CAN_PROC_DIR &quot;sys/net/can&quot; /* /proc/... */
++#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ struct can_proto {
+@@ -107,6 +107,7 @@
+ struct can_proto {
+ 	struct proto_ops *ops;
+ 	struct module    *owner;
++	int              (*init)(struct sock *sk);
+ 	size_t           obj_size;
+ };
+ #endif
+@@ -122,7 +123,7 @@
+ 		      void (*func)(unsigned long msg, void *), void *data);
+ void can_dev_unregister(struct net_device *dev,
+ 			void (*func)(unsigned long msg, void *), void *data);
+-int  can_send(struct sk_buff *skb);
++int  can_send(struct sk_buff *skb, int loop);
+ 
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/bcm.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/bcm.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/bcm.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/can.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/can.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/can.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -68,8 +68,8 @@
+ typedef __u32 canid_t;
+ 
+ struct can_frame {
+-	canid_t can_id;	/* 32 bit CAN_ID + EFF/RTR flags */
+-	__u8    can_dlc;	/* data length code: 0 .. 8 */
++	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
++	__u8    can_dlc; /* data length code: 0 .. 8 */
+ 	__u8    data[8] __attribute__ ((aligned(8)));
+ };
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/can_error.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/can_error.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/can_error.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -48,19 +48,21 @@
+ #define CAN_ERR_DLC 8 /* dlc for error frames */
+ 
+ /* error class (mask) in can_id */
+-#define CAN_ERR_BUSOFF       0x00000001U /* bus off */
+-#define CAN_ERR_TX_TIMEOUT   0x00000002U /* TX timeout (netdevice driver) */
+-#define CAN_ERR_ACK          0x00000004U /* received no ACK on transmission */
+-#define CAN_ERR_LOSTARB      0x00000008U /* lost arbitration    / data[0]    */
+-#define CAN_ERR_CRTL         0x00000010U /* controller problems / data[1]    */
+-#define CAN_ERR_PROT         0x00000020U /* protocol violations / data[2..3] */
+-#define CAN_ERR_TRX          0x00000040U /* transceiver status  / data[4]    */
++#define CAN_ERR_TX_TIMEOUT   0x00000001U /* TX timeout (by netdevice driver) */
++#define CAN_ERR_LOSTARB      0x00000002U /* lost arbitration    / data[0]    */
++#define CAN_ERR_CRTL         0x00000004U /* controller problems / data[1]    */
++#define CAN_ERR_PROT         0x00000008U /* protocol violations / data[2..3] */
++#define CAN_ERR_TRX          0x00000010U /* transceiver status  / data[4]    */
++#define CAN_ERR_ACK          0x00000020U /* received no ACK on transmission */
++#define CAN_ERR_BUSOFF       0x00000040U /* bus off */
++#define CAN_ERR_BUSERROR     0x00000080U /* bus error (may flood!) */
++#define CAN_ERR_RESTARTED    0x00000100U /* controller restarted */
+ 
+ #define CAN_ERR_MASK         0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
+ 
+ /* arbitration lost in bit ... / data[0] */
+ #define CAN_ERR_LOSTARB_UNSPEC   0x00 /* unspecified */
+-                                      /* else bit number in bitstream */
++				      /* else bit number in bitstream */
+ 
+ /* error status of CAN-controller / data[1] */
+ #define CAN_ERR_CRTL_UNSPEC      0x00 /* unspecified */
+@@ -68,9 +70,10 @@
+ #define CAN_ERR_CRTL_TX_OVERFLOW 0x02 /* TX buffer overflow */
+ #define CAN_ERR_CRTL_RX_WARNING  0x04 /* reached warning level for RX errors */
+ #define CAN_ERR_CRTL_TX_WARNING  0x08 /* reached warning level for TX errors */
+-#define CAN_ERR_CRTL_PASSIVE 	 0x10 /* reached the error passive status	 */
+-									  /* (at least one error counter exceeds */
+-									  /* the protocol-defined level of 127) */
++#define CAN_ERR_CRTL_RX_PASSIVE  0x10 /* reached error passive status RX */
++#define CAN_ERR_CRTL_TX_PASSIVE  0x20 /* reached error passive status TX */
++				      /* (at least one error counter exceeds */
++				      /* the protocol-defined level of 127)  */
+ 
+ /* error in CAN protocol (type) / data[2] */
+ #define CAN_ERR_PROT_UNSPEC      0x00 /* unspecified */
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/can_ioctl.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/can_ioctl.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/can_ioctl.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -68,6 +68,9 @@
+ #define SIOCGCANSTATE		(SIOCDEVPRIVATE+10)
+ #define SIOCGCANSTATS		(SIOCDEVPRIVATE+11)
+ 
++#define SIOCSCANERRORCONFIG	(SIOCDEVPRIVATE+12)
++#define SIOCGCANERRORCONFIG	(SIOCDEVPRIVATE+13)
++
+ /* parameters for ioctls */
+ 
+ /* SIOC[SG]CANBAUDRATE */
+@@ -108,7 +111,8 @@
+ 		struct can_bittime_btr btr;
+ 	};
+ };
+-#define CAN_BAUDRATE_UNCONFIGURED	((__u32)-1)
++
++#define CAN_BAUDRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
+ #define CAN_BAUDRATE_UNKNOWN		0
+ 
+ /* SIOC[SG]CANMODE */
+@@ -136,7 +140,7 @@
+ #define CAN_FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
+ #define CAN_FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
+ #define CAN_FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
+-                                  /* filters 3 - 31 currently undefined */
++				  /* filters 3 - 31 currently undefined */
+ 
+ #define CAN_FILTER_MAX         31 /* max. filter type value */
+ 
+@@ -167,4 +171,14 @@
+ 	int bus_error_at_init;
+ };
+ 
++/* SIOC[SG]CANERRORCONFIG */
++
++typedef enum CAN_ERRCFG_TYPE {
++	CAN_ERRCFG_MASK,
++	CAN_ERRCFG_BUSERR,
++	CAN_ERRCFG_BUSOFF
++} can_errcfg_type_t;
++
++/* tbd */
++
+ #endif /* CAN_IOCTL_H */
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/raw.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/raw.h	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/raw.h	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,7 +38,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -49,7 +49,9 @@
+ 
+ #define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
+ 
+-#define CAN_RAW_FILTER     1
+-#define CAN_RAW_ERR_FILTER 2
++#define CAN_RAW_FILTER        1
++#define CAN_RAW_ERR_FILTER    2
++#define CAN_RAW_LOOPBACK      3
++#define CAN_RAW_RECV_OWN_MSGS 4
+ 
+ #endif
+
+Copied: branches/ut/hlist/kernel/2.6/include/linux/can/version.h (from rev 61, trunk/kernel/2.6/include/linux/can/version.h)
+
+Modified: branches/ut/hlist/test/Makefile
+===================================================================
+--- branches/ut/hlist/test/Makefile	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/Makefile	2006-08-30 10:08:14 UTC (rev 63)
+@@ -38,11 +38,11 @@
+ #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ #  DAMAGE.
+ #
+-#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.4/can -fno-strict-aliasing
+ 
+-PROGRAMS_GPL = 	tst-raw		\
++PROGRAMS = 	tst-raw		\
+ 		tst-raw-filter	\
+ 		tst-err		\
+ 		tst-raw-sendto	\
+@@ -55,20 +55,10 @@
+ 		tst-proc	\
+ 		canecho
+ 
+-PROGRAMS_VW = 	tp20-client	\
+-		tp20-server	\
+-		tp16-client	\
+-		tp16-server
++all: $(PROGRAMS)
+ 
+-default: all-gpl
+-
+-all: all-gpl all-vw
+-
+-all-gpl: $(PROGRAMS_GPL)
+-all-vw:  $(PROGRAMS_VW)
+-
+ clean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW)
++	rm -f $(PROGRAMS)
+ 
+ distclean:
+-	rm -f $(PROGRAMS_GPL) $(PROGRAMS_VW) *~
++	rm -f $(PROGRAMS) *~
+
+Modified: branches/ut/hlist/test/canecho.c
+===================================================================
+--- branches/ut/hlist/test/canecho.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/canecho.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-bcm-cycle.c
+===================================================================
+--- branches/ut/hlist/test/tst-bcm-cycle.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-bcm-cycle.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-bcm-filter.c
+===================================================================
+--- branches/ut/hlist/test/tst-bcm-filter.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-bcm-filter.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-bcm-rtr.c
+===================================================================
+--- branches/ut/hlist/test/tst-bcm-rtr.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-bcm-rtr.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-bcm-single.c
+===================================================================
+--- branches/ut/hlist/test/tst-bcm-single.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-bcm-single.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-bcm-throttle.c
+===================================================================
+--- branches/ut/hlist/test/tst-bcm-throttle.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-bcm-throttle.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-bcm-tx_read.c
+===================================================================
+--- branches/ut/hlist/test/tst-bcm-tx_read.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-bcm-tx_read.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-err.c
+===================================================================
+--- branches/ut/hlist/test/tst-err.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-err.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-proc.c
+===================================================================
+--- branches/ut/hlist/test/tst-proc.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-proc.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-raw-filter.c
+===================================================================
+--- branches/ut/hlist/test/tst-raw-filter.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-raw-filter.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-raw-sendto.c
+===================================================================
+--- branches/ut/hlist/test/tst-raw-sendto.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-raw-sendto.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+
+Modified: branches/ut/hlist/test/tst-raw.c
+===================================================================
+--- branches/ut/hlist/test/tst-raw.c	2006-08-30 10:02:45 UTC (rev 62)
++++ branches/ut/hlist/test/tst-raw.c	2006-08-30 10:08:14 UTC (rev 63)
+@@ -42,7 +42,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+  * DAMAGE.
+  *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">llcf at volkswagen.de</A>&gt;
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+  *
+  */
+ 
+@@ -70,11 +70,34 @@
+     int ifindex;
+     int opt;
+ 
+-    while ((opt = getopt(argc, argv, &quot;i:&quot;)) != -1) {
++    /* sockopt test */
++    int loopback = 0;
++    int set_loopback = 0;
++    int recv_own_msgs = 0;
++    int set_recv_own_msgs = 0;
++    int send_one_frame = 0;
++
++    while ((opt = getopt(argc, argv, &quot;i:l:r:s&quot;)) != -1) {
+         switch (opt) {
++
+         case 'i':
+ 	    ifname = optarg;
+             break;
++
++        case 'l':
++	    loopback = atoi(optarg);
++	    set_loopback = 1;
++            break;
++
++        case 'r':
++	    recv_own_msgs = atoi(optarg);
++	    set_recv_own_msgs = 1;
++            break;
++
++        case 's':
++	    send_one_frame = 1;
++            break;
++
+         default:
+             fprintf(stderr, &quot;Unknown option %c\n&quot;, opt);
+             break;
+@@ -98,6 +121,12 @@
+ 
+     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &amp;rfilter, sizeof(rfilter));
+ 
++    if(set_loopback)
++	  setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &amp;loopback, sizeof(loopback));
++
++    if(set_recv_own_msgs)
++      setsockopt(s, SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS, &amp;recv_own_msgs, sizeof(recv_own_msgs));
++
+     strcpy(ifr.ifr_name, ifname);
+     ioctl(s, SIOCGIFINDEX, &amp;ifr);
+     ifindex = ifr.ifr_ifindex;
+@@ -110,6 +139,16 @@
+       return 1;
+     }
+ 
++	if(send_one_frame) {
++
++	  frame.can_id  = 0x123;
++	  frame.can_dlc = 2;
++	  frame.data[0] = 0x11;
++	  frame.data[1] = 0x22;
++
++	  nbytes = write(s, &amp;frame, sizeof(struct can_frame));
++	}
++
+     while (1) {
+ 
+ 	if ((nbytes = read(s, &amp;frame, sizeof(struct can_frame))) &lt; 0) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000041.html">r62 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000043.html">r64 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

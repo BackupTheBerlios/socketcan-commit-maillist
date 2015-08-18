@@ -1,0 +1,840 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r131 - trunk/doc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r131%20-%20trunk/doc&In-Reply-To=%3C200701291126.l0TBQ4N8012142%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000114.html">
+   <LINK REL="Next"  HREF="000116.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r131 - trunk/doc</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r131%20-%20trunk/doc&In-Reply-To=%3C200701291126.l0TBQ4N8012142%40sheep.berlios.de%3E"
+       TITLE="r131 - trunk/doc">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 29 12:26:04 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000114.html">r130 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000116.html">r132 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#115">[ date ]</a>
+              <a href="thread.html#115">[ thread ]</a>
+              <a href="subject.html#115">[ subject ]</a>
+              <a href="author.html#115">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-01-29 12:25:58 +0100 (Mon, 29 Jan 2007)
+New Revision: 131
+
+Added:
+   trunk/doc/asc2log.1
+   trunk/doc/bcm.7
+   trunk/doc/can-raw.7
+   trunk/doc/can-sniffer.1
+   trunk/doc/can.7
+   trunk/doc/candump.1
+   trunk/doc/cangen.1
+   trunk/doc/canplayer.1
+   trunk/doc/cansend.1
+   trunk/doc/log2asc.1
+   trunk/doc/log2long.1
+Log:
+Add manual pages (templates) describing the CAN protocols and CAN utils.
+
+
+Added: trunk/doc/asc2log.1
+===================================================================
+--- trunk/doc/asc2log.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/asc2log.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,52 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH ASC2LOG 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++asc2log \- convert log messages from ASC format to ...
++.SH SYNOPSIS
++.B &quot;asc2log ...&quot;
++.SH DESCRIPTION
++.B asc2log
++converts log messages in ASC format to ...
++.SH &quot;SEE ALSO&quot;
++.BR log2asc (1),
++.BR can (7)
+
+
+Property changes on: trunk/doc/asc2log.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/bcm.7
+===================================================================
+--- trunk/doc/bcm.7	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/bcm.7	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,58 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH BCM 7 2006-11-28 &quot;Socket CAN&quot; &quot;Linux Programmer's Manual&quot;
++.SH NAME
++bcm \- Broadcast manager protocol for Linux CAN implementation
++.SH SYNOPSIS
++.B #include &lt;linux/can.h&gt;
++.br
++.B #include &lt;linux/can/bcm.h&gt;
++.br
++.B bcm_socket = socket(PF_CAN, SOCK_DGRAM, CAN_BCM);
++.SH DESCRIPTION
++The broadcast manager is a CAN protocol implementation for efficiently
++handling periodically sent CAN messages.
++yadda yadda
++.SH &quot;SEE ALSO&quot;
++.BR can (7),
++.BR can-raw (7),
++.BR socket (7)
+
+
+Property changes on: trunk/doc/bcm.7
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/can-raw.7
+===================================================================
+--- trunk/doc/can-raw.7	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/can-raw.7	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,70 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH CAN-RAW 7 2006-11-28 &quot;Socket CAN&quot; &quot;Linux Programmer's Manual&quot;
++.SH NAME
++raw \- RAW protocol for Linux CAN implementation
++.SH SYNOPSIS
++.B #include &lt;linux/can.h&gt;
++.br
++.B #include &lt;linux/can/raw.h&gt;
++.br
++.B raw_socket = socket(PF_CAN, SOCK_RAW, CAN_RAW);
++.SH DESCRIPTION
++yadda yadda
++.SH &quot;SOCKET OPTIONS&quot;
++.TP
++.B CAN_RAW_FILTER
++foobar
++.TP
++.B CAN_RAW_ERR_FILTER
++yadda yadda
++.TP
++.B CAN_RAW_LOOPBACK
++yadda yadda
++.TP
++.B CAN_RAW_RECV_OWN_MSGS
++yadda yadda
++.PP
++.SH &quot;SEE ALSO&quot;
++.BR can (7),
++.BR bcm (7),
++.BR socket (7)
+
+
+Property changes on: trunk/doc/can-raw.7
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/can-sniffer.1
+===================================================================
+--- trunk/doc/can-sniffer.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/can-sniffer.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,53 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH CAN-SNIFFER 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++can-sniffer \- ...
++.SH SYNOPSIS
++.B &quot;can-sniffer ...&quot;
++.SH DESCRIPTION
++.B can-sniffer
++...
++.SH &quot;SEE ALSO&quot;
++.BR candump (1),
++.BR can (7),
++.BR can-raw (7)
+
+
+Property changes on: trunk/doc/can-sniffer.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/can.7
+===================================================================
+--- trunk/doc/can.7	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/can.7	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,64 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH CAN 7 2006-11-28 &quot;Socket CAN&quot; &quot;Linux Programmer's Manual&quot;
++.SH NAME
++can \-  Linux CAN implementation
++.SH SYNOPSIS
++.B #include &lt;linux/can.h&gt;
++.br
++.B #include &lt;linux/can/raw.h&gt;
++.br
++.B raw_socket = socket(PF_CAN, SOCK_RAW, CAN_RAW);
++.br
++.B bcm_socket = socket(PF_CAN, SOCK_DGRAM, CAN_BCM);
++.SH DESCRIPTION
++This is an implementation of the CAN protocols for Linux, based on the
++Berkeley socket API.  It consits of network device drivers for a
++number of CAN interface cards, a CAN core module which implements a
++new protocol family PF_CAN, and CAN protocol implementations which can
++be loaded as kernel modules.  The current GPL implementation covers
++two protocol modules, a raw socket interface and the broadcast manager
++(BCM) for efficiently handling periodically sent CAN messages.
++.SH &quot;SEE ALSO&quot;
++.BR can-raw (7),
++.BR bcm (7),
++.BR socket (7)
+
+
+Property changes on: trunk/doc/can.7
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/candump.1
+===================================================================
+--- trunk/doc/candump.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/candump.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,55 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH CANDUMP 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++candump \- dump traffic on a CAN network
++.SH SYNOPSIS
++.B &quot;candump ...&quot;
++.SH DESCRIPTION
++.B candump
++reads the traffic on one or more specified CAN interfaces and dumps
++all CAN frames on the standard output.
++.SH &quot;SEE ALSO&quot;
++.BR cansend (1),
++.BR can-sniffer (1),
++.BR can (7),
++.BR can-raw (7)
+
+
+Property changes on: trunk/doc/candump.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/cangen.1
+===================================================================
+--- trunk/doc/cangen.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/cangen.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,54 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH CANGEN 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++cangen \- generate CAN traffic to send on a CAN interface
++.SH SYNOPSIS
++.B &quot;cangen ...&quot;
++.SH DESCRIPTION
++.B cangen
++yadda yadda
++.SH &quot;SEE ALSO&quot;
++.BR candump (1),
++.BR cansend (1),
++.BR can (7),
++.BR can-raw (7)
+
+
+Property changes on: trunk/doc/cangen.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/canplayer.1
+===================================================================
+--- trunk/doc/canplayer.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/canplayer.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,58 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH CANPLAYER 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++canplayer \- send CAN frames from a file to a CAN interface
++.SH SYNOPSIS
++.B &quot;canplayer ...&quot;
++.SH DESCRIPTION
++.B canplayer
++reads CAN frames with timing information from a file and sends them to
++the specified CAN interface.  The file containing the CAN frames is
++typically created by recording CAN traffic on an interface using
++.BR candump (1).
++This file must have the following format:
++...
++.SH &quot;SEE ALSO&quot;
++.BR candump (1),
++.BR can (7),
++.BR can-raw (7)
+
+
+Property changes on: trunk/doc/canplayer.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/cansend.1
+===================================================================
+--- trunk/doc/cansend.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/cansend.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,58 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH CANSEND 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++cansend \- send CAN frames from a file to a CAN interface
++.SH SYNOPSIS
++.B &quot;cansend ...&quot;
++.SH DESCRIPTION
++.B cansend
++reads CAN frames from a file and sends them to the specified CAN
++interface.  The file containing the CAN frames is typically created by
++recording CAN traffic on an interface using
++.BR candump (1).
++This file must have the following format:
++...
++.SH &quot;SEE ALSO&quot;
++.BR candump (1),
++.BR can (7),
++.BR can-raw (7)
+
+
+Property changes on: trunk/doc/cansend.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/log2asc.1
+===================================================================
+--- trunk/doc/log2asc.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/log2asc.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,52 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH LOG2ASC 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++log2asc \- convert log messages from ... format to ASC format
++.SH SYNOPSIS
++.B &quot;log2asc ...&quot;
++.SH DESCRIPTION
++.B log2asc
++converts log messages in ... format to ASC format.
++.SH &quot;SEE ALSO&quot;
++.BR asc2log (1),
++.BR can (7)
+
+
+Property changes on: trunk/doc/log2asc.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/doc/log2long.1
+===================================================================
+--- trunk/doc/log2long.1	2007-01-26 07:36:33 UTC (rev 130)
++++ trunk/doc/log2long.1	2007-01-29 11:25:58 UTC (rev 131)
+@@ -0,0 +1,53 @@
++.\&quot; $Id$
++.\&quot;
++.\&quot; Copyright (c) 2002-2007 Volkswagen Group Electronic Research
++.\&quot; All rights reserved.
++.\&quot;
++.\&quot; Redistribution and use in source and binary forms, with or without
++.\&quot; modification, are permitted provided that the following conditions
++.\&quot; are met:
++.\&quot; 1. Redistributions of source code must retain the above copyright
++.\&quot;    notice, this list of conditions, the following disclaimer and
++.\&quot;    the referenced file 'COPYING'.
++.\&quot; 2. Redistributions in binary form must reproduce the above copyright
++.\&quot;    notice, this list of conditions and the following disclaimer in the
++.\&quot;    documentation and/or other materials provided with the distribution.
++.\&quot; 3. Neither the name of Volkswagen nor the names of its contributors
++.\&quot;    may be used to endorse or promote products derived from this software
++.\&quot;    without specific prior written permission.
++.\&quot;
++.\&quot; Alternatively, provided that this notice is retained in full, this
++.\&quot; software may be distributed under the terms of the GNU General
++.\&quot; Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++.\&quot; file from the main directory of the linux kernel source.
++.\&quot;
++.\&quot; The provided data structures and external interfaces from this code
++.\&quot; are not restricted to be used by modules with a GPL compatible license.
++.\&quot;
++.\&quot; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++.\&quot; &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++.\&quot; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++.\&quot; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++.\&quot; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++.\&quot; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++.\&quot; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++.\&quot; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++.\&quot; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++.\&quot; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++.\&quot; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++.\&quot; DAMAGE.
++.\&quot;
++.\&quot; Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++.\&quot;
++.TH LOG2LONG 1 2007-01-29 &quot;Socket CAN&quot; &quot;User Commands&quot;
++.SH NAME
++log2long \- convert log messages from ... format to ... format
++.SH SYNOPSIS
++.B &quot;log2long ...&quot;
++.SH DESCRIPTION
++.B log2long
++converts log messages in ... format to ... format.
++.SH &quot;SEE ALSO&quot;
++.BR asc2log (1),
++.BR log2asc (1),
++.BR can (7)
+
+
+Property changes on: trunk/doc/log2long.1
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000114.html">r130 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000116.html">r132 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#115">[ date ]</a>
+              <a href="thread.html#115">[ thread ]</a>
+              <a href="subject.html#115">[ subject ]</a>
+              <a href="author.html#115">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

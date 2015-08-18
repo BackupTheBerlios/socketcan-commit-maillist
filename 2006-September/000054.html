@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r74 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r74%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609141250.k8ECodRB015087%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000053.html">
+   <LINK REL="Next"  HREF="000055.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r74 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r74%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609141250.k8ECodRB015087%40sheep.berlios.de%3E"
+       TITLE="r74 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep 14 14:50:39 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000053.html">r73 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000055.html">r75 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#54">[ date ]</a>
+              <a href="thread.html#54">[ thread ]</a>
+              <a href="subject.html#54">[ subject ]</a>
+              <a href="author.html#54">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-09-14 14:50:38 +0200 (Thu, 14 Sep 2006)
+New Revision: 74
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+extract part of find_rcv_list() into new function find_dev_rcv_lists().
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-09-05 13:23:51 UTC (rev 73)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-09-14 12:50:38 UTC (rev 74)
+@@ -734,25 +734,12 @@
+ 	return matches;
+ }
+ 
+-static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
+-					struct net_device *dev)
++static struct dev_rcv_lists *find_dev_rcv_lists(struct net_device *dev,
++						int create)
+ {
+-	canid_t inv = *can_id &amp; CAN_INV_FILTER; /* save flag before masking values */
+-	canid_t eff = *can_id &amp; *mask &amp; CAN_EFF_FLAG; /* correct EFF check? */
+-	canid_t rtr = *can_id &amp; *mask &amp; CAN_RTR_FLAG; /* correct RTR check? */
+-	canid_t err = *mask &amp; CAN_ERR_FLAG; /* mask for error frames only */
+-
+ 	struct dev_rcv_lists *d;
+ 	struct hlist_node *n;
+ 
+-	/* make some paranoic operations */
+-	if (*can_id &amp; CAN_EFF_FLAG)
+-		*mask &amp;= (CAN_EFF_MASK | eff | rtr);
+-	else
+-		*mask &amp;= (CAN_SFF_MASK | rtr);
+-
+-	*can_id &amp;= *mask;
+-
+ 	/* find receive list for this device */
+ 	if (!dev)
+ 		d = &amp;rx_alldev_list;
+@@ -761,7 +748,7 @@
+ 		struct dev_rcv_lists *q;
+ 		d = NULL;
+ 		hlist_for_each_entry(q, n, &amp;rx_dev_list, list)
+-			if (!q-&gt;dev)
++			if (!q-&gt;dev &amp;&amp; create)
+ 				d = q;
+ 			else if (q-&gt;dev == dev) {
+ 				d = q;
+@@ -774,7 +761,7 @@
+ 		}
+ 	}
+ 
+-	if (!d) {
++	if (!d &amp;&amp; create) {
+ 		/* create new dev_rcv_lists for this device */
+ 		DBG(&quot;creating new dev_rcv_lists for %s\n&quot;, dev-&gt;name);
+ 		if (!(d = kmalloc(sizeof(struct dev_rcv_lists), GFP_KERNEL))) {
+@@ -785,12 +772,35 @@
+ 		        for the embedded hlist_head structs.
+ 			Another list type, e.g. list_head, would require
+ 			explicit initialization. */
+-		memset (d, 0, sizeof(struct dev_rcv_lists));
++		memset(d, 0, sizeof(struct dev_rcv_lists));
+ 
+ 		d-&gt;dev = dev;
+ 		hlist_add_head(&amp;d-&gt;list, &amp;rx_dev_list);
+ 	}
+ 
++	return d;
++}
++
++static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
++					struct net_device *dev)
++{
++	canid_t inv = *can_id &amp; CAN_INV_FILTER; /* save flag before masking values */
++	canid_t eff = *can_id &amp; *mask &amp; CAN_EFF_FLAG; /* correct EFF check? */
++	canid_t rtr = *can_id &amp; *mask &amp; CAN_RTR_FLAG; /* correct RTR check? */
++	canid_t err = *mask &amp; CAN_ERR_FLAG; /* mask for error frames only */
++
++	struct dev_rcv_lists *d;
++
++	/* make some paranoic operations */
++	if (*can_id &amp; CAN_EFF_FLAG)
++		*mask &amp;= (CAN_EFF_MASK | eff | rtr);
++	else
++		*mask &amp;= (CAN_SFF_MASK | rtr);
++
++	*can_id &amp;= *mask;
++
++	d = find_dev_rcv_lists(dev, 1);
++
+ 	if (err) /* error frames */
+ 		return &amp;d-&gt;rx_err;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000053.html">r73 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000055.html">r75 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#54">[ date ]</a>
+              <a href="thread.html#54">[ thread ]</a>
+              <a href="subject.html#54">[ subject ]</a>
+              <a href="author.html#54">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

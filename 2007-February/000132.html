@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r148 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r148%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200702121019.l1CAJInT016950%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000131.html">
+   <LINK REL="Next"  HREF="000133.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r148 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r148%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200702121019.l1CAJInT016950%40sheep.berlios.de%3E"
+       TITLE="r148 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Feb 12 11:19:18 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000131.html">r147 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000133.html">r149 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#132">[ date ]</a>
+              <a href="thread.html#132">[ thread ]</a>
+              <a href="subject.html#132">[ subject ]</a>
+              <a href="author.html#132">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-02-12 11:19:15 +0100 (Mon, 12 Feb 2007)
+New Revision: 148
+
+Modified:
+   trunk/kernel/2.4/can/Makefile
+Log:
+Remove VW-specific targets from Makefile.
+
+
+Modified: trunk/kernel/2.4/can/Makefile
+===================================================================
+--- trunk/kernel/2.4/can/Makefile	2007-02-12 08:36:38 UTC (rev 147)
++++ trunk/kernel/2.4/can/Makefile	2007-02-12 10:19:15 UTC (rev 148)
+@@ -53,33 +53,21 @@
+ 
+ MODLIB := $(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)/llcf
+ 
+-MOD_GPL = can.o vcan.o can-bcm.o can-raw.o
+-MOD_VW  = can-tpgen.o can-tp20.o can-tp16.o can-mcnet.o
++MOD = can.o vcan.o can-bcm.o can-raw.o
+ 
+-default: all-gpl
++all-vw: $(MOD)
+ 
+-all: all-gpl all-vw
+-
+-all-gpl: $(MOD_GPL)
+-
+-all-vw: $(MOD_VW)
+-
+ ifeq &quot;$(strip $(INSTALL_MOD_PATH))&quot; &quot;&quot;
+ DEPMOD_BASE :=
+ else
+ DEPMOD_BASE := -r -b $(INSTALL_MOD_PATH)
+ endif
+ 
+-install: $(MOD_GPL)
++install: $(MOD)
+ 	install -m 755 -d $(MODLIB)
+ 	install -m 644 $^ $(MODLIB)
+ 	depmod -ae -F $(KERNELDIR)/System.map $(DEPMOD_BASE) $(KERNELRELEASE)
+ 
+-install-vw: $(MOD_VW)
+-	install -m 755 -d $(MODLIB)
+-	install -m 644 $^ $(MODLIB)
+-	depmod -ae -F $(KERNELDIR)/System.map $(DEPMOD_BASE) $(KERNELRELEASE)
+-
+ clean:
+ 	rm -f *.o
+ 
+@@ -91,16 +79,3 @@
+ 
+ can-raw.o: raw.o
+ 	$(LD) -r -o $@ $^
+-
+-can-tpgen.o: tp_gen.o
+-	$(LD) -r -o $@ $^
+-
+-can-tp20.o: tp20.o
+-	$(LD) -r -o $@ $^
+-
+-can-tp16.o: tp16.o
+-	$(LD) -r -o $@ $^
+-
+-can-mcnet.o: mcnet.o
+-	$(LD) -r -o $@ $^
+-
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000131.html">r147 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000133.html">r149 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#132">[ date ]</a>
+              <a href="thread.html#132">[ thread ]</a>
+              <a href="subject.html#132">[ subject ]</a>
+              <a href="author.html#132">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,262 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r775 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/sja1000 include/linux/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r775%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/mscan%0A%09drivers/net/can/old/ccan%20drivers/net/can/sja1000%20include/linux/can&In-Reply-To=%3C200806111857.m5BIvh1G031686%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000754.html">
+   <LINK REL="Next"  HREF="000756.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r775 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/sja1000 include/linux/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r775%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/mscan%0A%09drivers/net/can/old/ccan%20drivers/net/can/sja1000%20include/linux/can&In-Reply-To=%3C200806111857.m5BIvh1G031686%40sheep.berlios.de%3E"
+       TITLE="r775 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/mscan	drivers/net/can/old/ccan drivers/net/can/sja1000 include/linux/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 11 20:57:43 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000754.html">r774 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000756.html">r776 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#755">[ date ]</a>
+              <a href="thread.html#755">[ thread ]</a>
+              <a href="subject.html#755">[ subject ]</a>
+              <a href="author.html#755">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-06-11 20:57:39 +0200 (Wed, 11 Jun 2008)
+New Revision: 775
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+   trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/sysfs.c
+   trunk/kernel/2.6/include/linux/can/dev.h
+   trunk/kernel/2.6/include/linux/can/ioctl.h
+Log:
+ioctl.h: don't use new typedefs
+
+We should not add new typedefs.
+
+Signed-off-by: Robert Schwebel &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">r.schwebel at pengutronix.de</A>&gt;
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2008-06-11 16:38:00 UTC (rev 774)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2008-06-11 18:57:39 UTC (rev 775)
+@@ -109,7 +109,7 @@
+ #define F_TX_PROGRESS	1
+ #define F_TX_WAIT_ALL	2
+ 
+-static can_state_t state_map[] = {
++static enum can_state state_map[] = {
+ 	CAN_STATE_ACTIVE,
+ 	CAN_STATE_BUS_WARNING,
+ 	CAN_STATE_BUS_PASSIVE,
+@@ -304,7 +304,7 @@
+ static inline int check_set_state(struct net_device *dev, u8 canrflg)
+ {
+ 	struct mscan_priv *priv = netdev_priv(dev);
+-	can_state_t state;
++	enum can_state state;
+ 	int ret = 0;
+ 
+ 	if (!(canrflg &amp; MSCAN_CSCIF) || priv-&gt;can.state &gt; CAN_STATE_BUS_OFF)
+@@ -552,7 +552,7 @@
+ 	return ret;
+ }
+ 
+-static int mscan_do_set_mode(struct net_device *dev, can_mode_t mode)
++static int mscan_do_set_mode(struct net_device *dev, enum can_mode mode)
+ {
+ 
+ 	struct mscan_priv *priv = netdev_priv(dev);
+
+Modified: trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c	2008-06-11 16:38:00 UTC (rev 774)
++++ trunk/kernel/2.6/drivers/net/can/old/ccan/ccan.c	2008-06-11 18:57:39 UTC (rev 775)
+@@ -274,7 +274,7 @@
+ 	return 0;
+ }
+ 
+-static int ccan_set_mode(struct net_device *dev, can_mode_t mode)
++static int ccan_set_mode(struct net_device *dev, enum can_mode mode)
+ {
+ 	switch (mode) {
+ 	case CAN_MODE_START:
+@@ -287,7 +287,7 @@
+ 	return 0;
+ }
+ 
+-static int ccan_get_state(struct net_device *dev, can_state_t *state)
++static int ccan_get_state(struct net_device *dev, enum can_state *state)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+ 	u32 reg_status;
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2008-06-11 16:38:00 UTC (rev 774)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2008-06-11 18:57:39 UTC (rev 775)
+@@ -238,7 +238,7 @@
+ 	set_normal_mode(dev);
+ }
+ 
+-static int sja1000_set_mode(struct net_device *dev, can_mode_t mode)
++static int sja1000_set_mode(struct net_device *dev, enum can_mode mode)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+ 
+@@ -260,7 +260,7 @@
+ 	return 0;
+ }
+ 
+-static int sja1000_get_state(struct net_device *dev, can_state_t *state)
++static int sja1000_get_state(struct net_device *dev, enum can_state *state)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+ 	u8 status;
+@@ -478,7 +478,7 @@
+ 	struct net_device_stats *stats = dev-&gt;get_stats(dev);
+ 	struct can_frame *cf;
+ 	struct sk_buff *skb;
+-	can_state_t state = priv-&gt;can.state;
++	enum can_state state = priv-&gt;can.state;
+ 	uint8_t ecc, alc;
+ 
+ 	skb = dev_alloc_skb(sizeof(struct can_frame));
+
+Modified: trunk/kernel/2.6/drivers/net/can/sysfs.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sysfs.c	2008-06-11 16:38:00 UTC (rev 774)
++++ trunk/kernel/2.6/drivers/net/can/sysfs.c	2008-06-11 18:57:39 UTC (rev 775)
+@@ -101,7 +101,7 @@
+ 	return 0;
+ }
+ 
+-static int can_get_state(struct net_device *dev, can_state_t *state)
++static int can_get_state(struct net_device *dev, enum can_state *state)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+ 
+@@ -283,7 +283,7 @@
+ 			     char *buf)
+ {
+ 	struct net_device *ndev = to_net_dev(dev);
+-	can_state_t state;
++	enum can_state state;
+ 	int ret = -EINVAL;
+ 
+ 	read_lock(&amp;dev_base_lock);
+
+Modified: trunk/kernel/2.6/include/linux/can/dev.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/dev.h	2008-06-11 16:38:00 UTC (rev 774)
++++ trunk/kernel/2.6/include/linux/can/dev.h	2008-06-11 18:57:39 UTC (rev 775)
+@@ -49,7 +49,7 @@
+ 	/* Please hold this lock when touching net_stats/can_stats */
+ 	spinlock_t stats_lock;
+ 
+-	can_state_t state;
++	enum can_state state;
+ 	u32 ctrlmode;
+ 
+ 	int restart_ms;
+
+Modified: trunk/kernel/2.6/include/linux/can/ioctl.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/ioctl.h	2008-06-11 16:38:00 UTC (rev 774)
++++ trunk/kernel/2.6/include/linux/can/ioctl.h	2008-06-11 18:57:39 UTC (rev 775)
+@@ -25,10 +25,10 @@
+ /*
+  * CAN custom bit time
+  */
+-typedef enum CAN_BITTIME_TYPE {
++enum can_bittimes {
+ 	CAN_BITTIME_STD,
+ 	CAN_BITTIME_BTR
+-} can_bittime_type_t;
++};
+ 
+ /* TSEG1 of controllers usually is a sum of synch_seg (always 1),
+  * prop_seg and phase_seg1, TSEG2 = phase_seg2 */
+@@ -48,7 +48,7 @@
+ };
+ 
+ struct can_bittime {
+-	can_bittime_type_t type;
++	enum can_bittimes type;
+ 	union {
+ 		struct can_bittime_std std;
+ 		struct can_bittime_btr btr;
+@@ -58,11 +58,11 @@
+ /*
+  * CAN mode
+  */
+-typedef enum {
++enum can_mode {
+ 	CAN_MODE_STOP = 0,
+ 	CAN_MODE_START,
+ 	CAN_MODE_SLEEP
+-} can_mode_t;
++};
+ 
+ /*
+  * CAN controller mode
+@@ -73,14 +73,14 @@
+ /*
+  * CAN operational and error states
+  */
+-typedef enum {
++enum can_state {
+ 	CAN_STATE_ACTIVE = 0,
+ 	CAN_STATE_BUS_WARNING,
+ 	CAN_STATE_BUS_PASSIVE,
+ 	CAN_STATE_BUS_OFF,
+ 	CAN_STATE_STOPPED,
+ 	CAN_STATE_SLEEPING
+-} can_state_t;
++};
+ 
+ /*
+  * CAN device statistics
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000754.html">r774 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000756.html">r776 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#755">[ date ]</a>
+              <a href="thread.html#755">[ thread ]</a>
+              <a href="subject.html#755">[ subject ]</a>
+              <a href="author.html#755">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

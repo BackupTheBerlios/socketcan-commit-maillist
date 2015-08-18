@@ -1,0 +1,313 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r255 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r255%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200705011421.l41ELhQh024624%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000240.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r255 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r255%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200705011421.l41ELhQh024624%40sheep.berlios.de%3E"
+       TITLE="r255 - in trunk/kernel/2.6: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue May  1 16:21:43 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000240.html">r256 - in trunk/kernel/2.6: . Documentation Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#239">[ date ]</a>
+              <a href="thread.html#239">[ thread ]</a>
+              <a href="subject.html#239">[ subject ]</a>
+              <a href="author.html#239">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-01 16:21:39 +0200 (Tue, 01 May 2007)
+New Revision: 255
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/bcm.h
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Changes after test integration into kernel 2.6.21 :
+
+Exported functions in core.h need to be declared 'extern' to avoid the 
+kernel error &quot;can: exports duplicate symbol can_send (owned by kernel)&quot;
+This occures e.g. when can.ko is built-in and the protocol modules are 
+built as modules.
+
+Made our kernel log messages lower case as other subsystems like USB do.
+Changed some kernel messages. Cosmetics.
+RFC: Use 20070501 as CAN_VERSION inside the Kernel instead of 2.0.0-pre7?
+
+
+Modified: trunk/kernel/2.6/include/linux/can/bcm.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/bcm.h	2007-04-30 12:59:32 UTC (rev 254)
++++ trunk/kernel/2.6/include/linux/can/bcm.h	2007-05-01 14:21:39 UTC (rev 255)
+@@ -23,11 +23,10 @@
+  * @count:     number of frames to send before changing interval.
+  * @ival1:     interval for the first @count frames.
+  * @ival2:     interval for the following frames.
+- * @can_id:    CAN ID of frames to be sent.
++ * @can_id:    CAN ID of frames to be sent or received.
+  * @nframes:   number of frames appended to the message head.
+  * @frames:    array of CAN frames.
+  */
+-
+ struct bcm_msg_head {
+ 	int opcode;
+ 	int flags;
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-04-30 12:59:32 UTC (rev 254)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-05-01 14:21:39 UTC (rev 255)
+@@ -21,12 +21,13 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ 
+-
+ #define CAN_VERSION &quot;2.0.0-pre7&quot;
+ 
+ /* increment this number each time you change some user-space interface */
+-#define CAN_ABI_VERSION 8
++#define CAN_ABI_VERSION &quot;8&quot;
+ 
++#define CAN_VERSION_STRING &quot;rev &quot; CAN_VERSION &quot; abi &quot; CAN_ABI_VERSION
++
+ #define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
+ 
+ #define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+@@ -55,27 +56,34 @@
+ 
+ /* function prototypes for the CAN networklayer core (af_can.c) */
+ 
+-int can_proto_register(struct can_proto *cp);
+-int can_proto_unregister(struct can_proto *cp);
++extern int can_proto_register(struct can_proto *cp);
++extern int can_proto_unregister(struct can_proto *cp);
+ 
+-int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-		    void (*func)(struct sk_buff *, void *), void *data,
+-		    char *ident);
+-int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		      void (*func)(struct sk_buff *, void *), void *data);
++extern int can_rx_register(struct net_device *dev, canid_t can_id,
++			   canid_t mask,
++			   void (*func)(struct sk_buff *, void *),
++			   void *data, char *ident);
+ 
+-int can_dev_register(struct net_device *dev,
+-		     void (*func)(unsigned long msg, void *), void *data);
+-int can_dev_unregister(struct net_device *dev,
+-		       void (*func)(unsigned long msg, void *), void *data);
++extern int can_rx_unregister(struct net_device *dev, canid_t can_id,
++			     canid_t mask,
++			     void (*func)(struct sk_buff *, void *),
++			     void *data);
+ 
+-int can_send(struct sk_buff *skb, int loop);
++extern int can_dev_register(struct net_device *dev,
++			    void (*func)(unsigned long msg, void *),
++			    void *data);
+ 
+-unsigned long timeval2jiffies(struct timeval *tv, int round_up);
++extern int can_dev_unregister(struct net_device *dev,
++			      void (*func)(unsigned long msg, void *),
++			      void *data);
+ 
++extern int can_send(struct sk_buff *skb, int loop);
++
++extern unsigned long timeval2jiffies(struct timeval *tv, int round_up);
++
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-void can_debug_skb(struct sk_buff *skb);
+-void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
++extern void can_debug_skb(struct sk_buff *skb);
++extern void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
+ #define DBG(args...)       (debug &amp; 1 ? \
+ 			       (printk(KERN_DEBUG &quot;can-%s %s: &quot;, \
+ 				IDENT, __func__), printk(args)) : 0)
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-30 12:59:32 UTC (rev 254)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-05-01 14:21:39 UTC (rev 255)
+@@ -70,7 +70,8 @@
+ 
+ #define IDENT &quot;core&quot;
+ static __initdata const char banner[] =
+-	KERN_INFO &quot;CAN: Controller Area Network PF_CAN core &quot; CAN_VERSION &quot;\n&quot;;
++	KERN_INFO &quot;can: controller area network core # &quot;
++	CAN_VERSION_STRING &quot;\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;Controller Area Network PF_CAN core&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -177,7 +178,7 @@
+ 	if (!proto_tab[protocol]) {
+ 		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+ 		if (request_module(module_name) == -ENOSYS)
+-			printk(KERN_INFO &quot;CAN: request_module(%s) not&quot;
++			printk(KERN_INFO &quot;can: request_module(%s) not&quot;
+ 			       &quot; implemented.\n&quot;, module_name);
+ 	}
+ 
+@@ -822,12 +823,12 @@
+ 	int err = 0;
+ 
+ 	if (proto &lt; 0 || proto &gt;= CAN_NPROTO) {
+-		printk(KERN_ERR &quot;CAN: protocol number %d out &quot;
++		printk(KERN_ERR &quot;can: protocol number %d out &quot;
+ 		       &quot;of range\n&quot;, proto);
+ 		return -EINVAL;
+ 	}
+ 	if (proto_tab[proto]) {
+-		printk(KERN_ERR &quot;CAN: protocol %d already &quot;
++		printk(KERN_ERR &quot;can: protocol %d already &quot;
+ 		       &quot;registered\n&quot;, proto);
+ 		return -EBUSY;
+ 	}
+@@ -861,7 +862,7 @@
+ 	int proto = cp-&gt;protocol;
+ 
+ 	if (!proto_tab[proto]) {
+-		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
++		printk(KERN_ERR &quot;can: protocol %d is not registered\n&quot;, proto);
+ 		return -ESRCH;
+ 	}
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+@@ -981,7 +982,7 @@
+ 		d = kzalloc(sizeof(*d),
+ 			    in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+ 		if (!d) {
+-			printk(KERN_ERR &quot;CAN: allocation of receive &quot;
++			printk(KERN_ERR &quot;can: allocation of receive &quot;
+ 			       &quot;list failed\n&quot;);
+ 			return NOTIFY_DONE;
+ 		}
+@@ -1009,7 +1010,7 @@
+ 			for (i = 0; i &lt; 2048; i++)
+ 				can_rx_delete_all(&amp;d-&gt;rx_sff[i]);
+ 		} else
+-			printk(KERN_ERR &quot;CAN: notifier: receive list not &quot;
++			printk(KERN_ERR &quot;can: notifier: receive list not &quot;
+ 			       &quot;found for dev %s\n&quot;, dev-&gt;name);
+ 
+ 		spin_unlock_bh(&amp;rcv_lists_lock);
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-04-30 12:59:32 UTC (rev 254)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-05-01 14:21:39 UTC (rev 255)
+@@ -68,10 +68,11 @@
+ 			(CAN_EFF_MASK | CAN_EFF_FLAG) : CAN_SFF_MASK))
+ 
+ #define IDENT &quot;bcm&quot;
++#define CAN_BCM_VERSION CAN_VERSION
+ static __initdata const char banner[] = KERN_INFO
+-	&quot;CAN: broadcast manager (bcm) socket protocol &quot; CAN_VERSION &quot;\n&quot;;
++	&quot;can: broadcast manager protocol # rev &quot; CAN_BCM_VERSION &quot;\n&quot;;
+ 
+-MODULE_DESCRIPTION(&quot;PF_CAN bcm sockets&quot;);
++MODULE_DESCRIPTION(&quot;PF_CAN broadcast manager protocol&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-04-30 12:59:32 UTC (rev 254)
++++ trunk/kernel/2.6/net/can/proc.c	2007-05-01 14:21:39 UTC (rev 255)
+@@ -123,8 +123,8 @@
+ 	can_dir = proc_mkdir(CAN_PROC_DIR, NULL);
+ 
+ 	if (!can_dir) {
+-		printk(KERN_INFO &quot;CAN: failed to create CAN_PROC_DIR. &quot;
+-		       &quot;CONFIG_PROC_FS missing?\n&quot;);
++		printk(KERN_INFO &quot;can: failed to create /proc/%s . &quot;
++		       &quot;CONFIG_PROC_FS missing?\n&quot;, CAN_PROC_DIR);
+ 		return;
+ 	}
+ 
+@@ -338,9 +338,8 @@
+ {
+ 	int len = 0;
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;CAN version %s, ABI version %d\n&quot;,
+-			CAN_VERSION, CAN_ABI_VERSION);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;%s\n&quot;,
++			CAN_VERSION_STRING);
+ 	*eof = 1;
+ 	return len;
+ }
+@@ -594,7 +593,7 @@
+ 
+ 	/* see can_rcv() - this should NEVER happen! */
+ 	if (count &gt; (ULONG_MAX / HZ)) {
+-		printk(KERN_ERR &quot;CAN: calc_rate: count exceeded! %ld\n&quot;,
++		printk(KERN_ERR &quot;can: calc_rate: count exceeded! %ld\n&quot;,
+ 		       count);
+ 		return 99999999;
+ 	}
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-04-30 12:59:32 UTC (rev 254)
++++ trunk/kernel/2.6/net/can/raw.c	2007-05-01 14:21:39 UTC (rev 255)
+@@ -60,10 +60,11 @@
+ RCSID(&quot;$Id$&quot;);
+ 
+ #define IDENT &quot;raw&quot;
++#define CAN_RAW_VERSION CAN_VERSION
+ static __initdata const char banner[] =
+-	KERN_INFO &quot;CAN: raw socket protocol &quot; CAN_VERSION &quot;\n&quot;;
++	KERN_INFO &quot;can: raw protocol # rev &quot; CAN_RAW_VERSION &quot;\n&quot;;
+ 
+-MODULE_DESCRIPTION(&quot;PF_CAN raw sockets&quot;);
++MODULE_DESCRIPTION(&quot;PF_CAN raw protocol&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000240.html">r256 - in trunk/kernel/2.6: . Documentation Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#239">[ date ]</a>
+              <a href="thread.html#239">[ thread ]</a>
+              <a href="subject.html#239">[ subject ]</a>
+              <a href="author.html#239">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

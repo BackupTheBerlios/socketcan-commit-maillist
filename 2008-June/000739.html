@@ -1,0 +1,1178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r759 - in trunk/kernel/2.6: . drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r759%20-%20in%20trunk/kernel/2.6%3A%20.%20drivers/net/can%20net/can&In-Reply-To=%3C200806101554.m5AFskob015581%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000738.html">
+   <LINK REL="Next"  HREF="000740.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r759 - in trunk/kernel/2.6: . drivers/net/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r759%20-%20in%20trunk/kernel/2.6%3A%20.%20drivers/net/can%20net/can&In-Reply-To=%3C200806101554.m5AFskob015581%40sheep.berlios.de%3E"
+       TITLE="r759 - in trunk/kernel/2.6: . drivers/net/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 10 17:54:46 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000738.html">r758 - branches/cannetdriver26
+</A></li>
+        <LI>Next message: <A HREF="000740.html">r760 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#739">[ date ]</a>
+              <a href="thread.html#739">[ thread ]</a>
+              <a href="subject.html#739">[ subject ]</a>
+              <a href="author.html#739">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-10 17:54:40 +0200 (Tue, 10 Jun 2008)
+New Revision: 759
+
+Added:
+   trunk/kernel/2.6/drivers/net/can/dev.c
+   trunk/kernel/2.6/drivers/net/can/sysfs.c
+   trunk/kernel/2.6/drivers/net/can/sysfs.h
+Removed:
+   trunk/kernel/2.6/net/can/dev.c
+   trunk/kernel/2.6/net/can/sysfs.c
+   trunk/kernel/2.6/net/can/sysfs.h
+Modified:
+   trunk/kernel/2.6/Makefile
+   trunk/kernel/2.6/drivers/net/can/Kconfig
+   trunk/kernel/2.6/drivers/net/can/Makefile
+   trunk/kernel/2.6/net/can/Makefile
+Log:
+Move can-dev.ko CAN driver library to drivers/net/can/*
+
+
+Modified: trunk/kernel/2.6/Makefile
+===================================================================
+--- trunk/kernel/2.6/Makefile	2008-06-10 13:00:41 UTC (rev 758)
++++ trunk/kernel/2.6/Makefile	2008-06-10 15:54:40 UTC (rev 759)
+@@ -5,9 +5,10 @@
+ TOPDIR    := $(PWD)
+ 
+ export CONFIG_CAN_VCAN=m
+-export CONFIG_CAN_SJA1000=m
++export CONFIG_CAN_DEV=m
+ export CONFIG_CAN_SJA1000_OLD=m
+ export CONFIG_CAN_I82527_OLD=m
++export CONFIG_CAN_SJA1000=m
+ export CONFIG_CAN_EMS_PCI=m
+ export CONFIG_CAN_PIPCAN=m
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Kconfig	2008-06-10 13:00:41 UTC (rev 758)
++++ trunk/kernel/2.6/drivers/net/can/Kconfig	2008-06-10 15:54:40 UTC (rev 759)
+@@ -35,7 +35,17 @@
+ 
+ source &quot;drivers/net/can/old/Kconfig&quot;
+ 
++config CAN_DEV
++	tristate &quot;Prompt for platform CAN drivers with sysfs support&quot;
++ 	depends on CAN
++	default Y
++ 	---help---
++	  Enables the common framework for platform CAN drivers with sysfs
++	  support. This is the standard library for CAN drivers.
++	  If unsure, say Y.
++
+ config CAN_SJA1000
++ 	depends on CAN_DEV
+        	tristate &quot;Philips SJA1000&quot;
+ 	---help---
+ 	  The SJA1000 is one of the top CAN controllers out there. As it
+@@ -94,7 +104,7 @@
+ 	4 channel) from Kvaser (<A HREF="http://www.kvaser.com">http://www.kvaser.com</A>).
+ 
+ config CAN_MSCAN
+-	depends on CAN &amp;&amp; (PPC || M68K || M68KNOMMU)
++	depends on CAN_DEV &amp;&amp; (PPC || M68K || M68KNOMMU)
+ 	tristate &quot;Support for a Freescale MSCAN based chips&quot;
+ 	---help---
+ 	  The Motorola Scalable Controller Area Network (MSCAN) definition
+
+Modified: trunk/kernel/2.6/drivers/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Makefile	2008-06-10 13:00:41 UTC (rev 758)
++++ trunk/kernel/2.6/drivers/net/can/Makefile	2008-06-10 15:54:40 UTC (rev 759)
+@@ -10,6 +10,7 @@
+ TOPDIR    := $(PWD)/../../..
+ 
+ export CONFIG_CAN_VCAN=m
++export CONFIG_CAN_DEV=m
+ export CONFIG_CAN_SJA1000_OLD=m
+ export CONFIG_CAN_I82527_OLD=m
+ export CONFIG_CAN_SJA1000=m
+@@ -23,6 +24,10 @@
+ 
+ obj-$(CONFIG_CAN_VCAN)		+= vcan.o
+ obj-$(CONFIG_CAN_SLCAN)		+= slcan.o
++
++obj-$(CONFIG_CAN_DEV)		+= can-dev.o
++can-dev-objs			:= dev.o sysfs.o
++
+ obj-$(CONFIG_CAN_SJA1000)	+= sja1000/
+ obj-$(CONFIG_CAN_MSCAN)		+= mscan/
+ obj-$(CONFIG_CAN_SJA1000_OLD)	+= old/sja1000/
+
+Copied: trunk/kernel/2.6/drivers/net/can/dev.c (from rev 758, trunk/kernel/2.6/net/can/dev.c)
+
+Copied: trunk/kernel/2.6/drivers/net/can/sysfs.c (from rev 758, trunk/kernel/2.6/net/can/sysfs.c)
+
+Copied: trunk/kernel/2.6/drivers/net/can/sysfs.h (from rev 758, trunk/kernel/2.6/net/can/sysfs.h)
+
+Modified: trunk/kernel/2.6/net/can/Makefile
+===================================================================
+--- trunk/kernel/2.6/net/can/Makefile	2008-06-10 13:00:41 UTC (rev 758)
++++ trunk/kernel/2.6/net/can/Makefile	2008-06-10 15:54:40 UTC (rev 759)
+@@ -66,7 +66,4 @@
+ obj-$(CONFIG_CAN_BCM)	+= can-bcm.o
+ can-bcm-objs		:= bcm.o
+ 
+-obj-$(CONFIG_CAN)	+= can-dev.o
+-can-dev-objs		:= dev.o sysfs.o
+-
+ endif
+
+Deleted: trunk/kernel/2.6/net/can/dev.c
+===================================================================
+--- trunk/kernel/2.6/net/can/dev.c	2008-06-10 13:00:41 UTC (rev 758)
++++ trunk/kernel/2.6/net/can/dev.c	2008-06-10 15:54:40 UTC (rev 759)
+@@ -1,484 +0,0 @@
+-/*
+- * $Id$
+- *
+- * Copyright (C) 2005 Marc Kleine-Budde, Pengutronix
+- * Copyright (C) 2006 Andrey Volkov, Varma Electronics
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the version 2 of the GNU General Public License
+- * as published by the Free Software Foundation
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+- */
+-
+-#include &lt;linux/module.h&gt;
+-#include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/if_arp.h&gt;
+-#include &lt;linux/rtnetlink.h&gt;
+-#include &lt;linux/can.h&gt;
+-#include &lt;linux/can/dev.h&gt;
+-
+-#include &quot;sysfs.h&quot;
+-
+-MODULE_DESCRIPTION(&quot;CAN netdevice library&quot;);
+-MODULE_LICENSE(&quot;GPL v2&quot;);
+-MODULE_AUTHOR(&quot;Marc Kleine-Budde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">mkl at pengutronix.de</A>&gt;, &quot;
+-	      &quot;Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;&quot;);
+-
+-static int restart_ms = 0;
+-
+-module_param(restart_ms, int, S_IRUGO | S_IWUSR);
+-
+-MODULE_PARM_DESC(restart_ms, &quot;Restart time after bus-off in ms (default 0)&quot;);
+-
+-
+-/*
+- * Abstract:
+- *   Bit rate calculated with next formula:
+- *   bitrate = frq/(brp*(1 + prop_seg+ phase_seg1 + phase_seg2))
+- *
+- *   This calc function based on work of Florian Hartwich and Armin Bassemi
+- *   &quot;The Configuration of the CAN Bit Timing&quot;
+- *   (<A HREF="http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf">http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf</A>)
+- *
+- *  Parameters:
+- *  [in]
+- *    bittime_nsec - expected bit time in nanosecs
+- *
+- *  [out]
+- *    bittime      - calculated time segments, for meaning of
+- * 		     each field read CAN standard.
+- */
+-
+-#define DEFAULT_MAX_BRP	64U
+-#define DEFAULT_MAX_SJW	4U
+-
+-/* All below values in tq units */
+-#define MAX_BITTIME	25U
+-#define MIN_BITTIME	8U
+-#define MAX_PROP_SEG	8U
+-#define MAX_PHASE_SEG1	8U
+-#define MAX_PHASE_SEG2	8U
+-
+-int can_calc_bittime(struct can_priv *can, u32 bitrate,
+-		     struct can_bittime_std *bittime)
+-{
+-	int best_error = -1;	/* Ariphmetic error */
+-	int df, best_df = -1;	/* oscillator's tolerance range,
+-				   greater is better */
+-	u32 quanta;		/* in tq units */
+-	u32 brp, phase_seg1, phase_seg2, sjw, prop_seg;
+-	u32 brp_min, brp_max, brp_expected;
+-	u64 tmp;
+-
+-	/* bitrate range [1baud,1MiB/s] */
+-	if (bitrate == 0 || bitrate &gt; 1000000UL)
+-		return -EINVAL;
+-
+-	tmp = (u64) can-&gt;can_sys_clock * 1000;
+-	do_div(tmp, bitrate);
+-	brp_expected = (u32) tmp;
+-
+-	brp_min = brp_expected / (1000 * MAX_BITTIME);
+-	if (brp_min == 0)
+-		brp_min = 1;
+-	if (brp_min &gt; can-&gt;max_brp)
+-		return -ERANGE;
+-
+-	brp_max = (brp_expected + 500 * MIN_BITTIME) / (1000 * MIN_BITTIME);
+-	if (brp_max == 0)
+-		brp_max = 1;
+-	if (brp_max &gt; can-&gt;max_brp)
+-		brp_max = can-&gt;max_brp;
+-
+-	for (brp = brp_min; brp &lt;= brp_max; brp++) {
+-		quanta = brp_expected / (brp * 1000);
+-		if (quanta &lt; MAX_BITTIME
+-		    &amp;&amp; quanta * brp * 1000 != brp_expected)
+-			quanta++;
+-		if (quanta &lt; MIN_BITTIME || quanta &gt; MAX_BITTIME)
+-			continue;
+-
+-		phase_seg2 = min((quanta - 3) / 2, MAX_PHASE_SEG2);
+-		for (sjw = can-&gt;max_sjw; sjw &gt; 0; sjw--) {
+-			for (; phase_seg2 &gt; sjw; phase_seg2--) {
+-				u32 err1, err2;
+-				phase_seg1 =
+-				    phase_seg2 % 2 ? phase_seg2 -
+-				    1 : phase_seg2;
+-				prop_seg = quanta - 1 - phase_seg2 - phase_seg1;
+-				/*
+-				 * FIXME: support of longer lines (i.e. bigger
+-				 * prop_seg) is more prefered than support of
+-				 * cheap oscillators (i.e. bigger
+-				 * df/phase_seg1/phase_seg2)
+-				 */
+-				if (prop_seg &lt; phase_seg1)
+-					continue;
+-				if (prop_seg &gt; MAX_PROP_SEG)
+-					goto next_brp;
+-
+-				err1 = phase_seg1 * brp * 500 * 1000 /
+-				    (13 * brp_expected -
+-				     phase_seg2 * brp * 1000);
+-				err2 = sjw * brp * 50 * 1000 / brp_expected;
+-
+-				df = min(err1, err2);
+-				if (df &gt;= best_df) {
+-					unsigned error =
+-						abs(brp_expected * 10 /
+-						    (brp * (1 + prop_seg +
+-							    phase_seg1 +
+-							    phase_seg2)) -
+-						    10000);
+-
+-					if (error &gt; 10 || error &gt; best_error)
+-						continue;
+-
+-					if (error == best_error
+-					    &amp;&amp; prop_seg &lt; bittime-&gt;prop_seg)
+-						continue;
+-
+-					best_error = error;
+-					best_df = df;
+-					bittime-&gt;brp = brp;
+-					bittime-&gt;prop_seg = prop_seg;
+-					bittime-&gt;phase_seg1 = phase_seg1;
+-					bittime-&gt;phase_seg2 = phase_seg2;
+-					bittime-&gt;sjw = sjw;
+-					bittime-&gt;sam =
+-						(bittime-&gt;phase_seg1 &gt; 3);
+-				}
+-			}
+-		}
+-	      next_brp:;
+-	}
+-
+-	if (best_error &lt; 0)
+-		return -EDOM;
+-	return 0;
+-}
+-
+-int can_set_bitrate(struct net_device *dev, u32 bitrate)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-	int err = -ENOTSUPP;
+-
+-	if (priv-&gt;state != CAN_STATE_STOPPED)
+-		return -EBUSY;
+-
+-	if (priv-&gt;do_set_bittime) {
+-		if (priv-&gt;do_set_bittime) {
+-			struct can_bittime bittime;
+-			err = can_calc_bittime(priv, bitrate, &amp;bittime.std);
+-			if (err)
+-				goto out;
+-			bittime.type = CAN_BITTIME_STD;
+-			err = priv-&gt;do_set_bittime(dev, &amp;bittime);
+-			if (!err) {
+-				priv-&gt;bitrate = bitrate;
+-				priv-&gt;bittime = bittime;
+-			}
+-		}
+-	}
+-out:
+-	return err;
+-}
+-EXPORT_SYMBOL(can_set_bitrate);
+-
+-#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+-static struct net_device_stats *can_get_stats(struct net_device *dev)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	return &amp;priv-&gt;net_stats;
+-}
+-#endif
+-
+-static void can_setup(struct net_device *dev)
+-{
+-	dev-&gt;type = ARPHRD_CAN;
+-	dev-&gt;mtu = sizeof(struct can_frame);
+-	dev-&gt;hard_header_len = 0;
+-	dev-&gt;addr_len = 0;
+-	dev-&gt;tx_queue_len = 10;
+-
+-	/* New-style flags. */
+-	dev-&gt;flags = IFF_NOARP;
+-	dev-&gt;features = NETIF_F_NO_CSUM;
+-#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+-	dev-&gt;get_stats = can_get_stats;
+-#endif
+-}
+-
+-/*
+- * Function  alloc_candev
+- * 	Allocates and sets up an CAN device
+- */
+-struct net_device *alloc_candev(int sizeof_priv)
+-{
+-	struct net_device *dev;
+-	struct can_priv *priv;
+-
+-	dev = alloc_netdev(sizeof_priv, &quot;can%d&quot;, can_setup);
+-	if (!dev)
+-		return NULL;
+-
+-	priv = netdev_priv(dev);
+-
+-	/* Default values can be overwritten by the device driver */
+-	priv-&gt;restart_ms = restart_ms;
+-	priv-&gt;bitrate = CAN_BITRATE_UNCONFIGURED;
+-	priv-&gt;state = CAN_STATE_STOPPED;
+-	priv-&gt;max_brp = DEFAULT_MAX_BRP;
+-	priv-&gt;max_sjw = DEFAULT_MAX_SJW;
+-	spin_lock_init(&amp;priv-&gt;irq_lock);
+-
+-	init_timer(&amp;priv-&gt;timer);
+-	priv-&gt;timer.expires = 0;
+-
+-	return dev;
+-}
+-
+-EXPORT_SYMBOL(alloc_candev);
+-
+-void free_candev(struct net_device *dev)
+-{
+-	free_netdev(dev);
+-}
+-
+-EXPORT_SYMBOL(free_candev);
+-
+-/*
+- * Local echo of CAN messages
+- *
+- * CAN network devices *should* support a local echo functionality
+- * (see Documentation/networking/can.txt). To test the handling of CAN
+- * interfaces that do not support the local echo both driver types are
+- * implemented. In the case that the driver does not support the echo
+- * the IFF_ECHO remains clear in dev-&gt;flags. This causes the PF_CAN core
+- * to perform the echo as a fallback solution.
+- */
+-
+-void can_flush_echo_skb(struct net_device *dev)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-#ifdef FIXME
+-	struct net_device_stats *stats = dev-&gt;get_stats(dev);
+-#endif
+-	int i;
+-
+-	for (i = 0; i &lt; CAN_ECHO_SKB_MAX; i++) {
+-		if (priv-&gt;echo_skb[i]) {
+-			kfree_skb(priv-&gt;echo_skb[i]);
+-			priv-&gt;echo_skb[i] = NULL;
+-#ifdef FIXME
+-			stats-&gt;tx_dropped++;
+-			stats-&gt;tx_aborted_errors++;
+-#endif
+-		}
+-	}
+-}
+-
+-void can_put_echo_skb(struct sk_buff *skb, struct net_device *dev, int idx)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	/* set flag whether this packet has to be looped back */
+-	if (!(dev-&gt;flags &amp; IFF_ECHO) || skb-&gt;pkt_type != PACKET_LOOPBACK) {
+-		kfree_skb(skb);
+-		return;
+-	}
+-
+-	if (!priv-&gt;echo_skb[idx]) {
+-		struct sock *srcsk = skb-&gt;sk;
+-
+-		if (atomic_read(&amp;skb-&gt;users) != 1) {
+-			struct sk_buff *old_skb = skb;
+-
+-			skb = skb_clone(old_skb, GFP_ATOMIC);
+-			kfree_skb(old_skb);
+-			if (!skb) {
+-				return;
+-			}
+-		} else
+-			skb_orphan(skb);
+-
+-		skb-&gt;sk = srcsk;
+-
+-		/* make settings for echo to reduce code in irq context */
+-		skb-&gt;protocol = htons(ETH_P_CAN);
+-		skb-&gt;pkt_type = PACKET_BROADCAST;
+-		skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+-		skb-&gt;dev = dev;
+-
+-		/* save this skb for tx interrupt echo handling */
+-		priv-&gt;echo_skb[idx] = skb;
+-	} else {
+-		/* locking problem with netif_stop_queue() ?? */
+-		printk(KERN_ERR &quot;%s: %s: BUG! echo_skb is occupied!\n&quot;,
+-		       dev-&gt;name, __FUNCTION__);
+-		kfree_skb(skb);
+-	}
+-}
+-EXPORT_SYMBOL(can_put_echo_skb);
+-
+-void can_get_echo_skb(struct net_device *dev, int idx)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	if ((dev-&gt;flags &amp; IFF_ECHO) &amp;&amp; priv-&gt;echo_skb[idx]) {
+-		netif_rx(priv-&gt;echo_skb[idx]);
+-		priv-&gt;echo_skb[idx] = NULL;
+-	}
+-}
+-EXPORT_SYMBOL(can_get_echo_skb);
+-
+-/*
+- * CAN bus-off handling
+- * FIXME: we need some synchronization
+- */
+-int can_restart_now(struct net_device *dev)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-	struct net_device_stats *stats = dev-&gt;get_stats(dev);
+-	struct sk_buff *skb;
+-	struct can_frame *cf;
+-	int err;
+-
+-	if (netif_carrier_ok(dev))
+-		netif_carrier_off(dev);
+-
+-	/* Cancel restart in progress */
+-	if (priv-&gt;timer.expires) {
+-		del_timer(&amp;priv-&gt;timer);
+-		priv-&gt;timer.expires = 0; /* mark inactive timer */
+-	}
+-
+-	can_flush_echo_skb(dev);
+-
+-	if ((err = priv-&gt;do_set_mode(dev, CAN_MODE_START)))
+-		return err;
+-
+-	netif_carrier_on(dev);
+-
+-	priv-&gt;can_stats.restarts++;
+-
+-	/* send restart message upstream */
+-	skb = dev_alloc_skb(sizeof(struct can_frame));
+-	if (skb == NULL)
+-		return -ENOMEM;
+-	skb-&gt;dev = dev;
+-	skb-&gt;protocol = htons(ETH_P_CAN);
+-	cf = (struct can_frame *)skb_put(skb, sizeof(struct can_frame));
+-	memset(cf, 0, sizeof(struct can_frame));
+-	cf-&gt;can_id = CAN_ERR_FLAG | CAN_ERR_RESTARTED;
+-	cf-&gt;can_dlc = CAN_ERR_DLC;
+-
+-	netif_rx(skb);
+-
+-	dev-&gt;last_rx = jiffies;
+-	stats-&gt;rx_packets++;
+-	stats-&gt;rx_bytes += cf-&gt;can_dlc;
+-
+-	return 0;
+-}
+-
+-static void can_restart_after(unsigned long data)
+-{
+-	struct net_device *dev = (struct net_device *)data;
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	priv-&gt;timer.expires = 0; /* mark inactive timer */
+-	can_restart_now(dev);
+-}
+-
+-void can_bus_off(struct net_device *dev)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	netif_carrier_off(dev);
+-
+-	if (priv-&gt;restart_ms &gt; 0 &amp;&amp; !priv-&gt;timer.expires) {
+-
+-		priv-&gt;timer.function = can_restart_after;
+-		priv-&gt;timer.data = (unsigned long)dev;
+-		priv-&gt;timer.expires =
+-			jiffies + (priv-&gt;restart_ms * HZ) / 1000;
+-		add_timer(&amp;priv-&gt;timer);
+-	}
+-}
+-EXPORT_SYMBOL(can_bus_off);
+-
+-void can_close_cleanup(struct net_device *dev)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	if (priv-&gt;timer.expires) {
+-		del_timer(&amp;priv-&gt;timer);
+-		priv-&gt;timer.expires = 0;
+-	}
+-
+-	can_flush_echo_skb(dev);
+-}
+-EXPORT_SYMBOL(can_close_cleanup);
+-
+-static int can_netdev_notifier_call(struct notifier_block *nb,
+-				    unsigned long state,
+-				    void *ndev)
+-{
+-	struct net_device *dev = ndev;
+-	struct can_priv *priv;
+-
+-	if (dev-&gt;type != ARPHRD_CAN)
+-		return 0;
+-
+-	priv = netdev_priv(dev);
+-
+-	/* software CAN devices like 'vcan' do not have private data */
+-	if (!priv)
+-		return 0;
+-
+-	switch (state) {
+-	case NETDEV_REGISTER:
+-		/* set default bit timing */
+-		if (priv-&gt;do_set_bittime &amp;&amp;
+-		    priv-&gt;bitrate == CAN_BITRATE_UNCONFIGURED) {
+-			if (can_set_bitrate(dev, CAN_BITRATE_DEFAULT))
+-				dev_err(ND2D(dev), &quot;failed to set bitrate\n&quot;);
+-		}
+-#ifdef CONFIG_SYSFS
+-		can_create_sysfs(dev);
+-#endif
+-		break;
+-	case NETDEV_UNREGISTER:
+-#ifdef CONFIG_SYSFS
+-		can_remove_sysfs(dev);
+-#endif
+-		break;
+-	}
+-	return 0;
+-}
+-
+-static struct notifier_block can_netdev_notifier = {
+-	.notifier_call = can_netdev_notifier_call,
+-};
+-
+-static __init int can_dev_init(void)
+-{
+-	return register_netdevice_notifier(&amp;can_netdev_notifier);
+-}
+-module_init(can_dev_init);
+-
+-static __exit void can_dev_exit(void)
+-{
+-	unregister_netdevice_notifier(&amp;can_netdev_notifier);
+-}
+-module_exit(can_dev_exit);
+
+Deleted: trunk/kernel/2.6/net/can/sysfs.c
+===================================================================
+--- trunk/kernel/2.6/net/can/sysfs.c	2008-06-10 13:00:41 UTC (rev 758)
++++ trunk/kernel/2.6/net/can/sysfs.c	2008-06-10 15:54:40 UTC (rev 759)
+@@ -1,476 +0,0 @@
+-/*
+- * $Id: dev.c 542 2007-11-07 13:57:16Z thuermann $
+- *
+- * Copyright (C) 2007 Wolfgang Grandegger &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">wg at grandegger.com</A>&gt;
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the version 2 of the GNU General Public License
+- * as published by the Free Software Foundation
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+- */
+-
+-#include &lt;linux/capability.h&gt;
+-#include &lt;linux/kernel.h&gt;
+-#include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/if_arp.h&gt;
+-#include &lt;net/sock.h&gt;
+-#include &lt;linux/rtnetlink.h&gt;
+-
+-#include &lt;linux/can.h&gt;
+-#include &lt;linux/can/dev.h&gt;
+-
+-#include &quot;sysfs.h&quot;
+-
+-#ifdef CONFIG_SYSFS
+-/*
+- * Functions to set/get CAN properties used by SYSFS
+- *
+- * FIXME: we may want to check for capabilities!
+- *
+- *        if (!capable(CAP_NET_ADMIN))
+- *        	return -EPERM;
+- */
+-static int can_get_bitrate(struct net_device *dev, u32 *bitrate)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-	*bitrate = priv-&gt;bitrate;
+-
+-	return 0;
+-}
+-
+-static int can_set_custombittime(struct net_device *dev,
+-				 struct can_bittime *bt)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-	int err = -ENOTSUPP;
+-
+-	if (priv-&gt;state != CAN_STATE_STOPPED)
+-		return -EBUSY;
+-
+-	if (priv-&gt;do_set_bittime) {
+-		err = priv-&gt;do_set_bittime(dev, bt);
+-		if (err)
+-			goto out;
+-		priv-&gt;bittime = *bt;
+-		if (bt-&gt;type == CAN_BITTIME_STD &amp;&amp; bt-&gt;std.brp) {
+-			priv-&gt;bitrate = priv-&gt;can_sys_clock /
+-				(bt-&gt;std.brp * (1 + bt-&gt;std.prop_seg +
+-						bt-&gt;std.phase_seg1 +
+-						bt-&gt;std.phase_seg2));
+-		} else
+-			priv-&gt;bitrate = CAN_BITRATE_UNKNOWN;
+-	}
+-out:
+-	return err;
+-}
+-
+-static int can_get_custombittime(struct net_device *dev,
+-				 struct can_bittime *bt)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	*bt = priv-&gt;bittime;
+-	return 0;
+-}
+-
+-static int can_set_ctrlmode(struct net_device *dev, u32 ctrlmode)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	if (!priv-&gt;do_set_ctrlmode)
+-		return -ENOTSUPP;
+-	if (priv-&gt;state != CAN_STATE_STOPPED)
+-		return -EBUSY;
+-
+-	return priv-&gt;do_set_ctrlmode(dev, ctrlmode);
+-}
+-
+-static int can_get_ctrlmode(struct net_device *dev, u32 *ctrlmode)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	*ctrlmode = priv-&gt;ctrlmode;
+-	return 0;
+-}
+-
+-static int can_get_state(struct net_device *dev, can_state_t *state)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	if (priv-&gt;do_get_state) {
+-		int err = priv-&gt;do_get_state(dev, state);
+-		if (err)
+-			return err;
+-		priv-&gt;state = *state;
+-	} else
+-		*state = priv-&gt;state;
+-	return 0;
+-}
+-
+-static int can_set_clock(struct net_device *dev, u32 clock)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	if (priv-&gt;state != CAN_STATE_STOPPED)
+-		return -EBUSY;
+-
+-	priv-&gt;can_sys_clock = clock;
+-	return 0;
+-}
+-
+-static int can_get_clock(struct net_device *dev, u32 *clock)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	*clock = priv-&gt;can_sys_clock;
+-	return 0;
+-}
+-
+-static int can_set_restart_ms(struct net_device *dev, int ms)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	if (priv-&gt;restart_ms &lt; 0)
+-		return -EOPNOTSUPP;
+-	priv-&gt;restart_ms = ms;
+-	return 0;
+-}
+-
+-static int can_get_restart_ms(struct net_device *dev, int *ms)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	*ms = priv-&gt;restart_ms;
+-	return 0;
+-}
+-
+-static int can_set_echo(struct net_device *dev, int on)
+-{
+-	if (on)
+-		dev-&gt;flags |= IFF_ECHO;
+-	else
+-		dev-&gt;flags &amp;= ~IFF_ECHO;
+-	return 0;
+-}
+-
+-static int can_get_echo(struct net_device *dev, int *on)
+-{
+-	*on = dev-&gt;flags &amp; IFF_ECHO ? 1 : 0;
+-	return 0;
+-}
+-
+-/*
+- * SYSFS access functions and attributes.
+- * Use same locking as net/core/net-sysfs.c
+- */
+-static inline int dev_isalive(const struct net_device *dev)
+-{
+-	return dev-&gt;reg_state &lt;= NETREG_REGISTERED;
+-}
+-
+-#define CAN_ATTR(_name, _func, _type, _fmt)				\
+-static ssize_t can_show_##_func(struct device *dev,			\
+-				struct device_attribute *attr,		\
+-				char *buf)				\
+-{									\
+-	struct net_device *ndev = to_net_dev(dev);			\
+-	_type val;							\
+-	int ret = -EINVAL;						\
+-	read_lock(&amp;dev_base_lock);					\
+-	if (dev_isalive(ndev)) {					\
+-		can_get_##_func(ndev, &amp;val);				\
+-		ret = snprintf(buf, PAGE_SIZE, _fmt &quot;\n&quot;, val);		\
+-	}								\
+-	read_unlock(&amp;dev_base_lock);					\
+-	return ret;							\
+-}									\
+-static ssize_t can_store_##_func(struct device *dev,			\
+-				 struct device_attribute *attr,		\
+-				 const char *buf, size_t count)		\
+-{									\
+-	struct net_device *ndev = to_net_dev(dev);			\
+-	char *endp;							\
+-	_type val;							\
+-	int ret = -EINVAL;						\
+-	val = simple_strtoul(buf, &amp;endp, 0);				\
+-	if (endp == buf)						\
+-		return ret;						\
+-	rtnl_lock();							\
+-	if (dev_isalive(ndev)) {					\
+-		if ((ret = can_set_##_func(ndev, val)) == 0)		\
+-			ret = count;					\
+-	}								\
+-	rtnl_unlock();							\
+-	return ret;							\
+-}									\
+-static DEVICE_ATTR(_name, S_IRUGO | S_IWUSR, 				\
+-		   can_show_##_func, can_store_##_func)
+-
+-CAN_ATTR(can_bitrate, bitrate, u32, &quot;%d&quot;);
+-CAN_ATTR(can_restart_ms, restart_ms, int, &quot;%d&quot;);
+-CAN_ATTR(can_clock, clock, u32, &quot;%d&quot;);
+-CAN_ATTR(can_echo, echo, int, &quot;%d&quot;);
+-
+-#define CAN_STATS_ATTR(_name)						\
+-static ssize_t can_stats_show_##_name(struct device *dev,		\
+-				      struct device_attribute *attr,	\
+-				      char *buf)			\
+-{									\
+-	struct net_device *ndev = to_net_dev(dev);			\
+-	struct can_priv *priv = netdev_priv(ndev);			\
+-	int ret = -EINVAL;						\
+-	read_lock(&amp;dev_base_lock);					\
+-	if (dev_isalive(ndev)) {					\
+-	        ret= snprintf(buf, PAGE_SIZE, &quot;%d\n&quot;,			\
+-			      priv-&gt;can_stats._name);			\
+-	}								\
+-	read_unlock(&amp;dev_base_lock);					\
+-	return ret;							\
+-}									\
+-static DEVICE_ATTR(_name, S_IRUGO, can_stats_show_##_name, NULL)
+-
+-#define CAN_CREATE_FILE(_dev, _name)					\
+-        if (device_create_file(&amp;_dev-&gt;dev, &amp;dev_attr_##_name))		\
+-		dev_err(ND2D(_dev),					\
+-			&quot;Couldn't create device file for ##_name\n&quot;)
+-
+-#define CAN_REMOVE_FILE(_dev, _name)					\
+-        device_remove_file(&amp;_dev-&gt;dev, &amp;dev_attr_##_name)		\
+-
+-CAN_STATS_ATTR(error_warning);
+-CAN_STATS_ATTR(error_passive);
+-CAN_STATS_ATTR(bus_error);
+-CAN_STATS_ATTR(arbitration_lost);
+-CAN_STATS_ATTR(data_overrun);
+-CAN_STATS_ATTR(wakeup);
+-CAN_STATS_ATTR(restarts);
+-
+-static ssize_t can_store_restart(struct device *dev,
+-				 struct device_attribute *attr,
+-				 const char *buf, size_t count)
+-{
+-	struct net_device *ndev = to_net_dev(dev);
+-	int ret = -EINVAL;
+-
+-	rtnl_lock();
+-	if (dev_isalive(ndev)) {
+-		if (!(ret = can_restart_now(ndev)))
+-			ret = count;
+-	}
+-	rtnl_unlock();
+-	return ret;
+-}
+-
+-static DEVICE_ATTR(can_restart, S_IWUSR, NULL, can_store_restart);
+-
+-static const char *can_state_names[] = {
+-	&quot;active&quot;, &quot;bus-warn&quot;, &quot;bus-pass&quot; , &quot;bus-off&quot;,
+-	&quot;stopped&quot;, &quot;sleeping&quot;, &quot;unkown&quot;
+-};
+-
+-static ssize_t can_show_state(struct device *dev,
+-			     struct device_attribute *attr,
+-			     char *buf)
+-{
+-	struct net_device *ndev = to_net_dev(dev);
+-	can_state_t state;
+-	int ret = -EINVAL;
+-
+-	read_lock(&amp;dev_base_lock);
+-	if (dev_isalive(ndev)) {
+-		can_get_state(ndev, &amp;state);
+-
+-		if (state &gt;= ARRAY_SIZE(can_state_names))
+-			state = ARRAY_SIZE(can_state_names) - 1;
+-		ret = snprintf(buf, PAGE_SIZE, &quot;%s\n&quot;, can_state_names[state]);
+-	}
+-	read_unlock(&amp;dev_base_lock);
+-	return ret;
+-}
+-
+-static DEVICE_ATTR(can_state, S_IRUGO, can_show_state, NULL);
+-
+-static ssize_t can_show_ctrlmode(struct device *dev,
+-				 struct device_attribute *attr,
+-				 char *buf)
+-{
+-	struct net_device *ndev = to_net_dev(dev);
+-	u32 ctrlmode;
+-	int ret = -EINVAL;
+-
+-	read_lock(&amp;dev_base_lock);
+-	if (dev_isalive(ndev)) {
+-		can_get_ctrlmode(ndev, &amp;ctrlmode);
+-		ret = 0;
+-		if (ctrlmode &amp; CAN_CTRLMODE_LISTENONLY)
+-			ret += sprintf(buf + ret, &quot;listenonly&quot;);
+-		if (ret)
+-			ret += sprintf(buf + ret, &quot; &quot;);
+-		if (ctrlmode &amp; CAN_CTRLMODE_LOOPBACK)
+-			ret += sprintf(buf + ret, &quot;loopback&quot;);
+-		if (ret)
+-			ret += sprintf(buf + ret, &quot;\n&quot;);
+-	}
+-	read_unlock(&amp;dev_base_lock);
+-        return ret;
+-}
+-
+-static ssize_t can_store_ctrlmode(struct device *dev,
+-				  struct device_attribute *attr,
+-				  const char *buf, size_t count)
+-{
+-	struct net_device *ndev = to_net_dev(dev);
+-	u32 ctrlmode = 0;
+-	int ret = -EINVAL;
+-
+-	if (strstr(buf, &quot;listenonly&quot;))
+-		ctrlmode |= CAN_CTRLMODE_LISTENONLY;
+-	if (strstr(buf, &quot;loopback&quot;))
+-		ctrlmode |= CAN_CTRLMODE_LOOPBACK;
+-
+-	rtnl_lock();
+-	if (dev_isalive(ndev) &amp;&amp; count) {
+-		if (!(ret = can_set_ctrlmode(ndev, ctrlmode)))
+-			ret = count;
+-	}
+-	rtnl_unlock();
+-	return ret;
+-}
+-
+-static DEVICE_ATTR(can_ctrlmode, S_IRUGO | S_IWUSR,
+-		   can_show_ctrlmode, can_store_ctrlmode);
+-
+-static ssize_t can_show_custombittime(struct device *dev,
+-				      struct device_attribute *attr,
+-				      char *buf)
+-{
+-	struct net_device *ndev = to_net_dev(dev);
+-	struct can_bittime bt;
+-	int ret = -EINVAL;
+-
+-	read_lock(&amp;dev_base_lock);
+-	if (dev_isalive(ndev)) {
+-		can_get_custombittime(ndev, &amp;bt);
+-
+-		if (bt.type == CAN_BITTIME_STD)
+-			ret = snprintf(buf, PAGE_SIZE,
+-				       &quot;std %#x %#x %#x %#x %#x %#x\n&quot;,
+-				       bt.std.brp, bt.std.prop_seg,
+-				       bt.std.phase_seg1, bt.std.phase_seg2,
+-				       bt.std.sjw, bt.std.sam);
+-		else if (bt.type == CAN_BITTIME_BTR)
+-			ret = snprintf(buf, PAGE_SIZE,
+-					&quot;btr %#x %#x\n&quot;,
+-					bt.btr.btr0, bt.btr.btr1);
+-		else
+-			ret = snprintf(buf, PAGE_SIZE, &quot;undefined\n&quot;);
+-	}
+-	read_unlock(&amp;dev_base_lock);
+-        return ret;
+-}
+-
+-static ssize_t can_store_custombittime(struct device *dev,
+-				       struct device_attribute *attr,
+-				       const char *buf, size_t count)
+-{
+-	struct net_device *ndev = to_net_dev(dev);
+-	struct can_bittime bt;
+-	u32 val[6];
+-	int ret = -EINVAL;
+-
+-	if (!strncmp(buf, &quot;std&quot;, 3)) {
+-		if (sscanf(buf + 4, &quot;%i %i %i %i %i %i&quot;,
+-			   val, val + 1, val + 2, val + 3,
+-			   val + 4, val + 5) == 6) {
+-			bt.type = CAN_BITTIME_STD;
+-			bt.std.brp = val[0];
+-			bt.std.prop_seg = val[1];
+-			bt.std.phase_seg1 = val[2];
+-			bt.std.phase_seg2 = val[3];
+-			bt.std.sjw = val[4];
+-			bt.std.sam = val[5];
+-		}
+-	}
+-	else if (!strncmp(buf, &quot;btr&quot;, 3)) {
+-		if (sscanf(buf + 4, &quot;%i %i&quot;, val, val + 1) == 2) {
+-			bt.type = CAN_BITTIME_BTR;
+-			bt.btr.btr0 = val[0];
+-			bt.btr.btr1 = val[1];
+-		}
+-	} else
+-		goto out;
+-
+-	rtnl_lock();
+-	if (dev_isalive(ndev)) {
+-		if (!(ret = can_set_custombittime(ndev, &amp;bt)))
+-			ret = count;
+-	}
+-	rtnl_unlock();
+-out:
+-	return ret;
+-}
+-
+-static DEVICE_ATTR(can_custombittime, S_IRUGO | S_IWUSR,
+-		   can_show_custombittime, can_store_custombittime);
+-
+-static struct attribute *can_stats_attrs[] = {
+-        &amp;dev_attr_error_warning.attr,
+-        &amp;dev_attr_error_passive.attr,
+-        &amp;dev_attr_bus_error.attr,
+-        &amp;dev_attr_arbitration_lost.attr,
+-        &amp;dev_attr_data_overrun.attr,
+-        &amp;dev_attr_wakeup.attr,
+-        &amp;dev_attr_restarts.attr,
+-	NULL
+-};
+-
+-static struct attribute_group can_stats_group = {
+-        .name = &quot;can_statistics&quot;,
+-        .attrs = can_stats_attrs,
+-};
+-
+-void can_create_sysfs(struct net_device *dev)
+-{
+-	int err;
+-
+-	CAN_CREATE_FILE(dev, can_bitrate);
+-	CAN_CREATE_FILE(dev, can_custombittime);
+-	CAN_CREATE_FILE(dev, can_restart);
+-	CAN_CREATE_FILE(dev, can_ctrlmode);
+-	CAN_CREATE_FILE(dev, can_state);
+-	CAN_CREATE_FILE(dev, can_restart_ms);
+-	CAN_CREATE_FILE(dev, can_clock);
+-	CAN_CREATE_FILE(dev, can_echo);
+-
+-        err = sysfs_create_group(&amp;(dev-&gt;dev.kobj), &amp;can_stats_group);
+-        if (err) {
+-		printk(KERN_EMERG
+-		       &quot;couldn't create sysfs group for CAN stats\n&quot;);
+-        }
+-}
+-
+-void can_remove_sysfs(struct net_device *dev)
+-{
+-	CAN_REMOVE_FILE(dev, can_bitrate);
+-	CAN_REMOVE_FILE(dev, can_custombittime);
+-	CAN_REMOVE_FILE(dev, can_restart);
+-	CAN_REMOVE_FILE(dev, can_ctrlmode);
+-	CAN_REMOVE_FILE(dev, can_state);
+-	CAN_REMOVE_FILE(dev, can_clock);
+-	CAN_REMOVE_FILE(dev, can_echo);
+-
+-        sysfs_remove_group(&amp;(dev-&gt;dev.kobj), &amp;can_stats_group);
+-}
+-
+-#endif /* CONFIG_SYSFS */
+-
+-
+-
+
+Deleted: trunk/kernel/2.6/net/can/sysfs.h
+===================================================================
+--- trunk/kernel/2.6/net/can/sysfs.h	2008-06-10 13:00:41 UTC (rev 758)
++++ trunk/kernel/2.6/net/can/sysfs.h	2008-06-10 15:54:40 UTC (rev 759)
+@@ -1,26 +0,0 @@
+-/*
+- * $Id: dev.c 542 2007-11-07 13:57:16Z thuermann $
+- *
+- * Copyright (C) 2007 Wolfgang Grandegger &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">wg at grandegger.com</A>&gt;
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the version 2 of the GNU General Public License
+- * as published by the Free Software Foundation
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+- */
+-
+-#ifndef CAN_SYSFS_H
+-#define CAN_SYSFS_H
+-
+-void can_create_sysfs(struct net_device *dev);
+-void can_remove_sysfs(struct net_device *dev);
+-
+-#endif /* CAN_SYSFS_H */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000738.html">r758 - branches/cannetdriver26
+</A></li>
+	<LI>Next message: <A HREF="000740.html">r760 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#739">[ date ]</a>
+              <a href="thread.html#739">[ thread ]</a>
+              <a href="subject.html#739">[ subject ]</a>
+              <a href="author.html#739">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

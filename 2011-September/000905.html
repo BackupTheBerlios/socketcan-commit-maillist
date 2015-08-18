@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1274 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1274%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110929053844.E9F38481120%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000904.html">
+   <LINK REL="Next"  HREF="000906.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1274 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1274%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110929053844.E9F38481120%40sheep.berlios.de%3E"
+       TITLE="r1274 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep 29 07:38:44 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000904.html">r1273 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000906.html">r1275 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#905">[ date ]</a>
+              <a href="thread.html#905">[ thread ]</a>
+              <a href="subject.html#905">[ subject ]</a>
+              <a href="author.html#905">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-09-29 07:38:44 +0200 (Thu, 29 Sep 2011)
+New Revision: 1274
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+can bcm: fix tx_setup off-by-one errors
+
+This patch fixes two off-by-one errors that canceled each other out.
+Checking for the same condition two times in bcm_tx_timeout_tsklet() reduced
+the count of frames to be sent by one. This did not show up the first time
+tx_setup is invoked as an additional frame is sent due to TX_ANNONCE.
+Invoking a second tx_setup on the same item led to a reduced (by 1) number of
+sent frames.
+
+Reported-by: Andre Naujoks &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">nautsch at gmail.com</A>&gt;
+Signed-off-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+Signed-off-by: David S. Miller &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">davem at davemloft.net</A>&gt;
+
+Upstream commit <A HREF="https://github.com/davem330/net/commit/aabdcb0b553b9c9547b1a506b34d55a764745870">https://github.com/davem330/net/commit/aabdcb0b553b9c9547b1a506b34d55a764745870</A>
+
+
+Modified: trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c	2011-09-01 09:55:35 UTC (rev 1273)
++++ trunk/kernel/2.6/net/can/bcm-prior-2-6-22.c	2011-09-29 05:38:44 UTC (rev 1274)
+@@ -416,10 +416,7 @@
+ 
+ 			bcm_send_to_user(op, &amp;msg_head, NULL, 0);
+ 		}
+-	}
+ 
+-	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+-
+ 		/* send (next) frame */
+ 		bcm_can_tx(op);
+ 		mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+@@ -958,15 +955,19 @@
+ 		/* spec: send can_frame when starting timer */
+ 		op-&gt;flags |= TX_ANNOUNCE;
+ 
+-		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
++		/* only start timer when having more frames than sent below */
++		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 1)) {
+ 			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
+ 			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ 		} else
+ 			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival2);
+ 	}
+ 
+-	if (op-&gt;flags &amp; TX_ANNOUNCE)
++	if (op-&gt;flags &amp; TX_ANNOUNCE) {
+ 		bcm_can_tx(op);
++		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0))
++			op-&gt;count--;
++	}
+ 
+ 	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+ }
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2011-09-01 09:55:35 UTC (rev 1273)
++++ trunk/kernel/2.6/net/can/bcm.c	2011-09-29 05:38:44 UTC (rev 1274)
+@@ -481,10 +481,7 @@
+ 
+ 			bcm_send_to_user(op, &amp;msg_head, NULL, 0);
+ 		}
+-	}
+ 
+-	if (op-&gt;kt_ival1.tv64 &amp;&amp; (op-&gt;count &gt; 0)) {
+-
+ 		/* send (next) frame */
+ 		bcm_can_tx(op);
+ 		hrtimer_start(&amp;op-&gt;timer,
+@@ -1101,8 +1098,9 @@
+ 		/* spec: send can_frame when starting timer */
+ 		op-&gt;flags |= TX_ANNOUNCE;
+ 
+-		if (op-&gt;kt_ival1.tv64 &amp;&amp; (op-&gt;count &gt; 0)) {
+-			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
++		/* only start timer when having more frames than sent below */
++		if (op-&gt;kt_ival1.tv64 &amp;&amp; (op-&gt;count &gt; 1)) {
++			/* op-&gt;count-- is done in bcm_tx_timeout_tsklet */
+ 			hrtimer_start(&amp;op-&gt;timer, op-&gt;kt_ival1,
+ 				      HRTIMER_MODE_REL);
+ 		} else
+@@ -1110,8 +1108,11 @@
+ 				      HRTIMER_MODE_REL);
+ 	}
+ 
+-	if (op-&gt;flags &amp; TX_ANNOUNCE)
++	if (op-&gt;flags &amp; TX_ANNOUNCE) {
+ 		bcm_can_tx(op);
++		if (op-&gt;kt_ival1.tv64 &amp;&amp; (op-&gt;count &gt; 0))
++			op-&gt;count--;
++	}
+ 
+ 	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000904.html">r1273 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000906.html">r1275 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#905">[ date ]</a>
+              <a href="thread.html#905">[ thread ]</a>
+              <a href="subject.html#905">[ subject ]</a>
+              <a href="author.html#905">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

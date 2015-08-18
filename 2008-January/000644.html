@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r662 - branches/cannetdriver26/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r662%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801271743.m0RHhoRM012975%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000643.html">
+   <LINK REL="Next"  HREF="000645.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r662 - branches/cannetdriver26/drivers/net/can/sja1000</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r662%20-%20branches/cannetdriver26/drivers/net/can/sja1000&In-Reply-To=%3C200801271743.m0RHhoRM012975%40sheep.berlios.de%3E"
+       TITLE="r662 - branches/cannetdriver26/drivers/net/can/sja1000">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 18:43:50 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000643.html">r661 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000645.html">r663 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#644">[ date ]</a>
+              <a href="thread.html#644">[ thread ]</a>
+              <a href="subject.html#644">[ subject ]</a>
+              <a href="author.html#644">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 18:43:49 +0100 (Sun, 27 Jan 2008)
+New Revision: 662
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/sja1000/ixxat_pci.c
+Log:
+Small fix for the IXXAT PCI driver
+
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/ixxat_pci.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/ixxat_pci.c	2008-01-27 17:42:55 UTC (rev 661)
++++ branches/cannetdriver26/drivers/net/can/sja1000/ixxat_pci.c	2008-01-27 17:43:49 UTC (rev 662)
+@@ -26,7 +26,7 @@
+ #include &lt;linux/can/dev.h&gt;
+ #include &lt;asm/io.h&gt;
+ 
+-#include &quot;sja1000dev.h&quot;
++#include &quot;sja1000.h&quot;
+ 
+ 
+ #define DRV_NAME  &quot;can-ixxat-pci&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000643.html">r661 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000645.html">r663 - in branches/cannetdriver26: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#644">[ date ]</a>
+              <a href="thread.html#644">[ thread ]</a>
+              <a href="subject.html#644">[ subject ]</a>
+              <a href="author.html#644">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

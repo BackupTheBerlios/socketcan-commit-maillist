@@ -1,0 +1,289 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1193 - trunk/test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1193%20-%20trunk/test&In-Reply-To=%3C20100809140022.186E24802F3%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000826.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1193 - trunk/test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1193%20-%20trunk/test&In-Reply-To=%3C20100809140022.186E24802F3%40sheep.berlios.de%3E"
+       TITLE="r1193 - trunk/test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug  9 16:00:22 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000826.html">r1194 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#825">[ date ]</a>
+              <a href="thread.html#825">[ thread ]</a>
+              <a href="subject.html#825">[ subject ]</a>
+              <a href="author.html#825">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-08-09 16:00:21 +0200 (Mon, 09 Aug 2010)
+New Revision: 1193
+
+Modified:
+   trunk/test/tst-rcv-own-msgs.c
+Log:
+Updated tool for a userfriendly result output.
+
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">user at host</A>:~/socketcan/trunk/test$ /bin/ip link show vcan0
+9: vcan0: &lt;NOARP,UP,LOWER_UP,ECHO&gt; mtu 16 qdisc noqueue state UNKNOWN 
+    link/can 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">user at host</A>:~/socketcan/trunk/test$ ./tst-rcv-own-msgs vcan0
+Starting PF_CAN frame flow test.
+checking socket default settings ... ok.
+check loopback 0 recv_own_msgs 0 ... ok.
+check loopback 0 recv_own_msgs 1 ... ok.
+check loopback 1 recv_own_msgs 0 ... ok.
+check loopback 1 recv_own_msgs 1 ... ok.
+PF_CAN frame flow test was successful.
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">user at hosts</A>:~/socketcan/trunk/test$ echo $?
+0
+
+Remarks:
+
+No need to make sure (in a script) that the CAN device has IFF_ECHO flags set!
+
+e.g. with
+/bin/ip link show vcan0 | grep -c ECHO
+
+The return code of tst-rcv-own-msgs is
+0 (success) 
+1 (failure)
+
+
+
+Modified: trunk/test/tst-rcv-own-msgs.c
+===================================================================
+--- trunk/test/tst-rcv-own-msgs.c	2010-07-29 09:44:09 UTC (rev 1192)
++++ trunk/test/tst-rcv-own-msgs.c	2010-08-09 14:00:21 UTC (rev 1193)
+@@ -62,15 +62,30 @@
+ 
+ #define max(a,b) (a &gt; b ? a : b)
+ 
+-void read_sockets(int s, int t)
++struct rxs {
++	int s;
++	int t;
++};
++
++struct rxs test_sockets(int s, int t, canid_t can_id)
+ {
+ 	fd_set rdfs;
+ 	struct timeval tv;
+ 	int m = max(s,t)+1;
+ 	int have_rx = 1;
+ 	struct can_frame frame;
++	struct rxs rx;
+ 	int ret;
+ 
++	frame.can_id = can_id;
++	frame.can_dlc = 0;
++	if (write(s, &amp;frame, sizeof(frame)) &lt; 0) {
++		perror(&quot;write&quot;);
++		exit(1);
++	}
++
++	rx.s = rx.t = 0;
++
+ 	while (have_rx) {
+ 
+ 		FD_ZERO(&amp;rdfs);
+@@ -80,7 +95,8 @@
+ 		tv.tv_usec = 50000; /* 50ms timeout */
+ 		have_rx = 0;
+ 
+-		if ((ret = select(m, &amp;rdfs, NULL, NULL, &amp;tv)) &lt; 0) {
++		ret = select(m, &amp;rdfs, NULL, NULL, &amp;tv);
++		if (ret &lt; 0) {
+ 			perror(&quot;select&quot;);
+ 			exit(1);
+ 		}
+@@ -93,7 +109,11 @@
+ 				perror(&quot;read&quot;);
+ 				exit(1);
+ 			}
+-			printf (&quot; s : %x\n&quot;, frame.can_id);
++			if (frame.can_id != can_id) {
++				fprintf(stderr, &quot;received wrong can_id!\n&quot;);
++				exit(1);
++			}
++			rx.s++;
+ 		}
+ 
+ 		if (FD_ISSET(t, &amp;rdfs)) {
+@@ -104,27 +124,19 @@
+ 				perror(&quot;read&quot;);
+ 				exit(1);
+ 			}
+-			printf (&quot; t : %x\n&quot;, frame.can_id);
++			if (frame.can_id != can_id) {
++				fprintf(stderr, &quot;received wrong can_id!\n&quot;);
++				exit(1);
++			}
++			rx.t++;
+ 		}
+-
+ 	}
+ 
+-	printf(&quot; timeout\n&quot;);
++	/* timeout */
+ 
++	return rx;
+ }
+ 
+-void write_socket(int s, int val)
+-{
+-	static struct can_frame frame;
+-
+-	frame.can_id = val;
+-	if (write(s, &amp;frame, sizeof(frame)) &lt; 0) {
+-		perror(&quot;write&quot;);
+-		exit(1);
+-	}
+-}
+-
+-
+ void setopts(int s, int loopback, int recv_own_msgs)
+ {
+ 	setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK,
+@@ -132,7 +144,8 @@
+ 	setsockopt(s, SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS,
+ 		   &amp;recv_own_msgs, sizeof(recv_own_msgs));
+ 
+-	printf(&quot;sockopt %c %c\n&quot;, (loopback)?'L':'-', (recv_own_msgs)?'R':'-');
++	printf(&quot;check loopback %d recv_own_msgs %d ... &quot;,
++	       loopback, recv_own_msgs);
+ }
+ 
+ 
+@@ -141,9 +154,8 @@
+ 	int s, t;
+ 	struct sockaddr_can addr;
+ 	struct ifreq ifr;
+-	int i = 0;
++	struct rxs rx;
+ 
+-
+ 	/* check command line options */
+ 	if (argc != 2) {
+ 		fprintf(stderr, &quot;Usage: %s &lt;device&gt;\n&quot;, argv[0]);
+@@ -176,29 +188,57 @@
+ 		return 1;
+ 	}
+ 
++	printf(&quot;Starting PF_CAN frame flow test.\n&quot;);
++	printf(&quot;checking socket default settings ... &quot;);
++	rx = test_sockets(s, t, 0x340);
++	if (rx.s == 0 &amp;&amp; rx.t == 1)
++		printf(&quot;ok.\n&quot;);
++	else {
++		printf(&quot;failure!\n&quot;);
++		return 1;
++	}
+ 
+-	/* perform the default settings */
+-	printf(&quot;sockopt default\n&quot;);
+-	write_socket(s, i++);
+-	read_sockets(s, t);
+-
++	/* check loopback 0 recv_own_msgs 0 */
+ 	setopts(s, 0, 0);
+-	write_socket(s, i++);
+-	read_sockets(s, t);
++	rx = test_sockets(s, t, 0x341);
++	if (rx.s == 0 &amp;&amp; rx.t == 0)
++		printf(&quot;ok.\n&quot;);
++	else {
++		printf(&quot;failure!\n&quot;);
++		return 1;
++	}
+ 
++	/* check loopback 0 recv_own_msgs 1 */
+ 	setopts(s, 0, 1);
+-	write_socket(s, i++);
+-	read_sockets(s, t);
++	rx = test_sockets(s, t, 0x342);
++	if (rx.s == 0 &amp;&amp; rx.t == 0)
++		printf(&quot;ok.\n&quot;);
++	else {
++		printf(&quot;failure!\n&quot;);
++		return 1;
++	}
+ 
++	/* check loopback 1 recv_own_msgs 0 */
+ 	setopts(s, 1, 0);
+-	write_socket(s, i++);
+-	read_sockets(s, t);
++	rx = test_sockets(s, t, 0x343);
++	if (rx.s == 0 &amp;&amp; rx.t == 1)
++		printf(&quot;ok.\n&quot;);
++	else {
++		printf(&quot;failure!\n&quot;);
++		return 1;
++	}
+ 
++	/* check loopback 1 recv_own_msgs 1 */
+ 	setopts(s, 1, 1);
+-	write_socket(s, i++);
+-	read_sockets(s, t);
++	rx = test_sockets(s, t, 0x344);
++	if (rx.s == 1 &amp;&amp; rx.t == 1)
++		printf(&quot;ok.\n&quot;);
++	else {
++		printf(&quot;failure!\n&quot;);
++		return 1;
++	}
+ 
+-	printf(&quot;done.\n&quot;);
++	printf(&quot;PF_CAN frame flow test was successful.\n&quot;);
+ 
+ 	close(s);
+ 	close(t);
+
+
+Property changes on: trunk/test/tst-rcv-own-msgs.c
+___________________________________________________________________
+Added: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000826.html">r1194 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#825">[ date ]</a>
+              <a href="thread.html#825">[ thread ]</a>
+              <a href="subject.html#825">[ subject ]</a>
+              <a href="author.html#825">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

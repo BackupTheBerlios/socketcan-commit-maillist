@@ -1,0 +1,274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r310 - trunk/kernel/2.6/Documentation/networking
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r310%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200705160903.l4G93RUo007861%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000293.html">
+   <LINK REL="Next"  HREF="000295.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r310 - trunk/kernel/2.6/Documentation/networking</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r310%20-%20trunk/kernel/2.6/Documentation/networking&In-Reply-To=%3C200705160903.l4G93RUo007861%40sheep.berlios.de%3E"
+       TITLE="r310 - trunk/kernel/2.6/Documentation/networking">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed May 16 11:03:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000293.html">r309 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+        <LI>Next message: <A HREF="000295.html">r311 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#294">[ date ]</a>
+              <a href="thread.html#294">[ thread ]</a>
+              <a href="subject.html#294">[ subject ]</a>
+              <a href="author.html#294">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-05-16 11:03:21 +0200 (Wed, 16 May 2007)
+New Revision: 310
+
+Modified:
+   trunk/kernel/2.6/Documentation/networking/can.txt
+Log:
+Remove trailing white-space at end of lines.
+
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2007-05-16 05:51:05 UTC (rev 309)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2007-05-16 09:03:21 UTC (rev 310)
+@@ -27,7 +27,7 @@
+     4.4 unconnected transport protocols (SOCK_DGRAM)
+ 
+   5 Socket CAN core module
+-    5.1 can.ko module params 
++    5.1 can.ko module params
+     5.2 procfs content
+     5.3 writing own CAN protocol modules
+ 
+@@ -146,8 +146,8 @@
+   medium that has no MAC-layer adressing like ethernet. The CAN-identifier
+   (can_id) is used for arbitration on the CAN-bus. Therefore the CAN-IDs
+   have to be choosen unique on the bus. When designing a CAN-ECU
+-  network the CAN-IDs are mapped to be sent by a specific ECU. 
+-  For this reason a CAN-ID can be treatened best as a kind of source address. 
++  network the CAN-IDs are mapped to be sent by a specific ECU.
++  For this reason a CAN-ID can be treatened best as a kind of source address.
+ 
+   3.1 receive lists
+ 
+@@ -164,7 +164,7 @@
+   CAN protocol modules by the SocketCAN core (see chapter 5).
+   To optimize the CPU usage at runtime the receive lists are split up
+   into several specific lists per device that match the requested
+-  filter complexity for a given use-case. 
++  filter complexity for a given use-case.
+ 
+   3.2 loopback
+ 
+@@ -172,16 +172,16 @@
+   applications may run on the same or different nodes without any
+   change (except if the according addressing information):
+ 
+-         ___   ___   ___                   _______   ___ 
+-        | _ | | _ | | _ |                 | _   _ | | _ | 
+-        ||A|| ||B|| ||C||                 ||A| |B|| ||C|| 
+-        |___| |___| |___|                 |_______| |___| 
++         ___   ___   ___                   _______   ___
++        | _ | | _ | | _ |                 | _   _ | | _ |
++        ||A|| ||B|| ||C||                 ||A| |B|| ||C||
++        |___| |___| |___|                 |_______| |___|
+           |     |     |                       |       |
+         -----------------(1)- CAN bus -(2)---------------
+ 
+   To ensure that application A receives the same information in the
+   expample (2) as it would receive in example (1) there is need for
+-  some kind of local loopback on the appropriate node. 
++  some kind of local loopback on the appropriate node.
+ 
+   The Linux network devices (by default) just can handle the
+   transmission and receiption of media dependend frames. Due to the
+@@ -190,7 +190,7 @@
+   reflect the correct* traffic on the node the loopback of the sent
+   data has to be performed right after a successful transmission. If
+   the CAN network interface is not capable to perform the loopback for
+-  some reason the SocketCAN core can do this task as a fallback solution.    
++  some reason the SocketCAN core can do this task as a fallback solution.
+   See chapter 6.2 for details (recommended).
+ 
+   The loopback functionality is enabled by default to reflect standard
+@@ -213,7 +213,7 @@
+   security of others networks to allow all users to access the CAN.
+   To enable non-root users to access CAN_RAW and CAN_BCM protocol
+   sockets the Kconfig options CAN_RAW_USER and/or CAN_BCM_USER may be
+-  selected at kernel compile time. 
++  selected at kernel compile time.
+ 
+   3.4 network problem notifications
+ 
+@@ -320,7 +320,7 @@
+     struct can_frame frame;
+ 
+     nbytes = read(s, &amp;frame, sizeof(struct can_frame));
+-  
++
+     if (nbytes &lt; 0) {
+             perror(&quot;can raw socket read&quot;);
+             return 1;
+@@ -362,7 +362,7 @@
+     ioctl(s, SIOCGIFINDEX, &amp;ifr);
+     addr.can_ifindex = ifr.ifr_ifindex;
+     addr.can_family  = AF_CAN;
+- 
++
+     nbytes = sendto(s, &amp;frame, sizeof(struct can_frame),
+                     0, (struct sockaddr*)&amp;addr, sizeof(addr));
+ 
+@@ -374,7 +374,7 @@
+   defaults are set at RAW socket bindung time:
+ 
+   - The filters are set to excatly one filter receiving everything
+-  - The socket only receives valid data frames (=&gt; no error frames) 
++  - The socket only receives valid data frames (=&gt; no error frames)
+   - The loopback of sent CAN frames is enabled (see chapter 3.2)
+   - The socket does not receive it's own sent frames (in loopback mode)
+ 
+@@ -385,7 +385,7 @@
+   4.1.1 RAW socket option CAN_RAW_FILTER
+ 
+   The receiption of CAN frames using CAN_RAW sockets can be controlled
+-  by defining 0 .. n filters with the CAN_RAW_FILTER socket option. 
++  by defining 0 .. n filters with the CAN_RAW_FILTER socket option.
+ 
+   The CAN filter structure is defined in include/linux/can.h:
+ 
+@@ -398,7 +398,7 @@
+ 
+     &lt;received_can_id&gt; &amp; mask == can_id &amp; mask
+ 
+-  which is analogue to known CAN controllers hardware filter semantics. 
++  which is analogue to known CAN controllers hardware filter semantics.
+   The filter can be inverted in this semantic, when the CAN_INV_FILTER
+   bit is set in can_id element of the can_filter structure. In
+   opposite to CAN controller hardware filters the user may set 0 .. n
+@@ -461,7 +461,7 @@
+     int set_recv_own_msgs = 1; /* 0 = disabled (default), 1 = enabled */
+ 
+     setsockopt(s, SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS,
+-               &amp;recv_own_msgs, sizeof(recv_own_msgs)); 
++               &amp;recv_own_msgs, sizeof(recv_own_msgs));
+ 
+   4.2 Broadcast Manager protocol sockets (SOCK_DGRAM)
+   4.3 connected transport protocols (SOCK_SEQPACKET)
+@@ -475,9 +475,9 @@
+   PF_CAN. CAN protocol modules are loaded by the core module at
+   runtime. The core module provides an interface for CAN protocol
+   modules to subscribe needed CAN IDs (see chapter 3.1).
+-  
+-  5.1 can.ko module params 
+ 
++  5.1 can.ko module params
++
+   - stats_timer: To calculate the Socket CAN core statistics
+     (e.g. current/maximum frames per second) this 1 second timer is
+     invoked at can.ko module start time by default. This timer can be
+@@ -491,7 +491,7 @@
+ 
+     It is possible or have ORed values e.g. 3 or 7 for an output off
+     all available debug information. Using 0x02 and 0x04 may flood
+-    your kernel log - so be careful. 
++    your kernel log - so be careful.
+ 
+   5.2 procfs content
+ 
+@@ -501,7 +501,7 @@
+   checked in the appropriate receive list. All entries contain the
+   device and a protocol module identifier:
+ 
+-    <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">foo at bar</A>:~$ cat /proc/net/can/rcvlist_all 
++    <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">foo at bar</A>:~$ cat /proc/net/can/rcvlist_all
+ 
+     receive list 'rx_all':
+       (vcan3: no entry)
+@@ -524,7 +524,7 @@
+ 
+     stats       - Socket CAN core statistics (rx/tx frames, match ratios, ...)
+     reset_stats - manual statistic reset
+-    version     - prints the Socket CAN core version and the ABI version 
++    version     - prints the Socket CAN core version and the ABI version
+ 
+   5.3 writing own CAN protocol modules
+ 
+@@ -554,7 +554,7 @@
+   - RX: Put the CAN frame from the CAN controller to the socket buffer.
+ 
+   See e.g. at Documentation/networking/netdevices.txt . The differences
+-  for writing CAN network device driver are described below: 
++  for writing CAN network device driver are described below:
+ 
+   6.1 general settings
+ 
+@@ -589,8 +589,8 @@
+   Therefore the use of hardware filters goes to the category 'handmade
+   tuning on deep embedded systems'. The author is running a MPC603e
+   @133MHz with four SJA1000 CAN controllers from 2002 under heavy bus
+-  load without any problems ...        
+-  
++  load without any problems ...
++
+   6.4 currently supported CAN hardware (May 2007)
+ 
+   On the project website <A HREF="http://developer.berlios.de/projects/socketcan">http://developer.berlios.de/projects/socketcan</A>
+@@ -601,13 +601,13 @@
+     i82527:  Intel i82527 CAN controller
+     mscan:   Motorola/Freescale CAN controller (e.g. inside SOC MPC5200)
+     slcan:   For a bunch of CAN adaptors that are attached via a
+-             serial line ASCII protocol (for serial / USB adaptors) 
++             serial line ASCII protocol (for serial / USB adaptors)
+ 
+   Additionally the different CAN adaptors (ISA/PCI/PCMCIA/USB/Parport)
+   from PEAK Systemtechnik support the CAN netdevice driver modell
+   since Linux driver v6.0: <A HREF="http://www.peak-system.com/linux/index.htm">http://www.peak-system.com/linux/index.htm</A>
+ 
+-  Please check the Mailing Lists on the berlios OSS project website. 
++  Please check the Mailing Lists on the berlios OSS project website.
+ 
+   6.5 todo (May 2007)
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000293.html">r309 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+	<LI>Next message: <A HREF="000295.html">r311 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#294">[ date ]</a>
+              <a href="thread.html#294">[ thread ]</a>
+              <a href="subject.html#294">[ subject ]</a>
+              <a href="author.html#294">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

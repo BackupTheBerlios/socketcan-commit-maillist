@@ -1,0 +1,337 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1201 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1201%20-%20in%20trunk%3A%20can-utils%20kernel/2.6/include/socketcan/can%0A%09kernel/2.6/net/can&In-Reply-To=%3C20101114085507.2D8044808C8%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000832.html">
+   <LINK REL="Next"  HREF="000834.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1201 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1201%20-%20in%20trunk%3A%20can-utils%20kernel/2.6/include/socketcan/can%0A%09kernel/2.6/net/can&In-Reply-To=%3C20101114085507.2D8044808C8%40sheep.berlios.de%3E"
+       TITLE="r1201 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 14 09:55:06 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000832.html">r1200 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000834.html">r1202 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#833">[ date ]</a>
+              <a href="thread.html#833">[ thread ]</a>
+              <a href="subject.html#833">[ subject ]</a>
+              <a href="author.html#833">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-14 09:55:06 +0100 (Sun, 14 Nov 2010)
+New Revision: 1201
+
+Modified:
+   trunk/can-utils/isotprecv.c
+   trunk/can-utils/isotpsend.c
+   trunk/kernel/2.6/include/socketcan/can/isotp.h
+   trunk/kernel/2.6/net/can/isotp.c
+Log:
+Added new socketoptions to force the isotp protocol to intentionally
+misbehave for regression tests.
+
+CAN_ISOTP_TX_STMIN:
+Set a value in nano secs that's used as minimum CF gap by the sender.
+This value is used instead of the value provided by the receiver inside the FC.
+
+CAN_ISOTP_RX_STMIN:
+Ignores received CF frames which timestamps differ less than this value in nano
+secs. This is used to test the receivers misbehaviour when the receiver
+provides a lower stmin value that he's able to cope with. Received CF frames
+are silently dropped when they come faster than specified by this value.
+ 
+
+
+Modified: trunk/can-utils/isotprecv.c
+===================================================================
+--- trunk/can-utils/isotprecv.c	2010-11-13 16:43:29 UTC (rev 1200)
++++ trunk/can-utils/isotprecv.c	2010-11-14 08:55:06 UTC (rev 1201)
+@@ -71,6 +71,7 @@
+ 	fprintf(stderr, &quot;         -P &lt;mode&gt;    (check padding in SF/CF. (l)ength (c)ontent (a)ll)\n&quot;);
+ 	fprintf(stderr, &quot;         -b &lt;bs&gt;      (blocksize. 0 = off)\n&quot;);
+ 	fprintf(stderr, &quot;         -m &lt;val&gt;     (STmin in ms/ns. See spec.)\n&quot;);
++	fprintf(stderr, &quot;         -f &lt;time ns&gt; (force rx stmin value in nanosecs)\n&quot;);
+ 	fprintf(stderr, &quot;         -w &lt;num&gt;     (max. wait frame transmissions.)\n&quot;);
+ 	fprintf(stderr, &quot;         -l           (loop: do not exit after pdu receiption.)\n&quot;);
+ 	fprintf(stderr, &quot;\nCAN IDs and addresses are given and expected in hexadecimal values.\n&quot;);
+@@ -87,6 +88,7 @@
+     static struct can_isotp_fc_options fcopts;
+     int opt, i;
+     extern int optind, opterr, optopt;
++    __u32 force_rx_stmin = 0;
+     int loop = 0;
+ 
+     unsigned char msg[4096];
+@@ -94,7 +96,7 @@
+ 
+     addr.can_addr.tp.tx_id = addr.can_addr.tp.rx_id = NO_CAN_ID;
+ 
+-    while ((opt = getopt(argc, argv, &quot;s:d:x:p:P:b:m:w:l?&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;s:d:x:p:P:b:m:w:f:l?&quot;)) != -1) {
+ 	    switch (opt) {
+ 	    case 's':
+ 		    addr.can_addr.tp.tx_id = strtoul(optarg, (char **)NULL, 16);
+@@ -144,6 +146,11 @@
+ 		    fcopts.wftmax = strtoul(optarg, (char **)NULL, 16) &amp; 0xFF;
+ 		    break;
+ 
++	    case 'f':
++		    opts.flags |= CAN_ISOTP_FORCE_RXSTMIN;
++		    force_rx_stmin = strtoul(optarg, (char **)NULL, 10);
++		    break;
++
+ 	    case 'l':
+ 		    loop = 1;
+ 		    break;
+@@ -176,6 +183,9 @@
+     setsockopt(s, SOL_CAN_ISOTP, CAN_ISOTP_OPTS, &amp;opts, sizeof(opts));
+     setsockopt(s, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &amp;fcopts, sizeof(fcopts));
+ 
++    if (opts.flags &amp; CAN_ISOTP_FORCE_RXSTMIN)
++	    setsockopt(s, SOL_CAN_ISOTP, CAN_ISOTP_RX_STMIN, &amp;force_rx_stmin, sizeof(force_rx_stmin));
++
+     addr.can_family = AF_CAN;
+     strcpy(ifr.ifr_name, argv[optind]);
+     ioctl(s, SIOCGIFINDEX, &amp;ifr);
+
+Modified: trunk/can-utils/isotpsend.c
+===================================================================
+--- trunk/can-utils/isotpsend.c	2010-11-13 16:43:29 UTC (rev 1200)
++++ trunk/can-utils/isotpsend.c	2010-11-14 08:55:06 UTC (rev 1201)
+@@ -69,7 +69,8 @@
+ 	fprintf(stderr, &quot;         -x &lt;addr&gt;    (extended addressing mode. Use 'any' for all addresses)\n&quot;);
+ 	fprintf(stderr, &quot;         -p &lt;byte&gt;    (set and enable padding byte)\n&quot;);
+ 	fprintf(stderr, &quot;         -P &lt;mode&gt;    (check padding in FC. (l)ength (c)ontent (a)ll)\n&quot;);
+-	fprintf(stderr, &quot;         -t &lt;time ns&gt; (transmit time in nanosecs)\n&quot;);
++	fprintf(stderr, &quot;         -t &lt;time ns&gt; (frame transmit time (N_As) in nanosecs)\n&quot;);
++	fprintf(stderr, &quot;         -f &lt;time ns&gt; (ignore FC and force local tx stmin value in nanosecs)\n&quot;);
+ 	fprintf(stderr, &quot;\nCAN IDs and addresses are given and expected in hexadecimal values.\n&quot;);
+ 	fprintf(stderr, &quot;The pdu data is expected on STDIN in space separated ASCII hex values.\n&quot;);
+ 	fprintf(stderr, &quot;\n&quot;);
+@@ -83,12 +84,13 @@
+     static struct can_isotp_options opts;
+     int opt;
+     extern int optind, opterr, optopt;
++    __u32 force_tx_stmin = 0;
+     unsigned char buf[4096];
+     int buflen = 0;
+ 
+     addr.can_addr.tp.tx_id = addr.can_addr.tp.rx_id = NO_CAN_ID;
+ 
+-    while ((opt = getopt(argc, argv, &quot;s:d:x:p:P:t:?&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;s:d:x:p:P:t:f:?&quot;)) != -1) {
+ 	    switch (opt) {
+ 	    case 's':
+ 		    addr.can_addr.tp.tx_id = strtoul(optarg, (char **)NULL, 16);
+@@ -130,6 +132,11 @@
+ 		    opts.frame_txtime = strtoul(optarg, (char **)NULL, 10);
+ 		    break;
+ 
++	    case 'f':
++		    opts.flags |= CAN_ISOTP_FORCE_TXSTMIN;
++		    force_tx_stmin = strtoul(optarg, (char **)NULL, 10);
++		    break;
++
+ 	    case '?':
+ 		    print_usage(basename(argv[0]));
+ 		    exit(0);
+@@ -157,6 +164,9 @@
+ 
+     setsockopt(s, SOL_CAN_ISOTP, CAN_ISOTP_OPTS, &amp;opts, sizeof(opts));
+ 
++    if (opts.flags &amp; CAN_ISOTP_FORCE_TXSTMIN)
++	    setsockopt(s, SOL_CAN_ISOTP, CAN_ISOTP_TX_STMIN, &amp;force_tx_stmin, sizeof(force_tx_stmin));
++
+     addr.can_family = AF_CAN;
+     strcpy(ifr.ifr_name, argv[optind]);
+     ioctl(s, SIOCGIFINDEX, &amp;ifr);
+
+Modified: trunk/kernel/2.6/include/socketcan/can/isotp.h
+===================================================================
+--- trunk/kernel/2.6/include/socketcan/can/isotp.h	2010-11-13 16:43:29 UTC (rev 1200)
++++ trunk/kernel/2.6/include/socketcan/can/isotp.h	2010-11-14 08:55:06 UTC (rev 1201)
+@@ -22,9 +22,20 @@
+ 
+ /* for socket options affecting the socket (not the global system) */
+ 
+-#define CAN_ISOTP_OPTS		1
+-#define CAN_ISOTP_RECV_FC	2
++#define CAN_ISOTP_OPTS		1	/* pass struct can_isotp_options */
+ 
++#define CAN_ISOTP_RECV_FC	2	/* pass struct can_isotp_fc_options */
++
++/* sockopts to force stmin timer values for protocol regression tests */
++
++#define CAN_ISOTP_TX_STMIN	3	/* pass __u32 value in nano secs    */
++					/* use this time instead of value   */
++					/* provided in FC from the receiver */
++
++#define CAN_ISOTP_RX_STMIN	4	/* pass __u32 value in nano secs   */
++					/* ignore received CF frames which */
++					/* timestamps differ less than val */
++
+ struct can_isotp_options {
+ 
+ 	__u32 flags;		/* set flags for isotp behaviour.	*/
+@@ -62,13 +73,15 @@
+ 
+ /* flags for isotp behaviour */
+ 
+-#define CAN_ISOTP_LISTEN_MODE	0x01	/* listen only (do not send FC) */
+-#define CAN_ISOTP_EXTEND_ADDR	0x02	/* enable extended addressing */
+-#define CAN_ISOTP_TX_PADDING	0x04	/* enable CAN frame padding tx path */
+-#define CAN_ISOTP_RX_PADDING	0x08	/* enable CAN frame padding rx path */
+-#define CAN_ISOTP_CHK_PAD_LEN	0x10	/* check received CAN frame padding */
+-#define CAN_ISOTP_CHK_PAD_DATA	0x20	/* check received CAN frame padding */
+-#define CAN_ISOTP_HALF_DUPLEX	0x40	/* half duplex error state handling */
++#define CAN_ISOTP_LISTEN_MODE	0x001	/* listen only (do not send FC) */
++#define CAN_ISOTP_EXTEND_ADDR	0x002	/* enable extended addressing */
++#define CAN_ISOTP_TX_PADDING	0x004	/* enable CAN frame padding tx path */
++#define CAN_ISOTP_RX_PADDING	0x008	/* enable CAN frame padding rx path */
++#define CAN_ISOTP_CHK_PAD_LEN	0x010	/* check received CAN frame padding */
++#define CAN_ISOTP_CHK_PAD_DATA	0x020	/* check received CAN frame padding */
++#define CAN_ISOTP_HALF_DUPLEX	0x040	/* half duplex error state handling */
++#define CAN_ISOTP_FORCE_TXSTMIN	0x080	/* ignore stmin from received FC */
++#define CAN_ISOTP_FORCE_RXSTMIN	0x100	/* ignore CFs depending on rx stmin */
+ 
+ 
+ /* default values */
+
+Modified: trunk/kernel/2.6/net/can/isotp.c
+===================================================================
+--- trunk/kernel/2.6/net/can/isotp.c	2010-11-13 16:43:29 UTC (rev 1200)
++++ trunk/kernel/2.6/net/can/isotp.c	2010-11-14 08:55:06 UTC (rev 1201)
+@@ -132,10 +132,13 @@
+ 	canid_t txid;
+ 	canid_t rxid;
+ 	ktime_t tx_gap;
++	ktime_t last_cf_tstamp;
+ 	struct hrtimer rxtimer, txtimer;
+ 	struct tasklet_struct txtsklet;
+ 	struct can_isotp_options opt;
+ 	struct can_isotp_fc_options rxfc, txfc;
++	__u32 force_tx_stmin;
++	__u32 force_rx_stmin;
+ 	struct tpcon rx, tx;
+ 	struct notifier_block notifier;
+ 	wait_queue_head_t wait;
+@@ -276,12 +279,18 @@
+ 		    ((so-&gt;txfc.stmin &lt; 0xF1) || (so-&gt;txfc.stmin &gt; 0xF9)))
+ 			so-&gt;txfc.stmin = 0x7F;
+ 
++		/* reset CF frame rx timestamp for rx stmin enforcement */
++		so-&gt;last_cf_tstamp = ktime_set(0,0);
++
+ 		so-&gt;tx_gap = ktime_set(0,0);
+ 		/* add transmission time for CAN frame N_As */
+ 		so-&gt;tx_gap = ktime_add_ns(so-&gt;tx_gap, so-&gt;opt.frame_txtime);
+ 		/* add waiting time for consecutive frames N_Cs */
+-		if (so-&gt;txfc.stmin &lt; 0x80)
++		if (so-&gt;opt.flags &amp; CAN_ISOTP_FORCE_TXSTMIN) 
+ 			so-&gt;tx_gap = ktime_add_ns(so-&gt;tx_gap,
++						  so-&gt;force_tx_stmin);
++		else if (so-&gt;txfc.stmin &lt; 0x80)
++			so-&gt;tx_gap = ktime_add_ns(so-&gt;tx_gap,
+ 						  so-&gt;txfc.stmin * 1000000);
+ 		else
+ 			so-&gt;tx_gap = ktime_add_ns(so-&gt;tx_gap,
+@@ -397,6 +406,16 @@
+ 	if (so-&gt;rx.state != ISOTP_WAIT_DATA)
+ 		return 0;
+ 
++	/* drop if timestamp gap is less than force_rx_stmin nano secs */
++	if (so-&gt;opt.flags &amp; CAN_ISOTP_FORCE_RXSTMIN) {
++
++		if (ktime_to_ns(ktime_sub(skb-&gt;tstamp, so-&gt;last_cf_tstamp)) &lt;
++		    so-&gt;force_rx_stmin)
++			return 0;
++
++		so-&gt;last_cf_tstamp = skb-&gt;tstamp; 
++	}
++
+ 	hrtimer_cancel(&amp;so-&gt;rxtimer);
+ 
+ 	if ((cf-&gt;data[ae] &amp; 0x0F) != so-&gt;rx.sn) {
+@@ -950,6 +969,22 @@
+ 			return -EFAULT;
+ 		break;
+ 
++	case CAN_ISOTP_TX_STMIN:
++		if (optlen != sizeof(__u32))
++			return -EINVAL;
++
++		if (copy_from_user(&amp;so-&gt;force_tx_stmin, optval, optlen))
++			return -EFAULT;
++		break;
++
++	case CAN_ISOTP_RX_STMIN:
++		if (optlen != sizeof(__u32))
++			return -EINVAL;
++
++		if (copy_from_user(&amp;so-&gt;force_rx_stmin, optval, optlen))
++			return -EFAULT;
++		break;
++
+ 	default:
+ 		ret = -ENOPROTOOPT;
+ 	}
+@@ -984,6 +1019,16 @@
+ 		val = &amp;so-&gt;rxfc;
+ 		break;
+ 
++	case CAN_ISOTP_TX_STMIN:
++		len = min_t(int, len, sizeof(__u32));
++		val = &amp;so-&gt;force_tx_stmin;
++		break;
++
++	case CAN_ISOTP_RX_STMIN:
++		len = min_t(int, len, sizeof(__u32));
++		val = &amp;so-&gt;force_rx_stmin;
++		break;
++
+ 	default:
+ 		return -ENOPROTOOPT;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000832.html">r1200 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000834.html">r1202 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#833">[ date ]</a>
+              <a href="thread.html#833">[ thread ]</a>
+              <a href="subject.html#833">[ subject ]</a>
+              <a href="author.html#833">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

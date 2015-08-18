@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r643 - in branches/cannetdriver26: drivers/net/can/old/i82527	drivers/net/can/old/sja1000 include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r643%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/old/i82527%0A%09drivers/net/can/old/sja1000%20include/linux/can%20net/can&In-Reply-To=%3C200801091124.m09BOX99014774%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000624.html">
+   <LINK REL="Next"  HREF="000626.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r643 - in branches/cannetdriver26: drivers/net/can/old/i82527	drivers/net/can/old/sja1000 include/linux/can net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r643%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/old/i82527%0A%09drivers/net/can/old/sja1000%20include/linux/can%20net/can&In-Reply-To=%3C200801091124.m09BOX99014774%40sheep.berlios.de%3E"
+       TITLE="r643 - in branches/cannetdriver26: drivers/net/can/old/i82527	drivers/net/can/old/sja1000 include/linux/can net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:24:33 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000624.html">r642 - branches/cannetdriver26/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000626.html">r644 - branches/cannetdriver26/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#625">[ date ]</a>
+              <a href="thread.html#625">[ thread ]</a>
+              <a href="subject.html#625">[ subject ]</a>
+              <a href="author.html#625">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:24:28 +0100 (Wed, 09 Jan 2008)
+New Revision: 643
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/old/i82527/i82527.c
+   branches/cannetdriver26/drivers/net/can/old/sja1000/sja1000.c
+   branches/cannetdriver26/include/linux/can/ioctl.h
+   branches/cannetdriver26/net/can/dev.c
+Log:
+Remove ioctl requests
+
+Modified: branches/cannetdriver26/drivers/net/can/old/i82527/i82527.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/old/i82527/i82527.c	2008-01-09 11:22:52 UTC (rev 642)
++++ branches/cannetdriver26/drivers/net/can/old/i82527/i82527.c	2008-01-09 11:24:28 UTC (rev 643)
+@@ -791,22 +791,6 @@
+ }
+ #endif
+ 
+-static int can_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+-{
+-	if (!netif_running(dev))
+-		return -EINVAL;
+-
+-	switch (cmd) {
+-	case SIOCSCANBAUDRATE:
+-		;
+-		return 0;
+-	case SIOCGCANBAUDRATE:
+-		;
+-		return 0;
+-	}
+-	return 0;
+-}
+-
+ /*
+  * I82527 interrupt handler
+  */
+@@ -1087,7 +1071,6 @@
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ 	dev-&gt;get_stats			= can_get_stats;
+ #endif
+-	dev-&gt;do_ioctl           	= can_ioctl;
+ 
+ 	dev-&gt;tx_timeout			= can_tx_timeout;
+ 	dev-&gt;watchdog_timeo		= TX_TIMEOUT;
+
+Modified: branches/cannetdriver26/drivers/net/can/old/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/old/sja1000/sja1000.c	2008-01-09 11:22:52 UTC (rev 642)
++++ branches/cannetdriver26/drivers/net/can/old/sja1000/sja1000.c	2008-01-09 11:24:28 UTC (rev 643)
+@@ -737,22 +737,6 @@
+ }
+ #endif
+ 
+-static int can_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+-{
+-	if (!netif_running(dev))
+-		return -EINVAL;
+-
+-	switch (cmd) {
+-	case SIOCSCANBAUDRATE:
+-		;
+-		return 0;
+-	case SIOCGCANBAUDRATE:
+-		;
+-		return 0;
+-	}
+-	return 0;
+-}
+-
+ /*
+  * SJA1000 interrupt handler
+  */
+@@ -1047,7 +1031,6 @@
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ 	dev-&gt;get_stats			= can_get_stats;
+ #endif
+-	dev-&gt;do_ioctl           	= can_ioctl;
+ 
+ 	dev-&gt;tx_timeout			= can_tx_timeout;
+ 	dev-&gt;watchdog_timeo		= TX_TIMEOUT;
+
+Modified: branches/cannetdriver26/include/linux/can/ioctl.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/ioctl.h	2008-01-09 11:22:52 UTC (rev 642)
++++ branches/cannetdriver26/include/linux/can/ioctl.h	2008-01-09 11:24:28 UTC (rev 643)
+@@ -15,41 +15,15 @@
+ 
+ #include &lt;linux/sockios.h&gt;
+ 
+-
+-/* max. 16 private ioctls */
+-
+-#define SIOCSCANBAUDRATE	(SIOCDEVPRIVATE+0)
+-#define SIOCGCANBAUDRATE	(SIOCDEVPRIVATE+1)
+-
+-#define SIOCSCANCUSTOMBITTIME   (SIOCDEVPRIVATE+2)
+-#define SIOCGCANCUSTOMBITTIME   (SIOCDEVPRIVATE+3)
+-
+-#define SIOCSCANMODE		(SIOCDEVPRIVATE+4)
+-#define SIOCGCANMODE		(SIOCDEVPRIVATE+5)
+-
+-#define SIOCSCANCTRLMODE	(SIOCDEVPRIVATE+6)
+-#define SIOCGCANCTRLMODE	(SIOCDEVPRIVATE+7)
+-
+-#define SIOCSCANFILTER		(SIOCDEVPRIVATE+8)
+-#define SIOCGCANFILTER		(SIOCDEVPRIVATE+9)
+-
+-#define SIOCGCANSTATE		(SIOCDEVPRIVATE+10)
+-#define SIOCGCANSTATS		(SIOCDEVPRIVATE+11)
+-
+-#define SIOCSCANERRORCONFIG	(SIOCDEVPRIVATE+12)
+-#define SIOCGCANERRORCONFIG	(SIOCDEVPRIVATE+13)
+-
+-/* parameters for ioctls */
+-
+-/* SIOC[SG]CANBAUDRATE */
+-/* baudrate for CAN-controller in bits per second. */
+-/* 0 = Scan for baudrate (Autobaud) */
+-
++/*
++ * CAN Baudrate for CAN-controller in bits per second.
++ * 0 = Scan for baudrate (Autobaud)
++ */
+ typedef __u32 can_baudrate_t;
+ 
+-
+-/* SIOC[SG]CANCUSTOMBITTIME */
+-
++/*
++ * CAN custom bit time
++ */
+ typedef enum CAN_BITTIME_TYPE {
+ 	CAN_BITTIME_STD,
+ 	CAN_BITTIME_BTR
+@@ -83,25 +57,26 @@
+ #define CAN_BAUDRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
+ #define CAN_BAUDRATE_UNKNOWN		0
+ 
+-/* SIOC[SG]CANMODE */
+-
++/*
++ * CAN mode
++ */
+ typedef __u32 can_mode_t;
+ 
+ #define CAN_MODE_STOP	0
+ #define CAN_MODE_START	1
+ #define CAN_MODE_SLEEP	2
+ 
+-
+-/* SIOC[SG]CANCTRLMODE */
+-
++/*
++ * CAN controller mode
++ */
+ typedef __u32 can_ctrlmode_t;
+ 
+ #define CAN_CTRLMODE_LOOPBACK   0x1
+ #define CAN_CTRLMODE_LISTENONLY 0x2
+ 
+-
+-/* SIOCGCANSTATE */
+-
++/*
++ * CAN operational and error states
++ */
+ typedef __u32 can_state_t;
+ 
+ #define CAN_STATE_ACTIVE		0
+@@ -111,9 +86,9 @@
+ #define CAN_STATE_STOPPED		5
+ #define CAN_STATE_SLEEPING		6
+ 
+-
+-/* SIOCGCANSTATS */
+-
++/*
++ * CAN device statistics
++ */
+ struct can_device_stats {
+ 	int error_warning;
+ 	int data_overrun;
+
+Modified: branches/cannetdriver26/net/can/dev.c
+===================================================================
+--- branches/cannetdriver26/net/can/dev.c	2008-01-09 11:22:52 UTC (rev 642)
++++ branches/cannetdriver26/net/can/dev.c	2008-01-09 11:24:28 UTC (rev 643)
+@@ -157,101 +157,6 @@
+ }
+ EXPORT_SYMBOL(can_calc_bit_time);
+ 
+-static int can_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+-{
+-	struct can_priv *can = netdev_priv(dev);
+-	struct can_bittime *bt = (struct can_bittime *)&amp;ifr-&gt;ifr_ifru;
+-	ulong *baudrate = (ulong *) &amp; ifr-&gt;ifr_ifru;
+-	int err = -EOPNOTSUPP;
+-
+-	dev_dbg(ND2D(dev), &quot;(%s) 0x%08x %p\n&quot;, __FUNCTION__, cmd,
+-		&amp;ifr-&gt;ifr_ifru);
+-
+-	switch (cmd) {
+-	case SIOCSCANBAUDRATE:
+-		if (can-&gt;do_set_bit_time) {
+-			struct can_bittime bit_time;
+-			err = can_calc_bit_time(can, *baudrate, &amp;bit_time.std);
+-			if (err)
+-				break;
+-			bit_time.type = CAN_BITTIME_STD;
+-			err = can-&gt;do_set_bit_time(dev, &amp;bit_time);
+-			if (!err) {
+-				can-&gt;baudrate = *baudrate;
+-				can-&gt;bit_time = bit_time;
+-			}
+-		}
+-		break;
+-	case SIOCGCANBAUDRATE:
+-		*baudrate = can-&gt;baudrate;
+-		err = 0;
+-		break;
+-	case SIOCSCANCUSTOMBITTIME:
+-		if (can-&gt;do_set_bit_time) {
+-			err = can-&gt;do_set_bit_time(dev, bt);
+-			if (!err) {
+-				can-&gt;bit_time = *bt;
+-				if (bt-&gt;type == CAN_BITTIME_STD &amp;&amp; bt-&gt;std.brp) {
+-					can-&gt;baudrate = can-&gt;can_sys_clock /
+-						(bt-&gt;std.brp *
+-						 (1 + bt-&gt;std.prop_seg +
+-						  bt-&gt;std.phase_seg1 +
+-						  bt-&gt;std.phase_seg2));
+-				} else
+-					can-&gt;baudrate = CAN_BAUDRATE_UNKNOWN;
+-			}
+-		}
+-		break;
+-	case SIOCGCANCUSTOMBITTIME:
+-		*bt = can-&gt;bit_time;
+-		err = 0;
+-		break;
+-	case SIOCSCANMODE:
+-		if (can-&gt;do_set_mode) {
+-			can_mode_t mode = *((can_mode_t *) (&amp;ifr-&gt;ifr_ifru));
+-			if (mode == CAN_MODE_START &amp;&amp;
+-			    can-&gt;baudrate == CAN_BAUDRATE_UNCONFIGURED) {
+-				dev_info(ND2D(dev),
+-					 &quot;Impossible to start on UNKNOWN speed\n&quot;);
+-				err = EINVAL;
+-			} else
+-				return can-&gt;do_set_mode(dev, mode);
+-		}
+-		break;
+-	case SIOCGCANMODE:
+-		*((can_mode_t *) (&amp;ifr-&gt;ifr_ifru)) = can-&gt;mode;
+-		err = 0;
+-		break;
+-	case SIOCSCANCTRLMODE:
+-		if (can-&gt;do_set_ctrlmode) {
+-			can_ctrlmode_t ctrlmode =
+-			    *((can_ctrlmode_t *) (&amp;ifr-&gt;ifr_ifru));
+-			return can-&gt;do_set_ctrlmode(dev, ctrlmode);
+-		}
+-		break;
+-	case SIOCGCANCTRLMODE:
+-		*((can_ctrlmode_t *) (&amp;ifr-&gt;ifr_ifru)) = can-&gt;ctrlmode;
+-		err = 0;
+-		break;
+-	case SIOCSCANFILTER:
+-		break;
+-	case SIOCGCANFILTER:
+-		break;
+-	case SIOCGCANSTATE:
+-		if (can-&gt;do_get_state)
+-			return can-&gt;do_get_state(dev,
+-						 (can_state_t *) (&amp;ifr-&gt;
+-								  ifr_ifru));
+-		break;
+-	case SIOCGCANSTATS:
+-		*((struct can_device_stats *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;can_stats;
+-		err = 0;
+-		break;
+-	}
+-
+-	return err;
+-}
+-
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ static struct net_device_stats *can_get_stats(struct net_device *dev)
+ {
+@@ -265,7 +170,6 @@
+ {
+ 	dev-&gt;type = ARPHRD_CAN;
+ 	dev-&gt;mtu = sizeof(struct can_frame);
+-	dev-&gt;do_ioctl = can_ioctl;
+ 	dev-&gt;hard_header_len = 0;
+ 	dev-&gt;addr_len = 0;
+ 	dev-&gt;tx_queue_len = 10;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000624.html">r642 - branches/cannetdriver26/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000626.html">r644 - branches/cannetdriver26/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#625">[ date ]</a>
+              <a href="thread.html#625">[ thread ]</a>
+              <a href="subject.html#625">[ subject ]</a>
+              <a href="author.html#625">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

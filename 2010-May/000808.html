@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1176 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1176%20-%20trunk/can-utils&In-Reply-To=%3C201005111001.o4BA1pW2021176%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000809.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1176 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1176%20-%20trunk/can-utils&In-Reply-To=%3C201005111001.o4BA1pW2021176%40sheep.berlios.de%3E"
+       TITLE="r1176 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue May 11 12:01:51 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000809.html">r1177 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#808">[ date ]</a>
+              <a href="thread.html#808">[ thread ]</a>
+              <a href="subject.html#808">[ subject ]</a>
+              <a href="author.html#808">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-05-11 12:01:49 +0200 (Tue, 11 May 2010)
+New Revision: 1176
+
+Modified:
+   trunk/can-utils/asc2log.c
+Log:
+Allow to have 4, 5 or 6 decimal places instead of only 4 &amp; 6.
+
+
+Modified: trunk/can-utils/asc2log.c
+===================================================================
+--- trunk/can-utils/asc2log.c	2010-04-27 06:03:58 UTC (rev 1175)
++++ trunk/can-utils/asc2log.c	2010-05-11 10:01:49 UTC (rev 1176)
+@@ -97,6 +97,9 @@
+ 	if (dplace == 4) /* shift values having only 4 decimal places */
+ 		read_tv-&gt;tv_usec *= 100;                /* and need for 6 */
+ 
++	if (dplace == 5) /* shift values having only 5 decimal places */
++		read_tv-&gt;tv_usec *= 10;                /* and need for 6 */
++
+ 	if (timestamps == 'a') { /* absolute */
+ 
+ 		tv-&gt;tv_sec  = date_tv-&gt;tv_sec  + read_tv-&gt;tv_sec;
+@@ -172,7 +175,7 @@
+ 	static struct timeval tv; /* current frame timestamp */
+ 	static struct timeval read_tv; /* frame timestamp from ASC file */
+ 	static struct timeval date_tv; /* date of the ASC file */
+-	static int dplace; /* decimal place 4 or 6 or uninitialized */
++	static int dplace; /* decimal place 4, 5 or 6 or uninitialized */
+ 	static char base; /* 'd'ec or 'h'ex */
+ 	static char timestamps; /* 'a'bsolute or 'r'elative */
+ 
+@@ -262,8 +265,8 @@
+ 				dplace = strlen(tmp2);
+ 				if (verbose)
+ 					printf(&quot;decimal place %d, e.g. '%s'\n&quot;, dplace, tmp2);
+-				if ((dplace != 4) &amp;&amp; (dplace != 6)) {
+-					printf(&quot;invalid dplace %d (must be 4 or 6)!\n&quot;, dplace);
++				if (dplace &lt; 4 || dplace &gt; 6) {
++					printf(&quot;invalid dplace %d (must be 4, 5 or 6)!\n&quot;, dplace);
+ 					return 1;
+ 				}
+ 			} else
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000809.html">r1177 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#808">[ date ]</a>
+              <a href="thread.html#808">[ thread ]</a>
+              <a href="subject.html#808">[ subject ]</a>
+              <a href="author.html#808">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r98 - trunk/etc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r98%20-%20trunk/etc&In-Reply-To=%3C200611171519.kAHFJ0YA020182%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000082.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r98 - trunk/etc</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r98%20-%20trunk/etc&In-Reply-To=%3C200611171519.kAHFJ0YA020182%40sheep.berlios.de%3E"
+       TITLE="r98 - trunk/etc">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 17 16:19:00 CET 2006</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000082.html">r99 - in trunk: kernel/2.6/net/can test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#81">[ date ]</a>
+              <a href="thread.html#81">[ thread ]</a>
+              <a href="subject.html#81">[ subject ]</a>
+              <a href="author.html#81">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-11-17 16:18:55 +0100 (Fri, 17 Nov 2006)
+New Revision: 98
+
+Modified:
+   trunk/etc/llcf
+Log:
+updated values to current settings in can.h to enable
+autoloading of kernel-modules.
+
+
+Modified: trunk/etc/llcf
+===================================================================
+--- trunk/etc/llcf	2006-10-31 10:41:21 UTC (rev 97)
++++ trunk/etc/llcf	2006-11-17 15:18:55 UTC (rev 98)
+@@ -11,13 +11,13 @@
+ # Other systems: Add this content to /etc/modules.conf
+ 
+ # protocol family PF_CAN
+-alias net-pf-30 can
++alias net-pf-29 can
+ 
+ # protocols in PF_CAN
+-alias can-proto-1 can-tp16
+-alias can-proto-2 can-tp20
+-alias can-proto-3 can-raw
+-alias can-proto-4 can-bcm
++alias can-proto-1 can-raw
++alias can-proto-2 can-bcm
++alias can-proto-3 can-tp16
++alias can-proto-4 can-tp20
+ alias can-proto-5 can-mcnet
+ alias can-proto-6 can-isotp
+ alias can-proto-7 can-bap
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000082.html">r99 - in trunk: kernel/2.6/net/can test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#81">[ date ]</a>
+              <a href="thread.html#81">[ thread ]</a>
+              <a href="subject.html#81">[ subject ]</a>
+              <a href="author.html#81">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

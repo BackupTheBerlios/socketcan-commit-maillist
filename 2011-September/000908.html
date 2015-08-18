@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1277 - trunk/etc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1277%20-%20trunk/etc&In-Reply-To=%3C20110930114022.748FC4808CD%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000907.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1277 - trunk/etc</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1277%20-%20trunk/etc&In-Reply-To=%3C20110930114022.748FC4808CD%40sheep.berlios.de%3E"
+       TITLE="r1277 - trunk/etc">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 30 13:40:22 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000907.html">r1276 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#908">[ date ]</a>
+              <a href="thread.html#908">[ thread ]</a>
+              <a href="subject.html#908">[ subject ]</a>
+              <a href="author.html#908">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-09-30 13:40:21 +0200 (Fri, 30 Sep 2011)
+New Revision: 1277
+
+Modified:
+   trunk/etc/can_if
+Log:
+Add modifiers for sampling-point and sjw to can_if start/stop script.
+
+
+Modified: trunk/etc/can_if
+===================================================================
+--- trunk/etc/can_if	2011-09-30 10:02:24 UTC (rev 1276)
++++ trunk/etc/can_if	2011-09-30 11:40:21 UTC (rev 1277)
+@@ -31,6 +31,12 @@
+ # The syntax for the CAN devices is: devname[@bitrate][,restart-ms]
+ # example CAN_IF=&quot;can0 <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can1 at 500000</A> <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can2 at 500000</A>,200 can3,500&quot;
+ CAN_IF=&quot;&quot;
++
++# To modify the sampling-point and SJW settings for the in-kernel bittiming
++# calculation. &quot;0&quot; =&gt; set default values (CAN CIA sampling-point / sjw=1)
++SAMPOINT=&quot;0&quot; # example for 84% : SAMPOINT=&quot;.840&quot;
++SJW=&quot;0&quot;      # example for max. sjw : SJW=&quot;4&quot;
++
+ VCAN_IF=&quot;vcan0 vcan1 vcan2 vcan3&quot;
+ PROBE=&quot;vcan&quot;
+ 
+@@ -54,7 +60,7 @@
+ 			if [ -n &quot;$HASBTR&quot; ]; then
+ 				BITRATE=${IF#*@}
+ 				BITRATE=${BITRATE%,*}
+-				/sbin/ip link set $DEVICE type can bitrate $BITRATE
++				/sbin/ip link set $DEVICE type can bitrate $BITRATE sample-point $SAMPOINT sjw $SJW
+ 			fi
+ 			HASMS=`echo $IF | grep &quot;,&quot;` 
+ 			if [ -n &quot;$HASMS&quot; ]; then
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000907.html">r1276 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#908">[ date ]</a>
+              <a href="thread.html#908">[ thread ]</a>
+              <a href="subject.html#908">[ subject ]</a>
+              <a href="author.html#908">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

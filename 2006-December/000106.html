@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r122 - trunk/kernel/2.6/drivers/net/can/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r122%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200612141258.kBECw18C024051%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000105.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r122 - trunk/kernel/2.6/drivers/net/can/mscan</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r122%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200612141258.kBECw18C024051%40sheep.berlios.de%3E"
+       TITLE="r122 - trunk/kernel/2.6/drivers/net/can/mscan">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 14 13:58:01 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000105.html">r121 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#106">[ date ]</a>
+              <a href="thread.html#106">[ thread ]</a>
+              <a href="subject.html#106">[ subject ]</a>
+              <a href="author.html#106">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-12-14 13:58:00 +0100 (Thu, 14 Dec 2006)
+New Revision: 122
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+Log:
+fixed includes and defines.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-12-13 07:47:34 UTC (rev 121)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-12-14 12:58:00 UTC (rev 122)
+@@ -35,11 +35,12 @@
+ #include &lt;linux/interrupt.h&gt;
+ #include &lt;linux/delay.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/can/can.h&gt;
++#include &lt;linux/can.h&gt;
+ #include &lt;linux/list.h&gt;
+ #include &lt;asm/io.h&gt;
+ 
+ #include &lt;linux/can/dev.h&gt;
++#include &lt;linux/can/error.h&gt;
+ #include &quot;mscan.h&quot;
+ 
+ #define MSCAN_NORMAL_MODE	0
+@@ -401,7 +402,7 @@
+ 						frame-&gt;data[1] |= CAN_ERR_CRTL_TX_WARNING;
+ 					break;
+ 				  case CAN_STATE_BUS_PASSIVE:
+-					frame-&gt;data[1] |= CAN_ERR_CRTL_PASSIVE;
++					frame-&gt;data[1] |= CAN_ERR_CRTL_RX_PASSIVE;
+ 					break;
+ 				  case CAN_STATE_BUS_OFF:
+ 					frame-&gt;can_id |= CAN_ERR_BUSOFF;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000105.html">r121 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#106">[ date ]</a>
+              <a href="thread.html#106">[ thread ]</a>
+              <a href="subject.html#106">[ subject ]</a>
+              <a href="author.html#106">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

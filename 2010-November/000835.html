@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1203 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1203%20-%20trunk/can-utils&In-Reply-To=%3C20101117065920.D6CF0480F4E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000834.html">
+   <LINK REL="Next"  HREF="000836.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1203 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1203%20-%20trunk/can-utils&In-Reply-To=%3C20101117065920.D6CF0480F4E%40sheep.berlios.de%3E"
+       TITLE="r1203 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 17 07:59:20 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000834.html">r1202 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000836.html">r1204 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#835">[ date ]</a>
+              <a href="thread.html#835">[ thread ]</a>
+              <a href="subject.html#835">[ subject ]</a>
+              <a href="author.html#835">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-17 07:59:20 +0100 (Wed, 17 Nov 2010)
+New Revision: 1203
+
+Modified:
+   trunk/can-utils/slcan_attach.c
+Log:
+slcan_attach: Print the name of the assigned netdevice after attaching the tty.
+
+
+Modified: trunk/can-utils/slcan_attach.c
+===================================================================
+--- trunk/can-utils/slcan_attach.c	2010-11-15 15:08:36 UTC (rev 1202)
++++ trunk/can-utils/slcan_attach.c	2010-11-17 06:59:20 UTC (rev 1203)
+@@ -52,6 +52,7 @@
+ #include &lt;unistd.h&gt;
+ #include &lt;getopt.h&gt;
+ #include &lt;sys/ioctl.h&gt;
++#include &lt;net/if.h&gt;
+ 
+ #define LDISC_N_SLCAN 17 /* default slcan line discipline since Kernel 2.6.25 */
+ 
+@@ -82,7 +83,7 @@
+ 	int send_close = 0;
+ 	char *speed = NULL;
+ 	char *btr = NULL;
+-	char buf[10];
++	char buf[IFNAMSIZ+1];
+ 	char *tty;
+ 	int opt;
+ 
+@@ -155,9 +156,15 @@
+ 		}
+ 
+ 		if (ioctl (fd, TIOCSETD, &amp;ldisc) &lt; 0) {
+-			perror(&quot;ioctl&quot;);
++			perror(&quot;ioctl TIOCSETD&quot;);
+ 			exit(1);
+ 		}
++
++		if (ioctl (fd, SIOCGIFNAME, buf) &lt; 0) {
++			perror(&quot;ioctl SIOCGIFNAME&quot;);
++			exit(1);
++		} else
++			printf(&quot;attached tty %s to netdevice %s\n&quot;, tty, buf);
+ 	}
+ 
+ 	if (waitkey) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000834.html">r1202 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000836.html">r1204 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#835">[ date ]</a>
+              <a href="thread.html#835">[ thread ]</a>
+              <a href="subject.html#835">[ subject ]</a>
+              <a href="author.html#835">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

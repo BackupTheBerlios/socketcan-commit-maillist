@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r518 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r518%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200710041725.l94HPWNt026122%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000499.html">
+   <LINK REL="Next"  HREF="000501.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r518 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r518%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200710041725.l94HPWNt026122%40sheep.berlios.de%3E"
+       TITLE="r518 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Oct  4 19:25:32 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000499.html">r517 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000501.html">r519 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#500">[ date ]</a>
+              <a href="thread.html#500">[ thread ]</a>
+              <a href="subject.html#500">[ subject ]</a>
+              <a href="author.html#500">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-10-04 19:25:30 +0200 (Thu, 04 Oct 2007)
+New Revision: 518
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+removed obsolete local *_poll functions and used datagram_poll directly.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-10-04 17:15:49 UTC (rev 517)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-10-04 17:25:30 UTC (rev 518)
+@@ -1792,17 +1792,6 @@
+ 	return size;
+ }
+ 
+-static unsigned int bcm_poll(struct file *file, struct socket *sock,
+-			     poll_table *wait)
+-{
+-	unsigned int mask = 0;
+-
+-	DBG(&quot;socket %p\n&quot;, sock);
+-
+-	mask = datagram_poll(file, sock, wait);
+-	return mask;
+-}
+-
+ static struct proto_ops bcm_ops __read_mostly = {
+ 	.family        = PF_CAN,
+ 	.release       = bcm_release,
+@@ -1811,7 +1800,7 @@
+ 	.socketpair    = sock_no_socketpair,
+ 	.accept        = sock_no_accept,
+ 	.getname       = sock_no_getname,
+-	.poll          = bcm_poll,
++	.poll          = datagram_poll,
+ 	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
+ 	.listen        = sock_no_listen,
+ 	.shutdown      = sock_no_shutdown,
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-10-04 17:15:49 UTC (rev 517)
++++ trunk/kernel/2.6/net/can/raw.c	2007-10-04 17:25:30 UTC (rev 518)
+@@ -479,17 +479,6 @@
+ 	return 0;
+ }
+ 
+-static unsigned int raw_poll(struct file *file, struct socket *sock,
+-			     poll_table *wait)
+-{
+-	unsigned int mask = 0;
+-
+-	DBG(&quot;socket %p\n&quot;, sock);
+-
+-	mask = datagram_poll(file, sock, wait);
+-	return mask;
+-}
+-
+ static int raw_setsockopt(struct socket *sock, int level, int optname,
+ 			  char __user *optval, int optlen)
+ {
+@@ -819,7 +808,7 @@
+ 	.socketpair    = sock_no_socketpair,
+ 	.accept        = sock_no_accept,
+ 	.getname       = raw_getname,
+-	.poll          = raw_poll,
++	.poll          = datagram_poll,
+ 	.ioctl         = NULL,		/* use can_ioctl() from af_can.c */
+ 	.listen        = sock_no_listen,
+ 	.shutdown      = sock_no_shutdown,
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000499.html">r517 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000501.html">r519 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#500">[ date ]</a>
+              <a href="thread.html#500">[ thread ]</a>
+              <a href="subject.html#500">[ subject ]</a>
+              <a href="author.html#500">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

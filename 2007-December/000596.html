@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r614 - trunk/kernel/2.4/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r614%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712130737.lBD7bRjx000073%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000595.html">
+   <LINK REL="Next"  HREF="000597.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r614 - trunk/kernel/2.4/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r614%20-%20trunk/kernel/2.4/net/can&In-Reply-To=%3C200712130737.lBD7bRjx000073%40sheep.berlios.de%3E"
+       TITLE="r614 - trunk/kernel/2.4/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 13 08:37:27 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000595.html">r613 - trunk/kernel/2.4/net/can
+</A></li>
+        <LI>Next message: <A HREF="000597.html">r615 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#596">[ date ]</a>
+              <a href="thread.html#596">[ thread ]</a>
+              <a href="subject.html#596">[ subject ]</a>
+              <a href="author.html#596">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-13 08:37:24 +0100 (Thu, 13 Dec 2007)
+New Revision: 614
+
+Modified:
+   trunk/kernel/2.4/net/can/bcm.c
+Log:
+Backported special handling for nframes = 1 to reduce kmallocs in the common
+use-case.
+
+
+Modified: trunk/kernel/2.4/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/net/can/bcm.c	2007-12-12 15:41:11 UTC (rev 613)
++++ trunk/kernel/2.4/net/can/bcm.c	2007-12-13 07:37:24 UTC (rev 614)
+@@ -97,6 +97,8 @@
+ 	int currframe;
+ 	struct can_frame *frames;
+ 	struct can_frame *last_frames;
++	struct can_frame sframe;
++	struct can_frame last_sframe;
+ 	struct sock *sk;
+ };
+ 
+@@ -477,6 +479,7 @@
+ 	}
+ 
+ 	/* do a real check in can_frame data section */
++
+ 	if ((GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(rxdata)) !=
+ 	    (GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(&amp;op-&gt;last_frames[index]))) {
+ 		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
+@@ -485,7 +488,6 @@
+ 
+ 	if (op-&gt;flags &amp; RX_CHECK_DLC) {
+ 		/* do a real check in can_frame dlc */
+-
+ 		if (rxdata-&gt;can_dlc != (op-&gt;last_frames[index].can_dlc &amp;
+ 					BCM_CAN_DLC_MASK)) {
+ 			bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index],
+@@ -807,17 +809,22 @@
+ 		op-&gt;can_id    = msg_head-&gt;can_id;
+ 
+ 		/* create array for can_frames and copy the data */
+-		op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ, GFP_KERNEL);
+-		if(!op-&gt;frames) {
+-			kfree(op);
+-			return -ENOMEM;
+-		}
++		if (msg_head-&gt;nframes &gt; 1) {
++			op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ,
++					     GFP_KERNEL);
++			if (!op-&gt;frames) {
++				kfree(op);
++				return -ENOMEM;
++			}
++		} else
++			op-&gt;frames = &amp;op-&gt;sframe;
+ 
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ 					       msg-&gt;msg_iov, CFSIZ);
+ 			if (err &lt; 0) {
+-				kfree(op-&gt;frames);
++				if (op-&gt;frames != &amp;op-&gt;sframe)
++					kfree(op-&gt;frames);
+ 				kfree(op);
+ 				return err;
+ 			}
+@@ -932,7 +939,7 @@
+ 
+ 		if (msg_head-&gt;nframes) {
+ 			/* update can_frames content */
+-			err = memcpy_fromiovec((u8*)op-&gt;frames,
++			err = memcpy_fromiovec((u8 *)op-&gt;frames,
+ 					       msg-&gt;msg_iov,
+ 					       msg_head-&gt;nframes * CFSIZ);
+ 			if (err &lt; 0)
+@@ -956,8 +963,7 @@
+ 		op-&gt;can_id    = msg_head-&gt;can_id;
+ 		op-&gt;nframes   = msg_head-&gt;nframes;
+ 
+-		if (msg_head-&gt;nframes) {
+-
++		if (msg_head-&gt;nframes &gt; 1) {
+ 			/* create array for can_frames and copy the data */
+ 			op-&gt;frames = kmalloc(msg_head-&gt;nframes * CFSIZ,
+ 					     GFP_KERNEL);
+@@ -966,15 +972,7 @@
+ 				return -ENOMEM;
+ 			}
+ 
+-			err = memcpy_fromiovec((u8*)op-&gt;frames, msg-&gt;msg_iov,
+-					       msg_head-&gt;nframes * CFSIZ);
+-			if (err &lt; 0) {
+-				kfree(op-&gt;frames);
+-				kfree(op);
+-				return err;
+-			}
+-
+-			/* create array for received can_frames */
++			/* create and init array for received can_frames */
+ 			op-&gt;last_frames = kzalloc(msg_head-&gt;nframes * CFSIZ,
+ 						  GFP_KERNEL);
+ 			if (!op-&gt;last_frames) {
+@@ -984,16 +982,20 @@
+ 			}
+ 
+ 		} else {
+-			/* op-&gt;frames = NULL due to memset */
++			op-&gt;frames = &amp;op-&gt;sframe;
++			op-&gt;last_frames = &amp;op-&gt;last_sframe;
++		}
+ 
+-			/* even when we have the RX_FILTER_ID case, we need */
+-			/* to store the last frame for the throttle feature */
+-
+-			/* create array for received can_frames */
+-			op-&gt;last_frames = kzalloc(CFSIZ, GFP_KERNEL);
+-			if (!op-&gt;last_frames) {
++		if (msg_head-&gt;nframes) {
++			err = memcpy_fromiovec((u8 *)op-&gt;frames, msg-&gt;msg_iov,
++					       msg_head-&gt;nframes * CFSIZ);
++			if (err &lt; 0) {
++				if (op-&gt;frames != &amp;op-&gt;sframe)
++					kfree(op-&gt;frames);
++				if (op-&gt;last_frames != &amp;op-&gt;last_sframe)
++					kfree(op-&gt;last_frames);
+ 				kfree(op);
+-				return -ENOMEM;
++				return err;
+ 			}
+ 		}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000595.html">r613 - trunk/kernel/2.4/net/can
+</A></li>
+	<LI>Next message: <A HREF="000597.html">r615 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#596">[ date ]</a>
+              <a href="thread.html#596">[ thread ]</a>
+              <a href="subject.html#596">[ subject ]</a>
+              <a href="author.html#596">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1205 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1205%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101117182318.DD7C948103D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000836.html">
+   <LINK REL="Next"  HREF="000838.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1205 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1205%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101117182318.DD7C948103D%40sheep.berlios.de%3E"
+       TITLE="r1205 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 17 19:23:18 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000836.html">r1204 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000838.html">r1206 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#837">[ date ]</a>
+              <a href="thread.html#837">[ thread ]</a>
+              <a href="subject.html#837">[ subject ]</a>
+              <a href="author.html#837">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-17 19:23:18 +0100 (Wed, 17 Nov 2010)
+New Revision: 1205
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+slcan: Revert SVN commit r1170 (SWTC char hack), as it is superfluous.
+<A HREF="https://lists.berlios.de/pipermail/socketcan-users/2010-November/001652.html">https://lists.berlios.de/pipermail/socketcan-users/2010-November/001652.html</A>
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-17 11:55:46 UTC (rev 1204)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-17 18:23:18 UTC (rev 1205)
+@@ -623,7 +623,7 @@
+ 
+ 
+ /* Find a free SLCAN channel, and link in this `tty' line. */
+-static struct slcan *slc_alloc(dev_t line, char forcednum)
++static struct slcan *slc_alloc(dev_t line)
+ {
+ 	int i;
+ 	int sel = -1;
+@@ -677,18 +677,10 @@
+ 		}
+ 	}
+ 
+-	/* Check if the user specified an exact interface to use */
+-	if (forcednum) {
+-		sel = forcednum - '0';
+-		score = 0;
+-		i = sel;
+-		dev = slcan_devs[i];
+-	}
+-
+ 	if (sel &gt;= 0) {
+ 		i = sel;
+ 		dev = slcan_devs[i];
+-		if ((score &gt; 1) &amp;&amp; (dev)) {
++		if (score &gt; 1) {
+ 			sl = netdev_priv(dev);
+ 			sl-&gt;flags &amp;= (1 &lt;&lt; SLF_INUSE);
+ 			return sl;
+@@ -770,21 +762,7 @@
+ 
+ 	/* OK.  Find a free SLCAN channel to use. */
+ 	err = -ENFILE;
+-
+-	/* Look to see if the user has requested a specific channel
+-	 * to be used (encoded as '0' plus the interface number requested in
+-	 * the otherwise unused swtch termios variable )
+-	 * stty swtch 'channel' device
+-	 *  where 'channel' is '0' to maxdevs (0)
+-	 *  where device is the name of the serial device (/dev/ttyUSB0)
+-	 */
+-	if ((SWTC_CHAR(tty)&gt;='0') &amp;&amp; (SWTC_CHAR(tty)&lt;'0'+maxdev)){
+-		sl = slc_alloc(tty_devnum(tty),SWTC_CHAR(tty));
+-	} else {
+-		/* OK.  Find a free SLCAN channel to use. */
+-		sl = slc_alloc(tty_devnum(tty),0);
+-	}
+-
++	sl = slc_alloc(tty_devnum(tty));
+ 	if (sl == NULL)
+ 		goto err_exit;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000836.html">r1204 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000838.html">r1206 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#837">[ date ]</a>
+              <a href="thread.html#837">[ thread ]</a>
+              <a href="subject.html#837">[ subject ]</a>
+              <a href="author.html#837">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

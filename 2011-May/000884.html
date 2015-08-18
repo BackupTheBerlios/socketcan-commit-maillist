@@ -1,0 +1,314 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1253 - branches/j1939/kernel/2.6/net/can trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1253%20-%20branches/j1939/kernel/2.6/net/can%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110505145541.1E75B480EC1%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000883.html">
+   <LINK REL="Next"  HREF="000885.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1253 - branches/j1939/kernel/2.6/net/can trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1253%20-%20branches/j1939/kernel/2.6/net/can%20trunk/kernel/2.6/net/can&In-Reply-To=%3C20110505145541.1E75B480EC1%40sheep.berlios.de%3E"
+       TITLE="r1253 - branches/j1939/kernel/2.6/net/can trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu May  5 16:55:40 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000883.html">r1252 - branches/j1939/kernel/2.6/include/socketcan/can	branches/j1939/kernel/2.6/net/can	branches/j1939/kernel/2.6/net/can/j1939	trunk/kernel/2.6/include/socketcan/can trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000885.html">r1254 - branches/j1939/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#884">[ date ]</a>
+              <a href="thread.html#884">[ thread ]</a>
+              <a href="subject.html#884">[ subject ]</a>
+              <a href="author.html#884">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-05-05 16:55:40 +0200 (Thu, 05 May 2011)
+New Revision: 1253
+
+Modified:
+   branches/j1939/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+can: rename can_try_module_get to can_get_proto
+
+can_try_module_get does return a struct can_proto.
+The name explains what is done in so much detail that a caller
+may not notice that a struct can_proto is locked/unlocked.
+
+Signed-off-by: Kurt Van Dijck &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kurt.van.dijck at eia.be</A>&gt;
+Acked-by: Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;
+
+
+Modified: branches/j1939/kernel/2.6/net/can/af_can.c
+===================================================================
+--- branches/j1939/kernel/2.6/net/can/af_can.c	2011-05-05 14:42:58 UTC (rev 1252)
++++ branches/j1939/kernel/2.6/net/can/af_can.c	2011-05-05 14:55:40 UTC (rev 1253)
+@@ -140,7 +140,7 @@
+ #endif
+ }
+ 
+-static const struct can_proto *can_try_module_get(int protocol)
++static const struct can_proto *can_get_proto(int protocol)
+ {
+ 	const struct can_proto *cp;
+ 
+@@ -158,6 +158,15 @@
+ 	return cp;
+ }
+ 
++static inline void can_put_proto(const struct can_proto *cp)
++{
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	module_put(cp-&gt;prot-&gt;owner);
++#else
++	module_put(cp-&gt;owner);
++#endif
++}
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,33)
+ static int can_create(struct net *net, struct socket *sock, int protocol, int kern)
+ #elif LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+@@ -180,7 +189,7 @@
+ 		return -EAFNOSUPPORT;
+ #endif
+ 
+-	cp = can_try_module_get(protocol);
++	cp = can_get_proto(protocol);
+ 
+ #ifdef CONFIG_MODULES
+ 	if (!cp) {
+@@ -197,7 +206,7 @@
+ 			printk(KERN_ERR &quot;can: request_module &quot;
+ 			       &quot;(can-proto-%d) failed.\n&quot;, protocol);
+ 
+-		cp = can_try_module_get(protocol);
++		cp = can_get_proto(protocol);
+ 	}
+ #endif
+ 
+@@ -261,11 +270,7 @@
+ 	}
+ 
+  errout:
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	module_put(cp-&gt;prot-&gt;owner);
+-#else
+-	module_put(cp-&gt;owner);
+-#endif
++	can_put_proto(cp);
+ 	return err;
+ }
+ 
+@@ -1032,7 +1037,7 @@
+ 
+ 	protocol = ((struct rtgencanmsg *)NLMSG_DATA(nlh))-&gt;can_protocol;
+ 	/* since rtnl_lock is held, dont try to load protocol */
+-	cp = can_try_module_get(protocol);
++	cp = can_get_proto(protocol);
+ 	if (!cp)
+ 		return -EPROTONOSUPPORT;
+ 
+@@ -1051,7 +1056,7 @@
+ 		ret = fn(skb, nlh, arg);
+ 	else
+ 		ret = -EPROTONOSUPPORT;
+-	module_put(cp-&gt;prot-&gt;owner);
++	can_put_proto(cp);
+ 	return ret;
+ }
+ 
+@@ -1066,14 +1071,14 @@
+ 	for (j = cb-&gt;args[0]; j &lt; CAN_NPROTO; ++j) {
+ 		/* save state */
+ 		cb-&gt;args[0] = j;
+-		cp = can_try_module_get(j);
++		cp = can_get_proto(j);
+ 		if (!cp)
+ 			/* we are looping, any error is our own fault */
+ 			continue;
+ 		fn = *((rtnl_dumpit_func *)(&amp;((const uint8_t *)cp)[offset]));
+ 		if (fn)
+ 			ret = fn(skb, cb);
+-		module_put(cp-&gt;prot-&gt;owner);
++		can_put_proto(cp);
+ 		if (ret &lt; 0)
+ 			/* suspend this skb */
+ 			return ret;
+@@ -1101,7 +1106,7 @@
+ 
+ 	total = 0;
+ 	for (j = 0; j &lt; CAN_NPROTO; ++j) {
+-		cp = can_try_module_get(j);
++		cp = can_get_proto(j);
+ 		if (!cp)
+ 			/* no worry */
+ 			continue;
+@@ -1109,7 +1114,7 @@
+ 		if (cp-&gt;rtnl_link_ops &amp;&amp; cp-&gt;rtnl_link_ops-&gt;get_link_af_size)
+ 			ret = cp-&gt;rtnl_link_ops-&gt;get_link_af_size(dev) +
+ 				nla_total_size(sizeof(struct nlattr));
+-		module_put(cp-&gt;prot-&gt;owner);
++		can_put_proto(cp);
+ 		if (ret &lt; 0)
+ 			return ret;
+ 		total += ret;
+@@ -1128,7 +1133,7 @@
+ 
+ 	n = 0;
+ 	for (j = 0; j &lt; CAN_NPROTO; ++j) {
+-		cp = can_try_module_get(j);
++		cp = can_get_proto(j);
+ 		if (!cp)
+ 			/* no worry */
+ 			continue;
+@@ -1151,13 +1156,13 @@
+ 			nla_nest_end(skb, nla);
+ 			++n;
+ 		}
+-		module_put(cp-&gt;prot-&gt;owner);
++		can_put_proto(cp);
+ 	}
+ 	return n ? 0 : -ENODATA;
+ 
+ nla_put_failure:
+ 	nla_nest_cancel(skb, nla);
+-	module_put(cp-&gt;prot-&gt;owner);
++	can_put_proto(cp);
+ 	return -EMSGSIZE;
+ }
+ 
+@@ -1172,7 +1177,7 @@
+ 		return -EPROTONOSUPPORT;
+ 
+ 	nla_for_each_nested(prot, nla, rem) {
+-		cp = can_try_module_get(nla_type(prot));
++		cp = can_get_proto(nla_type(prot));
+ 		if (!cp)
+ 			return -EPROTONOSUPPORT;
+ 		if (!cp-&gt;rtnl_link_ops)
+@@ -1181,7 +1186,7 @@
+ 			ret = 0;
+ 		else
+ 			ret = cp-&gt;rtnl_link_ops-&gt;validate_link_af(dev, prot);
+-		module_put(cp-&gt;prot-&gt;owner);
++		can_put_proto(cp);
+ 		if (ret &lt; 0)
+ 			return ret;
+ 	}
+@@ -1198,14 +1203,14 @@
+ 		return -EPROTONOSUPPORT;
+ 
+ 	nla_for_each_nested(prot, nla, rem) {
+-		cp = can_try_module_get(nla_type(prot));
++		cp = can_get_proto(nla_type(prot));
+ 		if (!cp)
+ 			return -EPROTONOSUPPORT;
+ 		if (!cp-&gt;rtnl_link_ops || !cp-&gt;rtnl_link_ops-&gt;set_link_af)
+ 			ret = -EPROTONOSUPPORT;
+ 		else
+ 			ret = cp-&gt;rtnl_link_ops-&gt;set_link_af(dev, prot);
+-		module_put(cp-&gt;prot-&gt;owner);
++		can_put_proto(cp);
+ 		if (ret &lt; 0)
+ 			return ret;
+ 	}
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2011-05-05 14:42:58 UTC (rev 1252)
++++ trunk/kernel/2.6/net/can/af_can.c	2011-05-05 14:55:40 UTC (rev 1253)
+@@ -140,7 +140,7 @@
+ #endif
+ }
+ 
+-static const struct can_proto *can_try_module_get(int protocol)
++static const struct can_proto *can_get_proto(int protocol)
+ {
+ 	const struct can_proto *cp;
+ 
+@@ -158,6 +158,15 @@
+ 	return cp;
+ }
+ 
++static inline void can_put_proto(const struct can_proto *cp)
++{
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	module_put(cp-&gt;prot-&gt;owner);
++#else
++	module_put(cp-&gt;owner);
++#endif
++}
++
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,33)
+ static int can_create(struct net *net, struct socket *sock, int protocol, int kern)
+ #elif LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+@@ -180,7 +189,7 @@
+ 		return -EAFNOSUPPORT;
+ #endif
+ 
+-	cp = can_try_module_get(protocol);
++	cp = can_get_proto(protocol);
+ 
+ #ifdef CONFIG_MODULES
+ 	if (!cp) {
+@@ -197,7 +206,7 @@
+ 			printk(KERN_ERR &quot;can: request_module &quot;
+ 			       &quot;(can-proto-%d) failed.\n&quot;, protocol);
+ 
+-		cp = can_try_module_get(protocol);
++		cp = can_get_proto(protocol);
+ 	}
+ #endif
+ 
+@@ -261,11 +270,7 @@
+ 	}
+ 
+  errout:
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	module_put(cp-&gt;prot-&gt;owner);
+-#else
+-	module_put(cp-&gt;owner);
+-#endif
++	can_put_proto(cp);
+ 	return err;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000883.html">r1252 - branches/j1939/kernel/2.6/include/socketcan/can	branches/j1939/kernel/2.6/net/can	branches/j1939/kernel/2.6/net/can/j1939	trunk/kernel/2.6/include/socketcan/can trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000885.html">r1254 - branches/j1939/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#884">[ date ]</a>
+              <a href="thread.html#884">[ thread ]</a>
+              <a href="subject.html#884">[ subject ]</a>
+              <a href="author.html#884">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

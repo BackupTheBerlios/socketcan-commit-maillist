@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r268 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r268%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200705021541.l42FfGa8032623%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000251.html">
+   <LINK REL="Next"  HREF="000253.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r268 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r268%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200705021541.l42FfGa8032623%40sheep.berlios.de%3E"
+       TITLE="r268 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May  2 17:41:16 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000251.html">r267 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000253.html">r269 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#252">[ date ]</a>
+              <a href="thread.html#252">[ thread ]</a>
+              <a href="subject.html#252">[ subject ]</a>
+              <a href="author.html#252">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-02 17:41:14 +0200 (Wed, 02 May 2007)
+New Revision: 268
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+Log:
+Introduced the module param 'drv_loopback' to switch the vcan driver into
+the appropriate loopback mode at loading time.
+This makes tests of the CAN core more easy and can additionally be used as
+a reference implementation hint.
+Also added some comments.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-02 14:50:53 UTC (rev 267)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-02 15:41:14 UTC (rev 268)
+@@ -81,16 +81,25 @@
+ }
+ #endif
+ 
+-/* Indicate if this VCAN driver should do a real loopback, or if this */
+-/* should be done in af_can.c */
+-#undef  DO_LOOPBACK
+-
+ #define STATSIZE sizeof(struct net_device_stats)
+ 
+ static int numdev = 4; /* default number of virtual CAN interfaces */
+ module_param(numdev, int, S_IRUGO);
+ MODULE_PARM_DESC(numdev, &quot;Number of virtual CAN devices&quot;);
+ 
++/*
++ * CAN network devices *should* support a local loopback functionality
++ * (see Documentation/networking/can.txt). To test the handling of CAN
++ * interfaces that do not support the loopback both driver types are
++ * implemented inside this vcan driver. In the case that the driver does
++ * not support the loopback the IFF_LOOPBACK remains clear in dev-&gt;flags.
++ * This causes the PF_CAN core to perform the loopback as a fallback solution.
++ */
++
++static int drv_loopback = 0; /* vcan default: no loopback, just free the skb */
++module_param(drv_loopback, int, S_IRUGO);
++MODULE_PARM_DESC(drv_loopback, &quot;Loop back sent frames. vcan default: 0 (Off)&quot;);
++
+ static struct net_device **vcan_devs; /* root pointer to netdevice structs */
+ 
+ static int vcan_open(struct net_device *dev)
+@@ -109,8 +118,6 @@
+ 	return 0;
+ }
+ 
+-#ifdef DO_LOOPBACK
+-
+ static void vcan_rx(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct net_device_stats *stats = netdev_priv(dev);
+@@ -126,8 +133,6 @@
+ 	netif_rx(skb);
+ }
+ 
+-#endif
+-
+ static int vcan_tx(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct net_device_stats *stats = netdev_priv(dev);
+@@ -138,10 +143,26 @@
+ 	stats-&gt;tx_packets++;
+ 	stats-&gt;tx_bytes += skb-&gt;len;
+ 
+-	/* loopback (on driver level) required? */
++	/* tx socket reference pointer: Loopback required if not NULL */
+ 	loop = *(struct sock **)skb-&gt;cb != NULL;
+ 
+-#ifdef DO_LOOPBACK
++	if (!drv_loopback) {
++		/* no loopback handling available inside this driver */
++
++		if (loop) {
++			/*
++			 * only count the packets here, because the
++			 * CAN core already did the loopback for us
++			 */
++			stats-&gt;rx_packets++;
++			stats-&gt;rx_bytes += skb-&gt;len;
++		}
++		kfree_skb(skb);
++		return 0;
++	}
++
++	/* perform standard loopback handling for CAN network interfaces */
++
+ 	if (loop) {
+ 		if (atomic_read(&amp;skb-&gt;users) != 1) {
+ 			struct sk_buff *old_skb = skb;
+@@ -162,14 +183,6 @@
+ 		/* no looped packets =&gt; no counting */
+ 		kfree_skb(skb);
+ 	}
+-#else
+-	/* only count here, because the CAN core already did the loopback */
+-	if (loop) {
+-		stats-&gt;rx_packets++;
+-		stats-&gt;rx_bytes += skb-&gt;len;
+-	}
+-	kfree_skb(skb);
+-#endif
+ 	return 0;
+ }
+ 
+@@ -210,10 +223,11 @@
+ 	dev-&gt;type              = ARPHRD_CAN;
+ 	dev-&gt;mtu               = sizeof(struct can_frame);
+ 	dev-&gt;flags             = IFF_NOARP;
+-#ifdef DO_LOOPBACK
+-	dev-&gt;flags            |= IFF_LOOPBACK;
+-#endif
+ 
++	/* set flags according to driver capabilities */
++	if (drv_loopback)
++		dev-&gt;flags |= IFF_LOOPBACK;
++
+ 	dev-&gt;open              = vcan_open;
+ 	dev-&gt;stop              = vcan_stop;
+ 	dev-&gt;set_config        = NULL;
+@@ -239,8 +253,9 @@
+ 	if (numdev &lt; 1)
+ 		numdev = 1;
+ 
+-	printk(KERN_INFO &quot;vcan: registering %d virtual CAN interfaces.\n&quot;,
+-	       numdev );
++	printk(KERN_INFO &quot;vcan: registering %d virtual CAN interfaces.&quot;
++	       &quot; (drv_loopback %s)\n&quot;,
++	       numdev, drv_loopback?&quot;enabled&quot;:&quot;disabled&quot;);
+ 
+ 	vcan_devs = kzalloc(numdev * sizeof(struct net_device *), GFP_KERNEL);
+ 	if (!vcan_devs) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000251.html">r267 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000253.html">r269 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#252">[ date ]</a>
+              <a href="thread.html#252">[ thread ]</a>
+              <a href="subject.html#252">[ subject ]</a>
+              <a href="author.html#252">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

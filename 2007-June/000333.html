@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r350 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r350%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706130826.l5D8QlGp008650%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000332.html">
+   <LINK REL="Next"  HREF="000334.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r350 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r350%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706130826.l5D8QlGp008650%40sheep.berlios.de%3E"
+       TITLE="r350 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 13 10:26:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000332.html">r349 - in branches/ha/locktest: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000334.html">r351 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#333">[ date ]</a>
+              <a href="thread.html#333">[ thread ]</a>
+              <a href="subject.html#333">[ subject ]</a>
+              <a href="author.html#333">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-13 10:26:44 +0200 (Wed, 13 Jun 2007)
+New Revision: 350
+
+Modified:
+   branches/ha/locktest/net/can/af_can.c
+   branches/ha/locktest/net/can/raw.c
+Log:
+some locking extensions and fixes for NETDEV_UNREGISTER handling.
+
+
+Modified: branches/ha/locktest/net/can/af_can.c
+===================================================================
+--- branches/ha/locktest/net/can/af_can.c	2007-06-13 05:30:59 UTC (rev 349)
++++ branches/ha/locktest/net/can/af_can.c	2007-06-13 08:26:44 UTC (rev 350)
+@@ -543,8 +543,6 @@
+ 		pstats.rcv_entries--;
+ 
+  out:
+-	spin_unlock_bh(&amp;rcv_lists_lock);
+-
+ 	/* schedule the receiver item for deletion */
+ 	if (r)
+ 		call_rcu(&amp;r-&gt;rcu, can_rx_delete_receiver);
+@@ -556,6 +554,8 @@
+ 		dev_put(dev);
+ 	}
+ 
++	spin_unlock_bh(&amp;rcv_lists_lock);
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(can_rx_unregister);
+@@ -904,6 +904,8 @@
+ 		break;
+ 
+ 	case NETDEV_UNREGISTER:
++		DBG(&quot;removing dev_rcv_list for %s\n&quot;, dev-&gt;name);
++
+ 		spin_lock_bh(&amp;rcv_lists_lock);
+ 
+ 		d = find_dev_rcv_lists(dev);
+@@ -916,13 +918,13 @@
+ 			printk(KERN_ERR &quot;can: notifier: receive list not &quot;
+ 			       &quot;found for dev %s\n&quot;, dev-&gt;name);
+ 
+-		spin_unlock_bh(&amp;rcv_lists_lock);
+-
+ 		if (d &amp;&amp; !d-&gt;entries) {
+ 			call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
+ 			dev_put(dev);
+ 		}
+ 
++		spin_unlock_bh(&amp;rcv_lists_lock);
++
+ 		break;
+ 	}
+ 
+
+Modified: branches/ha/locktest/net/can/raw.c
+===================================================================
+--- branches/ha/locktest/net/can/raw.c	2007-06-13 05:30:59 UTC (rev 349)
++++ branches/ha/locktest/net/can/raw.c	2007-06-13 08:26:44 UTC (rev 350)
+@@ -170,8 +170,9 @@
+ {
+ 	struct raw_opt *ro = raw_sk(sk);
+ 
+-	can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-			raw_rcv, sk, IDENT);
++	if (ro-&gt;err_mask)
++		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++				raw_rcv, sk, IDENT);
+ }
+ 
+ static void raw_disable_filters(struct net_device *dev, struct sock *sk)
+@@ -193,8 +194,9 @@
+ {
+ 	struct raw_opt *ro = raw_sk(sk);
+ 
+-	can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-			  raw_rcv, sk);
++	if (ro-&gt;err_mask)
++		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++				  raw_rcv, sk);
+ }
+ 
+ static int raw_notifier(struct notifier_block *nb,
+@@ -207,7 +209,7 @@
+ 	struct raw_sock *rs = container_of(ro, struct raw_sock, opt);
+ 	struct sock *sk = &amp;rs-&gt;sk;
+ #else
+-#error Support me ;-)
++#error Support me!
+ #endif
+ 
+ 	DBG(&quot;msg %ld sk %p dev %p ro-&gt;dev %p\n&quot;, msg, sk, dev, ro-&gt;dev);
+@@ -223,16 +225,15 @@
+ 		if (ro-&gt;bound) {
+ 			raw_disable_filters(dev, sk);
+ 			raw_disable_errfilter(dev, sk);
++			dev_put(dev);
+ 		}
+ 
+ 		if (ro-&gt;count &gt; 1)
+ 			kfree(ro-&gt;filter);
+ 
+-		if (dev)
+-			dev_put(dev);
+-
+-		ro-&gt;dev     = NULL;
+-		ro-&gt;bound   = 0;
++		ro-&gt;dev   = NULL;
++		ro-&gt;bound = 0;
++		ro-&gt;count = 0;
+ 		release_sock(sk);
+ 
+ 		sk-&gt;sk_err = ENODEV;
+@@ -291,13 +292,16 @@
+ 	if (ro-&gt;bound) {
+ 		raw_disable_filters(dev, sk);
+ 		raw_disable_errfilter(dev, sk);
++		if (dev)
++			dev_put(dev);
+ 	}
+ 
+ 	if (ro-&gt;count &gt; 1)
+ 		kfree(ro-&gt;filter);
+ 
+-	if (dev)
+-		dev_put(dev);
++	ro-&gt;dev   = NULL;
++	ro-&gt;bound = 0;
++	ro-&gt;count = 0;
+ 
+ 	release_sock(sk);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000332.html">r349 - in branches/ha/locktest: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000334.html">r351 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#333">[ date ]</a>
+              <a href="thread.html#333">[ thread ]</a>
+              <a href="subject.html#333">[ subject ]</a>
+              <a href="author.html#333">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

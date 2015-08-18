@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r449 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-August/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r449%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200708021128.l72BSNqA022260%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000432.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r449 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r449%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200708021128.l72BSNqA022260%40sheep.berlios.de%3E"
+       TITLE="r449 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Aug  2 13:28:23 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000432.html">r450 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#431">[ date ]</a>
+              <a href="thread.html#431">[ thread ]</a>
+              <a href="subject.html#431">[ subject ]</a>
+              <a href="author.html#431">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-08-02 13:28:16 +0200 (Thu, 02 Aug 2007)
+New Revision: 449
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+Log:
+Reduced the comments for the loopback parameter of the vcan driver to point
+out the 'testing' use-case and to reduce the confusion which may come up
+the known 'loopback' interface in Linux.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-07-25 12:24:21 UTC (rev 448)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-08-02 11:28:16 UTC (rev 449)
+@@ -96,17 +96,14 @@
+ #endif
+ 
+ /*
+- * CAN network devices *should* support a local loopback functionality
+- * (see Documentation/networking/can.txt). To test the handling of CAN
+- * interfaces that do not support the loopback both driver types are
+- * implemented inside this vcan driver. In the case that the driver does
+- * not support the loopback the IFF_LOOPBACK remains clear in dev-&gt;flags.
+- * This causes the PF_CAN core to perform the loopback as a fallback solution.
++ * CAN test feature:
++ * Enable the loopback on driver level for testing the CAN core loopback modes.
++ * See Documentation/networking/can.txt for details.
+  */
+ 
+-static int loopback; /* vcan default: no loopback, just free the skb */
++static int loopback; /* loopback testing. Default: 0 (Off) */
+ module_param(loopback, int, S_IRUGO);
+-MODULE_PARM_DESC(loopback, &quot;Loop back sent frames. vcan default: 0 (Off)&quot;);
++MODULE_PARM_DESC(loopback, &quot;Loop back frames (for testing). Default: 0 (Off)&quot;);
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,23)
+ struct vcan_priv {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000432.html">r450 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#431">[ date ]</a>
+              <a href="thread.html#431">[ thread ]</a>
+              <a href="subject.html#431">[ subject ]</a>
+              <a href="author.html#431">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

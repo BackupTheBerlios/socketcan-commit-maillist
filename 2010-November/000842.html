@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1210 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1210%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101118201924.66EF9480FD6%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000841.html">
+   <LINK REL="Next"  HREF="000843.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1210 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1210%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101118201924.66EF9480FD6%40sheep.berlios.de%3E"
+       TITLE="r1210 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 18 21:19:23 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000841.html">r1209 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000843.html">r1211 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#842">[ date ]</a>
+              <a href="thread.html#842">[ thread ]</a>
+              <a href="subject.html#842">[ subject ]</a>
+              <a href="author.html#842">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-18 21:19:23 +0100 (Thu, 18 Nov 2010)
+New Revision: 1210
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+slcan: This commit reverts commit rev1171 that has been done to
+enable the swtc char hack. Once swtc has gone the upstream commit
+<A HREF="http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=5342b77c4123ba39f911d92a813295fb3bb21f69">http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=5342b77c4123ba39f911d92a813295fb3bb21f69</A>
+is restored now to his original extend.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-18 19:51:14 UTC (rev 1209)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-18 20:19:23 UTC (rev 1210)
+@@ -609,8 +609,10 @@
+ static struct slcan *slc_alloc(dev_t line)
+ {
+ 	int i;
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,32)
+ 	int sel = -1;
+ 	int score = -1;
++#endif
+ 	struct net_device *dev = NULL;
+ 	struct slcan       *sl;
+ 
+@@ -622,6 +624,7 @@
+ 		if (dev == NULL)
+ 			break;
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,32)
+ 		sl = netdev_priv(dev);
+ 		if (sl-&gt;leased) {
+ 			if (sl-&gt;line != line)
+@@ -668,6 +671,7 @@
+ 			sl-&gt;flags &amp;= (1 &lt;&lt; SLF_INUSE);
+ 			return sl;
+ 		}
++#endif
+ 	}
+ 
+ 	/* Sorry, too many, all slots in use */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000841.html">r1209 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000843.html">r1211 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#842">[ date ]</a>
+              <a href="thread.html#842">[ thread ]</a>
+              <a href="subject.html#842">[ subject ]</a>
+              <a href="author.html#842">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

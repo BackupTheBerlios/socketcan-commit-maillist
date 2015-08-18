@@ -1,0 +1,562 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r554 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r554%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711160900.lAG909IP030875%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000535.html">
+   <LINK REL="Next"  HREF="000537.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r554 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r554%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711160900.lAG909IP030875%40sheep.berlios.de%3E"
+       TITLE="r554 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 16 10:00:09 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000535.html">r553 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000537.html">r555 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#536">[ date ]</a>
+              <a href="thread.html#536">[ thread ]</a>
+              <a href="subject.html#536">[ subject ]</a>
+              <a href="author.html#536">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-11-16 10:00:05 +0100 (Fri, 16 Nov 2007)
+New Revision: 554
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/af_can.h
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+Add can_ prefix to some global variables.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-11-16 08:37:42 UTC (rev 553)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-11-16 09:00:05 UTC (rev 554)
+@@ -88,8 +88,8 @@
+ MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ 
+ HLIST_HEAD(can_rx_dev_list);
+-static struct dev_rcv_lists rx_alldev_list;
+-static DEFINE_SPINLOCK(rcv_lists_lock);
++static struct dev_rcv_lists can_rx_alldev_list;
++static DEFINE_SPINLOCK(can_rcvlists_lock);
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+ static struct kmem_cache *rcv_cache __read_mostly;
+@@ -101,9 +101,9 @@
+ static struct can_proto *proto_tab[CAN_NPROTO] __read_mostly;
+ static DEFINE_SPINLOCK(proto_tab_lock);
+ 
+-struct timer_list stattimer; /* timer for statistics update */
+-struct s_stats  stats;       /* packet statistics */
+-struct s_pstats pstats;      /* receive list statistics */
++struct timer_list can_stattimer;   /* timer for statistics update */
++struct s_stats    can_stats;       /* packet statistics */
++struct s_pstats   can_pstats;      /* receive list statistics */
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static void *kzalloc(size_t size, unsigned int __nocast flags)
+@@ -351,8 +351,8 @@
+ 		err = net_xmit_errno(err);
+ 
+ 	/* update statistics */
+-	stats.tx_frames++;
+-	stats.tx_frames_delta++;
++	can_stats.tx_frames++;
++	can_stats.tx_frames_delta++;
+ 
+ 	return err;
+ }
+@@ -470,7 +470,7 @@
+ 	if (!r)
+ 		return -ENOMEM;
+ 
+-	spin_lock(&amp;rcv_lists_lock);
++	spin_lock(&amp;can_rcvlists_lock);
+ 
+ 	d = find_dev_rcv_lists(dev);
+ 	if (d) {
+@@ -486,15 +486,15 @@
+ 		hlist_add_head_rcu(&amp;r-&gt;list, rl);
+ 		d-&gt;entries++;
+ 
+-		pstats.rcv_entries++;
+-		if (pstats.rcv_entries_max &lt; pstats.rcv_entries)
+-			pstats.rcv_entries_max = pstats.rcv_entries;
++		can_pstats.rcv_entries++;
++		if (can_pstats.rcv_entries_max &lt; can_pstats.rcv_entries)
++			can_pstats.rcv_entries_max = can_pstats.rcv_entries;
+ 	} else {
+ 		kmem_cache_free(rcv_cache, r);
+ 		err = -ENODEV;
+ 	}
+ 
+-	spin_unlock(&amp;rcv_lists_lock);
++	spin_unlock(&amp;can_rcvlists_lock);
+ 
+ 	return err;
+ }
+@@ -539,7 +539,7 @@
+ 	struct hlist_node *next;
+ 	struct dev_rcv_lists *d;
+ 
+-	spin_lock(&amp;rcv_lists_lock);
++	spin_lock(&amp;can_rcvlists_lock);
+ 
+ 	d = find_dev_rcv_lists(dev);
+ 	if (!d) {
+@@ -581,8 +581,8 @@
+ 	hlist_del_rcu(&amp;r-&gt;list);
+ 	d-&gt;entries--;
+ 
+-	if (pstats.rcv_entries &gt; 0)
+-		pstats.rcv_entries--;
++	if (can_pstats.rcv_entries &gt; 0)
++		can_pstats.rcv_entries--;
+ 
+ 	/* remove device structure requested by NETDEV_UNREGISTER */
+ 	if (d-&gt;remove_on_zero_entries &amp;&amp; !d-&gt;entries)
+@@ -591,7 +591,7 @@
+ 		d = NULL;
+ 
+  out:
+-	spin_unlock(&amp;rcv_lists_lock);
++	spin_unlock(&amp;can_rcvlists_lock);
+ 
+ 	/* schedule the receiver item for deletion */
+ 	if (r)
+@@ -698,13 +698,13 @@
+ 	}
+ 
+ 	/* update statistics */
+-	stats.rx_frames++;
+-	stats.rx_frames_delta++;
++	can_stats.rx_frames++;
++	can_stats.rx_frames_delta++;
+ 
+ 	rcu_read_lock();
+ 
+ 	/* deliver the packet to sockets listening on all devices */
+-	matches = can_rcv_filter(&amp;rx_alldev_list, skb);
++	matches = can_rcv_filter(&amp;can_rx_alldev_list, skb);
+ 
+ 	/* find receive list for this device */
+ 	d = find_dev_rcv_lists(dev);
+@@ -717,8 +717,8 @@
+ 	kfree_skb(skb);
+ 
+ 	if (matches &gt; 0) {
+-		stats.matches++;
+-		stats.matches_delta++;
++		can_stats.matches++;
++		can_stats.matches_delta++;
+ 	}
+ 
+ 	return 0;
+@@ -835,14 +835,14 @@
+ 		}
+ 		d-&gt;dev = dev;
+ 
+-		spin_lock(&amp;rcv_lists_lock);
++		spin_lock(&amp;can_rcvlists_lock);
+ 		hlist_add_head_rcu(&amp;d-&gt;list, &amp;can_rx_dev_list);
+-		spin_unlock(&amp;rcv_lists_lock);
++		spin_unlock(&amp;can_rcvlists_lock);
+ 
+ 		break;
+ 
+ 	case NETDEV_UNREGISTER:
+-		spin_lock(&amp;rcv_lists_lock);
++		spin_lock(&amp;can_rcvlists_lock);
+ 
+ 		d = find_dev_rcv_lists(dev);
+ 		if (d) {
+@@ -855,7 +855,7 @@
+ 			printk(KERN_ERR &quot;can: notifier: receive list not &quot;
+ 			       &quot;found for dev %s\n&quot;, dev-&gt;name);
+ 
+-		spin_unlock(&amp;rcv_lists_lock);
++		spin_unlock(&amp;can_rcvlists_lock);
+ 
+ 		if (d)
+ 			call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
+@@ -902,25 +902,25 @@
+ 		return -ENOMEM;
+ 
+ 	/*
+-	 * Insert rx_alldev_list for reception on all devices.
++	 * Insert can_rx_alldev_list for reception on all devices.
+ 	 * This struct is zero initialized which is correct for the
+ 	 * embedded hlist heads, the dev pointer, and the entries counter.
+ 	 */
+ 
+-	spin_lock(&amp;rcv_lists_lock);
+-	hlist_add_head_rcu(&amp;rx_alldev_list.list, &amp;can_rx_dev_list);
+-	spin_unlock(&amp;rcv_lists_lock);
++	spin_lock(&amp;can_rcvlists_lock);
++	hlist_add_head_rcu(&amp;can_rx_alldev_list.list, &amp;can_rx_dev_list);
++	spin_unlock(&amp;can_rcvlists_lock);
+ 
+ 	if (stats_timer) {
+ 		/* the statistics are updated every second (timer triggered) */
+-		setup_timer(&amp;stattimer, can_stat_update, 0);
++		setup_timer(&amp;can_stattimer, can_stat_update, 0);
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+-		mod_timer(&amp;stattimer, round_jiffies(jiffies + HZ));
++		mod_timer(&amp;can_stattimer, round_jiffies(jiffies + HZ));
+ #else
+-		mod_timer(&amp;stattimer, jiffies + HZ);
++		mod_timer(&amp;can_stattimer, jiffies + HZ);
+ #endif
+ 	} else
+-		stattimer.function = NULL;
++		can_stattimer.function = NULL;
+ 
+ 	can_init_proc();
+ 
+@@ -938,7 +938,7 @@
+ 	struct hlist_node *n, *next;
+ 
+ 	if (stats_timer)
+-		del_timer(&amp;stattimer);
++		del_timer(&amp;can_stattimer);
+ 
+ 	can_remove_proc();
+ 
+@@ -948,13 +948,13 @@
+ 	sock_unregister(PF_CAN);
+ 
+ 	/* remove can_rx_dev_list */
+-	spin_lock(&amp;rcv_lists_lock);
+-	hlist_del(&amp;rx_alldev_list.list);
++	spin_lock(&amp;can_rcvlists_lock);
++	hlist_del(&amp;can_rx_alldev_list.list);
+ 	hlist_for_each_entry_safe(d, n, next, &amp;can_rx_dev_list, list) {
+ 		hlist_del(&amp;d-&gt;list);
+ 		kfree(d);
+ 	}
+-	spin_unlock(&amp;rcv_lists_lock);
++	spin_unlock(&amp;can_rcvlists_lock);
+ 
+ 	kmem_cache_destroy(rcv_cache);
+ }
+
+Modified: trunk/kernel/2.6/net/can/af_can.h
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.h	2007-11-16 08:37:42 UTC (rev 553)
++++ trunk/kernel/2.6/net/can/af_can.h	2007-11-16 09:00:05 UTC (rev 554)
+@@ -77,6 +77,7 @@
+ 
+ /* statistic structures */
+ 
++/* can be reset e.g. by can_init_stats() */
+ struct s_stats {
+ 	unsigned long jiffies_init;
+ 
+@@ -99,14 +100,15 @@
+ 	unsigned long rx_frames_delta;
+ 	unsigned long tx_frames_delta;
+ 	unsigned long matches_delta;
+-}; /* can be reset e.g. by can_init_stats() */
++};
+ 
++/* persistent statistics */
+ struct s_pstats {
+ 	unsigned long stats_reset;
+ 	unsigned long user_reset;
+ 	unsigned long rcv_entries;
+ 	unsigned long rcv_entries_max;
+-}; /* persistent statistics */
++};
+ 
+ /* function prototypes for the CAN networklayer procfs (proc.c) */
+ extern void can_init_proc(void);
+@@ -114,9 +116,9 @@
+ extern void can_stat_update(unsigned long data);
+ 
+ /* structures and variables from af_can.c needed in proc.c for reading */
+-extern struct timer_list stattimer;	/* timer for statistics update */
+-extern struct s_stats  stats;		/* packet statistics */
+-extern struct s_pstats pstats;		/* receive list statistics */
+-extern struct hlist_head can_rx_dev_list;	/* rx dispatcher structures */
++extern struct timer_list can_stattimer;    /* timer for statistics update */
++extern struct s_stats    can_stats;        /* packet statistics */
++extern struct s_pstats   can_pstats;       /* receive list statistics */
++extern struct hlist_head can_rx_dev_list;  /* rx dispatcher structures */
+ 
+ #endif /* AF_CAN_H */
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-11-16 08:37:42 UTC (rev 553)
++++ trunk/kernel/2.6/net/can/proc.c	2007-11-16 09:00:05 UTC (rev 554)
+@@ -95,17 +95,17 @@
+ {
+ 	/*
+ 	 * This memset function is called from a timer context (when
+-	 * stattimer is active which is the default) OR in a process
+-	 * context (reading the proc_fs when stattimer is disabled).
++	 * can_stattimer is active which is the default) OR in a process
++	 * context (reading the proc_fs when can_stattimer is disabled).
+ 	 */
+-	memset(&amp;stats, 0, sizeof(stats));
+-	stats.jiffies_init = jiffies;
++	memset(&amp;can_stats, 0, sizeof(can_stats));
++	can_stats.jiffies_init = jiffies;
+ 
+-	pstats.stats_reset++;
++	can_pstats.stats_reset++;
+ 
+ 	if (user_reset) {
+ 		user_reset = 0;
+-		pstats.user_reset++;
++		can_pstats.user_reset++;
+ 	}
+ }
+ 
+@@ -138,59 +138,60 @@
+ 		can_init_stats();
+ 
+ 	/* restart counting on jiffies overflow */
+-	if (j &lt; stats.jiffies_init)
++	if (j &lt; can_stats.jiffies_init)
+ 		can_init_stats();
+ 
+ 	/* prevent overflow in calc_rate() */
+-	if (stats.rx_frames &gt; (ULONG_MAX / HZ))
++	if (can_stats.rx_frames &gt; (ULONG_MAX / HZ))
+ 		can_init_stats();
+ 
+ 	/* prevent overflow in calc_rate() */
+-	if (stats.tx_frames &gt; (ULONG_MAX / HZ))
++	if (can_stats.tx_frames &gt; (ULONG_MAX / HZ))
+ 		can_init_stats();
+ 
+ 	/* matches overflow - very improbable */
+-	if (stats.matches &gt; (ULONG_MAX / 100))
++	if (can_stats.matches &gt; (ULONG_MAX / 100))
+ 		can_init_stats();
+ 
+ 	/* calc total values */
+-	if (stats.rx_frames)
+-		stats.total_rx_match_ratio = (stats.matches * 100) /
+-						stats.rx_frames;
++	if (can_stats.rx_frames)
++		can_stats.total_rx_match_ratio = (can_stats.matches * 100) /
++			can_stats.rx_frames;
+ 
+-	stats.total_tx_rate = calc_rate(stats.jiffies_init, j,
+-					stats.tx_frames);
+-	stats.total_rx_rate = calc_rate(stats.jiffies_init, j,
+-					stats.rx_frames);
++	can_stats.total_tx_rate = calc_rate(can_stats.jiffies_init, j,
++					    can_stats.tx_frames);
++	can_stats.total_rx_rate = calc_rate(can_stats.jiffies_init, j,
++					    can_stats.rx_frames);
+ 
+ 	/* calc current values */
+-	if (stats.rx_frames_delta)
+-		stats.current_rx_match_ratio =
+-			(stats.matches_delta * 100) / stats.rx_frames_delta;
++	if (can_stats.rx_frames_delta)
++		can_stats.current_rx_match_ratio =
++			(can_stats.matches_delta * 100) /
++			can_stats.rx_frames_delta;
+ 
+-	stats.current_tx_rate = calc_rate(0, HZ, stats.tx_frames_delta);
+-	stats.current_rx_rate = calc_rate(0, HZ, stats.rx_frames_delta);
++	can_stats.current_tx_rate = calc_rate(0, HZ, can_stats.tx_frames_delta);
++	can_stats.current_rx_rate = calc_rate(0, HZ, can_stats.rx_frames_delta);
+ 
+ 	/* check / update maximum values */
+-	if (stats.max_tx_rate &lt; stats.current_tx_rate)
+-		stats.max_tx_rate = stats.current_tx_rate;
++	if (can_stats.max_tx_rate &lt; can_stats.current_tx_rate)
++		can_stats.max_tx_rate = can_stats.current_tx_rate;
+ 
+-	if (stats.max_rx_rate &lt; stats.current_rx_rate)
+-		stats.max_rx_rate = stats.current_rx_rate;
++	if (can_stats.max_rx_rate &lt; can_stats.current_rx_rate)
++		can_stats.max_rx_rate = can_stats.current_rx_rate;
+ 
+-	if (stats.max_rx_match_ratio &lt; stats.current_rx_match_ratio)
+-		stats.max_rx_match_ratio = stats.current_rx_match_ratio;
++	if (can_stats.max_rx_match_ratio &lt; can_stats.current_rx_match_ratio)
++		can_stats.max_rx_match_ratio = can_stats.current_rx_match_ratio;
+ 
+ 	/* clear values for 'current rate' calculation */
+-	stats.tx_frames_delta = 0;
+-	stats.rx_frames_delta = 0;
+-	stats.matches_delta   = 0;
++	can_stats.tx_frames_delta = 0;
++	can_stats.rx_frames_delta = 0;
++	can_stats.matches_delta   = 0;
+ 
+ 	/* restart timer (one second) */
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+-	mod_timer(&amp;stattimer, round_jiffies(jiffies + HZ));
++	mod_timer(&amp;can_stattimer, round_jiffies(jiffies + HZ));
+ #else
+-	mod_timer(&amp;stattimer, jiffies + HZ);
++	mod_timer(&amp;can_stattimer, jiffies + HZ);
+ #endif
+ }
+ 
+@@ -254,71 +255,71 @@
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot; %8ld transmitted frames (TXF)\n&quot;, stats.tx_frames);
++			&quot; %8ld transmitted frames (TXF)\n&quot;, can_stats.tx_frames);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot; %8ld received frames (RXF)\n&quot;, stats.rx_frames);
++			&quot; %8ld received frames (RXF)\n&quot;, can_stats.rx_frames);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot; %8ld matched frames (RXMF)\n&quot;, stats.matches);
++			&quot; %8ld matched frames (RXMF)\n&quot;, can_stats.matches);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+-	if (stattimer.function == can_stat_update) {
++	if (can_stattimer.function == can_stat_update) {
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld %% total match ratio (RXMR)\n&quot;,
+-				stats.total_rx_match_ratio);
++				can_stats.total_rx_match_ratio);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld frames/s total tx rate (TXR)\n&quot;,
+-				stats.total_tx_rate);
++				can_stats.total_tx_rate);
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld frames/s total rx rate (RXR)\n&quot;,
+-				stats.total_rx_rate);
++				can_stats.total_rx_rate);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld %% current match ratio (CRXMR)\n&quot;,
+-				stats.current_rx_match_ratio);
++				can_stats.current_rx_match_ratio);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld frames/s current tx rate (CTXR)\n&quot;,
+-				stats.current_tx_rate);
++				can_stats.current_tx_rate);
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld frames/s current rx rate (CRXR)\n&quot;,
+-				stats.current_rx_rate);
++				can_stats.current_rx_rate);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld %% max match ratio (MRXMR)\n&quot;,
+-				stats.max_rx_match_ratio);
++				can_stats.max_rx_match_ratio);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld frames/s max tx rate (MTXR)\n&quot;,
+-				stats.max_tx_rate);
++				can_stats.max_tx_rate);
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld frames/s max rx rate (MRXR)\n&quot;,
+-				stats.max_rx_rate);
++				can_stats.max_rx_rate);
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld current receive list entries (CRCV)\n&quot;,
+-			pstats.rcv_entries);
++			can_pstats.rcv_entries);
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot; %8ld maximum receive list entries (MRCV)\n&quot;,
+-			pstats.rcv_entries_max);
++			can_pstats.rcv_entries_max);
+ 
+-	if (pstats.stats_reset)
++	if (can_pstats.stats_reset)
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot;\n %8ld statistic resets (STR)\n&quot;,
+-				pstats.stats_reset);
++				can_pstats.stats_reset);
+ 
+-	if (pstats.user_reset)
++	if (can_pstats.user_reset)
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot; %8ld user statistic resets (USTR)\n&quot;,
+-				pstats.user_reset);
++				can_pstats.user_reset);
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ 
+@@ -333,18 +334,18 @@
+ 
+ 	user_reset = 1;
+ 
+-	if (stattimer.function == can_stat_update) {
++	if (can_stattimer.function == can_stat_update) {
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot;Scheduled statistic reset #%ld.\n&quot;,
+-				pstats.stats_reset + 1);
++				can_pstats.stats_reset + 1);
+ 
+ 	} else {
+-		if (stats.jiffies_init != jiffies)
++		if (can_stats.jiffies_init != jiffies)
+ 			can_init_stats();
+ 
+ 		len += snprintf(page + len, PAGE_SIZE - len,
+ 				&quot;Performed statistic reset #%ld.\n&quot;,
+-				pstats.stats_reset);
++				can_pstats.stats_reset);
+ 	}
+ 
+ 	*eof = 1;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000535.html">r553 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000537.html">r555 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#536">[ date ]</a>
+              <a href="thread.html#536">[ thread ]</a>
+              <a href="subject.html#536">[ subject ]</a>
+              <a href="author.html#536">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

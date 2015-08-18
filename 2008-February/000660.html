@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r678 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r678%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200802062318.m16NIGT0006530%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000659.html">
+   <LINK REL="Next"  HREF="000661.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r678 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r678%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200802062318.m16NIGT0006530%40sheep.berlios.de%3E"
+       TITLE="r678 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb  7 00:18:16 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000659.html">r677 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000661.html">r679 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#660">[ date ]</a>
+              <a href="thread.html#660">[ thread ]</a>
+              <a href="subject.html#660">[ subject ]</a>
+              <a href="author.html#660">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2008-02-07 00:18:14 +0100 (Thu, 07 Feb 2008)
+New Revision: 678
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Call request_module() only if CONFIG_KMOD is set.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2008-02-06 11:56:52 UTC (rev 677)
++++ trunk/kernel/2.6/net/can/af_can.c	2008-02-06 23:18:14 UTC (rev 678)
+@@ -159,6 +159,7 @@
+ 		return -EAFNOSUPPORT;
+ #endif
+ 
++#ifdef CONFIG_KMOD
+ 	/* try to load protocol module, when CONFIG_KMOD is defined */
+ 	if (!proto_tab[protocol]) {
+ 		err = request_module(&quot;can-proto-%d&quot;, protocol);
+@@ -168,16 +169,11 @@
+ 		 * return the error code immediately.  Below we will
+ 		 * return -EPROTONOSUPPORT
+ 		 */
+-		if (err == -ENOSYS) {
+-			if (printk_ratelimit())
+-				printk(KERN_INFO &quot;can: request_module()&quot;
+-				       &quot; not implemented.\n&quot;);
+-		} else if (err) {
+-			if (printk_ratelimit())
+-				printk(KERN_ERR &quot;can: request_module &quot;
+-				       &quot;(can-proto-%d) failed.\n&quot;, protocol);
+-		}
++		if (err &amp;&amp; printk_ratelimit())
++			printk(KERN_ERR &quot;can: request_module &quot;
++			       &quot;(can-proto-%d) failed.\n&quot;, protocol);
+ 	}
++#endif
+ 
+ 	spin_lock(&amp;proto_tab_lock);
+ 	cp = proto_tab[protocol];
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000659.html">r677 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000661.html">r679 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#660">[ date ]</a>
+              <a href="thread.html#660">[ thread ]</a>
+              <a href="subject.html#660">[ subject ]</a>
+              <a href="author.html#660">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

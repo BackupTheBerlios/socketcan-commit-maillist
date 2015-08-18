@@ -1,0 +1,318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r362 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r362%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706181204.l5IC4XH0005469%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000344.html">
+   <LINK REL="Next"  HREF="000346.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r362 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r362%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706181204.l5IC4XH0005469%40sheep.berlios.de%3E"
+       TITLE="r362 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun 18 14:04:33 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000344.html">r361 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000346.html">r363 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#345">[ date ]</a>
+              <a href="thread.html#345">[ thread ]</a>
+              <a href="subject.html#345">[ subject ]</a>
+              <a href="author.html#345">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-18 14:04:32 +0200 (Mon, 18 Jun 2007)
+New Revision: 362
+
+Modified:
+   branches/ha/locktest/net/can/raw.c
+Log:
+Removed 'long time' device references in the case of a bound socket. The
+bound CAN netdevice reference is now released immediately after usage.
+(This revision reverts some of the changes r344-&gt;r345)
+
+
+Modified: branches/ha/locktest/net/can/raw.c
+===================================================================
+--- branches/ha/locktest/net/can/raw.c	2007-06-18 07:56:25 UTC (rev 361)
++++ branches/ha/locktest/net/can/raw.c	2007-06-18 12:04:32 UTC (rev 362)
+@@ -92,7 +92,7 @@
+ 
+ struct raw_opt {
+ 	int bound;
+-	struct net_device *dev;
++	int ifindex;
+ 	struct notifier_block notifier;
+ 	int loopback;
+ 	int recv_own_msgs;
+@@ -213,10 +213,10 @@
+ #error TODO (if needed): Notifier support for Kernel Versions &lt; 2.6.12
+ #endif
+ 
+-	DBG(&quot;msg %ld sk %p dev %p dev-&gt;name %s ro-&gt;dev %p\n&quot;,
+-	    msg, sk, dev, dev-&gt;name, ro-&gt;dev);
++	DBG(&quot;msg %ld sk %p dev %p (name %s ifindex %d) ro-&gt;ifindex %d\n&quot;,
++	    msg, sk, dev, dev-&gt;name, dev-&gt;ifindex, ro-&gt;ifindex);
+ 
+-	if (ro-&gt;dev != dev)
++	if (ro-&gt;ifindex != dev-&gt;ifindex)
+ 		return NOTIFY_DONE;
+ 
+ 	switch (msg) {
+@@ -227,15 +227,14 @@
+ 		if (ro-&gt;bound) {
+ 			raw_disable_filters(dev, sk);
+ 			raw_disable_errfilter(dev, sk);
+-			dev_put(dev);
+ 		}
+ 
+ 		if (ro-&gt;count &gt; 1)
+ 			kfree(ro-&gt;filter);
+ 
+-		ro-&gt;dev   = NULL;
+-		ro-&gt;bound = 0;
+-		ro-&gt;count = 0;
++		ro-&gt;ifindex = 0;
++		ro-&gt;bound   = 0;
++		ro-&gt;count   = 0;
+ 		release_sock(sk);
+ 
+ 		sk-&gt;sk_err = ENODEV;
+@@ -258,7 +257,7 @@
+ 	struct raw_opt *ro = raw_sk(sk);
+ 
+ 	ro-&gt;bound            = 0;
+-	ro-&gt;dev              = NULL;
++	ro-&gt;ifindex          = 0;
+ 
+ 	/* set default filter to single entry dfilter */
+ 	ro-&gt;dfilter.can_id   = 0;
+@@ -282,7 +281,6 @@
+ {
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
+-	struct net_device *dev = ro-&gt;dev;
+ 
+ 	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+ 	    atomic_read(&amp;sk-&gt;sk_refcnt));
+@@ -293,18 +291,25 @@
+ 
+ 	/* remove current filters &amp; unregister */
+ 	if (ro-&gt;bound) {
+-		raw_disable_filters(dev, sk);
+-		raw_disable_errfilter(dev, sk);
+-		if (dev)
+-			dev_put(dev);
++		if (ro-&gt;ifindex) {
++			struct net_device *dev = dev_get_by_index(ro-&gt;ifindex);
++			if (dev) {
++				raw_disable_filters(dev, sk);
++				raw_disable_errfilter(dev, sk);
++				dev_put(dev);
++			}
++		} else {
++			raw_disable_filters(NULL, sk);
++			raw_disable_errfilter(NULL, sk);
++		}
+ 	}
+ 
+ 	if (ro-&gt;count &gt; 1)
+ 		kfree(ro-&gt;filter);
+ 
+-	ro-&gt;dev   = NULL;
+-	ro-&gt;bound = 0;
+-	ro-&gt;count = 0;
++	ro-&gt;ifindex = 0;
++	ro-&gt;bound   = 0;
++	ro-&gt;count   = 0;
+ 
+ 	release_sock(sk);
+ 	sock_put(sk);
+@@ -317,7 +322,6 @@
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
+-	struct net_device *dev = ro-&gt;dev;
+ 	int err = 0;
+ 
+ 	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+@@ -329,17 +333,25 @@
+ 
+ 	if (ro-&gt;bound) {
+ 		/* unregister current filters for this device */
+-		raw_disable_filters(dev, sk);
+-		raw_disable_errfilter(dev, sk);
++		if (ro-&gt;ifindex) {
++			struct net_device *dev = dev_get_by_index(ro-&gt;ifindex);
++			if (dev) {
++				raw_disable_filters(dev, sk);
++				raw_disable_errfilter(dev, sk);
++				dev_put(dev);
++			}
++			ro-&gt;ifindex = 0;
+ 
+-		if (dev)
+-			dev_put(dev);
++		} else {
++			raw_disable_filters(NULL, sk);
++			raw_disable_errfilter(NULL, sk);
++		}
+ 
+ 		ro-&gt;bound = 0;
+ 	}
+ 
+ 	if (addr-&gt;can_ifindex) {
+-		dev = dev_get_by_index(addr-&gt;can_ifindex);
++		struct net_device *dev = dev_get_by_index(addr-&gt;can_ifindex);
+ 		if (!dev) {
+ 			DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
+ 			err = -ENODEV;
+@@ -356,15 +368,20 @@
+ 			if (!sock_flag(sk, SOCK_DEAD))
+ 				sk-&gt;sk_error_report(sk);
+ 		}
+-	} else
+-		dev = NULL;
++		ro-&gt;ifindex = dev-&gt;ifindex;
+ 
+-	ro-&gt;dev = dev;
++		/* filters set by default/setsockopt */
++		raw_enable_filters(dev, sk);
++		raw_enable_errfilter(dev, sk);
+ 
+-	/* filters set by default/setsockopt */
+-	raw_enable_filters(dev, sk);
+-	raw_enable_errfilter(dev, sk);
++	} else {
++		ro-&gt;ifindex = 0;
+ 
++		/* filters set by default/setsockopt */
++		raw_enable_filters(NULL, sk);
++		raw_enable_errfilter(NULL, sk);
++	}
++
+ 	ro-&gt;bound = 1;
+ 
+  out:
+@@ -384,12 +401,8 @@
+ 		return -EOPNOTSUPP;
+ 
+ 	addr-&gt;can_family  = AF_CAN;
++	addr-&gt;can_ifindex = ro-&gt;ifindex;
+ 
+-	if (ro-&gt;dev)
+-		addr-&gt;can_ifindex = ro-&gt;dev-&gt;ifindex;
+-	else
+-		addr-&gt;can_ifindex = 0;
+-
+ 	*len = sizeof(*addr);
+ 
+ 	return 0;
+@@ -413,7 +426,7 @@
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
+ 	struct can_filter sfilter;         /* single filter */
+-	struct net_device *dev = ro-&gt;dev;
++	struct net_device *dev = NULL;
+ 	can_err_mask_t err_mask = 0;
+ 	int count = 0;
+ 	int err;
+@@ -450,6 +463,9 @@
+ 
+ 		lock_sock(sk);
+ 
++		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++			dev = dev_get_by_index(ro-&gt;ifindex);
++
+ 		/* remove current filters &amp; unregister */
+ 		if (ro-&gt;bound)
+ 			raw_disable_filters(dev, sk);
+@@ -469,6 +485,9 @@
+ 		if (ro-&gt;bound)
+ 			raw_enable_filters(dev, sk);
+ 
++		if (dev)
++			dev_put(dev);
++
+ 		release_sock(sk);
+ 
+ 		break;
+@@ -485,6 +504,9 @@
+ 
+ 		lock_sock(sk);
+ 
++		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
++			dev = dev_get_by_index(ro-&gt;ifindex);
++
+ 		/* remove current error mask */
+ 		if (ro-&gt;bound)
+ 			raw_disable_errfilter(dev, sk);
+@@ -495,6 +517,9 @@
+ 		if (ro-&gt;bound)
+ 			raw_enable_errfilter(dev, sk);
+ 
++		if (dev)
++			dev_put(dev);
++
+ 		release_sock(sk);
+ 
+ 		break;
+@@ -590,7 +615,7 @@
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct sk_buff *skb;
+ 	struct net_device *dev;
+-	int ifindex = 0;
++	int ifindex;
+ 	int err;
+ 
+ 	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+@@ -604,8 +629,7 @@
+ 
+ 		ifindex = addr-&gt;can_ifindex;
+ 	} else
+-		if (ro-&gt;dev)
+-			ifindex = ro-&gt;dev-&gt;ifindex;
++		ifindex = ro-&gt;ifindex;
+ 
+ 	dev = dev_get_by_index(ifindex);
+ 	if (!dev) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000344.html">r361 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000346.html">r363 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#345">[ date ]</a>
+              <a href="thread.html#345">[ thread ]</a>
+              <a href="subject.html#345">[ subject ]</a>
+              <a href="author.html#345">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

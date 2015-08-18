@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r313 - in trunk/kernel/2.6/drivers/net/can: i82527 sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r313%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20i82527%20sja1000&In-Reply-To=%3C200705220748.l4M7mtbD001020%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000296.html">
+   <LINK REL="Next"  HREF="000298.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r313 - in trunk/kernel/2.6/drivers/net/can: i82527 sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r313%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20i82527%20sja1000&In-Reply-To=%3C200705220748.l4M7mtbD001020%40sheep.berlios.de%3E"
+       TITLE="r313 - in trunk/kernel/2.6/drivers/net/can: i82527 sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue May 22 09:48:55 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000296.html">r312 - trunk/kernel/2.6/include/linux/can
+</A></li>
+        <LI>Next message: <A HREF="000298.html">r314 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#297">[ date ]</a>
+              <a href="thread.html#297">[ thread ]</a>
+              <a href="subject.html#297">[ subject ]</a>
+              <a href="author.html#297">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-22 09:48:51 +0200 (Tue, 22 May 2007)
+New Revision: 313
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+Log:
+Added missing hw_detach() calls at device cleanup.
+Added some debug output.
+Thanks to Bjoern Riemer for the error report &amp; feedback.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-18 19:48:54 UTC (rev 312)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-22 07:48:51 UTC (rev 313)
+@@ -172,6 +172,7 @@
+ 			struct can_priv *priv = netdev_priv(can_dev[i]);
+ 			unregister_netdev(can_dev[i]);
+ 			del_timer(&amp;priv-&gt;timer);
++			hw_detach(i);
+ 			hal_release_region(i, I82527_IO_SIZE);
+ 			free_netdev(can_dev[i]);
+ 		}
+@@ -253,6 +254,7 @@
+ 		if (!i82527_probe_chip(rbase[i])) {
+ 			printk(KERN_ERR &quot;%s: probably missing controller&quot;
+ 			       &quot; hardware\n&quot;, drv_name);
++			hw_detach(i);
+ 			hal_release_region(i, I82527_IO_SIZE);
+ 			i82527_exit_module();
+ 			return -ENODEV;
+@@ -953,6 +955,8 @@
+ 
+ 	hw_preirq(dev);
+ 
++	iiDBG(KERN_INFO &quot;%s: interrupt\n&quot;, dev-&gt;name);
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) {
+ 		printk(KERN_ERR &quot;%s: %s: uninitialized controller!\n&quot;,
+ 		       dev-&gt;name, __FUNCTION__);
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-18 19:48:54 UTC (rev 312)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-22 07:48:51 UTC (rev 313)
+@@ -209,6 +209,7 @@
+ 			struct can_priv *priv = netdev_priv(can_dev[i]);
+ 			unregister_netdev(can_dev[i]);
+ 			del_timer(&amp;priv-&gt;timer);
++			hw_detach(i);
+ 			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
+ 			free_netdev(can_dev[i]);
+ 		}
+@@ -264,6 +265,7 @@
+ 		if (!sja1000_probe_chip(base[i])) {
+ 			printk(KERN_ERR &quot;%s: probably missing controller&quot;
+ 			       &quot; hardware\n&quot;, drv_name);
++			hw_detach(i);
+ 			hal_release_region(i, SJA1000_IO_SIZE_BASIC);
+ 			sja1000_exit_module();
+ 			return -ENODEV;
+@@ -847,6 +849,8 @@
+ 
+ 	hw_preirq(dev);
+ 
++	iiDBG(KERN_INFO &quot;%s: interrupt\n&quot;, dev-&gt;name);
++
+ 	if (priv-&gt;state == STATE_UNINITIALIZED) {
+ 		printk(KERN_ERR &quot;%s: %s: uninitialized controller!\n&quot;,
+ 		       dev-&gt;name, __FUNCTION__);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000296.html">r312 - trunk/kernel/2.6/include/linux/can
+</A></li>
+	<LI>Next message: <A HREF="000298.html">r314 - in trunk/kernel/2.6/drivers/net/can: hal i82527 sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#297">[ date ]</a>
+              <a href="thread.html#297">[ thread ]</a>
+              <a href="subject.html#297">[ subject ]</a>
+              <a href="author.html#297">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,208 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r590 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r590%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101403.lBAE3fED001322%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000571.html">
+   <LINK REL="Next"  HREF="000573.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r590 - trunk/kernel/2.4/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r590%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101403.lBAE3fED001322%40sheep.berlios.de%3E"
+       TITLE="r590 - trunk/kernel/2.4/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 10 15:03:41 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000571.html">r589 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000573.html">r591 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#572">[ date ]</a>
+              <a href="thread.html#572">[ thread ]</a>
+              <a href="subject.html#572">[ subject ]</a>
+              <a href="author.html#572">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-10 15:03:34 +0100 (Mon, 10 Dec 2007)
+New Revision: 590
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/can_core.h
+   trunk/kernel/2.4/can/raw.c
+Log:
+removed IDENT defines.
+Backported module init banners and CAN version info.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-10 10:23:37 UTC (rev 589)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-10 14:03:34 UTC (rev 590)
+@@ -66,9 +66,8 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define IDENT &quot;af_can&quot;
+-static __initdata const char banner[] = KERN_INFO &quot;CAN: Controller Area &quot;
+-					&quot;Network PF_CAN core &quot; VERSION &quot;\n&quot;;
++static __initdata const char banner[] = KERN_INFO
++	&quot;can: controller area network core (&quot; CAN_VERSION_STRING &quot;)\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;Controller Area Network PF_CAN core&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2007-12-10 10:23:37 UTC (rev 589)
++++ trunk/kernel/2.4/can/bcm.c	2007-12-10 14:03:34 UTC (rev 590)
+@@ -65,9 +65,9 @@
+ #define REGMASK(id) ((id &amp; CAN_RTR_FLAG) | ((id &amp; CAN_EFF_FLAG) ? \
+ 			(CAN_EFF_MASK | CAN_EFF_FLAG) : CAN_SFF_MASK))
+ 
+-#define IDENT &quot;bcm&quot;
++#define CAN_BCM_VERSION CAN_VERSION
+ static __initdata const char banner[] = KERN_INFO
+-	&quot;CAN: broadcast manager (bcm) socket protocol &quot; VERSION &quot;\n&quot;;
++	&quot;can: broadcast manager protocol (rev &quot; CAN_BCM_VERSION &quot;)\n&quot;;
+ 
+ MODULE_DESCRIPTION(&quot;PF_CAN bcm sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+@@ -1008,12 +1008,12 @@
+ 			if (dev) {
+ 				can_rx_register(dev, op-&gt;can_id,
+ 						REGMASK(op-&gt;can_id),
+-						bcm_rx_handler, op, IDENT);
++						bcm_rx_handler, op, &quot;bcm&quot;);
+ 				dev_put(dev);
+ 			}
+ 		} else
+ 			can_rx_register(NULL, op-&gt;can_id, REGMASK(op-&gt;can_id),
+-					bcm_rx_handler, op, IDENT);
++					bcm_rx_handler, op, &quot;bcm&quot;);
+ 	}
+ 
+ 	return msg_head-&gt;nframes * CFSIZ + MHSIZ;
+@@ -1362,7 +1362,7 @@
+ 	can_proto_register(&amp;bcm_can_proto);
+ 
+ 	/* create /proc/net/can/bcm directory */
+-	proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
++	proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/bcm&quot;, NULL);
+ 
+ 	if (proc_dir)
+ 		proc_dir-&gt;owner = THIS_MODULE;
+@@ -1375,7 +1375,7 @@
+ 	can_proto_unregister(&amp;bcm_can_proto);
+ 
+ 	if (proc_dir)
+-		remove_proc_entry(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
++		remove_proc_entry(CAN_PROC_DIR&quot;/bcm&quot;, NULL);
+ 
+ }
+ 
+
+Modified: trunk/kernel/2.4/can/can_core.h
+===================================================================
+--- trunk/kernel/2.4/can/can_core.h	2007-12-10 10:23:37 UTC (rev 589)
++++ trunk/kernel/2.4/can/can_core.h	2007-12-10 14:03:34 UTC (rev 590)
+@@ -54,6 +54,13 @@
+ 
+ #include &quot;can.h&quot;
+ 
++#define CAN_VERSION &quot;20071116-backport-preview-1&quot;
++
++/* increment this number each time you change some user-space interface */
++#define CAN_ABI_VERSION &quot;8&quot;
++
++#define CAN_VERSION_STRING &quot;rev &quot; CAN_VERSION &quot; abi &quot; CAN_ABI_VERSION
++
+ #define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
+ 
+ #define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2007-12-10 10:23:37 UTC (rev 589)
++++ trunk/kernel/2.4/can/raw.c	2007-12-10 14:03:34 UTC (rev 590)
+@@ -57,11 +57,10 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
++#define CAN_RAW_VERSION CAN_VERSION
++static __initdata const char banner[] =
++	KERN_INFO &quot;can: raw protocol (rev &quot; CAN_RAW_VERSION &quot;)\n&quot;;
+ 
+-#define IDENT &quot;raw&quot;
+-static __initdata const char banner[] = KERN_INFO &quot;CAN: raw socket protocol&quot;
+-					&quot; &quot; VERSION &quot;\n&quot;; 
+-
+ MODULE_DESCRIPTION(&quot;PF_CAN raw sockets&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+@@ -155,7 +154,7 @@
+ 
+ 	for (i = 0; i &lt; ro-&gt;count; i++) {
+ 		can_rx_register(dev, filter[i].can_id, filter[i].can_mask,
+-				raw_rcv, sk, IDENT);
++				raw_rcv, sk, &quot;raw&quot;);
+ 	}
+ }
+ 
+@@ -283,7 +282,7 @@
+ 	/* error frame filter set by setsockopt */
+ 	if (ro-&gt;err_mask)
+ 		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-				raw_rcv, sk, IDENT);
++				raw_rcv, sk, &quot;raw&quot;);
+ 
+ 	ro-&gt;bound = 1;
+ 
+@@ -401,7 +400,7 @@
+ 		ro-&gt;err_mask = err_mask;
+ 		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+ 			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-					raw_rcv, sk, IDENT);
++					raw_rcv, sk, &quot;raw&quot;);
+ 
+ 		if (dev)
+ 			dev_put(dev);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000571.html">r589 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000573.html">r591 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#572">[ date ]</a>
+              <a href="thread.html#572">[ thread ]</a>
+              <a href="subject.html#572">[ subject ]</a>
+              <a href="author.html#572">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

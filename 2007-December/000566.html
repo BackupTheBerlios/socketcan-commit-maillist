@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r584 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r584%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082228.lB8MSE6K010627%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000565.html">
+   <LINK REL="Next"  HREF="000567.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r584 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r584%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082228.lB8MSE6K010627%40sheep.berlios.de%3E"
+       TITLE="r584 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  8 23:28:14 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000565.html">r583 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000567.html">r585 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#566">[ date ]</a>
+              <a href="thread.html#566">[ thread ]</a>
+              <a href="subject.html#566">[ subject ]</a>
+              <a href="author.html#566">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-12-08 23:28:12 +0100 (Sat, 08 Dec 2007)
+New Revision: 584
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/proc.c
+Log:
+Move timer initialization from proc.c to af_can.c.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-08 22:27:50 UTC (rev 583)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-08 22:28:12 UTC (rev 584)
+@@ -760,8 +760,12 @@
+ 	write_unlock_bh(&amp;can_rcvlists_lock);
+ 
+ 	if (stats_timer) {
+-		/* statistics init */
++		/* the statistics are updated every second (timer triggered) */
+ 		init_timer(&amp;can_stattimer);
++		can_stattimer.function = can_stat_update;
++		can_stattimer.data = 0;
++		can_stattimer.expires = jiffies + HZ; /* every second */
++		add_timer(&amp;can_stattimer); /* start statistics timer */
+ 	}
+ 
+ 	can_init_proc();
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-12-08 22:27:50 UTC (rev 583)
++++ trunk/kernel/2.4/can/proc.c	2007-12-08 22:28:12 UTC (rev 584)
+@@ -471,14 +471,6 @@
+ 					can_proc_read_rcvlist, (void *)RX_EFF);
+ 	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF, 0644,
+ 					can_proc_read_rcvlist_sff, NULL);
+-
+-	if (stats_timer) {
+-		/* the statistics are updated every second (timer triggered) */
+-		can_stattimer.function = can_stat_update;
+-		can_stattimer.data = 0;
+-		can_stattimer.expires = jiffies + HZ; /* every second */
+-		add_timer(&amp;can_stattimer); /* start statistics timer */
+-	}
+ }
+ 
+ /*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000565.html">r583 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000567.html">r585 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#566">[ date ]</a>
+              <a href="thread.html#566">[ thread ]</a>
+              <a href="subject.html#566">[ subject ]</a>
+              <a href="author.html#566">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

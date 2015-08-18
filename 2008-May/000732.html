@@ -1,0 +1,485 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r751 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r751%20-%20trunk/can-utils&In-Reply-To=%3C200805271347.m4RDlOnB006907%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000731.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r751 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r751%20-%20trunk/can-utils&In-Reply-To=%3C200805271347.m4RDlOnB006907%40sheep.berlios.de%3E"
+       TITLE="r751 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue May 27 15:47:24 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000731.html">r750 - branches/ha/hrtimer/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#732">[ date ]</a>
+              <a href="thread.html#732">[ thread ]</a>
+              <a href="subject.html#732">[ subject ]</a>
+              <a href="author.html#732">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-27 15:47:20 +0200 (Tue, 27 May 2008)
+New Revision: 751
+
+Added:
+   trunk/can-utils/canbusload.c
+Modified:
+   trunk/can-utils/Makefile
+Log:
+Added tiny tool to measure CAN busload.
+
+
+Modified: trunk/can-utils/Makefile
+===================================================================
+--- trunk/can-utils/Makefile	2008-05-26 15:08:34 UTC (rev 750)
++++ trunk/can-utils/Makefile	2008-05-27 13:47:20 UTC (rev 751)
+@@ -46,7 +46,7 @@
+ 	    -DAF_CAN=PF_CAN
+ 
+ PROGRAMS = candump cansniffer cansend canplayer canlogserver cangen\
+-	   log2long log2asc asc2log slcan_attach vcan
++	   canbusload log2long log2asc asc2log slcan_attach vcan
+ 
+ all: $(PROGRAMS)
+ 
+@@ -64,6 +64,7 @@
+ candump.o:	lib.h
+ canplayer.o:	lib.h
+ canlogserver.o:	lib.h
++canbusload.o:	lib.h
+ log2long.o:	lib.h
+ log2asc.o:	lib.h
+ asc2log.o:	lib.h
+
+Added: trunk/can-utils/canbusload.c
+===================================================================
+--- trunk/can-utils/canbusload.c	2008-05-26 15:08:34 UTC (rev 750)
++++ trunk/can-utils/canbusload.c	2008-05-27 13:47:20 UTC (rev 751)
+@@ -0,0 +1,380 @@
++/*
++ *  $Id$
++ */
++
++/*
++ * canbusload.c
++ *
++ * Copyright (c) 2002-2008 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
++ * GPL apply INSTEAD OF those given above.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;unistd.h&gt;
++#include &lt;string.h&gt;
++#include &lt;signal.h&gt;
++#include &lt;ctype.h&gt;
++#include &lt;libgen.h&gt;
++#include &lt;time.h&gt;
++
++#include &lt;sys/time.h&gt;
++#include &lt;sys/types.h&gt;
++#include &lt;sys/socket.h&gt;
++#include &lt;sys/ioctl.h&gt;
++#include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
++
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
++
++#include &quot;terminal.h&quot;
++
++#define MAXSOCK 16    /* max. number of CAN interfaces given on the cmdline */
++
++#define PERCENTRES 5 /* resolution in percent for bargraph */
++#define NUMBAR (100/PERCENTRES) /* number of bargraph elements */
++
++extern int optind, opterr, optopt;
++
++static struct {
++    char devname[IFNAMSIZ+1];
++    unsigned int bitrate;
++    unsigned int recv_frames;
++    unsigned int recv_bits_total;
++    unsigned int recv_bits_payload;
++} stat[MAXSOCK+1];
++
++static int  max_devname_len; /* to prevent frazzled device name output */ 
++static int  max_bitrate_len;
++static int  currmax;
++static unsigned char redraw;
++static unsigned char timestamp;
++static unsigned char color;
++static unsigned char bargraph;
++static char *prg;
++
++void print_usage(char *prg)
++{
++    fprintf(stderr, &quot;\nUsage: %s [options] &lt;CAN interface&gt;+\n&quot;, prg);
++    fprintf(stderr, &quot;  (use CTRL-C to terminate %s)\n\n&quot;, prg);
++    fprintf(stderr, &quot;Options: -t (show current time on the first line)\n&quot;);
++    fprintf(stderr, &quot;         -c (colorize lines)\n&quot;);
++    fprintf(stderr, &quot;         -b (show bargraph in %d%% resolution)\n&quot;, PERCENTRES);
++    fprintf(stderr, &quot;         -r (redraw the terminal - similar to top)\n&quot;);
++    fprintf(stderr, &quot;\n&quot;);
++    fprintf(stderr, &quot;Up to %d CAN interfaces with mandatory bitrate can be specified on the \n&quot;, MAXSOCK);
++    fprintf(stderr, &quot;commandline in the form: &lt;ifname&gt;@&lt;bitrate&gt;\n\n&quot;);
++    fprintf(stderr, &quot;The bitrate is mandatory as it is needed to know the CAN bus bitrate to\n&quot;);
++    fprintf(stderr, &quot;calcultate the bus load percentage based on the received CAN frames.\n&quot;);
++    fprintf(stderr, &quot;For each given interface the data is presented in one line which contains:\n\n&quot;);
++    fprintf(stderr, &quot;(interface) (received CAN frames) (used bits total) (used bits for payload)\n&quot;);
++    fprintf(stderr, &quot;\nExample:\n&quot;);
++    fprintf(stderr, &quot;\nuser$&gt; canbusload <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can0 at 100000</A> <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can1 at 500000</A> <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can2 at 500000</A> <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can3 at 500000</A> -r -t -b -c\n\n&quot;);
++    fprintf(stderr, &quot;%s 2008-05-27 15:18:49\n&quot;, prg);
++    fprintf(stderr, &quot; <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can0 at 100000</A>  805  74491  36656  74%%  |XXXXXXXXXXXXXX......|\n&quot;);
++    fprintf(stderr, &quot; <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can1 at 500000</A>  796  75140  37728  15%%  |XXX.................|\n&quot;);
++    fprintf(stderr, &quot; <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can2 at 500000</A>    0      0      0   0%%  |....................|\n&quot;);
++    fprintf(stderr, &quot; <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">can3 at 500000</A>   47   4633   2424   0%%  |....................|\n&quot;);
++    fprintf(stderr, &quot;\n&quot;);
++}
++
++void sigterm(int signo)
++{
++    exit(0);
++}
++
++void printstats(int signo)
++{
++    int i, j, percent;
++
++    if (redraw)
++	printf(&quot;%s&quot;, CSR_HOME);
++
++    if (timestamp) {
++	time_t currtime;
++	struct tm now;
++
++	if (time(&amp;currtime) == (time_t)-1) {
++	    perror(&quot;time&quot;);
++	    exit(1);
++	}
++
++	localtime_r(&amp;currtime, &amp;now);
++
++	printf(&quot;%s %04d-%02d-%02d %02d:%02d:%02d\n&quot;,
++	       prg,
++	       now.tm_year + 1900,
++	       now.tm_mon + 1,
++	       now.tm_mday,
++	       now.tm_hour,
++	       now.tm_min,
++	       now.tm_sec);
++    }
++
++    for (i=0; i&lt;currmax; i++) {
++
++	if (color)
++	    if (i%2)
++		printf(&quot;%s&quot;, FGRED);
++	    else
++		printf(&quot;%s&quot;, FGBLUE);
++
++	if (stat[i].bitrate)
++	    percent = (stat[i].recv_bits_total*100)/stat[i].bitrate;
++	else
++	    percent = 0;
++
++	printf(&quot; %*s@%-*d %4d %6d %6d %3d%%&quot;,
++	       max_devname_len, stat[i].devname,
++	       max_bitrate_len, stat[i].bitrate,
++	       stat[i].recv_frames,
++	       stat[i].recv_bits_total,
++	       stat[i].recv_bits_payload,
++	       percent);
++
++	if (bargraph) {
++
++	    printf(&quot;  |&quot;);
++
++	    for (j=0; j &lt; NUMBAR; j++){
++		if (j &lt; percent/PERCENTRES)
++		    printf(&quot;X&quot;);
++		else
++		    printf(&quot;.&quot;);
++	    }
++	    
++	    printf(&quot;|&quot;);
++	}
++	
++	if (color)
++	    printf(&quot;%s&quot;, ATTRESET);
++
++	printf(&quot;\n&quot;);
++
++	stat[i].recv_frames = 0;
++	stat[i].recv_bits_total = 0;
++	stat[i].recv_bits_payload = 0;
++    }
++
++    printf(&quot;\n&quot;);
++
++    alarm(1);
++}
++
++int main(int argc, char **argv)
++{
++    fd_set rdfs;
++    int s[MAXSOCK];
++
++    int opt;
++    char *ptr, *nptr;
++    struct sockaddr_can addr;
++    struct can_frame frame;
++    int nbytes, i;
++    struct ifreq ifr;
++    sigset_t sigmask, savesigmask;
++
++    signal(SIGTERM, sigterm);
++    signal(SIGHUP, sigterm);
++    signal(SIGINT, sigterm);
++
++    signal(SIGALRM, printstats);
++
++    prg = basename(argv[0]);
++
++    while ((opt = getopt(argc, argv, &quot;rtbch?&quot;)) != -1) {
++	switch (opt) {
++	case 'r':
++	    redraw = 1;
++	    break;
++
++	case 't':
++	    timestamp = 1;
++	    break;
++
++	case 'b':
++	    bargraph = 1;
++	    break;
++
++	case 'c':
++	    color = 1;
++	    break;
++
++	default:
++	    print_usage(prg);
++	    exit(1);
++	    break;
++	}
++    }
++
++    if (optind == argc) {
++	print_usage(prg);
++	exit(0);
++    }
++	
++    currmax = argc - optind; /* find real number of CAN devices */
++
++    if (currmax &gt; MAXSOCK) {
++	printf(&quot;More than %d CAN devices given on commandline!\n&quot;, MAXSOCK);
++	return 1;
++    }
++
++    for (i=0; i &lt; currmax; i++) {
++
++	ptr = argv[optind+i];
++
++	nbytes = strlen(ptr);
++	if (nbytes &gt;= IFNAMSIZ+sizeof(&quot;@1000000&quot;)+1) {
++	    printf(&quot;name of CAN device '%s' is too long!\n&quot;, ptr);
++	    return 1;
++	}
++
++#ifdef DEBUG
++	printf(&quot;open %d '%s'.\n&quot;, i, ptr);
++#endif
++
++	s[i] = socket(PF_CAN, SOCK_RAW, CAN_RAW);
++	if (s[i] &lt; 0) {
++	    perror(&quot;socket&quot;);
++	    return 1;
++	}
++
++	nptr = strchr(ptr, '@');
++
++	if (!nptr) {
++	    print_usage(prg);
++	    return 1;
++	}
++
++	nbytes = nptr - ptr;  /* interface name is up the first '@' */
++
++	if (nbytes &gt;= IFNAMSIZ) {
++	    printf(&quot;name of CAN device '%s' is too long!\n&quot;, ptr);
++	    return 1;
++	}
++
++	strncpy(stat[i].devname, ptr, nbytes);
++	memset(&amp;ifr.ifr_name, 0, sizeof(ifr.ifr_name));
++	strncpy(ifr.ifr_name, ptr, nbytes);
++
++	if (nbytes &gt; max_devname_len)
++	    max_devname_len = nbytes; /* for nice printing */
++
++	stat[i].bitrate = atoi(nptr+1); /* bitrate is placed behind the '@' */
++
++	if (!stat[i].bitrate || stat[i].bitrate &gt; 1000000) {
++	    printf(&quot;invalid bitrate for CAN device '%s'!\n&quot;, ptr);
++	    return 1;
++	}
++
++	nbytes = strlen(nptr+1);
++	if (nbytes &gt; max_bitrate_len)
++	    max_bitrate_len = nbytes; /* for nice printing */
++
++
++#ifdef DEBUG
++	printf(&quot;using interface name '%s'.\n&quot;, ifr.ifr_name);
++#endif
++
++	if (ioctl(s[i], SIOCGIFINDEX, &amp;ifr) &lt; 0) {
++	    perror(&quot;SIOCGIFINDEX&quot;);
++	    exit(1);
++	}
++
++	addr.can_family = AF_CAN;
++	addr.can_ifindex = ifr.ifr_ifindex;
++
++	if (bind(s[i], (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
++	    perror(&quot;bind&quot;);
++	    return 1;
++	}
++    }
++
++    alarm(1);
++
++    if (redraw)
++	printf(&quot;%s&quot;, CLR_SCREEN);
++
++    while (1) {
++
++	FD_ZERO(&amp;rdfs);
++	for (i=0; i&lt;currmax; i++)
++	    FD_SET(s[i], &amp;rdfs);
++
++	savesigmask = sigmask;
++
++	if (pselect(s[currmax-1]+1, &amp;rdfs, NULL, NULL, NULL, &amp;sigmask) &lt; 0) {
++	    //perror(&quot;pselect&quot;);
++	    sigmask = savesigmask;
++	    continue;
++	}
++
++	for (i=0; i&lt;currmax; i++) {  /* check all CAN RAW sockets */
++
++	    if (FD_ISSET(s[i], &amp;rdfs)) {
++
++		nbytes = read(s[i], &amp;frame, sizeof(struct can_frame));
++
++		if (nbytes &lt; 0) {
++		    perror(&quot;read&quot;);
++		    return 1;
++		}
++
++		if (nbytes &lt; sizeof(struct can_frame)) {
++		    fprintf(stderr, &quot;read: incomplete CAN frame\n&quot;);
++		    return 1;
++		}
++
++		stat[i].recv_frames++;
++		stat[i].recv_bits_payload += frame.can_dlc*8;
++		stat[i].recv_bits_total += frame.can_dlc*8;
++		if (frame.can_id &amp; CAN_EFF_FLAG)
++		    stat[i].recv_bits_total += 67;
++		else
++		    stat[i].recv_bits_total += 47;
++	    }
++	}
++    }
++
++    for (i=0; i&lt;currmax; i++)
++	close(s[i]);
++
++    return 0;
++}
+
+
+Property changes on: trunk/can-utils/canbusload.c
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000731.html">r750 - branches/ha/hrtimer/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#732">[ date ]</a>
+              <a href="thread.html#732">[ thread ]</a>
+              <a href="subject.html#732">[ subject ]</a>
+              <a href="author.html#732">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

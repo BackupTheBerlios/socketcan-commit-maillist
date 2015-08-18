@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r260 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r260%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200705011548.l41Fmo7W010017%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000243.html">
+   <LINK REL="Next"  HREF="000245.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r260 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r260%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200705011548.l41Fmo7W010017%40sheep.berlios.de%3E"
+       TITLE="r260 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue May  1 17:48:50 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000243.html">r259 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000245.html">r261 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#244">[ date ]</a>
+              <a href="thread.html#244">[ thread ]</a>
+              <a href="subject.html#244">[ subject ]</a>
+              <a href="author.html#244">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-01 17:48:49 +0200 (Tue, 01 May 2007)
+New Revision: 260
+
+Modified:
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+comment and indention beautifications.
+
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-05-01 15:28:50 UTC (rev 259)
++++ trunk/kernel/2.6/net/can/proc.c	2007-05-01 15:48:49 UTC (rev 260)
+@@ -113,7 +113,8 @@
+ {
+ 	unsigned long j = jiffies; /* snapshot */
+ 
+-	if (j &lt; stats.jiffies_init) /* jiffies overflow */
++	/* restart counting on jiffies overflow */
++	if (j &lt; stats.jiffies_init)
+ 		can_init_stats();
+ 
+ 	/* stats.rx_frames is the definitively max. statistic value */
+@@ -159,8 +160,8 @@
+ 	stats.rx_frames_delta = 0;
+ 	stats.matches_delta   = 0;
+ 
+-	/* restart timer */
+-	stattimer.expires = jiffies + HZ; /* every second */
++	/* restart timer (one second) */
++	stattimer.expires = jiffies + HZ;
+ 	add_timer(&amp;stattimer);
+ }
+ 
+@@ -567,24 +568,24 @@
+ 	can_dir-&gt;owner = THIS_MODULE;
+ 
+ 	/* own procfs entries from the AF_CAN core */
+-	pde_version     = can_create_proc_readentry(
+-		CAN_PROC_VERSION, 0644, can_proc_read_version, NULL);
+-	pde_stats       = can_create_proc_readentry(
+-		CAN_PROC_STATS, 0644, can_proc_read_stats, NULL);
+-	pde_reset_stats = can_create_proc_readentry(
+-		CAN_PROC_RESET_STATS, 0644, can_proc_read_reset_stats, NULL);
+-	pde_rcvlist_all = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_ALL, 0644, can_proc_read_rcvlist_all, NULL);
+-	pde_rcvlist_fil = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_FIL, 0644, can_proc_read_rcvlist_fil, NULL);
+-	pde_rcvlist_inv = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_INV, 0644, can_proc_read_rcvlist_inv, NULL);
+-	pde_rcvlist_sff = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_SFF, 0644, can_proc_read_rcvlist_sff, NULL);
+-	pde_rcvlist_eff = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_EFF, 0644, can_proc_read_rcvlist_eff, NULL);
+-	pde_rcvlist_err = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_ERR, 0644, can_proc_read_rcvlist_err, NULL);
++	pde_version     = can_create_proc_readentry(CAN_PROC_VERSION,
++					0644, can_proc_read_version, NULL);
++	pde_stats       = can_create_proc_readentry(CAN_PROC_STATS,
++					0644, can_proc_read_stats, NULL);
++	pde_reset_stats = can_create_proc_readentry(CAN_PROC_RESET_STATS,
++					0644, can_proc_read_reset_stats, NULL);
++	pde_rcvlist_all = can_create_proc_readentry(CAN_PROC_RCVLIST_ALL,
++					0644, can_proc_read_rcvlist_all, NULL);
++	pde_rcvlist_fil = can_create_proc_readentry(CAN_PROC_RCVLIST_FIL,
++					0644, can_proc_read_rcvlist_fil, NULL);
++	pde_rcvlist_inv = can_create_proc_readentry(CAN_PROC_RCVLIST_INV,
++					0644, can_proc_read_rcvlist_inv, NULL);
++	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF,
++					0644, can_proc_read_rcvlist_sff, NULL);
++	pde_rcvlist_eff = can_create_proc_readentry(CAN_PROC_RCVLIST_EFF,
++					0644, can_proc_read_rcvlist_eff, NULL);
++	pde_rcvlist_err = can_create_proc_readentry(CAN_PROC_RCVLIST_ERR,
++					0644, can_proc_read_rcvlist_err, NULL);
+ }
+ 
+ /*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000243.html">r259 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000245.html">r261 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#244">[ date ]</a>
+              <a href="thread.html#244">[ thread ]</a>
+              <a href="subject.html#244">[ subject ]</a>
+              <a href="author.html#244">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

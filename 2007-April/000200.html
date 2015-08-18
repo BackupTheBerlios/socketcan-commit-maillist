@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r216 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r216%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704181349.l3IDnuxo019310%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000199.html">
+   <LINK REL="Next"  HREF="000201.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r216 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r216%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704181349.l3IDnuxo019310%40sheep.berlios.de%3E"
+       TITLE="r216 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 18 15:49:56 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000199.html">r215 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000201.html">r217 - in trunk: . kernel/2.6/drivers/net/can	kernel/2.6/include/linux/can kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#200">[ date ]</a>
+              <a href="thread.html#200">[ thread ]</a>
+              <a href="subject.html#200">[ subject ]</a>
+              <a href="author.html#200">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-18 15:49:51 +0200 (Wed, 18 Apr 2007)
+New Revision: 216
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Added local skb_set_timestamp() and skb_get_timestamp for Kernel
+Versions &lt; 2.6.14 . Tnx to the hint from Simon Kallweit.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-04-18 13:22:54 UTC (rev 215)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-04-18 13:49:51 UTC (rev 216)
+@@ -237,6 +237,20 @@
+ 		memset(ret, 0, size);
+ 	return ret;
+ }
++
++static inline void skb_get_timestamp(const struct sk_buff *skb,
++				     struct timeval *stamp)
++{
++	stamp-&gt;tv_sec  = skb-&gt;stamp.tv_sec;
++	stamp-&gt;tv_usec = skb-&gt;stamp.tv_usec;
++}
++
++static inline void skb_set_timestamp(struct sk_buff *skb,
++				     const struct timeval *stamp)
++{
++	skb-&gt;stamp.tv_sec  = stamp-&gt;tv_sec;
++	skb-&gt;stamp.tv_usec = stamp-&gt;tv_usec;
++}
+ #endif
+ 
+ #define CFSIZ sizeof(struct can_frame)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000199.html">r215 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000201.html">r217 - in trunk: . kernel/2.6/drivers/net/can	kernel/2.6/include/linux/can kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#200">[ date ]</a>
+              <a href="thread.html#200">[ thread ]</a>
+              <a href="subject.html#200">[ subject ]</a>
+              <a href="author.html#200">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r227 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r227%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200704200657.l3K6vYPx001617%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000210.html">
+   <LINK REL="Next"  HREF="000212.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r227 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r227%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200704200657.l3K6vYPx001617%40sheep.berlios.de%3E"
+       TITLE="r227 - in trunk/kernel/2.6: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 20 08:57:34 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000210.html">r226 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000212.html">r228 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#211">[ date ]</a>
+              <a href="thread.html#211">[ thread ]</a>
+              <a href="subject.html#211">[ subject ]</a>
+              <a href="author.html#211">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-04-20 08:57:28 +0200 (Fri, 20 Apr 2007)
+New Revision: 227
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+removed duplicated code.
+added MODULE_PARM_DESCs for debug and stats_timer.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-04-19 14:16:49 UTC (rev 226)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-04-20 06:57:28 UTC (rev 227)
+@@ -56,9 +56,6 @@
+ 
+ /* function prototypes for the CAN networklayer core (af_can.c) */
+ 
+-void can_debug_skb(struct sk_buff *skb);
+-void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
+-
+ int can_proto_register(struct can_proto *cp);
+ int can_proto_unregister(struct can_proto *cp);
+ 
+@@ -77,4 +74,18 @@
+ 
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+ 
++#ifdef CONFIG_CAN_DEBUG_CORE
++void can_debug_skb(struct sk_buff *skb);
++void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
++#define DBG(args...)       (debug &amp; 1 ? \
++			       (printk(KERN_DEBUG &quot;can-%s %s: &quot;, \
++				IDENT, __func__), printk(args)) : 0)
++#define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
++#define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
++#else
++#define DBG(args...)
++#define DBG_FRAME(args...)
++#define DBG_SKB(skb)
++#endif
++
+ #endif /* CAN_CORE_H */
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-19 14:16:49 UTC (rev 226)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-20 06:57:28 UTC (rev 227)
+@@ -68,7 +68,7 @@
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-#define IDENT &quot;af_can&quot;
++#define IDENT &quot;core&quot;
+ static __initdata const char banner[] =
+ 	KERN_INFO &quot;CAN: Controller Area Network PF_CAN core &quot; CAN_VERSION &quot;\n&quot;;
+ 
+@@ -79,19 +79,12 @@
+ 
+ int stats_timer = 1; /* default: on */
+ module_param(stats_timer, int, S_IRUGO);
++MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+-#define DBG(args...)       (debug &amp; 1 ? \
+-			       (printk(KERN_DEBUG &quot;CAN %s: &quot;, __func__), \
+-				printk(args)) : 0)
+-#define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+-#define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+-#else
+-#define DBG(args...)
+-#define DBG_FRAME(args...)
+-#define DBG_SKB(skb)
++MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+ static __init int  can_init(void);
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-04-19 14:16:49 UTC (rev 226)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-04-20 06:57:28 UTC (rev 227)
+@@ -58,20 +58,6 @@
+ #include &lt;linux/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+ RCSID(&quot;$Id$&quot;);
+ 
+-#ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug = 0;
+-module_param(debug, int, S_IRUGO);
+-#define DBG(args...)       (debug &amp; 1 ? \
+-			       (printk(KERN_DEBUG &quot;BCM %s: &quot;, __func__), \
+-				printk(args)) : 0)
+-#define DBG_FRAME(args...) (debug &amp; 2 ? can_debug_cframe(args) : 0)
+-#define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+-#else
+-#define DBG(args...)
+-#define DBG_FRAME(args...)
+-#define DBG_SKB(skb)
+-#endif
+-
+ /* use of last_frames[index].can_dlc */
+ #define RX_RECV    0x40 /* received data for this element */
+ #define RX_THR     0x80 /* element not been sent due to throttle feature */
+@@ -89,6 +75,12 @@
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
++#ifdef CONFIG_CAN_DEBUG_CORE
++static int debug = 0;
++module_param(debug, int, S_IRUGO);
++MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
++#endif
++
+ #define GET_U64(p) (*(u64*)(p)-&gt;data) /* easy access */
+ 
+ struct bcm_op {
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-04-19 14:16:49 UTC (rev 226)
++++ trunk/kernel/2.6/net/can/raw.c	2007-04-20 06:57:28 UTC (rev 227)
+@@ -71,13 +71,7 @@
+ #ifdef CONFIG_CAN_DEBUG_CORE
+ static int debug = 0;
+ module_param(debug, int, S_IRUGO);
+-#define DBG(args...)       (debug &amp; 1 ? \
+-			       (printk(KERN_DEBUG &quot;RAW %s: &quot;, __func__), \
+-				printk(args)) : 0)
+-#define DBG_SKB(skb)       (debug &amp; 4 ? can_debug_skb(skb) : 0)
+-#else
+-#define DBG(args...)
+-#define DBG_SKB(skb)
++MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+ static int raw_init(struct sock *sk);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000210.html">r226 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000212.html">r228 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#211">[ date ]</a>
+              <a href="thread.html#211">[ thread ]</a>
+              <a href="subject.html#211">[ subject ]</a>
+              <a href="author.html#211">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,476 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r720 - branches/ha/hrtimer/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r720%20-%20branches/ha/hrtimer/can-utils&In-Reply-To=%3C200805031251.m43Cpw5v007352%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000701.html">
+   <LINK REL="Next"  HREF="000703.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r720 - branches/ha/hrtimer/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r720%20-%20branches/ha/hrtimer/can-utils&In-Reply-To=%3C200805031251.m43Cpw5v007352%40sheep.berlios.de%3E"
+       TITLE="r720 - branches/ha/hrtimer/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat May  3 14:51:58 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000701.html">r719 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000703.html">r721 - branches/ha/hrtimer/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#702">[ date ]</a>
+              <a href="thread.html#702">[ thread ]</a>
+              <a href="subject.html#702">[ subject ]</a>
+              <a href="author.html#702">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-03 14:51:56 +0200 (Sat, 03 May 2008)
+New Revision: 720
+
+Modified:
+   branches/ha/hrtimer/can-utils/cangen.c
+Log:
+Reworked cangen tool as the commandline options turned out to be 
+completely unusable. cangen can now be used easily as a CAN frame 
+generator for Pengutronix' cansequence tool.
+Also added new help text:
+
+cangen: generate CAN frames
+
+Usage: cangen [options] &lt;CAN interface&gt;
+Options: -g &lt;ms&gt;       (gap in milli seconds - default: 200 ms)
+         -e            (generate extended frame mode (EFF) CAN frames)
+         -I &lt;mode&gt;     (CAN ID generation mode - see below)
+         -L &lt;mode&gt;     (CAN data length code (dlc) generation mode - see below)
+         -D &lt;mode&gt;     (CAN data (payload) generation mode - see below)
+         -i            (ignore -ENOBUFS return values on write() syscalls)
+         -x            (disable local loopback of generated CAN frames)
+         -v            (increment verbose level for printing sent CAN frames)
+
+Generation modes:
+'r'        =&gt; random values (default)
+'i'        =&gt; increment values
+&lt;hexvalue&gt; =&gt; fix value using &lt;hexvalue&gt;
+
+When incrementing the CAN data the data length code minimum is set to 1.
+
+Examples:
+cangen vcan0 -g 4 -I 42A -L 1 -D i -v -v   (fixed CAN ID and length, inc. data)
+cangen vcan0 -e -L i -v -v -v              (generate EFF frames, incr. length)
+cangen vcan0 -D 11223344DEADBEEF -L 8      (fixed CAN data payload and length)
+cangen vcan0 -g 0 -i -x                    (full load test ignoring -ENOBUFS)
+cangen vcan0                               (my favourite default :)
+
+
+
+
+Modified: branches/ha/hrtimer/can-utils/cangen.c
+===================================================================
+--- branches/ha/hrtimer/can-utils/cangen.c	2008-05-02 12:04:42 UTC (rev 719)
++++ branches/ha/hrtimer/can-utils/cangen.c	2008-05-03 12:51:56 UTC (rev 720)
+@@ -47,6 +47,7 @@
+ 
+ #include &lt;stdio.h&gt;
+ #include &lt;stdlib.h&gt;
++#include &lt;stdint.h&gt;
+ #include &lt;unistd.h&gt;
+ #include &lt;string.h&gt;
+ #include &lt;signal.h&gt;
+@@ -68,51 +69,73 @@
+ 
+ #define DEFAULT_GAP 200 /* ms */
+ 
++#define MODE_RANDOM	0
++#define MODE_INCREMENT	1
++#define MODE_FIX	2
++
+ extern int optind, opterr, optopt;
+ 
+ static volatile int running = 1;
++static unsigned long long enobufs_count;
+ 
+ void print_usage(char *prg)
+ {
+-    fprintf(stderr, &quot;\n%s: generate random CAN frames\n\n&quot;, prg);
+-    fprintf(stderr, &quot;Usage: %s [can-interface]\n&quot;, prg);
+-    fprintf(stderr, &quot;Options: -g &lt;ms&gt;       (gap in milli seconds)  &quot;
+-	    &quot;default: %d\n&quot;, DEFAULT_GAP);
+-    fprintf(stderr, &quot;         -e            (extended frame mode)   &quot;
+-	    &quot;default: standard frame format \n&quot;);
+-    fprintf(stderr, &quot;         -I            (fixed CAN ID)          &quot;
+-	    &quot;default: 0x123\n&quot;);
+-    fprintf(stderr, &quot;         -D            (fixed CAN Data)        &quot;
+-	    &quot;default: 01 23 45 67 89 AB CD EF\n&quot;);
+-    fprintf(stderr, &quot;         -L            (fixed CAN DLC)         &quot;
+-	    &quot;default: 8\n&quot;);
+-    fprintf(stderr, &quot;         -f &lt;canframe&gt; (other fixed CAN frame) &quot;
+-	    &quot;default: 123#0123456789ABCDEF\n&quot;);
+-    fprintf(stderr, &quot;         -i            (increment values)      &quot;
+-	    &quot;default: random values\n&quot;);
+-    fprintf(stderr, &quot;         -x            (disable loopback)      &quot;
+-	    &quot;default: standard loopback\n&quot;);
+-    fprintf(stderr, &quot;         -v            (verbose)               &quot;
+-	    &quot;default: don't print sent frames\n&quot;);
++    fprintf(stderr, &quot;\n%s: generate CAN frames\n\n&quot;, prg);
++    fprintf(stderr, &quot;Usage: %s [options] &lt;CAN interface&gt;\n&quot;, prg);
++    fprintf(stderr, &quot;Options: -g &lt;ms&gt;       (gap in milli seconds &quot;
++	    &quot;- default: %d ms)\n&quot;, DEFAULT_GAP);
++    fprintf(stderr, &quot;         -e            (generate extended frame mode &quot;
++	    &quot;(EFF) CAN frames)\n&quot;);
++    fprintf(stderr, &quot;         -I &lt;mode&gt;     (CAN ID&quot;
++	    &quot; generation mode - see below)\n&quot;);
++    fprintf(stderr, &quot;         -L &lt;mode&gt;     (CAN data length code (dlc)&quot;
++	    &quot; generation mode - see below)\n&quot;);
++    fprintf(stderr, &quot;         -D &lt;mode&gt;     (CAN data (payload)&quot;
++	    &quot; generation mode - see below)\n&quot;);
++    fprintf(stderr, &quot;         -i            (ignore -ENOBUFS return values on&quot;
++	    &quot; write() syscalls)\n&quot;);
++    fprintf(stderr, &quot;         -x            (disable local loopback of &quot;
++	    &quot;generated CAN frames)\n&quot;);
++    fprintf(stderr, &quot;         -v            (increment verbose level for &quot;
++	    &quot;printing sent CAN frames)\n\n&quot;);
++    fprintf(stderr, &quot;Generation modes:\n&quot;);
++    fprintf(stderr, &quot;'r'        =&gt; random values (default)\n&quot;);
++    fprintf(stderr, &quot;'i'        =&gt; increment values\n&quot;);
++    fprintf(stderr, &quot;&lt;hexvalue&gt; =&gt; fix value using &lt;hexvalue&gt;\n\n&quot;);
++    fprintf(stderr, &quot;When incrementing the CAN data the data length code &quot;
++	    &quot;minimum is set to 1.\n\n&quot;);
++    fprintf(stderr, &quot;Examples:\n&quot;);
++    fprintf(stderr, &quot;%s vcan0 -g 4 -I 42A -L 1 -D i -v -v   &quot;, prg);
++    fprintf(stderr, &quot;(fixed CAN ID and length, inc. data)\n&quot;);
++    fprintf(stderr, &quot;%s vcan0 -e -L i -v -v -v              &quot;, prg);
++    fprintf(stderr, &quot;(generate EFF frames, incr. length)\n&quot;);
++    fprintf(stderr, &quot;%s vcan0 -D 11223344DEADBEEF -L 8      &quot;, prg);
++    fprintf(stderr, &quot;(fixed CAN data payload and length)\n&quot;);
++    fprintf(stderr, &quot;%s vcan0 -g 0 -i -x                    &quot;, prg);
++    fprintf(stderr, &quot;(full load test ignoring -ENOBUFS)\n&quot;);
++    fprintf(stderr, &quot;%s vcan0                               &quot;, prg);
++    fprintf(stderr, &quot;(my favourite default :)\n\n&quot;);
+ }
+ 
+ void sigterm(int signo)
+ {
+     running = 0;
++
++    if (enobufs_count)
++	printf(&quot;\nCounted %llu ENOBUFS.\n&quot;, enobufs_count);
+ }
+ 
+ int main(int argc, char **argv)
+ {
+     unsigned long gap = DEFAULT_GAP; 
++    unsigned char ignore_enobufs = 0;
+     unsigned char extended = 0;
+-    unsigned char fix_id = 0;
+-    unsigned char fix_data = 0;
+-    unsigned char fix_dlc = 0;
+-    unsigned char default_frame = 1;
++    unsigned char id_mode = MODE_RANDOM;
++    unsigned char data_mode = MODE_RANDOM;
++    unsigned char dlc_mode = MODE_RANDOM;
+     unsigned char loopback_disable = 0;
+-    unsigned char inc_values = 0;
+     unsigned char verbose = 0;
+-    unsigned long long incdata = 0;
++    uint64_t incdata = 0;
+ 
+     int opt;
+     int s; /* socket */
+@@ -129,8 +152,13 @@
+     signal(SIGHUP, sigterm);
+     signal(SIGINT, sigterm);
+ 
+-    while ((opt = getopt(argc, argv, &quot;g:eIDLf:xiv&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;ig:eI:L:D:xvh?&quot;)) != -1) {
+ 	switch (opt) {
++
++	case 'i':
++	    ignore_enobufs = 1;
++	    break;
++
+ 	case 'g':
+ 	    gap = strtoul(optarg, NULL, 10);
+ 	    break;
+@@ -140,69 +168,90 @@
+ 	    break;
+ 
+ 	case 'I':
+-	    fix_id = 1;
++	    if (optarg[0] == 'r') {
++		id_mode = MODE_RANDOM;
++	    } else if (optarg[0] == 'i') {
++		id_mode = MODE_INCREMENT;
++	    } else {
++		id_mode = MODE_FIX;
++		frame.can_id = strtoul(optarg, NULL, 16);
++	    }
+ 	    break;
+ 
+-	case 'D':
+-	    fix_data = 1;
+-	    break;
+-
+ 	case 'L':
+-	    fix_dlc = 1;
++	    if (optarg[0] == 'r') {
++		dlc_mode = MODE_RANDOM;
++	    } else if (optarg[0] == 'i') {
++		dlc_mode = MODE_INCREMENT;
++	    } else {
++		dlc_mode = MODE_FIX;
++		frame.can_dlc = atoi(optarg)%9;
++	    }
+ 	    break;
+ 
+-	case 'f':
+-	    default_frame = 0;
+-	    if (parse_canframe(optarg, &amp;frame)) {
+-		fprintf(stderr, &quot;'%s' is a wrong CAN frame format.\n&quot;, optarg);
+-		exit(1);
++	case 'D':
++	    if (optarg[0] == 'r') {
++		data_mode = MODE_RANDOM;
++	    } else if (optarg[0] == 'i') {
++		data_mode = MODE_INCREMENT;
++	    } else {
++		data_mode = MODE_FIX;
++		incdata = strtoull(optarg, NULL, 16);
++		for (i=0; i&lt;8 ;i++)
++		    frame.data[i] = (incdata &gt;&gt; (7-i)*8) &amp; 0xFFULL;
+ 	    }
+ 	    break;
+ 
+ 	case 'v':
+-	    verbose = 1;
++	    verbose++;
+ 	    break;
+ 
+ 	case 'x':
+ 	    loopback_disable = 1;
+ 	    break;
+ 
+-	case 'i':
+-	    inc_values = 1;
+-	    break;
+-
++	case '?':
++	case 'h':
+ 	default:
+ 	    print_usage(basename(argv[0]));
+-	    exit(1);
++	    return 1;
+ 	    break;
+ 	}
+     }
+ 
+     if (optind == argc) {
+ 	print_usage(basename(argv[0]));
+-	exit(0);
++	return 1;
+     }
+ 
+     ts.tv_sec = gap / 1000;
+     ts.tv_nsec = (gap % 1000) * 1000000;
+ 
+ 
+-    if (default_frame) {
++    if (id_mode == MODE_FIX) {
++
++	/* recognize obviously missing commandline option */
++	if ((frame.can_id &gt; 0x7FF) &amp;&amp; !extended) {
++	    printf(&quot;The given CAN-ID is greater than 0x7FF and &quot;
++		   &quot;the '-e' option is not set.\n&quot;);
++	    return 1;
++	}
++
+ 	if (extended)
+-	    frame.can_id = 0x12345678 | CAN_EFF_FLAG;
++	    frame.can_id &amp;= CAN_EFF_MASK;
+ 	else
+-	    frame.can_id = 0x123;
++	    frame.can_id &amp;= CAN_SFF_MASK;
++    }
+ 
+-	frame.can_dlc = 8;
++    if (extended)
++	    frame.can_id |=  CAN_EFF_FLAG;
+ 
+-	frame.data[0] = 0x01;
+-	frame.data[1] = 0x23;
+-	frame.data[2] = 0x45;
+-	frame.data[3] = 0x67;
+-	frame.data[4] = 0x89;
+-	frame.data[5] = 0xAB;
+-	frame.data[6] = 0xCD;
+-	frame.data[7] = 0xEF;
++    if ((data_mode == MODE_INCREMENT) &amp;&amp; !frame.can_dlc)
++	frame.can_dlc = 1; /* min dlc value for incr. data */
++
++    if (strlen(argv[optind]) &gt;= IFNAMSIZ) {
++	printf(&quot;Name of CAN device '%s' is too long!\n\n&quot;, argv[optind]);
++	return 1;
+     }
+ 
+     if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
+@@ -239,12 +288,10 @@
+ 
+     while (running) {
+ 
+-	if (!fix_id) {
+-	    if (inc_values)
+-		frame.can_id++;
+-	    else
+-		frame.can_id = random();
++	if (id_mode == MODE_RANDOM) {
+ 
++	    frame.can_id = random();
++
+ 	    if (extended) {
+ 		frame.can_id &amp;= CAN_EFF_MASK;
+ 		frame.can_id |= CAN_EFF_FLAG;
+@@ -252,34 +299,46 @@
+ 		frame.can_id &amp;= CAN_SFF_MASK;
+ 	}
+ 
+-	if (!fix_dlc) {
+-	    if (inc_values) {
+-		frame.can_dlc++;
+-		frame.can_dlc %= 9;
+-	    } else {
+-		frame.can_dlc = random() &amp; 0xF;
+-		if (frame.can_dlc &amp; 8)
+-		    frame.can_dlc = 8; /* for about 50% of the frames */
+-	    }
++	if (dlc_mode == MODE_RANDOM) {
++
++	    frame.can_dlc = random() &amp; 0xF;
++
++	    if (frame.can_dlc &amp; 8)
++		frame.can_dlc = 8; /* for about 50% of the frames */
++
++	    if ((data_mode == MODE_INCREMENT) &amp;&amp; !frame.can_dlc)
++		frame.can_dlc = 1; /* min dlc value for incr. data */
+ 	}
+ 
+-	if (!fix_data) {
+-	    if (inc_values) {
+-		incdata++;
++	if (data_mode == MODE_RANDOM) {
+ 
+-		for (i=0; i&lt;8 ;i++)
+-		    frame.data[i] = (incdata &gt;&gt; (7-i)*8) &amp; 0xFFULL;
++	    /* that's what the 64 bit alignment of data[] is for ... :) */
++	    *(unsigned long*)(&amp;frame.data[0]) = random();
++	    *(unsigned long*)(&amp;frame.data[4]) = random();
++	}
+ 
+-	    } else {
+-		/* that's what the 64 bit alignment of data[] is for ... :) */
+-		*(unsigned long*)(&amp;frame.data[0]) = random();
+-		*(unsigned long*)(&amp;frame.data[4]) = random();
+-	    }
++	if (verbose) {
++
++	    printf(&quot;  %s  &quot;, argv[optind]);
++
++	    if (verbose &gt; 1)
++		fprint_long_canframe(stdout, &amp;frame, &quot;\n&quot;, (verbose &gt; 2)?1:0);
++	    else
++		fprint_canframe(stdout, &amp;frame, &quot;\n&quot;, 1);
+ 	}
+ 
+-	if ((nbytes = write(s, &amp;frame, sizeof(struct can_frame))) &lt; 0) {
+-	    perror(&quot;write&quot;);
+-	    return 1;
++	nbytes = write(s, &amp;frame, sizeof(struct can_frame));
++	if (nbytes &lt; 0) {
++	    if (nbytes != -ENOBUFS) {
++		perror(&quot;write&quot;);
++		return 1;
++	    }
++	    if (!ignore_enobufs) {
++		perror(&quot;write&quot;);
++		return 1;
++	    }
++	    enobufs_count++;
++
+ 	} else if (nbytes &lt; sizeof(struct can_frame)) {
+ 	    fprintf(stderr, &quot;write: incomplete CAN frame\n&quot;);
+ 	    return 1;
+@@ -289,12 +348,33 @@
+ 	    if (nanosleep(&amp;ts, NULL))
+ 		return 1;
+ 		    
+-	if (verbose)
+-#if 0
+-	    fprint_long_canframe(stdout, &amp;frame, &quot;\n&quot;, 1);
+-#else
+-	    fprint_canframe(stdout, &amp;frame, &quot;\n&quot;, 1);
+-#endif
++	if (id_mode == MODE_INCREMENT) {
++
++	    frame.can_id++;
++
++	    if (extended) {
++		frame.can_id &amp;= CAN_EFF_MASK;
++		frame.can_id |= CAN_EFF_FLAG;
++	    } else
++		frame.can_id &amp;= CAN_SFF_MASK;
++	}
++
++	if (dlc_mode == MODE_INCREMENT) {
++
++	    frame.can_dlc++;
++	    frame.can_dlc %= 9;
++
++	    if ((data_mode == MODE_INCREMENT) &amp;&amp; !frame.can_dlc)
++		frame.can_dlc = 1; /* min dlc value for incr. data */
++	}
++
++	if (data_mode == MODE_INCREMENT) {
++
++	    incdata++;
++
++	    for (i=0; i&lt;8 ;i++)
++		frame.data[i] = (incdata &gt;&gt; i*8) &amp; 0xFFULL;
++	}
+     }
+ 
+     close(s);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000701.html">r719 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000703.html">r721 - branches/ha/hrtimer/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#702">[ date ]</a>
+              <a href="thread.html#702">[ thread ]</a>
+              <a href="subject.html#702">[ subject ]</a>
+              <a href="author.html#702">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

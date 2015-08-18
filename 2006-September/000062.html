@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r82 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r82%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609191516.k8JFGuTv011755%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000061.html">
+   <LINK REL="Next"  HREF="000063.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r82 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r82%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609191516.k8JFGuTv011755%40sheep.berlios.de%3E"
+       TITLE="r82 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep 19 17:16:56 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000061.html">r81 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000063.html">r83 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#62">[ date ]</a>
+              <a href="thread.html#62">[ thread ]</a>
+              <a href="subject.html#62">[ subject ]</a>
+              <a href="author.html#62">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-09-19 17:16:55 +0200 (Tue, 19 Sep 2006)
+New Revision: 82
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Check for valid return value in the case of NETDEV_UNREGISTER.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-09-19 13:46:32 UTC (rev 81)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-09-19 15:16:55 UTC (rev 82)
+@@ -450,7 +450,12 @@
+ 	case NETDEV_UNREGISTER:
+ 		spin_lock(&amp;rcv_lists_lock);
+ 
+-		d = find_dev_rcv_lists(dev);
++		if (!(d = find_dev_rcv_lists(dev))) {
++			printk(KERN_ERR &quot;CAN: notifier: receive list not &quot;
++			       &quot;found for dev %s\n&quot;, dev-&gt;name);
++			goto unreg_out;
++		}
++
+ 		hlist_del_rcu(&amp;d-&gt;list);
+ 
+ 		/* remove all receivers hooked at this netdevice */
+@@ -462,9 +467,11 @@
+ 		for (i = 0; i &lt; 2048; i++)
+ 			can_rx_delete_all(&amp;d-&gt;rx_sff[i]);
+ 
++unreg_out:
+ 		spin_unlock(&amp;rcv_lists_lock);
+ 
+-		call_rcu(&amp;d-&gt;rcu, can_rcv_lists_delete);
++		if (d)
++			call_rcu(&amp;d-&gt;rcu, can_rcv_lists_delete);
+ 
+ 		break;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000061.html">r81 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000063.html">r83 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#62">[ date ]</a>
+              <a href="thread.html#62">[ thread ]</a>
+              <a href="subject.html#62">[ subject ]</a>
+              <a href="author.html#62">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

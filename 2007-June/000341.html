@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r358 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r358%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706180715.l5I7FR9N032003%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000340.html">
+   <LINK REL="Next"  HREF="000342.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r358 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r358%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706180715.l5I7FR9N032003%40sheep.berlios.de%3E"
+       TITLE="r358 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun 18 09:15:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000340.html">r357 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000342.html">r359 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#341">[ date ]</a>
+              <a href="thread.html#341">[ thread ]</a>
+              <a href="subject.html#341">[ subject ]</a>
+              <a href="author.html#341">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-18 09:15:26 +0200 (Mon, 18 Jun 2007)
+New Revision: 358
+
+Modified:
+   branches/ha/locktest/net/can/bcm.c
+Log:
+Using non-safe list in bcm_notifier().
+Added handling to omit double rx_ungegister() calls in bcm_notifier() and
+bcm_release() in the case of NETDEV_UNREGISTER.
+
+
+Modified: branches/ha/locktest/net/can/bcm.c
+===================================================================
+--- branches/ha/locktest/net/can/bcm.c	2007-06-18 06:19:40 UTC (rev 357)
++++ branches/ha/locktest/net/can/bcm.c	2007-06-18 07:15:26 UTC (rev 358)
+@@ -110,6 +110,7 @@
+ 	struct can_frame sframe;
+ 	struct can_frame last_sframe;
+ 	struct sock *sk;
++	struct net_device *rx_reg_dev;
+ };
+ 
+ struct bcm_opt {
+@@ -1309,6 +1310,7 @@
+ 				can_rx_register(dev, op-&gt;can_id,
+ 						REGMASK(op-&gt;can_id),
+ 						bcm_rx_handler, op, IDENT);
++				op-&gt;rx_reg_dev = dev;
+ 				dev_put(dev);
+ 			}
+ 
+@@ -1488,7 +1490,7 @@
+ #else
+ #error TODO (if needed): Notifier support for Kernel Versions &lt; 2.6.12
+ #endif
+-	struct bcm_op *op, *next;
++	struct bcm_op *op;
+ 	int notify_enodev = 0;
+ 
+ 	DBG(&quot;msg %ld sk %p dev-&gt;name %s dev-&gt;ifindex %d bo-&gt;ifindex %d\n&quot;,
+@@ -1500,12 +1502,16 @@
+ 		lock_sock(sk);
+ 
+ 		/* remove device specific receive entries */
+-		list_for_each_entry_safe(op, next, &amp;bo-&gt;rx_ops, list)
+-			if (op-&gt;ifindex == dev-&gt;ifindex)
++		list_for_each_entry(op, &amp;bo-&gt;rx_ops, list)
++			if (op-&gt;rx_reg_dev == dev) {
+ 				can_rx_unregister(dev, op-&gt;can_id,
+ 						  REGMASK(op-&gt;can_id),
+ 						  bcm_rx_handler, op);
+ 
++				/* mark as removed subscription */
++				op-&gt;rx_reg_dev = NULL;
++			}
++
+ 		/* remove device reference, if this is our bound device */
+ 		if (bo-&gt;bound &amp;&amp; bo-&gt;ifindex == dev-&gt;ifindex) {
+ 			bo-&gt;bound   = 0;
+@@ -1586,15 +1592,23 @@
+ 		 * can_rx_unregister() is always a save thing to do here.
+ 		 */
+ 		if (op-&gt;ifindex) {
+-			struct net_device *dev = dev_get_by_index(op-&gt;ifindex);
+ 
+-			if (dev) {
+-				can_rx_unregister(dev, op-&gt;can_id,
+-						  REGMASK(op-&gt;can_id),
+-						  bcm_rx_handler, op);
+-				dev_put(dev);
++			/*
++			 * Only remove subscriptions that had not been
++			 * removed due to NETDEV_UNREGISTER in bcm_notifier()
++			 */
++			if (op-&gt;rx_reg_dev) {
++				struct net_device *dev;
++
++				dev = dev_get_by_index(op-&gt;ifindex);
++				if (dev) {
++					BUG_ON(op-&gt;rx_reg_dev != dev);
++					can_rx_unregister(dev, op-&gt;can_id,
++							  REGMASK(op-&gt;can_id),
++							  bcm_rx_handler, op);
++					dev_put(dev);
++				}
+ 			}
+-
+ 		} else
+ 			can_rx_unregister(NULL, op-&gt;can_id,
+ 					  REGMASK(op-&gt;can_id),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000340.html">r357 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000342.html">r359 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#341">[ date ]</a>
+              <a href="thread.html#341">[ thread ]</a>
+              <a href="subject.html#341">[ subject ]</a>
+              <a href="author.html#341">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

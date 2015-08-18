@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r80 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r80%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609191059.k8JAxMrh026175%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000059.html">
+   <LINK REL="Next"  HREF="000061.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r80 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r80%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200609191059.k8JAxMrh026175%40sheep.berlios.de%3E"
+       TITLE="r80 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep 19 12:59:22 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000059.html">r79 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000061.html">r81 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#60">[ date ]</a>
+              <a href="thread.html#60">[ thread ]</a>
+              <a href="subject.html#60">[ subject ]</a>
+              <a href="author.html#60">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-09-19 12:59:17 +0200 (Tue, 19 Sep 2006)
+New Revision: 80
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+use slab cache for receiver structs since we may have *lots* of them.
+still untested...
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-09-19 10:04:01 UTC (rev 79)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-09-19 10:59:17 UTC (rev 80)
+@@ -45,6 +45,7 @@
+ #include &lt;linux/config.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/version.h&gt;
++#include &lt;linux/slab.h&gt;
+ #include &lt;linux/kmod.h&gt;
+ #include &lt;linux/init.h&gt;
+ #include &lt;linux/list.h&gt;
+@@ -126,6 +127,8 @@
+ struct dev_rcv_lists rx_alldev_list;
+ static spinlock_t rcv_lists_lock  = SPIN_LOCK_UNLOCKED;
+ 
++static kmem_cache_t *rcv_cache;
++
+ static struct packet_type can_packet = {
+ 	.type = __constant_htons(ETH_P_CAN),
+ 	.dev  = NULL,
+@@ -161,6 +164,11 @@
+ {
+ 	printk(banner);
+ 
++	rcv_cache = kmem_cache_create(&quot;CAN receiver&quot;, sizeof(struct receiver),
++				      0, 0, NULL, NULL);
++	if (!rcv_cache)
++		return -ENOMEM;
++
+ 	if (stats_timer) {
+ 		/* statistics init */
+ 		init_timer(&amp;stattimer);
+@@ -191,6 +199,8 @@
+ 	dev_remove_pack(&amp;can_packet);
+ 	unregister_netdevice_notifier(&amp;can_netdev_notifier);
+ 	sock_unregister(PF_CAN);
++
++	kmem_cache_destroy(rcv_cache);
+ }
+ 
+ /**************************************************/
+@@ -545,7 +555,7 @@
+ 	}
+ 
+ 	/* insert   (dev,canid,mask) -&gt; (func,data) */
+-	if (!(r = kmalloc(sizeof(struct receiver), GFP_KERNEL)))
++	if (!(r = kmem_cache_alloc(rcv_cache, GFP_KERNEL)))
+ 		goto out;
+ 
+ 	r-&gt;can_id  = can_id;
+@@ -575,7 +585,7 @@
+ static void can_rx_delete(struct rcu_head *rp)
+ {
+ 	struct receiver *r = container_of(rp, struct receiver, rcu);
+-	kfree(r);
++	kmem_cache_free(rcv_cache, r);
+ }
+ 
+ static void can_rx_delete_all(struct hlist_head *rl)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000059.html">r79 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000061.html">r81 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#60">[ date ]</a>
+              <a href="thread.html#60">[ thread ]</a>
+              <a href="subject.html#60">[ subject ]</a>
+              <a href="author.html#60">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

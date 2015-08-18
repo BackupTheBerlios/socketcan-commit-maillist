@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r283 - trunk/kernel/2.6/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r283%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200705071414.l47EEljE004819%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000266.html">
+   <LINK REL="Next"  HREF="000268.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r283 - trunk/kernel/2.6/drivers/net/can/sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r283%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200705071414.l47EEljE004819%40sheep.berlios.de%3E"
+       TITLE="r283 - trunk/kernel/2.6/drivers/net/can/sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon May  7 16:14:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000266.html">r282 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000268.html">r284 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#267">[ date ]</a>
+              <a href="thread.html#267">[ thread ]</a>
+              <a href="subject.html#267">[ subject ]</a>
+              <a href="author.html#267">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-07 16:14:46 +0200 (Mon, 07 May 2007)
+New Revision: 283
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+Log:
+Added pending loopback checks in error cases.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-07 14:06:06 UTC (rev 282)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-07 14:14:46 UTC (rev 283)
+@@ -522,8 +522,13 @@
+ 	else
+ 		chipset_init_trx(dev);
+ 
+-	if ((wake) &amp;&amp; netif_queue_stopped(dev))
++	if ((wake) &amp;&amp; netif_queue_stopped(dev)) {
++		if (priv-&gt;loop_skb) { /* pending loopback? */
++			dev_kfree_skb(priv-&gt;loop_skb);
++			priv-&gt;loop_skb = NULL;
++		}
+ 		netif_wake_queue(dev);
++	}
+ }
+ 
+ static void chipset_init_rx(struct net_device *dev)
+@@ -650,6 +655,10 @@
+ 	/* do not conflict with e.g. bus error handling */
+ 	if (!(priv-&gt;timer.expires)){ /* no restart on the run */
+ 		chipset_init_trx(dev); /* no tx queue wakeup */
++		if (priv-&gt;loop_skb) { /* pending loopback? */
++			dev_kfree_skb(priv-&gt;loop_skb);
++			priv-&gt;loop_skb = NULL;
++		}
+ 		netif_wake_queue(dev); /* wakeup here */
+ 	}
+ 	else
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000266.html">r282 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000268.html">r284 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#267">[ date ]</a>
+              <a href="thread.html#267">[ thread ]</a>
+              <a href="subject.html#267">[ subject ]</a>
+              <a href="author.html#267">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

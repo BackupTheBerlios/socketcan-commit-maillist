@@ -1,0 +1,233 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r595 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r595%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101537.lBAFb5Dg009418%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000576.html">
+   <LINK REL="Next"  HREF="000578.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r595 - trunk/kernel/2.4/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r595%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712101537.lBAFb5Dg009418%40sheep.berlios.de%3E"
+       TITLE="r595 - trunk/kernel/2.4/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 10 16:37:05 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000576.html">r594 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000578.html">r596 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#577">[ date ]</a>
+              <a href="thread.html#577">[ thread ]</a>
+              <a href="subject.html#577">[ subject ]</a>
+              <a href="author.html#577">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-10 16:37:02 +0100 (Mon, 10 Dec 2007)
+New Revision: 595
+
+Modified:
+   trunk/kernel/2.4/can/bcm.c
+Log:
+Some more cosmetics (to be continued).
+
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2007-12-10 15:19:57 UTC (rev 594)
++++ trunk/kernel/2.4/can/bcm.c	2007-12-10 15:37:02 UTC (rev 595)
+@@ -69,7 +69,7 @@
+ static __initdata const char banner[] = KERN_INFO
+ 	&quot;can: broadcast manager protocol (rev &quot; CAN_BCM_VERSION &quot;)\n&quot;;
+ 
+-MODULE_DESCRIPTION(&quot;PF_CAN bcm sockets&quot;);
++MODULE_DESCRIPTION(&quot;PF_CAN broadcast manager protocol&quot;);
+ MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+@@ -98,6 +98,8 @@
+ 	struct sock *sk;
+ };
+ 
++static struct proc_dir_entry *proc_dir;
++
+ struct bcm_opt {
+ 	int bound;
+ 	int ifindex;
+@@ -108,8 +110,6 @@
+ 	char procname [9]; /* pointer printed in ASCII with \0 */
+ };
+ 
+-static struct proc_dir_entry *proc_dir = NULL;
+-
+ #define bcm_sk(sk) ((struct bcm_opt *)&amp;(sk)-&gt;tp_pinfo)
+ 
+ #define CFSIZ sizeof(struct can_frame)
+@@ -126,7 +126,8 @@
+ 	if (!ifindex)
+ 		return &quot;any&quot;;
+ 
+-	dev = __dev_get_by_index(ifindex); /* no usage counting */
++	/* no usage counting */
++	dev = __dev_get_by_index(ifindex);
+ 	if (dev)
+ 		return dev-&gt;name;
+ 
+@@ -233,28 +234,32 @@
+ 	struct net_device *dev;
+ 	struct can_frame *cf = &amp;op-&gt;frames[op-&gt;currframe];
+ 
++	/* no target device? =&gt; exit */
+ 	if (!op-&gt;ifindex)
+-		return; /* no target device -&gt; exit */
++		return;
+ 
+ 	dev = dev_get_by_index(op-&gt;ifindex);
++	if (!dev) {
++		/* RFC: should this bcm_op remove itself here? */
++		return;
++	}
+ 
+-	if (!dev)
+-		return; /* should this bcm_op remove itself here? */
+-
+ 	skb = alloc_skb(CFSIZ,
+ 			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+ 
+ 	if (!skb)
+-		goto out; /* no memory */
++		goto out;
+ 
+ 	memcpy(skb_put(skb, CFSIZ), cf, CFSIZ);
+ 
++	/* send with loopback */
+ 	skb-&gt;dev = dev;
+ 	skb-&gt;sk = op-&gt;sk;
+-	can_send(skb, 1); /* send with loopback */
++	can_send(skb, 1);
+ 
++	/* update statistics */
+ 	op-&gt;currframe++;
+-	op-&gt;frames_abs++; /* statistics */
++	op-&gt;frames_abs++;
+ 
+ 	/* reached last frame? */
+ 	if (op-&gt;currframe &gt;= op-&gt;nframes)
+@@ -272,9 +277,9 @@
+ {
+ 	struct sk_buff *skb;
+ 	struct can_frame *firstframe;
++	struct sockaddr_can *addr;
+ 	struct sock *sk = op-&gt;sk;
+ 	int datalen = head-&gt;nframes * CFSIZ;
+-	struct sockaddr_can *addr;
+ 	int err;
+ 
+ 	skb = alloc_skb(sizeof(*head) + datalen,
+@@ -317,17 +322,15 @@
+  */
+ static void bcm_tx_timeout_handler(unsigned long data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 
+ 	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ 
+ 		op-&gt;count--;
+-
+ 		if (!op-&gt;count &amp;&amp; (op-&gt;flags &amp; TX_COUNTEVT)) {
+-			/* create notification to user */
+-
+ 			struct bcm_msg_head msg_head;
+ 
++			/* create notification to user */
+ 			msg_head.opcode  = TX_EXPIRED;
+ 			msg_head.flags   = op-&gt;flags;
+ 			msg_head.count   = op-&gt;count;
+@@ -356,7 +359,6 @@
+ 	}
+ 
+ 	return;
+-
+ }
+ 
+ /*
+@@ -464,13 +466,12 @@
+ 	}
+ }
+ 
+-
+ /*
+  * bcm_rx_timeout_handler - when the (cyclic) CAN frame receiption timed out
+  */
+ static void bcm_rx_timeout_handler(unsigned long data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 	struct bcm_msg_head msg_head;
+ 
+ 	msg_head.opcode  = RX_TIMEOUT;
+@@ -490,7 +491,6 @@
+ 		/* clear received can_frames to indicate 'nothing received' */
+ 		memset(op-&gt;last_frames, 0, op-&gt;nframes * CFSIZ);
+ 	}
+-
+ }
+ 
+ /*
+@@ -499,7 +499,7 @@
+  */
+ static void bcm_rx_thr_handler(unsigned long data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 	int i = 0;
+ 
+ 	op-&gt;thrtimer.expires = 0; /* mark disabled / consumed timer */
+@@ -529,7 +529,7 @@
+  */
+ static void bcm_rx_handler(struct sk_buff *skb, void *data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 	struct can_frame rxframe;
+ 	int i;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000576.html">r594 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000578.html">r596 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#577">[ date ]</a>
+              <a href="thread.html#577">[ thread ]</a>
+              <a href="subject.html#577">[ subject ]</a>
+              <a href="author.html#577">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

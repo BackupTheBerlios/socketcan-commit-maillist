@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r660 - in branches/cannetdriver26/drivers/net/can: . sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r660%20-%20in%20branches/cannetdriver26/drivers/net/can%3A%20.%20sja1000&In-Reply-To=%3C200801271742.m0RHg65M008479%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000641.html">
+   <LINK REL="Next"  HREF="000643.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r660 - in branches/cannetdriver26/drivers/net/can: . sja1000</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r660%20-%20in%20branches/cannetdriver26/drivers/net/can%3A%20.%20sja1000&In-Reply-To=%3C200801271742.m0RHg65M008479%40sheep.berlios.de%3E"
+       TITLE="r660 - in branches/cannetdriver26/drivers/net/can: . sja1000">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 18:42:06 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000641.html">r659 - in branches/cannetdriver26/drivers/net/can: . sja1000
+</A></li>
+        <LI>Next message: <A HREF="000643.html">r661 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#642">[ date ]</a>
+              <a href="thread.html#642">[ thread ]</a>
+              <a href="subject.html#642">[ subject ]</a>
+              <a href="author.html#642">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 18:41:58 +0100 (Sun, 27 Jan 2008)
+New Revision: 660
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/Kconfig
+   branches/cannetdriver26/drivers/net/can/sja1000/Makefile
+Log:
+SJA1000 driver for the Phytec PCM027 board
+
+This patch adds the SJA1000 driver for the SJA1000 chip on the Phytec
+PCM027 board.
+
+This work was funded by Pengutronix e.K. (<A HREF="http://www.pengutronix.de">http://www.pengutronix.de</A>).
+
+
+Modified: branches/cannetdriver26/drivers/net/can/Kconfig
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/Kconfig	2008-01-27 17:40:31 UTC (rev 659)
++++ branches/cannetdriver26/drivers/net/can/Kconfig	2008-01-27 17:41:58 UTC (rev 660)
+@@ -136,4 +136,11 @@
+ 	This driver is for the PCAN PCI, the PC-PCI CAN plug-in card (1 or
+ 	2 channel) from PEAK Systems (<A HREF="http://www.peak-system.com">http://www.peak-system.com</A>).
+ 
++config CAN_PCM027
++        depends on CAN_SJA1000 &amp;&amp; MACH_PCM027
++	tristate &quot;Phytec pcm027 can driver (SJA1000)&quot;
++	help
++	This driver adds support for the SJA1000 chip on the PCM027 board
++	from Phytec (<A HREF="http://www.phytec.de">http://www.phytec.de</A>).
++
+ endmenu
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/Makefile
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/Makefile	2008-01-27 17:40:31 UTC (rev 659)
++++ branches/cannetdriver26/drivers/net/can/sja1000/Makefile	2008-01-27 17:41:58 UTC (rev 660)
+@@ -59,5 +59,6 @@
+ obj-$(CONFIG_CAN_EMS_PCI) += ems_pci.o
+ obj-$(CONFIG_CAN_IXXAT_PCI) += ixxat_pci.o
+ obj-$(CONFIG_CAN_PEAK_PCI) += peak_pci.o
++obj-$(CONFIG_CAN_PCM027) += pcm027.o
+ 
+ endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000641.html">r659 - in branches/cannetdriver26/drivers/net/can: . sja1000
+</A></li>
+	<LI>Next message: <A HREF="000643.html">r661 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#642">[ date ]</a>
+              <a href="thread.html#642">[ thread ]</a>
+              <a href="subject.html#642">[ subject ]</a>
+              <a href="author.html#642">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

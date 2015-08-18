@@ -1,0 +1,456 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r345 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r345%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706121034.l5CAY8Ah018745%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000327.html">
+   <LINK REL="Next"  HREF="000329.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r345 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r345%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706121034.l5CAY8Ah018745%40sheep.berlios.de%3E"
+       TITLE="r345 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun 12 12:34:08 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000327.html">r344 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000329.html">r346 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#328">[ date ]</a>
+              <a href="thread.html#328">[ thread ]</a>
+              <a href="subject.html#328">[ subject ]</a>
+              <a href="author.html#328">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-12 12:34:05 +0200 (Tue, 12 Jun 2007)
+New Revision: 345
+
+Modified:
+   branches/ha/locktest/net/can/raw.c
+Log:
+Changes to hold the device as long as we have device depended data structures.
+Consistently using lock_sock() and removed the spinlock stuff.
+Notifier is working full featured now.
+Further testing ...
+
+
+Modified: branches/ha/locktest/net/can/raw.c
+===================================================================
+--- branches/ha/locktest/net/can/raw.c	2007-06-12 08:26:36 UTC (rev 344)
++++ branches/ha/locktest/net/can/raw.c	2007-06-12 10:34:05 UTC (rev 345)
+@@ -92,7 +92,7 @@
+ 
+ struct raw_opt {
+ 	int bound;
+-	int ifindex;
++	struct net_device *dev;
+ 	struct can_notif notifier;
+ 	int loopback;
+ 	int recv_own_msgs;
+@@ -100,7 +100,6 @@
+ 	struct can_filter dfilter; /* default/single filter */
+ 	struct can_filter *filter; /* pointer to filter(s) */
+ 	can_err_mask_t err_mask;
+-	spinlock_t lock;
+ };
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+@@ -120,32 +119,6 @@
+ }
+ #endif
+ 
+-static void raw_notifier(unsigned long msg, struct sock *sk,
+-			 struct net_device *dev)
+-{
+-	struct raw_opt *ro = raw_sk(sk);
+-
+-	DBG(&quot;msg %ld sk %p dev %p&quot;
+-	    &quot; dev-&gt;ifindex %d ro-&gt;ifindex %d\n&quot;,
+-	    __func__, msg, sk, dev, dev-&gt;ifindex, ro-&gt;ifindex);
+-
+-	if (ro-&gt;ifindex != dev-&gt;ifindex)
+-		return;
+-
+-	switch (msg) {
+-
+-	case NETDEV_UNREGISTER:
+-		ro-&gt;ifindex = 0;
+-		ro-&gt;bound   = 0;
+-		/* fallthrough */
+-	case NETDEV_DOWN:
+-		sk-&gt;sk_err = ENETDOWN;
+-		if (!sock_flag(sk, SOCK_DEAD))
+-			sk-&gt;sk_error_report(sk);
+-		break;
+-	}
+-}
+-
+ static void raw_rcv(struct sk_buff *skb, void *data)
+ {
+ 	struct sock *sk = (struct sock*)data;
+@@ -178,7 +151,7 @@
+ 	}
+ }
+ 
+-static void raw_add_filters(struct net_device *dev, struct sock *sk)
++static void raw_enable_filters(struct net_device *dev, struct sock *sk)
+ {
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = ro-&gt;filter;
+@@ -193,9 +166,17 @@
+ 	}
+ }
+ 
+-static void raw_remove_filters(struct net_device *dev, struct sock *sk)
++static void raw_enable_errfilter(struct net_device *dev, struct sock *sk)
+ {
+ 	struct raw_opt *ro = raw_sk(sk);
++
++	can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++			raw_rcv, sk, IDENT);
++}
++
++static void raw_disable_filters(struct net_device *dev, struct sock *sk)
++{
++	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+@@ -208,11 +189,64 @@
+ 	}
+ }
+ 
++static void raw_disable_errfilter(struct net_device *dev, struct sock *sk)
++{
++	struct raw_opt *ro = raw_sk(sk);
++
++	can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
++			  raw_rcv, sk);
++}
++
++static void raw_notifier(unsigned long msg, struct sock *sk,
++			 struct net_device *dev)
++{
++	struct raw_opt *ro = raw_sk(sk);
++
++	DBG(&quot;msg %ld sk %p dev %p ro-&gt;dev %p\n&quot;,
++	    __func__, msg, sk, dev, ro-&gt;dev);
++
++	if (ro-&gt;dev != dev)
++		return;
++
++	switch (msg) {
++
++	case NETDEV_UNREGISTER:
++		lock_sock(sk);
++		/* remove current filters &amp; unregister */
++		if (ro-&gt;bound) {
++			raw_disable_filters(dev, sk);
++			raw_disable_errfilter(dev, sk);
++		}
++
++		if (ro-&gt;count &gt; 1)
++			kfree(ro-&gt;filter);
++
++		if (dev)
++			dev_put(dev);
++
++		ro-&gt;dev     = NULL;
++		ro-&gt;bound   = 0;
++		release_sock(sk);
++
++		sk-&gt;sk_err = ENODEV;
++		if (!sock_flag(sk, SOCK_DEAD))
++			sk-&gt;sk_error_report(sk);
++		break;
++
++	case NETDEV_DOWN:
++		sk-&gt;sk_err = ENETDOWN;
++		if (!sock_flag(sk, SOCK_DEAD))
++			sk-&gt;sk_error_report(sk);
++		break;
++	}
++}
++
+ static int raw_init(struct sock *sk)
+ {
+ 	struct raw_opt *ro = raw_sk(sk);
+ 
+ 	ro-&gt;bound            = 0;
++	ro-&gt;dev              = NULL;
+ 
+ 	/* set default filter to single entry dfilter */
+ 	ro-&gt;dfilter.can_id   = 0;
+@@ -228,7 +262,7 @@
+ 	ro-&gt;notifier.func    = raw_notifier;
+ 	ro-&gt;notifier.sk      = sk;
+ 
+-	spin_lock_init(&amp;ro-&gt;lock);
++	can_register_notifier(&amp;ro-&gt;notifier);
+ 
+ 	return 0;
+ }
+@@ -237,33 +271,29 @@
+ {
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
+-	struct net_device *dev = NULL;
++	struct net_device *dev = ro-&gt;dev;
+ 
+ 	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+ 	    atomic_read(&amp;sk-&gt;sk_refcnt));
+ 
+-	spin_lock(&amp;ro-&gt;lock);
+-	if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+-		dev = dev_get_by_index(ro-&gt;ifindex);
+-	spin_unlock(&amp;ro-&gt;lock);
+ 
++	lock_sock(sk);
++
+ 	/* remove current filters &amp; unregister */
+-	if (ro-&gt;bound)
+-		raw_remove_filters(dev, sk);
++	if (ro-&gt;bound) {
++		raw_disable_filters(dev, sk);
++		raw_disable_errfilter(dev, sk);
++	}
+ 
+ 	if (ro-&gt;count &gt; 1)
+ 		kfree(ro-&gt;filter);
+ 
+-	/* remove current error mask */
+-	if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-				  raw_rcv, sk);
+-
+-	if (dev) {
+-		can_unregister_notifier(&amp;ro-&gt;notifier);
++	if (dev)
+ 		dev_put(dev);
+-	}
+ 
++	release_sock(sk);
++
++	can_unregister_notifier(&amp;ro-&gt;notifier);
+ 	sock_put(sk);
+ 
+ 	return 0;
+@@ -274,7 +304,7 @@
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct raw_opt *ro = raw_sk(sk);
+-	struct net_device *dev;
++	struct net_device *dev = ro-&gt;dev;
+ 	int err = 0;
+ 
+ 	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+@@ -283,30 +313,11 @@
+ 		return -EINVAL;
+ 
+ 	lock_sock(sk);
+-	spin_lock(&amp;ro-&gt;lock);
+ 
+ 	if (ro-&gt;bound) {
+-		/* remove current bindings / notifier */
+-		if (ro-&gt;ifindex) {
+-			dev = dev_get_by_index(ro-&gt;ifindex);
+-			if (!dev) {
+-				DBG(&quot;could not find device %d\n&quot;,
+-				    addr-&gt;can_ifindex);
+-				err = -ENODEV;
+-				goto out;
+-			}
+-			if (!(dev-&gt;flags &amp; IFF_UP)) {
+-				sk-&gt;sk_err = ENETDOWN;
+-				if (!sock_flag(sk, SOCK_DEAD))
+-					sk-&gt;sk_error_report(sk);
+-				goto out;
+-			}
+-			can_unregister_notifier(&amp;ro-&gt;notifier);
+-		} else
+-			dev = NULL;
+-
+ 		/* unregister current filters for this device */
+-		raw_remove_filters(dev, sk);
++		raw_disable_filters(dev, sk);
++		raw_disable_errfilter(dev, sk);
+ 
+ 		if (dev)
+ 			dev_put(dev);
+@@ -325,31 +336,21 @@
+ 			sk-&gt;sk_err = ENETDOWN;
+ 			if (!sock_flag(sk, SOCK_DEAD))
+ 				sk-&gt;sk_error_report(sk);
+-			goto out;
+ 		}
+-		can_register_notifier(&amp;ro-&gt;notifier);
+ 	} else
+ 		dev = NULL;
+ 
+-	ro-&gt;ifindex = addr-&gt;can_ifindex;
++	ro-&gt;dev = dev;
+ 
+ 	/* filters set by default/setsockopt */
+-	raw_add_filters(dev, sk);
++	raw_enable_filters(dev, sk);
++	raw_enable_errfilter(dev, sk);
+ 
+-	/* error frame filter set by setsockopt */
+-	if (ro-&gt;err_mask)
+-		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-				raw_rcv, sk, IDENT);
+-
+ 	ro-&gt;bound = 1;
+ 
+  out:
+-	spin_unlock(&amp;ro-&gt;lock);
+ 	release_sock(sk);
+ 
+-	if (dev)
+-		dev_put(dev);
+-
+ 	return err;
+ }
+ 
+@@ -364,7 +365,12 @@
+ 		return -EOPNOTSUPP;
+ 
+ 	addr-&gt;can_family  = AF_CAN;
+-	addr-&gt;can_ifindex = ro-&gt;ifindex;
++
++	if (ro-&gt;dev)
++		addr-&gt;can_ifindex = ro-&gt;dev-&gt;ifindex;
++	else
++		addr-&gt;can_ifindex = 0;
++
+ 	*len = sizeof(*addr);
+ 
+ 	return 0;
+@@ -388,7 +394,7 @@
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
+ 	struct can_filter sfilter;         /* single filter */
+-	struct net_device *dev = NULL;
++	struct net_device *dev = ro-&gt;dev;
+ 	can_err_mask_t err_mask = 0;
+ 	int count = 0;
+ 	int err;
+@@ -425,14 +431,9 @@
+ 
+ 		lock_sock(sk);
+ 
+-		spin_lock(&amp;ro-&gt;lock);
+-		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+-			dev = dev_get_by_index(ro-&gt;ifindex);
+-		spin_unlock(&amp;ro-&gt;lock);
+-
+ 		/* remove current filters &amp; unregister */
+ 		if (ro-&gt;bound)
+-			raw_remove_filters(dev, sk);
++			raw_disable_filters(dev, sk);
+ 
+ 		if (ro-&gt;count &gt; 1)
+ 			kfree(ro-&gt;filter);
+@@ -447,11 +448,8 @@
+ 		ro-&gt;filter = filter;
+ 		ro-&gt;count  = count;
+ 		if (ro-&gt;bound)
+-			raw_add_filters(dev, sk);
++			raw_enable_filters(dev, sk);
+ 
+-		if (dev)
+-			dev_put(dev);
+-
+ 		release_sock(sk);
+ 
+ 		break;
+@@ -466,23 +464,20 @@
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+ 
+-		if (ro-&gt;bound &amp;&amp; ro-&gt;ifindex)
+-			dev = dev_get_by_index(ro-&gt;ifindex);
++		lock_sock(sk);
+ 
+ 		/* remove current error mask */
+-		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-			can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-					  raw_rcv, sk);
++		if (ro-&gt;bound)
++			raw_disable_errfilter(dev, sk);
+ 
+-		/* add new error mask */
+ 		ro-&gt;err_mask = err_mask;
+-		if (ro-&gt;err_mask &amp;&amp; ro-&gt;bound)
+-			can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+-					raw_rcv, sk, IDENT);
+ 
+-		if (dev)
+-			dev_put(dev);
++		/* add new error mask */
++		if (ro-&gt;bound)
++			raw_enable_errfilter(dev, sk);
+ 
++		release_sock(sk);
++
+ 		break;
+ 
+ 	case CAN_RAW_LOOPBACK:
+@@ -576,7 +571,7 @@
+ 	struct raw_opt *ro = raw_sk(sk);
+ 	struct sk_buff *skb;
+ 	struct net_device *dev;
+-	int ifindex;
++	int ifindex = 0;
+ 	int err;
+ 
+ 	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+@@ -590,7 +585,8 @@
+ 
+ 		ifindex = addr-&gt;can_ifindex;
+ 	} else
+-		ifindex = ro-&gt;ifindex;
++		if (ro-&gt;dev)
++			ifindex = ro-&gt;dev-&gt;ifindex;
+ 
+ 	dev = dev_get_by_index(ifindex);
+ 	if (!dev) {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000327.html">r344 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000329.html">r346 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#328">[ date ]</a>
+              <a href="thread.html#328">[ thread ]</a>
+              <a href="subject.html#328">[ subject ]</a>
+              <a href="author.html#328">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r663 - in branches/cannetdriver26: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r663%20-%20in%20branches/cannetdriver26%3A%20include/linux/can%20net/can&In-Reply-To=%3C200801271744.m0RHiwFO014910%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000644.html">
+   <LINK REL="Next"  HREF="000646.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r663 - in branches/cannetdriver26: include/linux/can net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r663%20-%20in%20branches/cannetdriver26%3A%20include/linux/can%20net/can&In-Reply-To=%3C200801271744.m0RHiwFO014910%40sheep.berlios.de%3E"
+       TITLE="r663 - in branches/cannetdriver26: include/linux/can net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 18:44:58 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000644.html">r662 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000646.html">r664 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#645">[ date ]</a>
+              <a href="thread.html#645">[ thread ]</a>
+              <a href="subject.html#645">[ subject ]</a>
+              <a href="author.html#645">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 18:44:55 +0100 (Sun, 27 Jan 2008)
+New Revision: 663
+
+Modified:
+   branches/cannetdriver26/include/linux/can/dev.h
+   branches/cannetdriver26/net/can/sysfs.c
+   branches/cannetdriver26/net/can/sysfs.h
+Log:
+Replace SYSFS file can_mode with can_restart for restarting the CAN device
+
+Also the obsolete field &quot;mode&quot; of struct &quot;can_priv&quot; has been removed.
+
+
+Modified: branches/cannetdriver26/include/linux/can/dev.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/dev.h	2008-01-27 17:43:49 UTC (rev 662)
++++ branches/cannetdriver26/include/linux/can/dev.h	2008-01-27 17:44:55 UTC (rev 663)
+@@ -50,7 +50,6 @@
+ 	spinlock_t stats_lock;
+ 
+ 	can_state_t state;
+-	can_mode_t mode;
+ 	u32 ctrlmode;
+ 
+ 	int restart_ms;
+@@ -76,8 +75,7 @@
+ struct net_device *alloc_candev(int sizeof_priv);
+ void free_candev(struct net_device *dev);
+ 
+-int can_calc_bittime(struct can_priv *can, u32 bitrate,
+-		     struct can_bittime_std *bittime);
++int can_set_bitrate(struct net_device *dev, u32 bitrate);
+ 
+ void can_bus_off(struct net_device *dev);
+ 
+@@ -86,6 +84,4 @@
+ int can_put_echo_skb(struct sk_buff *skb, struct net_device *dev, int idx);
+ void can_get_echo_skb(struct net_device *dev, int idx);
+ 
+-void can_close_cleanup(struct net_device *dev);
+-
+ #endif /* CAN_DEVICE_H */
+
+Modified: branches/cannetdriver26/net/can/sysfs.c
+===================================================================
+--- branches/cannetdriver26/net/can/sysfs.c	2008-01-27 17:43:49 UTC (rev 662)
++++ branches/cannetdriver26/net/can/sysfs.c	2008-01-27 17:44:55 UTC (rev 663)
+@@ -27,6 +27,8 @@
+ #include &lt;linux/can.h&gt;
+ #include &lt;linux/can/dev.h&gt;
+ 
++#include &quot;sysfs.h&quot;
++
+ #ifdef CONFIG_SYSFS
+ /*
+  * Functions to set/get CAN properties used by SYSFS
+@@ -105,35 +107,6 @@
+ 	return 0;
+ }
+ 
+-static int can_set_mode(struct net_device *dev, can_mode_t mode)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-	int err;
+-
+-	if (!priv-&gt;do_set_mode)
+-		return -ENOTSUPP;
+-
+-	if (mode == CAN_MODE_START &amp;&amp;
+-	    priv-&gt;bitrate == CAN_BITRATE_UNCONFIGURED) {
+-		dev_info(ND2D(dev), &quot;Impossible to start on UNKNOWN speed\n&quot;);
+-		return EINVAL;
+-	}
+-
+-	err = priv-&gt;do_set_mode(dev, mode);
+-	if (!err)
+-		priv-&gt;mode = mode;
+-
+-	return err;
+-}
+-
+-static int can_get_mode(struct net_device *dev, can_mode_t *mode)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-
+-	*mode = priv-&gt;mode;
+-	return 0;
+-}
+-
+ static int can_set_ctrlmode(struct net_device *dev, u32 ctrlmode)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+@@ -290,53 +263,24 @@
+ CAN_STATS_ATTR(wakeup);
+ CAN_STATS_ATTR(restarts);
+ 
+-static const char *can_mode_names[] = {
+-	&quot;stop&quot;, &quot;start&quot;, &quot;sleep&quot;, &quot;unkown&quot;
+-};
+-
+-static ssize_t can_show_mode(struct device *dev,
+-			     struct device_attribute *attr,
+-			     char *buf)
++static ssize_t can_store_restart(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count)
+ {
+ 	struct net_device *ndev = to_net_dev(dev);
+-	can_mode_t mode;
+ 	int ret = -EINVAL;
+ 
+-	read_lock(&amp;dev_base_lock);
++	rtnl_lock();
+ 	if (dev_isalive(ndev)) {
+-		can_get_mode(ndev, &amp;mode);
+-		if (mode &gt;= ARRAY_SIZE(can_mode_names))
+-			mode = ARRAY_SIZE(can_mode_names) - 1;
+-		ret = snprintf(buf, PAGE_SIZE, &quot;%s\n&quot;, can_mode_names[mode]);
++		if (!(ret = can_restart_now(ndev)))
++			ret = count;
+ 	}
+-	read_unlock(&amp;dev_base_lock);
++	rtnl_unlock();
+ 	return ret;
+ }
+ 
+-static ssize_t can_store_mode(struct device *dev,
+-			      struct device_attribute *attr,
+-			      const char *buf, size_t count)
+-{
+-	struct net_device *ndev = to_net_dev(dev);
+-	int i, ret = -EINVAL;
++static DEVICE_ATTR(can_restart, S_IWUSR, NULL, can_store_restart);
+ 
+-	/* Find out the new setting */
+-	for (i = 0; i &lt; (ARRAY_SIZE(can_mode_names) - 1); i++) {
+-		if (!strncmp(can_mode_names[i], buf, count - 1)) {
+-			rtnl_lock();
+-			if (dev_isalive(ndev)) {
+-				if (!(ret = can_set_mode(ndev, i)))
+-					ret = count;
+-			}
+-			rtnl_unlock();
+-		}
+-	}
+-	return ret;
+-}
+-
+-static DEVICE_ATTR(can_mode, S_IRUGO | S_IWUSR,
+-		   can_show_mode, can_store_mode);
+-
+ static const char *can_state_names[] = {
+ 	&quot;active&quot;, &quot;bus-warn&quot;, &quot;bus-pass&quot; , &quot;bus-off&quot;,
+ 	&quot;stopped&quot;, &quot;sleeping&quot;, &quot;unkown&quot;
+@@ -509,7 +453,7 @@
+ 
+ 	CAN_CREATE_FILE(dev, can_bitrate);
+ 	CAN_CREATE_FILE(dev, can_custombittime);
+-	CAN_CREATE_FILE(dev, can_mode);
++	CAN_CREATE_FILE(dev, can_restart);
+ 	CAN_CREATE_FILE(dev, can_ctrlmode);
+ 	CAN_CREATE_FILE(dev, can_state);
+ 	CAN_CREATE_FILE(dev, can_restart_ms);
+@@ -526,7 +470,7 @@
+ {
+ 	CAN_REMOVE_FILE(dev, can_bitrate);
+ 	CAN_REMOVE_FILE(dev, can_custombittime);
+-	CAN_REMOVE_FILE(dev, can_mode);
++	CAN_REMOVE_FILE(dev, can_restart);
+ 	CAN_REMOVE_FILE(dev, can_ctrlmode);
+ 	CAN_REMOVE_FILE(dev, can_state);
+ 	CAN_REMOVE_FILE(dev, can_clock);
+
+Modified: branches/cannetdriver26/net/can/sysfs.h
+===================================================================
+--- branches/cannetdriver26/net/can/sysfs.h	2008-01-27 17:43:49 UTC (rev 662)
++++ branches/cannetdriver26/net/can/sysfs.h	2008-01-27 17:44:55 UTC (rev 663)
+@@ -20,6 +20,8 @@
+ #ifndef CAN_SYSFS_H
+ #define CAN_SYSFS_H
+ 
++int can_restart_now(struct net_device *dev);
++
+ __init int can_sysfs_init(void);
+ __exit void can_sysfs_exit(void);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000644.html">r662 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000646.html">r664 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#645">[ date ]</a>
+              <a href="thread.html#645">[ thread ]</a>
+              <a href="subject.html#645">[ subject ]</a>
+              <a href="author.html#645">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

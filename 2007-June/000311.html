@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r328 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r328%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706061340.l56De7NL015618%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000310.html">
+   <LINK REL="Next"  HREF="000312.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r328 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r328%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706061340.l56De7NL015618%40sheep.berlios.de%3E"
+       TITLE="r328 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun  6 15:40:07 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000310.html">r327 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000312.html">r329 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#311">[ date ]</a>
+              <a href="thread.html#311">[ thread ]</a>
+              <a href="subject.html#311">[ subject ]</a>
+              <a href="author.html#311">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-06-06 15:40:05 +0200 (Wed, 06 Jun 2007)
+New Revision: 328
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Set skb-&gt;pkt_type on CAN frames looped back from can_send().
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-06-06 13:14:37 UTC (rev 327)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-06-06 13:40:05 UTC (rev 328)
+@@ -285,6 +285,7 @@
+ 
+ 			/* perform the local loopback here */
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++			newskb-&gt;pkt_type = PACKET_BROADCAST;
+ 			netif_rx(newskb);
+ 		}
+ 	} else {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000310.html">r327 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000312.html">r329 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#311">[ date ]</a>
+              <a href="thread.html#311">[ thread ]</a>
+              <a href="subject.html#311">[ subject ]</a>
+              <a href="author.html#311">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

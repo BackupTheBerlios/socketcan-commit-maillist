@@ -1,0 +1,1299 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r599 - in trunk/kernel/2.4: can include/linux/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r599%20-%20in%20trunk/kernel/2.4%3A%20can%20include/linux/can&In-Reply-To=%3C200712120955.lBC9td64015920%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000580.html">
+   <LINK REL="Next"  HREF="000582.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r599 - in trunk/kernel/2.4: can include/linux/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r599%20-%20in%20trunk/kernel/2.4%3A%20can%20include/linux/can&In-Reply-To=%3C200712120955.lBC9td64015920%40sheep.berlios.de%3E"
+       TITLE="r599 - in trunk/kernel/2.4: can include/linux/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 12 10:55:39 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000580.html">r598 - trunk/kernel/2.4
+</A></li>
+        <LI>Next message: <A HREF="000582.html">r600 - trunk/kernel/2.4
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#581">[ date ]</a>
+              <a href="thread.html#581">[ thread ]</a>
+              <a href="subject.html#581">[ subject ]</a>
+              <a href="author.html#581">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-12 10:55:16 +0100 (Wed, 12 Dec 2007)
+New Revision: 599
+
+Removed:
+   trunk/kernel/2.4/can/bcm.h
+   trunk/kernel/2.4/can/can.h
+   trunk/kernel/2.4/can/can_core.h
+   trunk/kernel/2.4/can/can_error.h
+   trunk/kernel/2.4/can/can_ioctl.h
+   trunk/kernel/2.4/can/raw.h
+   trunk/kernel/2.4/can/version.h
+   trunk/kernel/2.4/include/linux/can/dev.h
+Modified:
+   trunk/kernel/2.4/can/Makefile
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/bcm.c
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.4/can/vcan.c
+   trunk/kernel/2.4/include/linux/can/core.h
+Log:
+Make use of backported 2.6 includes.
+Changed procfs files analogue to 2.6.
+Moved tv2jiffies function to bcm.c.
+Remove obsolete includes.
+
+
+Modified: trunk/kernel/2.4/can/Makefile
+===================================================================
+--- trunk/kernel/2.4/can/Makefile	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/Makefile	2007-12-12 09:55:16 UTC (rev 599)
+@@ -41,10 +41,17 @@
+ #  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+ 
+-CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -DMODULE $(DEBUG) \
+-		-I$(KERNELDIR)/include -fno-strict-aliasing
+ KERNELDIR = /usr/src/linux
+ 
++CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -DMODULE $(DEBUG) \
++		-I$(KERNELDIR)/include -I../include -fno-strict-aliasing \
++		-DETH_P_CAN=0x000C \
++		-DARPHRD_CAN=280 \
++		-DPF_CAN=29 \
++		-DAF_CAN=PF_CAN
++
++
++
+ VERSION       = $(shell awk '/^VERSION/     {print $$3}' $(KERNELDIR)/Makefile)
+ PATCHLEVEL    = $(shell awk '/^PATCHLEVEL/  {print $$3}' $(KERNELDIR)/Makefile)
+ SUBLEVEL      = $(shell awk '/^SUBLEVEL/    {print $$3}' $(KERNELDIR)/Makefile)
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-12 09:55:16 UTC (rev 599)
+@@ -59,9 +59,9 @@
+ #include &lt;net/sock.h&gt;
+ #include &lt;asm/uaccess.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_core.h&quot;
+-#include &quot;version.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/core.h&gt;
++#include &lt;linux/can/version.h&gt;
+ #include &quot;af_can.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+@@ -819,32 +819,6 @@
+ 	kmem_cache_destroy(rcv_cache);
+ }
+ 
+-/*
+- * af_can utility stuff
+- */
+-
+-unsigned long timeval2jiffies(struct timeval *tv, int round_up)
+-{
+-	unsigned long jif;
+-	unsigned long sec  = tv-&gt;tv_sec;
+-	unsigned long usec = tv-&gt;tv_usec;
+-
+-	if (sec &gt; ULONG_MAX / HZ)          /* check for overflow */
+-		return ULONG_MAX;
+-
+-	if (round_up)                      /* any usec below one HZ? */
+-		usec += 1000000 / HZ - 1;  /* pump it up */
+-
+-	jif = usec / (1000000 / HZ);
+-
+-	if (sec * HZ &gt; ULONG_MAX - jif)    /* check for overflow */
+-		return ULONG_MAX;
+-	else
+-		return jif + sec * HZ;
+-}
+-
+-
+-
+ module_init(can_init);
+ module_exit(can_exit);
+ 
+@@ -859,5 +833,4 @@
+ EXPORT_SYMBOL(can_dev_register);
+ EXPORT_SYMBOL(can_dev_unregister);
+ EXPORT_SYMBOL(can_send);
+-EXPORT_SYMBOL(timeval2jiffies);
+ #endif
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/af_can.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -44,13 +44,13 @@
+ #ifndef AF_CAN_H
+ #define AF_CAN_H
+ 
+-#include &quot;version.h&quot;
++#include &lt;linux/can/version.h&gt;
+ RCSID(&quot;$Id$&quot;);
+ 
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ 
+-#include &quot;can.h&quot;
++#include &lt;linux/can.h&gt;
+ 
+ /* af_can rx dispatcher structures */
+ 
+
+Modified: trunk/kernel/2.4/can/bcm.c
+===================================================================
+--- trunk/kernel/2.4/can/bcm.c	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/bcm.c	2007-12-12 09:55:16 UTC (rev 599)
+@@ -49,10 +49,10 @@
+ #include &lt;linux/poll.h&gt;
+ #include &lt;net/sock.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_core.h&quot;
+-#include &quot;version.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/core.h&gt;
++#include &lt;linux/can/version.h&gt;
++#include &lt;linux/can/bcm.h&gt;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+@@ -117,6 +117,39 @@
+ #define MHSIZ sizeof(struct bcm_msg_head)
+ 
+ /*
++ * rounded_tv2jif - calculate jiffies from timeval including optional up
++ * @tv: pointer to timeval
++ *
++ * Description:
++ * Unlike timeval_to_jiffies() provided in include/linux/jiffies.h, this
++ * function is intentionally more relaxed on precise timer ticks to get
++ * exact one jiffy for requested 1000us on a 1000HZ machine.
++ * This code is to be removed when upgrading to kernel hrtimer.
++ *
++ * Return:
++ *  calculated jiffies (max: ULONG_MAX)
++ */
++static unsigned long rounded_tv2jif(const struct timeval *tv)
++{
++	unsigned long sec  = tv-&gt;tv_sec;
++	unsigned long usec = tv-&gt;tv_usec;
++	unsigned long jif;
++
++	if (sec &gt; ULONG_MAX / HZ)
++		return ULONG_MAX;
++
++	/* round up to get at least the requested time */
++	usec += 1000000 / HZ - 1;
++
++	jif  = usec / (1000000 / HZ);
++
++	if (sec * HZ &gt; ULONG_MAX - jif)
++		return ULONG_MAX;
++
++	return jif + sec * HZ;
++}
++
++/*
+  * procfs functions
+  */
+ static char *bcm_proc_getifname(int ifindex)
+@@ -822,8 +855,8 @@
+ 		op-&gt;count   = msg_head-&gt;count;
+ 		op-&gt;ival1   = msg_head-&gt;ival1;
+ 		op-&gt;ival2   = msg_head-&gt;ival2;
+-		op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head-&gt;ival1, 1);
+-		op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head-&gt;ival2, 1);
++		op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
++		op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ 
+ 		/* disable an active timer due to zero values? */
+ 		if (!op-&gt;j_ival1 &amp;&amp; !op-&gt;j_ival2) {
+@@ -1016,9 +1049,9 @@
+ 			/* set timer value */
+ 
+ 			op-&gt;ival1   = msg_head-&gt;ival1;
+-			op-&gt;j_ival1 = timeval2jiffies(&amp;msg_head-&gt;ival1, 1);
++			op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
+ 			op-&gt;ival2   = msg_head-&gt;ival2;
+-			op-&gt;j_ival2 = timeval2jiffies(&amp;msg_head-&gt;ival2, 1);
++			op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ 
+ 			/* disable an active timer due to zero value? */
+ 			if (!op-&gt;j_ival1) {
+@@ -1412,7 +1445,7 @@
+ 	can_proto_register(&amp;bcm_can_proto);
+ 
+ 	/* create /proc/net/can/bcm directory */
+-	proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/bcm&quot;, NULL);
++	proc_dir = proc_mkdir(&quot;net/can-bcm&quot;, NULL);
+ 
+ 	if (proc_dir)
+ 		proc_dir-&gt;owner = THIS_MODULE;
+@@ -1425,7 +1458,7 @@
+ 	can_proto_unregister(&amp;bcm_can_proto);
+ 
+ 	if (proc_dir)
+-		remove_proc_entry(CAN_PROC_DIR&quot;/bcm&quot;, NULL);
++		remove_proc_entry(&quot;net/can-bcm&quot;, NULL);
+ 
+ }
+ 
+
+Deleted: trunk/kernel/2.4/can/bcm.h
+===================================================================
+--- trunk/kernel/2.4/can/bcm.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/bcm.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,89 +0,0 @@
+-/*
+- * bcm.h
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#ifndef BCM_H
+-#define BCM_H
+-
+-#ifdef __KERNEL__
+-#include &quot;version.h&quot;
+-RCSID(&quot;$Id$&quot;);
+-#endif
+-
+-struct bcm_msg_head {
+-	int opcode;                   /* command */
+-	int flags;                    /* special flags */
+-	int count;                    /* run 'count' times ival1 then ival2 */
+-	struct timeval ival1, ival2;  /* intervals */
+-	canid_t can_id;               /* 32 Bit SFF/EFF. MSB set at EFF */
+-	int nframes;                  /* number of following can_frame's */
+-	struct can_frame frames[0];
+-};
+-
+-enum {
+-	TX_SETUP = 1,	/* create (cyclic) transmission task */
+-	TX_DELETE,	/* remove (cyclic) transmission task */
+-	TX_READ,	/* read properties of (cyclic) transmission task */
+-	TX_SEND,	/* send one CAN frame */
+-	RX_SETUP,	/* create RX content filter subscription */
+-	RX_DELETE,	/* remove RX content filter subscription */
+-	RX_READ,	/* read properties of RX content filter subscription */
+-	TX_STATUS,	/* reply to TX_READ request */
+-	TX_EXPIRED,	/* notification on performed transmissions (count=0) */
+-	RX_STATUS,	/* reply to RX_READ request */
+-	RX_TIMEOUT,	/* cyclic message is absent */
+-	RX_CHANGED	/* updated CAN frame (detected content change) */
+-};
+-
+-#define SETTIMER            0x0001
+-#define STARTTIMER          0x0002
+-#define TX_COUNTEVT         0x0004
+-#define TX_ANNOUNCE         0x0008
+-#define TX_CP_CAN_ID        0x0010
+-#define RX_FILTER_ID        0x0020
+-#define RX_CHECK_DLC        0x0040
+-#define RX_NO_AUTOTIMER     0x0080
+-#define RX_ANNOUNCE_RESUME  0x0100
+-#define TX_RESET_MULTI_IDX  0x0200
+-#define RX_RTR_FRAME        0x0400
+-
+-#endif /* BCM_H */
+
+Deleted: trunk/kernel/2.4/can/can.h
+===================================================================
+--- trunk/kernel/2.4/can/can.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/can.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,119 +0,0 @@
+-/*
+- * can.h
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#ifndef CAN_H
+-#define CAN_H
+-
+-#ifdef __KERNEL__
+-#include &quot;version.h&quot;
+-RCSID(&quot;$Id$&quot;);
+-#endif
+-
+-#include &lt;linux/types.h&gt;
+-#include &lt;linux/socket.h&gt;
+-
+-#include &quot;can_error.h&quot;
+-#include &quot;can_ioctl.h&quot;
+-
+-/* controller area network (CAN) kernel definitions */
+-
+-/* CAN socket protocol family definition */
+-#define PF_CAN		29	/* to be moved to include/linux/socket.h */
+-#define AF_CAN		PF_CAN
+-
+-/* ethernet protocol identifier */
+-#define ETH_P_CAN	0x000C	/* to be moved to include/linux/if_ether.h */
+-
+-/* ARP protocol identifier (dummy type for non ARP hardware) */
+-#define ARPHRD_CAN	280	/* to be moved to include/linux/if_arp.h */
+-
+-/* special address description flags for the CAN_ID */
+-#define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+-#define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+-#define CAN_ERR_FLAG 0x20000000U /* error frame */
+-
+-/* valid bits in CAN ID for frame formats */
+-#define CAN_SFF_MASK 0x000007FFU /* standard frame format (SFF) */
+-#define CAN_EFF_MASK 0x1FFFFFFFU /* extended frame format (EFF) */
+-#define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
+-
+-typedef __u32 canid_t;
+-
+-struct can_frame {
+-	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
+-	__u8    can_dlc; /* data length code: 0 .. 8 */
+-	__u8    data[8] __attribute__ ((aligned(8)));
+-};
+-
+-/* particular protocols of the protocol family PF_CAN */
+-#define CAN_RAW		1 /* RAW sockets */
+-#define CAN_BCM		2 /* Broadcast Manager */
+-#define CAN_TP16	3 /* VAG Transport Protocol v1.6 */
+-#define CAN_TP20	4 /* VAG Transport Protocol v2.0 */
+-#define CAN_MCNET	5 /* Bosch MCNet */
+-#define CAN_ISOTP	6 /* ISO 15765-2 Transport Protocol */
+-#define CAN_BAP		7 /* VAG Bedien- und Anzeigeprotokoll */
+-#define CAN_NPROTO	8
+-
+-#define SOL_CAN_BASE 100
+-
+-struct sockaddr_can {
+-	sa_family_t   can_family;
+-	int           can_ifindex;
+-	union {
+-		struct { canid_t rx_id, tx_id; } tp16;
+-		struct { canid_t rx_id, tx_id; } tp20;
+-		struct { canid_t rx_id, tx_id; } mcnet;
+-	} can_addr;
+-};
+-
+-typedef canid_t can_err_mask_t;
+-
+-struct can_filter {
+-	canid_t can_id;
+-	canid_t can_mask;
+-};
+-
+-#define CAN_INV_FILTER 0x20000000U /* to be set in can_filter.can_id */
+-
+-#endif /* CAN_H */
+
+Deleted: trunk/kernel/2.4/can/can_core.h
+===================================================================
+--- trunk/kernel/2.4/can/can_core.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/can_core.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,94 +0,0 @@
+-/*
+- * can_core.h
+- *
+- * Protoypes and definitions for CAN protocol modules using the PF_CAN core
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#ifndef CAN_CORE_H
+-#define CAN_CORE_H
+-
+-#include &quot;version.h&quot;
+-RCSID(&quot;$Id$&quot;);
+-
+-#include &lt;linux/skbuff.h&gt;
+-#include &lt;linux/netdevice.h&gt;
+-
+-#include &quot;can.h&quot;
+-
+-#define CAN_VERSION &quot;20071116-backport-preview-1&quot;
+-
+-/* increment this number each time you change some user-space interface */
+-#define CAN_ABI_VERSION &quot;8&quot;
+-
+-#define CAN_VERSION_STRING &quot;rev &quot; CAN_VERSION &quot; abi &quot; CAN_ABI_VERSION
+-
+-#define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
+-
+-#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+-
+-struct can_proto {
+-	int              type;
+-	int              protocol;
+-	int              capability;
+-	struct proto_ops *ops;
+-	int              (*init)(struct sock *sk);
+-	size_t           obj_size;
+-};
+-
+-/* function prototypes for the CAN networklayer core (af_can.c) */
+-
+-int  can_proto_register(struct can_proto *cp);
+-void can_proto_unregister(struct can_proto *cp);
+-int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-		     void (*func)(struct sk_buff *, void *), void *data,
+-		     char *ident);
+-void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		       void (*func)(struct sk_buff *, void *), void *data);
+-void can_dev_register(struct net_device *dev,
+-		      void (*func)(unsigned long msg, void *), void *data);
+-void can_dev_unregister(struct net_device *dev,
+-			void (*func)(unsigned long msg, void *), void *data);
+-int  can_send(struct sk_buff *skb, int loop);
+-
+-unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+-
+-#endif /* CAN_CORE_H */
+
+Deleted: trunk/kernel/2.4/can/can_error.h
+===================================================================
+--- trunk/kernel/2.4/can/can_error.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/can_error.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,128 +0,0 @@
+-/*
+- * can_error_h
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#ifndef CAN_ERROR_H
+-#define CAN_ERROR_H
+-
+-#ifdef __KERNEL__
+-#include &quot;version.h&quot;
+-RCSID(&quot;$Id$&quot;);
+-#endif
+-
+-#define CAN_ERR_DLC 8 /* dlc for error frames */
+-
+-/* error class (mask) in can_id */
+-#define CAN_ERR_TX_TIMEOUT   0x00000001U /* TX timeout (by netdevice driver) */
+-#define CAN_ERR_LOSTARB      0x00000002U /* lost arbitration    / data[0]    */
+-#define CAN_ERR_CRTL         0x00000004U /* controller problems / data[1]    */
+-#define CAN_ERR_PROT         0x00000008U /* protocol violations / data[2..3] */
+-#define CAN_ERR_TRX          0x00000010U /* transceiver status  / data[4]    */
+-#define CAN_ERR_ACK          0x00000020U /* received no ACK on transmission */
+-#define CAN_ERR_BUSOFF       0x00000040U /* bus off */
+-#define CAN_ERR_BUSERROR     0x00000080U /* bus error (may flood!) */
+-#define CAN_ERR_RESTARTED    0x00000100U /* controller restarted */
+-
+-/* arbitration lost in bit ... / data[0] */
+-#define CAN_ERR_LOSTARB_UNSPEC   0x00 /* unspecified */
+-				      /* else bit number in bitstream */
+-
+-/* error status of CAN-controller / data[1] */
+-#define CAN_ERR_CRTL_UNSPEC      0x00 /* unspecified */
+-#define CAN_ERR_CRTL_RX_OVERFLOW 0x01 /* RX buffer overflow */
+-#define CAN_ERR_CRTL_TX_OVERFLOW 0x02 /* TX buffer overflow */
+-#define CAN_ERR_CRTL_RX_WARNING  0x04 /* reached warning level for RX errors */
+-#define CAN_ERR_CRTL_TX_WARNING  0x08 /* reached warning level for TX errors */
+-#define CAN_ERR_CRTL_RX_PASSIVE  0x10 /* reached error passive status RX */
+-#define CAN_ERR_CRTL_TX_PASSIVE  0x20 /* reached error passive status TX */
+-				      /* (at least one error counter exceeds */
+-				      /* the protocol-defined level of 127)  */
+-
+-/* error in CAN protocol (type) / data[2] */
+-#define CAN_ERR_PROT_UNSPEC      0x00 /* unspecified */
+-#define CAN_ERR_PROT_BIT         0x01 /* single bit error */
+-#define CAN_ERR_PROT_FORM        0x02 /* frame format error */
+-#define CAN_ERR_PROT_STUFF       0x04 /* bit stuffing error */
+-#define CAN_ERR_PROT_BIT0        0x08 /* unable to send dominant bit */
+-#define CAN_ERR_PROT_BIT1        0x10 /* unable to send recessive bit */
+-#define CAN_ERR_PROT_OVERLOAD    0x20 /* bus overload */
+-#define CAN_ERR_PROT_ACTIVE      0x40 /* active error announcement */
+-#define CAN_ERR_PROT_TX          0x80 /* error occured on transmission */
+-
+-/* error in CAN protocol (location) / data[3] */
+-#define CAN_ERR_PROT_LOC_UNSPEC  0x00 /* unspecified */
+-#define CAN_ERR_PROT_LOC_SOF     0x03 /* start of frame */
+-#define CAN_ERR_PROT_LOC_ID28_21 0x02 /* ID bits 28 - 21 (SFF: 10 - 3) */
+-#define CAN_ERR_PROT_LOC_ID20_18 0x06 /* ID bits 20 - 18 (SFF: 2 - 0 )*/
+-#define CAN_ERR_PROT_LOC_SRTR    0x04 /* substitute RTR (SFF: RTR) */
+-#define CAN_ERR_PROT_LOC_IDE     0x05 /* identifier extension */
+-#define CAN_ERR_PROT_LOC_ID17_13 0x07 /* ID bits 17-13 */
+-#define CAN_ERR_PROT_LOC_ID12_05 0x0F /* ID bits 12-5 */
+-#define CAN_ERR_PROT_LOC_ID04_00 0x0E /* ID bits 4-0 */
+-#define CAN_ERR_PROT_LOC_RTR     0x0C /* RTR */
+-#define CAN_ERR_PROT_LOC_RES1    0x0D /* reserved bit 1 */
+-#define CAN_ERR_PROT_LOC_RES0    0x09 /* reserved bit 0 */
+-#define CAN_ERR_PROT_LOC_DLC     0x0B /* data length code */
+-#define CAN_ERR_PROT_LOC_DATA    0x0A /* data section */
+-#define CAN_ERR_PROT_LOC_CRC_SEQ 0x08 /* CRC sequence */
+-#define CAN_ERR_PROT_LOC_CRC_DEL 0x18 /* CRC delimiter */
+-#define CAN_ERR_PROT_LOC_ACK     0x19 /* ACK slot */
+-#define CAN_ERR_PROT_LOC_ACK_DEL 0x1B /* ACK delimiter */
+-#define CAN_ERR_PROT_LOC_EOF     0x1A /* end of frame */
+-#define CAN_ERR_PROT_LOC_INTERM  0x12 /* intermission */
+-
+-/* error status of CAN-transceiver / data[4] */
+-/*                                             CANH CANL */
+-#define CAN_ERR_TRX_UNSPEC             0x00 /* 0000 0000 */
+-#define CAN_ERR_TRX_CANH_NO_WIRE       0x04 /* 0000 0100 */
+-#define CAN_ERR_TRX_CANH_SHORT_TO_BAT  0x05 /* 0000 0101 */
+-#define CAN_ERR_TRX_CANH_SHORT_TO_VCC  0x06 /* 0000 0110 */
+-#define CAN_ERR_TRX_CANH_SHORT_TO_GND  0x07 /* 0000 0111 */
+-#define CAN_ERR_TRX_CANL_NO_WIRE       0x40 /* 0100 0000 */
+-#define CAN_ERR_TRX_CANL_SHORT_TO_BAT  0x50 /* 0101 0000 */
+-#define CAN_ERR_TRX_CANL_SHORT_TO_VCC  0x60 /* 0110 0000 */
+-#define CAN_ERR_TRX_CANL_SHORT_TO_GND  0x70 /* 0111 0000 */
+-#define CAN_ERR_TRX_CANL_SHORT_TO_CANH 0x80 /* 1000 0000 */
+-
+-/* controller specific additional information / data[5..7] */
+-
+-#endif /* CAN_ERROR_H */
+
+Deleted: trunk/kernel/2.4/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.4/can/can_ioctl.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/can_ioctl.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,188 +0,0 @@
+-/*
+- * can_ioctl_h
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#ifndef CAN_IOCTL_H
+-#define CAN_IOCTL_H
+-
+-#ifdef __KERNEL__
+-#include &quot;version.h&quot;
+-RCSID(&quot;$Id$&quot;);
+-#endif
+-
+-#include &lt;linux/sockios.h&gt;
+-
+-
+-/* max. 16 private ioctls */
+-
+-#define SIOCSCANBAUDRATE	(SIOCDEVPRIVATE+0)
+-#define SIOCGCANBAUDRATE	(SIOCDEVPRIVATE+1)
+-
+-#define SIOCSCANCUSTOMBITTIME   (SIOCDEVPRIVATE+2)
+-#define SIOCGCANCUSTOMBITTIME   (SIOCDEVPRIVATE+3)
+-
+-#define SIOCSCANMODE		(SIOCDEVPRIVATE+4)
+-#define SIOCGCANMODE		(SIOCDEVPRIVATE+5)
+-
+-#define SIOCSCANCTRLMODE	(SIOCDEVPRIVATE+6)
+-#define SIOCGCANCTRLMODE	(SIOCDEVPRIVATE+7)
+-
+-#define SIOCSCANFILTER		(SIOCDEVPRIVATE+8)
+-#define SIOCGCANFILTER		(SIOCDEVPRIVATE+9)
+-
+-#define SIOCGCANSTATE		(SIOCDEVPRIVATE+10)
+-#define SIOCGCANSTATS		(SIOCDEVPRIVATE+11)
+-
+-#define SIOCSCANERRORCONFIG	(SIOCDEVPRIVATE+12)
+-#define SIOCGCANERRORCONFIG	(SIOCDEVPRIVATE+13)
+-
+-/* parameters for ioctls */
+-
+-/* SIOC[SG]CANBAUDRATE */
+-/* baudrate for CAN-controller in bits per second. */
+-/* 0 = Scan for baudrate (Autobaud) */
+-
+-typedef __u32 can_baudrate_t;
+-
+-
+-/* SIOC[SG]CANCUSTOMBITTIME */
+-
+-typedef enum CAN_BITTIME_TYPE {
+-	CAN_BITTIME_STD,
+-	CAN_BITTIME_BTR
+-} can_bittime_type_t;
+-
+-/* TSEG1 of controllers usually is a sum of synch_seg (always 1),
+- * prop_seg and phase_seg1, TSEG2 = phase_seg2 */
+-
+-struct can_bittime_std {
+-	__u32 brp;        /* baud rate prescaler */
+-	__u8  prop_seg;   /* from 1 to 8 */
+-	__u8  phase_seg1; /* from 1 to 8 */
+-	__u8  phase_seg2; /* from 1 to 8 */
+-	__u8  sjw:7;      /* from 1 to 4 */
+-	__u8  sam:1;      /* 1 - enable triple sampling */
+-};
+-
+-struct can_bittime_btr {
+-	__u8  btr0;
+-	__u8  btr1;
+-};
+-
+-struct can_bittime {
+-	can_bittime_type_t type;
+-	union {
+-		struct can_bittime_std std;
+-		struct can_bittime_btr btr;
+-	};
+-};
+-
+-#define CAN_BAUDRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
+-#define CAN_BAUDRATE_UNKNOWN		0
+-
+-/* SIOC[SG]CANMODE */
+-
+-typedef __u32 can_mode_t;
+-
+-#define CAN_MODE_STOP	0
+-#define CAN_MODE_START	1
+-#define CAN_MODE_SLEEP	2
+-
+-
+-/* SIOC[SG]CANCTRLMODE */
+-
+-typedef __u32 can_ctrlmode_t;
+-
+-#define CAN_CTRLMODE_LOOPBACK   0x1
+-#define CAN_CTRLMODE_LISTENONLY 0x2
+-
+-
+-/* SIOCGCANFILTER */
+-
+-typedef __u32 can_filter_t;
+-
+-/* filter modes (may vary due to controller specific capabilities) */
+-#define CAN_FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
+-#define CAN_FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
+-#define CAN_FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
+-				  /* filters 3 - 31 currently undefined */
+-
+-#define CAN_FILTER_MAX         31 /* max. filter type value */
+-
+-
+-/* SIOCGCANSTATE */
+-
+-typedef __u32 can_state_t;
+-
+-#define CAN_STATE_ACTIVE		0
+-#define CAN_STATE_BUS_WARNING		1
+-#define CAN_STATE_BUS_PASSIVE		2
+-#define CAN_STATE_BUS_OFF		3
+-#define CAN_STATE_SCANNING_BAUDRATE	4
+-#define CAN_STATE_STOPPED		5
+-#define CAN_STATE_SLEEPING		6
+-
+-
+-/* SIOCGCANSTATS */
+-
+-struct can_device_stats {
+-	int error_warning;
+-	int data_overrun;
+-	int wakeup;
+-	int bus_error;
+-	int error_passive;
+-	int arbitration_lost;
+-	int restarts;
+-	int bus_error_at_init;
+-};
+-
+-/* SIOC[SG]CANERRORCONFIG */
+-
+-typedef enum CAN_ERRCFG_TYPE {
+-	CAN_ERRCFG_MASK,
+-	CAN_ERRCFG_BUSERR,
+-	CAN_ERRCFG_BUSOFF
+-} can_errcfg_type_t;
+-
+-/* tbd */
+-
+-#endif /* CAN_IOCTL_H */
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/proc.c	2007-12-12 09:55:16 UTC (rev 599)
+@@ -44,9 +44,9 @@
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_core.h&quot;
+-#include &quot;version.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/core.h&gt;
++#include &lt;linux/can/version.h&gt;
+ #include &quot;af_can.h&quot;
+ 
+ RCSID(&quot;$Id$&quot;);
+@@ -323,9 +323,8 @@
+ 
+ 	MOD_INC_USE_COUNT;
+ 
+-	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;%06X [ Volkswagen Group - Low Level CAN Framework&quot;
+-			&quot; (LLCF) v%s ]\n&quot;, LLCF_VERSION_CODE, VERSION);
++	len += snprintf(page + len, PAGE_SIZE - len, &quot;%s\n&quot;,
++			CAN_VERSION_STRING);
+ 
+ 	MOD_DEC_USE_COUNT;
+ 
+@@ -442,10 +441,10 @@
+ void can_init_proc(void)
+ {
+ 	/* create /proc/net/can directory */
+-	can_dir = proc_mkdir(CAN_PROC_DIR, NULL);
++	can_dir = proc_mkdir(&quot;net/can&quot;, NULL);
+ 
+ 	if (!can_dir) {
+-		printk(KERN_INFO &quot;CAN: failed to create CAN_PROC_DIR. &quot;
++		printk(KERN_INFO &quot;CAN: failed to create /proc/net/can. &quot;
+ 		       &quot;CONFIG_PROC_FS missing?\n&quot;);
+ 		return;
+ 	}
+@@ -506,5 +505,5 @@
+ 		can_remove_proc_readentry(CAN_PROC_RCVLIST_SFF);
+ 
+ 	if (can_dir)
+-		remove_proc_entry(CAN_PROC_DIR, NULL);
++		remove_proc_entry(&quot;net/can&quot;, NULL);
+ }
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/raw.c	2007-12-12 09:55:16 UTC (rev 599)
+@@ -49,11 +49,11 @@
+ #include &lt;linux/poll.h&gt;
+ #include &lt;net/sock.h&gt;
+ 
+-#include &quot;can.h&quot;
+-#include &quot;can_core.h&quot;
+-#include &quot;can_error.h&quot;
+-#include &quot;version.h&quot;
+-#include &quot;raw.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/core.h&gt;
++#include &lt;linux/can/error.h&gt;
++#include &lt;linux/can/version.h&gt;
++#include &lt;linux/can/raw.h&gt;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+
+Deleted: trunk/kernel/2.4/can/raw.h
+===================================================================
+--- trunk/kernel/2.4/can/raw.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/raw.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,64 +0,0 @@
+-/*
+- * raw.h
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#ifndef RAW_H
+-#define RAW_H
+-
+-#ifdef __KERNEL__
+-#include &quot;version.h&quot;
+-RCSID(&quot;$Id$&quot;);
+-#endif
+-
+-#include &quot;af_can.h&quot;
+-
+-
+-#define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
+-
+-/* for socket options affecting the socket (not the global system) */
+-
+-#define CAN_RAW_FILTER		1	/* set 0 .. n can_filter(s)          */
+-#define CAN_RAW_ERR_FILTER	2	/* set filter for error frames       */
+-#define CAN_RAW_LOOPBACK	3	/* local loopback (default:on)       */
+-#define CAN_RAW_RECV_OWN_MSGS	4	/* receive my own msgs (default:off) */
+-
+-#endif
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/vcan.c	2007-12-12 09:55:16 UTC (rev 599)
+@@ -46,8 +46,8 @@
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;version.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/version.h&gt;
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+
+Deleted: trunk/kernel/2.4/can/version.h
+===================================================================
+--- trunk/kernel/2.4/can/version.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/can/version.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,70 +0,0 @@
+-/*
+- * version.h
+- *
+- * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. Neither the name of Volkswagen nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * Alternatively, provided that this notice is retained in full, this
+- * software may be distributed under the terms of the GNU General
+- * Public License (&quot;GPL&quot;) version 2, in which case the provisions of the
+- * GPL apply INSTEAD OF those given above.
+- *
+- * The provided data structures and external interfaces from this code
+- * are not restricted to be used by modules with a GPL compatible license.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+- * DAMAGE.
+- *
+- * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+- *
+- */
+-
+-#ifndef VERSION_H
+-#define VERSION_H
+-
+-#define RCSID(s) asm(&quot;.section .rodata.str1.1,\&quot;aMS\&quot;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">, at progbits</A>,1\n\t&quot; \
+-		     &quot;.string \&quot;&quot; s &quot;\&quot;\n\t.previous\n&quot;)
+-
+-RCSID(&quot;$Id$&quot;);
+-
+-#define MAJORVERSION 2
+-#define MINORVERSION 0
+-#define PATCHLEVEL   0
+-#define EXTRAVERSION &quot;-pre7&quot;
+-
+-#define LLCF_VERSION_CODE (((MAJORVERSION) &lt;&lt; 16) + ((MINORVERSION) &lt;&lt; 8) \
+-				+ (PATCHLEVEL))
+-
+-/* stringification:  these are the usual macros to stringify with macro
+-   expansion.   The str() macro does the expansion, the xstr() macro is
+-   for the actual stringification.
+-*/
+-#define str(arg) xstr(arg)
+-#define xstr(arg) #arg
+-
+-#define VERSION str(MAJORVERSION) &quot;.&quot; str(MINORVERSION) &quot;.&quot; str(PATCHLEVEL) \
+-	EXTRAVERSION
+-
+-#endif /* VERSION_H */
+
+Modified: trunk/kernel/2.4/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.4/include/linux/can/core.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/include/linux/can/core.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -21,7 +21,7 @@
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ 
+-#define CAN_VERSION &quot;20071116&quot;
++#define CAN_VERSION &quot;20071116-backport-pre2&quot;
+ 
+ /* increment this number each time you change some user-space interface */
+ #define CAN_ABI_VERSION &quot;8&quot;
+@@ -36,20 +36,14 @@
+  * @protocol:   protocol number in socket() syscall.
+  * @capability: capability needed to open the socket, or -1 for no restriction.
+  * @ops:        pointer to struct proto_ops for sock-&gt;ops.
+- * @prot:       pointer to struct proto structure.
+  */
+ struct can_proto {
+ 	int              type;
+ 	int              protocol;
+ 	int              capability;
+ 	struct proto_ops *ops;
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	struct proto     *prot;
+-#else
+-	struct module    *owner;
+ 	int              (*init)(struct sock *sk);
+ 	size_t           obj_size;
+-#endif
+ };
+ 
+ /* function prototypes for the CAN networklayer core (af_can.c) */
+@@ -57,6 +51,12 @@
+ extern int  can_proto_register(struct can_proto *cp);
+ extern void can_proto_unregister(struct can_proto *cp);
+ 
++/* FIX ME: &quot;can_dev_(un)register() to be removed after notifier rework! */
++extern void can_dev_register(struct net_device *dev,
++			     void (*func)(unsigned long msg, void *), void *data);
++extern void can_dev_unregister(struct net_device *dev,
++			       void (*func)(unsigned long msg, void *), void *data);
++
+ extern int  can_rx_register(struct net_device *dev, canid_t can_id,
+ 			    canid_t mask,
+ 			    void (*func)(struct sk_buff *, void *),
+
+Deleted: trunk/kernel/2.4/include/linux/can/dev.h
+===================================================================
+--- trunk/kernel/2.4/include/linux/can/dev.h	2007-12-12 08:02:44 UTC (rev 598)
++++ trunk/kernel/2.4/include/linux/can/dev.h	2007-12-12 09:55:16 UTC (rev 599)
+@@ -1,69 +0,0 @@
+-/*
+- * linux/can/dev.h
+- *
+- * Definitions for CAN controller network devices lib (work in progress)
+- *
+- * $Id$
+- *
+- * Author: Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;
+- * Copyright (c) 2006 Varma Electronics Oy
+- *
+- */
+-
+-#ifndef CAN_DEVICE_H
+-#define CAN_DEVICE_H
+-
+-#include &lt;linux/version.h&gt;
+-#include &lt;linux/can/error.h&gt;
+-#include &lt;linux/can/ioctl.h&gt;
+-
+-struct can_priv {
+-#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+-	struct net_device_stats net_stats;
+-#endif
+-	struct can_device_stats can_stats;
+-
+-	/* can-bus oscillator frequency, in Hz,
+-	   BE CAREFUL! SOME CONTROLLERS (LIKE SJA1000)
+-	   FOOLISH ABOUT THIS FRQ (for sja1000 as ex. this
+-	   clock must be xtal clock divided by 2). */
+-	u32	can_sys_clock;
+-
+-	/* by default max_brp is equal 64,
+-	   but for a Freescale TouCAN, as ex., it can be 255*/
+-	u32	max_brp;
+-	/* For the mostly all controllers, max_sjw is equal 4, but
+-	   some, hmm, CAN implementations hardwared it to 1 */
+-	u8	max_sjw;
+-
+-	u32	baudrate;	/* in bauds */
+-	struct can_bittime	bit_time;
+-
+-	spinlock_t irq_lock;
+-	/* Please hold this lock when touching net_stats/can_stats*/
+-	spinlock_t stats_lock;
+-
+-	can_state_t state;
+-	can_mode_t  mode;
+-	can_ctrlmode_t ctrlmode;
+-
+-	int (*do_set_bit_time)(struct net_device *dev, struct can_bittime *br);
+-	int (*do_get_state)   (struct net_device *dev, can_state_t *state);
+-	int (*do_set_mode)    (struct net_device *dev, can_mode_t mode);
+-	int (*do_set_ctrlmode)(struct net_device *dev, can_ctrlmode_t ctrlmode);
+-	int (*do_get_ctrlmode)(struct net_device *dev, can_ctrlmode_t *ctrlmode);
+-};
+-
+-#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,21)
+-#define ND2D(_ndev)		(_ndev-&gt;class_dev.dev)
+-#else
+-#define ND2D(_ndev)		(_ndev-&gt;dev.parent)
+-#endif
+-
+-struct net_device *alloc_candev(int sizeof_priv);
+-void free_candev(struct net_device *dev);
+-
+-int can_calc_bit_time(struct can_priv *can, u32 baudrate,
+-		      struct can_bittime_std *bit_time);
+-
+-#endif /* CAN_DEVICE_H */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000580.html">r598 - trunk/kernel/2.4
+</A></li>
+	<LI>Next message: <A HREF="000582.html">r600 - trunk/kernel/2.4
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#581">[ date ]</a>
+              <a href="thread.html#581">[ thread ]</a>
+              <a href="subject.html#581">[ subject ]</a>
+              <a href="author.html#581">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

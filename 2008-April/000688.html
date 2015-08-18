@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r706 - branches/ha/hrtimer/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r706%20-%20branches/ha/hrtimer/net/can&In-Reply-To=%3C200804091446.m39EknOt018205%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000687.html">
+   <LINK REL="Next"  HREF="000689.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r706 - branches/ha/hrtimer/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r706%20-%20branches/ha/hrtimer/net/can&In-Reply-To=%3C200804091446.m39EknOt018205%40sheep.berlios.de%3E"
+       TITLE="r706 - branches/ha/hrtimer/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr  9 16:46:49 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000687.html">r705 - branches/cannetdriver26/net/can
+</A></li>
+        <LI>Next message: <A HREF="000689.html">r707 - branches/ha/hrtimer/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#688">[ date ]</a>
+              <a href="thread.html#688">[ thread ]</a>
+              <a href="subject.html#688">[ subject ]</a>
+              <a href="author.html#688">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-04-09 16:46:48 +0200 (Wed, 09 Apr 2008)
+New Revision: 706
+
+Modified:
+   branches/ha/hrtimer/net/can/bcm.c
+Log:
+Removed obsolete code.
+
+
+Modified: branches/ha/hrtimer/net/can/bcm.c
+===================================================================
+--- branches/ha/hrtimer/net/can/bcm.c	2008-04-09 12:49:41 UTC (rev 705)
++++ branches/ha/hrtimer/net/can/bcm.c	2008-04-09 14:46:48 UTC (rev 706)
+@@ -45,7 +45,6 @@
+ #include &lt;linux/version.h&gt;
+ #include &lt;linux/init.h&gt;
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,22)
+-#include &lt;linux/ktime.h&gt;
+ #include &lt;linux/hrtimer.h&gt;
+ #endif
+ #include &lt;linux/list.h&gt;
+@@ -581,8 +580,6 @@
+ 	    ktime_to_us(op-&gt;kt_ival2)) {
+ 		/* mark as 'throttled' and start timer */
+ 		lastdata-&gt;can_dlc |= RX_THR;
+-		printk(&quot;starting thrtimer for op %p\n&quot;, op);
+-
+ 		hrtimer_start(&amp;op-&gt;thrtimer,
+ 			      ktime_add(op-&gt;kt_lastmsg, op-&gt;kt_ival2),
+ 			      HRTIMER_MODE_ABS);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000687.html">r705 - branches/cannetdriver26/net/can
+</A></li>
+	<LI>Next message: <A HREF="000689.html">r707 - branches/ha/hrtimer/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#688">[ date ]</a>
+              <a href="thread.html#688">[ thread ]</a>
+              <a href="subject.html#688">[ subject ]</a>
+              <a href="author.html#688">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r296 - trunk/kernel/2.6/include/linux
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r296%20-%20trunk/kernel/2.6/include/linux&In-Reply-To=%3C200705091740.l49HevT1028770%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000279.html">
+   <LINK REL="Next"  HREF="000281.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r296 - trunk/kernel/2.6/include/linux</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r296%20-%20trunk/kernel/2.6/include/linux&In-Reply-To=%3C200705091740.l49HevT1028770%40sheep.berlios.de%3E"
+       TITLE="r296 - trunk/kernel/2.6/include/linux">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed May  9 19:40:57 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000279.html">r295 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000281.html">r297 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#280">[ date ]</a>
+              <a href="thread.html#280">[ thread ]</a>
+              <a href="subject.html#280">[ subject ]</a>
+              <a href="author.html#280">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-09 19:40:55 +0200 (Wed, 09 May 2007)
+New Revision: 296
+
+Modified:
+   trunk/kernel/2.6/include/linux/can.h
+Log:
+cosmetic.
+
+
+Modified: trunk/kernel/2.6/include/linux/can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can.h	2007-05-09 07:36:43 UTC (rev 295)
++++ trunk/kernel/2.6/include/linux/can.h	2007-05-09 17:40:55 UTC (rev 296)
+@@ -45,7 +45,7 @@
+ struct can_frame {
+ 	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
+ 	__u8    can_dlc; /* data length code: 0 .. 8 */
+-	__u8    data[8] __attribute__ ((aligned(8)));
++	__u8    data[8] __attribute__((aligned(8)));
+ };
+ 
+ /* particular protocols of the protocol family PF_CAN */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000279.html">r295 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000281.html">r297 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#280">[ date ]</a>
+              <a href="thread.html#280">[ thread ]</a>
+              <a href="subject.html#280">[ subject ]</a>
+              <a href="author.html#280">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

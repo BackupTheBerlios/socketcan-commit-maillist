@@ -1,0 +1,393 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r400 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r400%20-%20trunk&In-Reply-To=%3C200707041345.l64DjDbq025435%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000384.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r400 - trunk</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r400%20-%20trunk&In-Reply-To=%3C200707041345.l64DjDbq025435%40sheep.berlios.de%3E"
+       TITLE="r400 - trunk">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul  4 15:45:13 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000384.html">r401 - branches/ut
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#383">[ date ]</a>
+              <a href="thread.html#383">[ thread ]</a>
+              <a href="subject.html#383">[ subject ]</a>
+              <a href="author.html#383">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-04 15:45:06 +0200 (Wed, 04 Jul 2007)
+New Revision: 400
+
+Added:
+   trunk/strip-src
+Removed:
+   trunk/kv
+Modified:
+   trunk/mkpatch
+Log:
+Rename kv to strip-src.
+Move code to strip ident lines from mkpatch to strip-src.
+
+
+
+Deleted: trunk/kv
+===================================================================
+--- trunk/kv	2007-06-29 16:13:03 UTC (rev 399)
++++ trunk/kv	2007-07-04 13:45:06 UTC (rev 400)
+@@ -1,95 +0,0 @@
+-#!/usr/bin/perl
+-#
+-# $Id$ 
+-#
+-# Eliminate CPP condional compilation for different kernel version, i.e.
+-# eliminate all occurences of #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(...)
+-# and likewise for &lt;=, &gt;, and &gt;=.
+-#
+-# Call as kv [-d] &lt;version&gt; &lt;file&gt; where &lt;version&gt; is the kernel version you
+-# want the code to be generated for, in the form &lt;major&gt;.&lt;minor&gt;.&lt;patchlevel&gt;.
+-# The -d (debug) option will give you some output on what the program does.
+-# The result will be output on stdout.
+-
+-require(&quot;getopts.pl&quot;);
+-
+-$re = &quot;^\\#if LINUX_VERSION_CODE (&lt;|&lt;=|&gt;|&gt;=) &quot; .
+-    &quot;KERNEL_VERSION\\((\\d+),(\\d+),(\\d+)\\)&quot;;
+-
+-Getopts(&quot;d&quot;);
+-$debug = $opt_d;
+-
+-$version = shift;
+-$level   = 0;
+-$state   = -1;
+-
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">- at lines</A> = &lt;&gt;;
+-unshift(@lines, &quot;&quot;);
+-
+-for ($i = 1; $i &lt;= $#lines; $i++) {
+-    printf(&quot;%6d: &quot;, $i) if ($debug);
+-    $_ = $lines[$i];
+-    if ($state == -1) {
+-	if (/$re/) {
+-	    $state = compare($version, $1, $2, $3, $4);
+-	    print &quot;&lt;del&gt;\n&quot; if ($debug);
+-	    $skip = ($lines[$i-1] eq &quot;\n&quot;);
+-	} else {
+-	    print;
+-	}
+-    } else {
+-	if ($level == 0 &amp;&amp; /^\#else/) {
+-	    $state = !$state;
+-	    print &quot;&lt;del&gt;\n&quot; if ($debug);
+-	} elsif ($level == 0 &amp;&amp; /^\#endif/) {
+-	    $state = -1;
+-	    print &quot;&lt;del&gt;\n&quot; if ($debug);
+-
+-	    while ($skip &amp;&amp; $lines[$i+1] eq &quot;\n&quot;) {
+-		$i++;
+-		printf(&quot;%6d: &lt;skip&gt;\n&quot;, $i) if ($debug);
+-	    }
+-	} elsif (/^\#if/) {
+-	    $level++;
+-	    print &quot;&lt;del&gt;\n&quot; if ($debug);
+-	} elsif (/^\#endif/) {
+-	    $level--;
+-	    print &quot;&lt;del&gt;\n&quot; if ($debug);
+-	} elsif ($state == 1) {
+-	    print;
+-	    $skip = 0;
+-	} else {
+-	    print &quot;&lt;del&gt;\n&quot; if ($debug);
+-	}
+-    }
+-}
+-
+-sub compare() {
+-    ($version, $op, $major, $minor, $patchlevel) = @_;
+-
+-    ($mj, $mn, $pl) = split(/\./, $version);
+-    
+-    if ($op eq &quot;&lt;&quot; &amp;&amp;
+-	($mj &lt; $major ||
+-	 $mj == $major &amp;&amp; ($mn &lt; $minor || 
+-			   $mn == $minor &amp;&amp; $pl &lt; $patchlevel))) {
+-	return 1;
+-    } elsif ($op eq &quot;&lt;=&quot; &amp;&amp;
+-	     ($mj &lt; $major ||
+-	      $mj == $major &amp;&amp; ($mn &lt; $minor || 
+-				$mn == $minor &amp;&amp; $pl &lt;= $patchlevel))) {
+-	return 1;
+-    } elsif ($op eq &quot;&gt;&quot; &amp;&amp;
+-	     ($mj &gt; $major ||
+-	      $mj == $major &amp;&amp; ($mn &gt; $minor || 
+-				$mn == $minor &amp;&amp; $pl &gt; $patchlevel))) {
+-	return 1;
+-    } elsif ($op eq &quot;&gt;=&quot; &amp;&amp;
+-	     ($mj &gt; $major ||
+-	      $mj == $major &amp;&amp; ($mn &gt; $minor || 
+-				$mn == $minor &amp;&amp; $pl &gt;= $patchlevel))) {
+-	return 1;
+-    } else {
+-	return 0;
+-    }
+-}
+
+Modified: trunk/mkpatch
+===================================================================
+--- trunk/mkpatch	2007-06-29 16:13:03 UTC (rev 399)
++++ trunk/mkpatch	2007-07-04 13:45:06 UTC (rev 400)
+@@ -42,45 +42,19 @@
+ 
+ sub add_file {
+     my ($file, $name) = @_;
+-    my (@lines, $count, $ts, $mtime);
++    my (@lines, $count, $ts);
+ 
+-    open file, &quot;./kv $version $file |&quot; || die &quot;open $file\n&quot;;
++    open file, &quot;./strip-src -i -v $version $file |&quot; || die &quot;open $file\n&quot;;
+     @lines = &lt;file&gt;;
++    close file;
++
+     $count = $#lines + 1;
+-    $mtime = (stat($file))[9];
+     $ts = strftime &quot;%F %T&quot;, gmtime((stat($file))[9]);
+ 
+-    for $i (0..$#lines) {
+-
+-	if ($lines[$i] =~ /include.*linux(\/can)?\/version\.h/) {
+-	    undef($lines[$i]);
+-	    $count--;
+-	}
+-
+-	if ($lines[$i] =~ /RCSID/) {
+-	    undef($lines[$i]);
+-	    $count--;
+-	    while ($lines[++$i] eq &quot;\n&quot;) {
+-		undef($lines[$i]);
+-		$count--;
+-	    }
+-	}
+-
+-	if ($lines[$i] =~ /\$Id.*\$/) {
+-	    undef($lines[$i]);
+-	    $count--;
+-	    while ($lines[++$i] eq &quot; *\n&quot;) {
+-		undef($lines[$i]);
+-		$count--;
+-	    }
+-	}
+-    }
+-
+     print &quot;--- a/$name 1970-01-01 00:00:00\n&quot;;
+     print &quot;+++ b/$name $ts\n&quot;;
+     print &quot;@@ -0,0 +1,$count @@\n&quot;;
+     for (@lines) {
+-	print &quot;+$_&quot; if (defined($_));
++	print &quot;+$_&quot;;
+     }
+-    close file;
+ }
+
+Copied: trunk/strip-src (from rev 399, trunk/kv)
+===================================================================
+--- trunk/kv	2007-06-29 16:13:03 UTC (rev 399)
++++ trunk/strip-src	2007-07-04 13:45:06 UTC (rev 400)
+@@ -0,0 +1,155 @@
++#!/usr/bin/perl
++#
++# $Id$ 
++#
++# Strip lines from sources files:
++# 
++# * Eliminate CPP conditional compilation for different kernel version, i.e.
++#   eliminate all occurences of #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(...)
++#   and likewise for &lt;=, &gt;, and &gt;=.
++#
++# * Eliminate all Subversion $Id$ and RCSID() lines.
++#
++# Call the program as
++#
++#     strip-src [-v &lt;version&gt;] [-i] [-d] [&lt;file&gt;]
++#
++# The -v option will generate a source file for specified kernel version
++# where &lt;version&gt; is the kernel version you want the code to be generated
++# for, in the form &lt;major&gt;.&lt;minor&gt;.&lt;patchlevel&gt;.
++#
++# The -i option will strip all Subversion $Id$ lines from the the source.
++#
++# The -d (debug) option will give you some output on what the program does.
++#
++# If &lt;file&gt; is given, read that source file, otherwise stdin.
++#
++# The result will be output on stdout.
++
++require(&quot;getopts.pl&quot;);
++
++$re = &quot;^\\#if LINUX_VERSION_CODE (&lt;|&lt;=|&gt;|&gt;=) &quot; .
++    &quot;KERNEL_VERSION\\((\\d+),(\\d+),(\\d+)\\)&quot;;
++
++Getopts(&quot;div:&quot;);
++$debug = $opt_d;
++
++if (defined($opt_v)) {
++    $version = $opt_v;
++}
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+ at lines</A> = &lt;&gt;;
++unshift(@lines, &quot;&quot;);
++
++if (defined($opt_v)) {
++    strip_kversion($opt_v);
++}
++
++if (defined($opt_i)) {
++    strip_id();
++}
++
++for (@lines) {
++    print if (defined($_));
++}
++
++sub strip_id {
++    my($i);
++    
++    for $i (0..$#lines) {
++	
++	if ($lines[$i] =~ /include.*linux(\/can)?\/version\.h/) {
++	    delete_line($i, &quot;&lt;del&gt;&quot;);
++	}
++	
++	if ($lines[$i] =~ /RCSID/ || $lines[$i] =~ /\$Id.*\$/) {
++	    delete_line($i, &quot;&lt;del&gt;&quot;);
++	    while ($lines[++$i] eq &quot;\n&quot;) {
++		delete_line($i, &quot;&lt;skip&gt;&quot;);
++	    }
++	}
++    }
++}
++
++
++sub strip_kversion {
++    my($version) = @_;
++    my($i, $state, $skip, $level);
++
++    $level   = 0;
++    $state   = -1;
++
++    for ($i = 1; $i &lt;= $#lines; $i++) {
++	$_ = $lines[$i];
++	if ($state == -1) {
++	    if (/$re/) {
++		$state = compare($version, $1, $2, $3, $4);
++		delete_line($i, &quot;&lt;del&gt;&quot;);
++		$skip = ($lines[$i-1] eq &quot;\n&quot;);
++	    }
++	} else {
++	    if ($level == 0 &amp;&amp; /^\#else/) {
++		$state = !$state;
++		delete_line($i, &quot;&lt;del&gt;&quot;);
++	    } elsif ($level == 0 &amp;&amp; /^\#endif/) {
++		$state = -1;
++		delete_line($i, &quot;&lt;del&gt;&quot;);
++
++		while ($skip &amp;&amp; $lines[$i+1] eq &quot;\n&quot;) {
++		    $i++;
++		    delete_line($i, &quot;&lt;skip&gt;&quot;);
++		}
++	    } elsif (/^\#if/) {
++		$level++;
++		delete_line($i, &quot;&lt;del&gt;&quot;);
++	    } elsif (/^\#endif/) {
++		$level--;
++		delete_line($i, &quot;&lt;del&gt;&quot;);
++	    } elsif ($state == 1) {
++		$skip = 0;
++	    } else {
++		delete_line($i, &quot;&lt;del&gt;&quot;);
++	    }
++	}
++    }
++}
++
++sub compare {
++    my($version, $op, $major, $minor, $patchlevel) = @_;
++
++    my($mj, $mn, $pl) = split(/\./, $version);
++    
++    if ($op eq &quot;&lt;&quot; &amp;&amp;
++	($mj &lt; $major ||
++	 $mj == $major &amp;&amp; ($mn &lt; $minor || 
++			   $mn == $minor &amp;&amp; $pl &lt; $patchlevel))) {
++	return 1;
++    } elsif ($op eq &quot;&lt;=&quot; &amp;&amp;
++	     ($mj &lt; $major ||
++	      $mj == $major &amp;&amp; ($mn &lt; $minor || 
++				$mn == $minor &amp;&amp; $pl &lt;= $patchlevel))) {
++	return 1;
++    } elsif ($op eq &quot;&gt;&quot; &amp;&amp;
++	     ($mj &gt; $major ||
++	      $mj == $major &amp;&amp; ($mn &gt; $minor || 
++				$mn == $minor &amp;&amp; $pl &gt; $patchlevel))) {
++	return 1;
++    } elsif ($op eq &quot;&gt;=&quot; &amp;&amp;
++	     ($mj &gt; $major ||
++	      $mj == $major &amp;&amp; ($mn &gt; $minor || 
++				$mn == $minor &amp;&amp; $pl &gt;= $patchlevel))) {
++	return 1;
++    } else {
++	return 0;
++    }
++}
++
++sub delete_line {
++    my($lineno, $dbg) = @_;
++    
++    if ($debug) {
++	$lines[$lineno] = &quot;$dbg\n&quot;;
++    } else {
++	undef($lines[$lineno]);
++    }
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000384.html">r401 - branches/ut
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#383">[ date ]</a>
+              <a href="thread.html#383">[ thread ]</a>
+              <a href="subject.html#383">[ subject ]</a>
+              <a href="author.html#383">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

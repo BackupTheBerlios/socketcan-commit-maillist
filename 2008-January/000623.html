@@ -1,0 +1,424 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r641 - in branches/cannetdriver26: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r641%20-%20in%20branches/cannetdriver26%3A%20include/linux/can%20net/can&In-Reply-To=%3C200801091120.m09BKYtv013056%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000624.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r641 - in branches/cannetdriver26: include/linux/can net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r641%20-%20in%20branches/cannetdriver26%3A%20include/linux/can%20net/can&In-Reply-To=%3C200801091120.m09BKYtv013056%40sheep.berlios.de%3E"
+       TITLE="r641 - in branches/cannetdriver26: include/linux/can net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  9 12:20:34 CET 2008</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000624.html">r642 - branches/cannetdriver26/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#623">[ date ]</a>
+              <a href="thread.html#623">[ thread ]</a>
+              <a href="subject.html#623">[ subject ]</a>
+              <a href="author.html#623">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-09 12:20:21 +0100 (Wed, 09 Jan 2008)
+New Revision: 641
+
+Modified:
+   branches/cannetdriver26/include/linux/can/dev.h
+   branches/cannetdriver26/net/can/dev.c
+Log:
+Coding style fixes (Lindent and manual)
+
+Modified: branches/cannetdriver26/include/linux/can/dev.h
+===================================================================
+--- branches/cannetdriver26/include/linux/can/dev.h	2007-12-28 10:14:22 UTC (rev 640)
++++ branches/cannetdriver26/include/linux/can/dev.h	2008-01-09 11:20:21 UTC (rev 641)
+@@ -23,41 +23,48 @@
+ #endif
+ 	struct can_device_stats can_stats;
+ 
+-	/* can-bus oscillator frequency, in Hz,
+-	   BE CAREFUL! SOME CONTROLLERS (LIKE SJA1000)
+-	   FOOLISH ABOUT THIS FRQ (for sja1000 as ex. this
+-	   clock must be xtal clock divided by 2). */
+-	u32	can_sys_clock;
++	/*
++	 * CAN bus oscillator frequency, in Hz, BE CAREFUL! SOME
++	 * CONTROLLERS (LIKE SJA1000) FOOLISH ABOUT THIS FRQ (for
++	 * sja1000 as ex. this clock must be xtal clock divided by 2).
++	 */
++	u32 can_sys_clock;
++	/*
++	 * By default max_brp is equal 64, but for a Freescale TouCAN,
++	 * as ex., it can be 255.
++	 */
++	u32 max_brp;
++	/*
++	 * For the mostly all controllers, max_sjw is equal 4, but some,
++	 * hmm, CAN implementations hardwared it to 1.
++	 */
++	u8 max_sjw;
+ 
+-	/* by default max_brp is equal 64,
+-	   but for a Freescale TouCAN, as ex., it can be 255*/
+-	u32	max_brp;
+-	/* For the mostly all controllers, max_sjw is equal 4, but
+-	   some, hmm, CAN implementations hardwared it to 1 */
+-	u8	max_sjw;
++	u32 baudrate;		/* in bauds */
++	struct can_bittime bit_time;
+ 
+-	u32	baudrate;	/* in bauds */
+-	struct can_bittime	bit_time;
+-
+ 	spinlock_t irq_lock;
+-	/* Please hold this lock when touching net_stats/can_stats*/
++	/* Please hold this lock when touching net_stats/can_stats */
+ 	spinlock_t stats_lock;
+ 
+ 	can_state_t state;
+-	can_mode_t  mode;
++	can_mode_t mode;
+ 	can_ctrlmode_t ctrlmode;
+ 
+-	int (*do_set_bit_time)(struct net_device *dev, struct can_bittime *br);
+-	int (*do_get_state)   (struct net_device *dev, can_state_t *state);
+-	int (*do_set_mode)    (struct net_device *dev, can_mode_t mode);
+-	int (*do_set_ctrlmode)(struct net_device *dev, can_ctrlmode_t ctrlmode);
+-	int (*do_get_ctrlmode)(struct net_device *dev, can_ctrlmode_t *ctrlmode);
++	int (*do_set_bit_time)(struct net_device * dev,
++			       struct can_bittime * br);
++	int (*do_get_state)(struct net_device * dev, can_state_t * state);
++	int (*do_set_mode)(struct net_device * dev, can_mode_t mode);
++	int (*do_set_ctrlmode)(struct net_device * dev,
++			       can_ctrlmode_t ctrlmode);
++	int (*do_get_ctrlmode)(struct net_device * dev,
++			       can_ctrlmode_t * ctrlmode);
+ };
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,21)
+-#define ND2D(_ndev)		(_ndev-&gt;class_dev.dev)
++#define ND2D(_ndev)	(_ndev-&gt;class_dev.dev)
+ #else
+-#define ND2D(_ndev)		(_ndev-&gt;dev.parent)
++#define ND2D(_ndev)	(_ndev-&gt;dev.parent)
+ #endif
+ 
+ struct net_device *alloc_candev(int sizeof_priv);
+
+Modified: branches/cannetdriver26/net/can/dev.c
+===================================================================
+--- branches/cannetdriver26/net/can/dev.c	2007-12-28 10:14:22 UTC (rev 640)
++++ branches/cannetdriver26/net/can/dev.c	2008-01-09 11:20:21 UTC (rev 641)
+@@ -30,26 +30,26 @@
+ 	      &quot;Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;&quot;);
+ 
+ /*
+- Abstract:
+-	Baud rate calculated with next formula:
+-	baud = frq/(brp*(1 + prop_seg+ phase_seg1 + phase_seg2))
++ * Abstract:
++ *   Baud rate calculated with next formula:
++ *   baud = frq/(brp*(1 + prop_seg+ phase_seg1 + phase_seg2))
++ *
++ *   This calc function based on work of Florian Hartwich and Armin Bassemi
++ *   &quot;The Configuration of the CAN Bit Timing&quot;
++ *   (<A HREF="http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf">http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf</A>)
++ *
++ *  Parameters:
++ *  [in]
++ *    bit_time_nsec - expected bit time in nanosecs
++ *
++ *  [out]
++ *    bit_time      - calculated time segments, for meaning of
++ * 		      each field read CAN standard.
++ */
+ 
+-	This calc function based on work of Florian Hartwich and Armin Bassemi
+-	&quot;The Configuration of the CAN Bit Timing&quot;
+-	(<A HREF="http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf">http://www.semiconductors.bosch.de/pdf/CiA99Paper.pdf</A>)
++#define DEFAULT_MAX_BRP	64U
++#define DEFAULT_MAX_SJW	4U
+ 
+- Parameters:
+-  [in]
+-    bit_time_nsec - expected bit time in nanosecs
+-
+-  [out]
+-	bit_time	- calculated time segments, for meaning of
+-			  each field read CAN standard.
+-*/
+-
+-#define DEFAULT_MAX_BRP			64U
+-#define DEFAULT_MAX_SJW			4U
+-
+ /* All below values in tq units */
+ #define MAX_BIT_TIME	25U
+ #define MIN_BIT_TIME	8U
+@@ -60,9 +60,10 @@
+ int can_calc_bit_time(struct can_priv *can, u32 baudrate,
+ 		      struct can_bittime_std *bit_time)
+ {
+-	int best_error  = -1; /* Ariphmetic error */
+-	int df, best_df = -1; /* oscillator's tolerance range, greater is better*/
+-	u32 quanta;	      /*in tq units*/
++	int best_error = -1;	/* Ariphmetic error */
++	int df, best_df = -1;	/* oscillator's tolerance range,
++				   greater is better */
++	u32 quanta;		/* in tq units */
+ 	u32 brp, phase_seg1, phase_seg2, sjw, prop_seg;
+ 	u32 brp_min, brp_max, brp_expected;
+ 	u64 tmp;
+@@ -71,9 +72,9 @@
+ 	if (baudrate == 0 || baudrate &gt; 1000000UL)
+ 		return -EINVAL;
+ 
+-	tmp = (u64)can-&gt;can_sys_clock*1000;
++	tmp = (u64) can-&gt;can_sys_clock * 1000;
+ 	do_div(tmp, baudrate);
+-	brp_expected = (u32)tmp;
++	brp_expected = (u32) tmp;
+ 
+ 	brp_min = brp_expected / (1000 * MAX_BIT_TIME);
+ 	if (brp_min == 0)
+@@ -89,7 +90,8 @@
+ 
+ 	for (brp = brp_min; brp &lt;= brp_max; brp++) {
+ 		quanta = brp_expected / (brp * 1000);
+-		if (quanta &lt; MAX_BIT_TIME &amp;&amp; quanta * brp * 1000 != brp_expected)
++		if (quanta &lt; MAX_BIT_TIME
++		    &amp;&amp; quanta * brp * 1000 != brp_expected)
+ 			quanta++;
+ 		if (quanta &lt; MIN_BIT_TIME || quanta &gt; MAX_BIT_TIME)
+ 			continue;
+@@ -98,31 +100,40 @@
+ 		for (sjw = can-&gt;max_sjw; sjw &gt; 0; sjw--) {
+ 			for (; phase_seg2 &gt; sjw; phase_seg2--) {
+ 				u32 err1, err2;
+-				phase_seg1 = phase_seg2 % 2 ? phase_seg2-1 : phase_seg2;
+-				prop_seg = quanta-1 - phase_seg2 - phase_seg1;
++				phase_seg1 =
++				    phase_seg2 % 2 ? phase_seg2 -
++				    1 : phase_seg2;
++				prop_seg = quanta - 1 - phase_seg2 - phase_seg1;
+ 				/*
+-				 * FIXME: support of longer lines (i.e. bigger prop_seg)
+-				 * is more prefered than support of cheap oscillators
+-				 * (i.e. bigger df/phase_seg1/phase_seg2)
++				 * FIXME: support of longer lines (i.e. bigger
++				 * prop_seg) is more prefered than support of
++				 * cheap oscillators (i.e. bigger
++				 * df/phase_seg1/phase_seg2)
+ 				 */
+ 				if (prop_seg &lt; phase_seg1)
+-						continue;
++					continue;
+ 				if (prop_seg &gt; MAX_PROP_SEG)
+-						goto next_brp;
++					goto next_brp;
+ 
+-				err1 = phase_seg1*brp*500*1000/
+-					(13*brp_expected-phase_seg2*brp*1000);
+-				err2 = sjw*brp*50*1000/brp_expected;
++				err1 = phase_seg1 * brp * 500 * 1000 /
++				    (13 * brp_expected -
++				     phase_seg2 * brp * 1000);
++				err2 = sjw * brp * 50 * 1000 / brp_expected;
+ 
+-				df = min(err1,err2);
++				df = min(err1, err2);
+ 				if (df &gt;= best_df) {
+-					unsigned error = abs(brp_expected*10/
+-							   (brp*(1+prop_seg+phase_seg1+phase_seg2))-10000);
++					unsigned error =
++						abs(brp_expected * 10 /
++						    (brp * (1 + prop_seg +
++							    phase_seg1 +
++							    phase_seg2)) -
++						    10000);
+ 
+ 					if (error &gt; 10 || error &gt; best_error)
+ 						continue;
+ 
+-					if (error == best_error &amp;&amp; prop_seg &lt; bit_time-&gt;prop_seg)
++					if (error == best_error
++					    &amp;&amp; prop_seg &lt; bit_time-&gt;prop_seg)
+ 						continue;
+ 
+ 					best_error = error;
+@@ -132,11 +143,12 @@
+ 					bit_time-&gt;phase_seg1 = phase_seg1;
+ 					bit_time-&gt;phase_seg2 = phase_seg2;
+ 					bit_time-&gt;sjw = sjw;
+-					bit_time-&gt;sam = (bit_time-&gt;phase_seg1 &gt; 3);
++					bit_time-&gt;sam =
++						(bit_time-&gt;phase_seg1 &gt; 3);
+ 				}
+ 			}
+ 		}
+-	next_brp:	;
++	      next_brp:;
+ 	}
+ 
+ 	if (best_error &lt; 0)
+@@ -149,10 +161,11 @@
+ {
+ 	struct can_priv *can = netdev_priv(dev);
+ 	struct can_bittime *bt = (struct can_bittime *)&amp;ifr-&gt;ifr_ifru;
+-	ulong *baudrate = (ulong *)&amp;ifr-&gt;ifr_ifru;
++	ulong *baudrate = (ulong *) &amp; ifr-&gt;ifr_ifru;
+ 	int err = -EOPNOTSUPP;
+ 
+-	dev_dbg(ND2D(dev), &quot;(%s) 0x%08x %p\n&quot;, __FUNCTION__, cmd, &amp;ifr-&gt;ifr_ifru);
++	dev_dbg(ND2D(dev), &quot;(%s) 0x%08x %p\n&quot;, __FUNCTION__, cmd,
++		&amp;ifr-&gt;ifr_ifru);
+ 
+ 	switch (cmd) {
+ 	case SIOCSCANBAUDRATE:
+@@ -179,8 +192,11 @@
+ 			if (!err) {
+ 				can-&gt;bit_time = *bt;
+ 				if (bt-&gt;type == CAN_BITTIME_STD &amp;&amp; bt-&gt;std.brp) {
+-					can-&gt;baudrate = can-&gt;can_sys_clock/(bt-&gt;std.brp*
+-						(1+bt-&gt;std.prop_seg+bt-&gt;std.phase_seg1+bt-&gt;std.phase_seg2));
++					can-&gt;baudrate = can-&gt;can_sys_clock /
++						(bt-&gt;std.brp *
++						 (1 + bt-&gt;std.prop_seg +
++						  bt-&gt;std.phase_seg1 +
++						  bt-&gt;std.phase_seg2));
+ 				} else
+ 					can-&gt;baudrate = CAN_BAUDRATE_UNKNOWN;
+ 			}
+@@ -192,27 +208,29 @@
+ 		break;
+ 	case SIOCSCANMODE:
+ 		if (can-&gt;do_set_mode) {
+-			can_mode_t mode = *((can_mode_t *)(&amp;ifr-&gt;ifr_ifru));
++			can_mode_t mode = *((can_mode_t *) (&amp;ifr-&gt;ifr_ifru));
+ 			if (mode == CAN_MODE_START &amp;&amp;
+ 			    can-&gt;baudrate == CAN_BAUDRATE_UNCONFIGURED) {
+-				dev_info(ND2D(dev), &quot;Impossible to start on UNKNOWN speed\n&quot;);
++				dev_info(ND2D(dev),
++					 &quot;Impossible to start on UNKNOWN speed\n&quot;);
+ 				err = EINVAL;
+ 			} else
+ 				return can-&gt;do_set_mode(dev, mode);
+ 		}
+ 		break;
+ 	case SIOCGCANMODE:
+-		*((can_mode_t *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;mode;
++		*((can_mode_t *) (&amp;ifr-&gt;ifr_ifru)) = can-&gt;mode;
+ 		err = 0;
+ 		break;
+ 	case SIOCSCANCTRLMODE:
+ 		if (can-&gt;do_set_ctrlmode) {
+-			can_ctrlmode_t ctrlmode = *((can_ctrlmode_t *)(&amp;ifr-&gt;ifr_ifru));
++			can_ctrlmode_t ctrlmode =
++			    *((can_ctrlmode_t *) (&amp;ifr-&gt;ifr_ifru));
+ 			return can-&gt;do_set_ctrlmode(dev, ctrlmode);
+ 		}
+ 		break;
+ 	case SIOCGCANCTRLMODE:
+-		*((can_ctrlmode_t *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;ctrlmode;
++		*((can_ctrlmode_t *) (&amp;ifr-&gt;ifr_ifru)) = can-&gt;ctrlmode;
+ 		err = 0;
+ 		break;
+ 	case SIOCSCANFILTER:
+@@ -221,7 +239,9 @@
+ 		break;
+ 	case SIOCGCANSTATE:
+ 		if (can-&gt;do_get_state)
+-			return can-&gt;do_get_state(dev, (can_state_t *)(&amp;ifr-&gt;ifr_ifru));
++			return can-&gt;do_get_state(dev,
++						 (can_state_t *) (&amp;ifr-&gt;
++								  ifr_ifru));
+ 		break;
+ 	case SIOCGCANSTATS:
+ 		*((struct can_device_stats *)(&amp;ifr-&gt;ifr_ifru)) = can-&gt;can_stats;
+@@ -243,18 +263,18 @@
+ 
+ static void can_setup(struct net_device *dev)
+ {
+-	dev-&gt;type            = ARPHRD_CAN;
+-	dev-&gt;mtu             = sizeof(struct can_frame);
+-	dev-&gt;do_ioctl        = can_ioctl;
++	dev-&gt;type = ARPHRD_CAN;
++	dev-&gt;mtu = sizeof(struct can_frame);
++	dev-&gt;do_ioctl = can_ioctl;
+ 	dev-&gt;hard_header_len = 0;
+-	dev-&gt;addr_len        = 0;
+-	dev-&gt;tx_queue_len    = 10;
++	dev-&gt;addr_len = 0;
++	dev-&gt;tx_queue_len = 10;
+ 
+ 	/* New-style flags. */
+-	dev-&gt;flags           = IFF_NOARP;
+-	dev-&gt;features        = NETIF_F_NO_CSUM;
++	dev-&gt;flags = IFF_NOARP;
++	dev-&gt;features = NETIF_F_NO_CSUM;
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+-	dev-&gt;get_stats       = can_get_stats;
++	dev-&gt;get_stats = can_get_stats;
+ #endif
+ }
+ 
+@@ -274,16 +294,18 @@
+ 	priv = netdev_priv(dev);
+ 
+ 	priv-&gt;baudrate = CAN_BAUDRATE_UNCONFIGURED;
+-	priv-&gt;max_brp  = DEFAULT_MAX_BRP;
+-	priv-&gt;max_sjw  = DEFAULT_MAX_SJW;
++	priv-&gt;max_brp = DEFAULT_MAX_BRP;
++	priv-&gt;max_sjw = DEFAULT_MAX_SJW;
+ 	spin_lock_init(&amp;priv-&gt;irq_lock);
+ 
+ 	return dev;
+ }
++
+ EXPORT_SYMBOL(alloc_candev);
+ 
+ void free_candev(struct net_device *dev)
+ {
+ 	free_netdev(dev);
+ }
++
+ EXPORT_SYMBOL(free_candev);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000624.html">r642 - branches/cannetdriver26/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#623">[ date ]</a>
+              <a href="thread.html#623">[ thread ]</a>
+              <a href="subject.html#623">[ subject ]</a>
+              <a href="author.html#623">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

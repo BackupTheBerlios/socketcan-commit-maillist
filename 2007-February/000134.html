@@ -1,0 +1,508 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r150 - in trunk/kernel/2.4: can drivers/mscan drivers/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r150%20-%20in%20trunk/kernel/2.4%3A%20can%20drivers/mscan%20drivers/sja1000&In-Reply-To=%3C200702141032.l1EAWscU004252%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000133.html">
+   <LINK REL="Next"  HREF="000135.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r150 - in trunk/kernel/2.4: can drivers/mscan drivers/sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r150%20-%20in%20trunk/kernel/2.4%3A%20can%20drivers/mscan%20drivers/sja1000&In-Reply-To=%3C200702141032.l1EAWscU004252%40sheep.berlios.de%3E"
+       TITLE="r150 - in trunk/kernel/2.4: can drivers/mscan drivers/sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 14 11:32:54 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000133.html">r149 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000135.html">r151 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#134">[ date ]</a>
+              <a href="thread.html#134">[ thread ]</a>
+              <a href="subject.html#134">[ subject ]</a>
+              <a href="author.html#134">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-02-14 11:32:39 +0100 (Wed, 14 Feb 2007)
+New Revision: 150
+
+Modified:
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/can.h
+   trunk/kernel/2.4/can/can_ioctl.h
+   trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+   trunk/kernel/2.4/drivers/sja1000/sja1000.c
+Log:
+Cleaned up the #includes for Kernel 2.4 analogue to Kernel 2.6 tree.
+
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2007-02-12 13:34:56 UTC (rev 149)
++++ trunk/kernel/2.4/can/af_can.h	2007-02-14 10:32:39 UTC (rev 150)
+@@ -45,88 +45,16 @@
+ #ifndef AF_CAN_H
+ #define AF_CAN_H
+ 
+-#ifdef __KERNEL__
+ #include &quot;version.h&quot;
+ RCSID(&quot;$Id$&quot;);
+-#endif
+ 
+-#ifdef __KERNEL__
+ #include &lt;linux/skbuff.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+-#include &lt;linux/proc_fs.h&gt;
+-#include &lt;linux/if.h&gt;
+-#else
+-#include &lt;net/if.h&gt;
+-#endif
+ 
+ #include &quot;can.h&quot;
+ 
+ #define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
+ 
+-/* CAN socket protocol family definition */
+-/* to be moved to include/linux/socket.h */
+-#define PF_CAN		29	/* Controller Area Network      */
+-#define AF_CAN		PF_CAN
+-
+-/* particular protocols of the protocol family PF_CAN */
+-#define CAN_RAW		1 /* RAW sockets */
+-#define CAN_BCM		2 /* Broadcast Manager */
+-#define CAN_TP16	3 /* VAG Transport Protocol v1.6 */
+-#define CAN_TP20	4 /* VAG Transport Protocol v2.0 */
+-#define CAN_MCNET	5 /* Bosch MCNet */
+-#define CAN_ISOTP	6 /* ISO 15765-2 Transport Protocol */
+-#define CAN_BAP		7 /* VAG Bedien- und Anzeigeprotokoll */
+-#define CAN_NPROTO	8
+-
+-#define SOL_CAN_BASE 100
+-
+-struct sockaddr_can {
+-	sa_family_t   can_family;
+-	int           can_ifindex;
+-	union {
+-		struct { canid_t rx_id, tx_id; } tp16;
+-		struct { canid_t rx_id, tx_id; } tp20;
+-		struct { canid_t rx_id, tx_id; } mcnet;
+-	} can_addr;
+-};
+-
+-typedef canid_t can_err_mask_t;
+-
+-struct can_filter {
+-	canid_t can_id;
+-	canid_t can_mask;
+-};
+-
+-#define CAN_INV_FILTER 0x20000000U /* to be set in can_filter.can_id */
+-
+-#ifdef __KERNEL__
+-
+-#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+-
+-struct can_proto {
+-	int              type;
+-	int              protocol;
+-	int              capability;
+-	struct proto_ops *ops;
+-	int              (*init)(struct sock *sk);
+-	size_t           obj_size;
+-};
+-
+-void can_proto_register(struct can_proto *cp);
+-void can_proto_unregister(struct can_proto *cp);
+-int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+-		     void (*func)(struct sk_buff *, void *), void *data,
+-		     char *ident);
+-int  can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		       void (*func)(struct sk_buff *, void *), void *data);
+-void can_dev_register(struct net_device *dev,
+-		      void (*func)(unsigned long msg, void *), void *data);
+-void can_dev_unregister(struct net_device *dev,
+-			void (*func)(unsigned long msg, void *), void *data);
+-int  can_send(struct sk_buff *skb, int loop);
+-
+-unsigned long timeval2jiffies(struct timeval *tv, int round_up);
+-
+ void can_debug_skb(struct sk_buff *skb);
+ void can_debug_cframe(const char *msg, struct can_frame *cframe, ...);
+ 
+@@ -190,6 +118,4 @@
+ void can_init_proc(void);
+ void can_remove_proc(void);
+ 
+-#endif
+-
+ #endif /* AF_CAN_H */
+
+Modified: trunk/kernel/2.4/can/can.h
+===================================================================
+--- trunk/kernel/2.4/can/can.h	2007-02-12 13:34:56 UTC (rev 149)
++++ trunk/kernel/2.4/can/can.h	2007-02-14 10:32:39 UTC (rev 150)
+@@ -51,9 +51,17 @@
+ #endif
+ 
+ #include &lt;linux/types.h&gt;
++#include &lt;linux/socket.h&gt;
+ 
++#include &quot;can_error.h&quot;
++#include &quot;can_ioctl.h&quot;
++
+ /* controller area network (CAN) kernel definitions */
+ 
++/* CAN socket protocol family definition */
++#define PF_CAN		29	/* to be moved to include/linux/socket.h */
++#define AF_CAN		PF_CAN
++
+ /* ethernet protocol identifier */
+ #define ETH_P_CAN	0x000C	/* to be moved to include/linux/if_ether.h */
+ 
+@@ -61,6 +69,8 @@
+ #define ARPHRD_CAN	804	/* to be moved to include/linux/if_arp.h */
+ 
+ 
++
++
+ /* special address description flags for the CAN_ID */
+ #define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+ #define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+@@ -79,4 +89,70 @@
+ 	__u8    data[8] __attribute__ ((aligned(8)));
+ };
+ 
++
++
++/* particular protocols of the protocol family PF_CAN */
++#define CAN_RAW		1 /* RAW sockets */
++#define CAN_BCM		2 /* Broadcast Manager */
++#define CAN_TP16	3 /* VAG Transport Protocol v1.6 */
++#define CAN_TP20	4 /* VAG Transport Protocol v2.0 */
++#define CAN_MCNET	5 /* Bosch MCNet */
++#define CAN_ISOTP	6 /* ISO 15765-2 Transport Protocol */
++#define CAN_BAP		7 /* VAG Bedien- und Anzeigeprotokoll */
++#define CAN_NPROTO	8
++
++#define SOL_CAN_BASE 100
++
++struct sockaddr_can {
++	sa_family_t   can_family;
++	int           can_ifindex;
++	union {
++		struct { canid_t rx_id, tx_id; } tp16;
++		struct { canid_t rx_id, tx_id; } tp20;
++		struct { canid_t rx_id, tx_id; } mcnet;
++	} can_addr;
++};
++
++typedef canid_t can_err_mask_t;
++
++struct can_filter {
++	canid_t can_id;
++	canid_t can_mask;
++};
++
++#define CAN_INV_FILTER 0x20000000U /* to be set in can_filter.can_id */
++
++
++
++#ifdef __KERNEL__
++
++#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
++
++struct can_proto {
++	int              type;
++	int              protocol;
++	int              capability;
++	struct proto_ops *ops;
++	int              (*init)(struct sock *sk);
++	size_t           obj_size;
++};
++
++void can_proto_register(struct can_proto *cp);
++void can_proto_unregister(struct can_proto *cp);
++int  can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
++		     void (*func)(struct sk_buff *, void *), void *data,
++		     char *ident);
++int  can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++		       void (*func)(struct sk_buff *, void *), void *data);
++void can_dev_register(struct net_device *dev,
++		      void (*func)(unsigned long msg, void *), void *data);
++void can_dev_unregister(struct net_device *dev,
++			void (*func)(unsigned long msg, void *), void *data);
++int  can_send(struct sk_buff *skb, int loop);
++
++unsigned long timeval2jiffies(struct timeval *tv, int round_up);
++
++#endif
++
++
+ #endif /* CAN_H */
+
+Modified: trunk/kernel/2.4/can/can_ioctl.h
+===================================================================
+--- trunk/kernel/2.4/can/can_ioctl.h	2007-02-12 13:34:56 UTC (rev 149)
++++ trunk/kernel/2.4/can/can_ioctl.h	2007-02-14 10:32:39 UTC (rev 150)
+@@ -55,80 +55,117 @@
+ 
+ /* max. 16 private ioctls */
+ 
+-#define SIOCSRATE      (SIOCDEVPRIVATE+0)
+-#define SIOCGRATE      (SIOCDEVPRIVATE+1)
++#define SIOCSCANBAUDRATE	(SIOCDEVPRIVATE+0)
++#define SIOCGCANBAUDRATE	(SIOCDEVPRIVATE+1)
+ 
+-#define SIOCSMODE      (SIOCDEVPRIVATE+2)
+-#define SIOCGMODE      (SIOCDEVPRIVATE+3)
++#define SIOCSCANCUSTOMBITTIME   (SIOCDEVPRIVATE+2)
++#define SIOCGCANCUSTOMBITTIME   (SIOCDEVPRIVATE+3)
+ 
+-#define SIOCSFILTER    (SIOCDEVPRIVATE+4)
+-#define SIOCGFILTER    (SIOCDEVPRIVATE+5)
++#define SIOCSCANMODE		(SIOCDEVPRIVATE+4)
++#define SIOCGCANMODE		(SIOCDEVPRIVATE+5)
+ 
+-#define SIOCSTRX       (SIOCDEVPRIVATE+6)
+-#define SIOCGTRX       (SIOCDEVPRIVATE+7)
++#define SIOCSCANCTRLMODE	(SIOCDEVPRIVATE+6)
++#define SIOCGCANCTRLMODE	(SIOCDEVPRIVATE+7)
+ 
+-#define SIOCGSTATUS    (SIOCDEVPRIVATE+8)
+-#define SIOCGTRXSTATUS (SIOCDEVPRIVATE+9)
++#define SIOCSCANFILTER		(SIOCDEVPRIVATE+8)
++#define SIOCGCANFILTER		(SIOCDEVPRIVATE+9)
+ 
+-#define SIOCGSTATS     (SIOCDEVPRIVATE+10)
++#define SIOCGCANSTATE		(SIOCDEVPRIVATE+10)
++#define SIOCGCANSTATS		(SIOCDEVPRIVATE+11)
+ 
++#define SIOCSCANERRORCONFIG	(SIOCDEVPRIVATE+12)
++#define SIOCGCANERRORCONFIG	(SIOCDEVPRIVATE+13)
++
+ /* parameters for ioctls */
+ 
+-/* baudrate for CAN-controller */
+-#define RATE_SPEED 0 /* parameter is in bits/second (speed 0: autoprobe) */
+-#define RATE_BTREG 1 /* parameter is controller specific bit-timing register */
++/* SIOC[SG]CANBAUDRATE */
++/* baudrate for CAN-controller in bits per second. */
++/* 0 = Scan for baudrate (Autobaud) */
+ 
+-/* operation modes for CAN-controller */
+-#define MODE_OFFLINE 0
+-#define MODE_RX      1
+-#define MODE_TX      2
+-#define MODE_TRX     (MODE_TX | MODE_RX)
+-#define MODE_LISTEN  4 /* no acknowledge on CAN layer */
++typedef __u32 can_baudrate_t;
+ 
++
++/* SIOC[SG]CANCUSTOMBITTIME */
++
++typedef enum CAN_BITTIME_TYPE {
++	CAN_BITTIME_STD,
++	CAN_BITTIME_BTR
++} can_bittime_type_t;
++
++/* TSEG1 of controllers usually is a sum of synch_seg (always 1),
++ * prop_seg and phase_seg1, TSEG2 = phase_seg2 */
++
++struct can_bittime_std {
++	__u32 brp;        /* baud rate prescaler */
++	__u8  prop_seg;   /* from 1 to 8 */
++	__u8  phase_seg1; /* from 1 to 8 */
++	__u8  phase_seg2; /* from 1 to 8 */
++	__u8  sjw:7;      /* from 1 to 4 */
++	__u8  sam:1;      /* 1 - enable triple sampling */
++};
++
++struct can_bittime_btr {
++	__u8  btr0;
++	__u8  btr1;
++};
++
++struct can_bittime {
++	can_bittime_type_t type;
++	union {
++		struct can_bittime_std std;
++		struct can_bittime_btr btr;
++	};
++};
++
++#define CAN_BAUDRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
++#define CAN_BAUDRATE_UNKNOWN		0
++
++/* SIOC[SG]CANMODE */
++
++typedef __u32 can_mode_t;
++
++#define CAN_MODE_STOP	0
++#define CAN_MODE_START	1
++#define CAN_MODE_SLEEP	2
++
++
++/* SIOC[SG]CANCTRLMODE */
++
++typedef __u32 can_ctrlmode_t;
++
++#define CAN_CTRLMODE_LOOPBACK   0x1
++#define CAN_CTRLMODE_LISTENONLY 0x2
++
++
++/* SIOCGCANFILTER */
++
++typedef __u32 can_filter_t;
++
+ /* filter modes (may vary due to controller specific capabilities) */
+-#define FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
+-#define FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
+-#define FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
++#define CAN_FILTER_CAPAB       0  /* get filter type capabilities (32 Bit value) */
++#define CAN_FILTER_MASK_VALUE  1  /* easy bit filter (see struct can_filter) */
++#define CAN_FILTER_SFF_BITMASK 2  /* bitfield with 2048 bit SFF filter */
++				  /* filters 3 - 31 currently undefined */
+ 
+-			      /* filters 3 - 31 currently undefined */
++#define CAN_FILTER_MAX         31 /* max. filter type value */
+ 
+-#define FILTER_MAX         31 /* max. filter type value */
+ 
+-/* operation modes for CAN-transceiver */
+-#define TRX_OPERATE 0 /* normal operation */
+-#define TRX_STANDBY 1 /* standby */
+-#define TRX_SLEEP   2 /* goto sleep */
++/* SIOCGCANSTATE */
+ 
+-/* operating status of CAN-controller */
+-#define STATUS_OK            0
+-#define STATUS_WARNING       1 /* see parameter for additional info */
+-#define STATUS_ERROR         2 /* see parameter for additional info */
+-#define STATUS_ERROR_PASSIVE 3
+-#define STATUS_BUS_OFF       4
++typedef __u32 can_state_t;
+ 
+-/* additional info for STATUS_ERROR */
+-#define STATUS_ERR_BIT   0x00
+-#define STATUS_ERR_FORM  0x01
+-#define STATUS_ERR_STUFF 0x02
+-#define STATUS_ERR_CRC   0x04
+-#define STATUS_ERR_ACK   0x08
+-#define STATUS_ERR_OTHER 0x10
++#define CAN_STATE_ACTIVE		0
++#define CAN_STATE_BUS_WARNING		1
++#define CAN_STATE_BUS_PASSIVE		2
++#define CAN_STATE_BUS_OFF		3
++#define CAN_STATE_SCANNING_BAUDRATE	4
++#define CAN_STATE_STOPPED		5
++#define CAN_STATE_SLEEPING		6
+ 
+-/* operating status of CAN-transceiver */
+-#define TRXSTATUS_OK                 0x000
+-#define TRXSTATUS_SLEEP              0x001
+-#define TRXSTATUS_CANH_NO_WIRE       0x002
+-#define TRXSTATUS_CANH_SHORT_TO_BAT  0x004
+-#define TRXSTATUS_CANH_SHORT_TO_VCC  0x008
+-#define TRXSTATUS_CANH_SHORT_TO_GND  0x010
+-#define TRXSTATUS_CANL_NO_WIRE       0x020
+-#define TRXSTATUS_CANL_SHORT_TO_BAT  0x040
+-#define TRXSTATUS_CANL_SHORT_TO_VCC  0x080
+-#define TRXSTATUS_CANL_SHORT_TO_GND  0x100
+-#define TRXSTATUS_CANL_SHORT_TO_CANH 0x200
+ 
++/* SIOCGCANSTATS */
++
+ struct can_device_stats {
+-
+ 	int error_warning;
+ 	int data_overrun;
+ 	int wakeup;
+@@ -139,4 +176,14 @@
+ 	int bus_error_at_init;
+ };
+ 
++/* SIOC[SG]CANERRORCONFIG */
++
++typedef enum CAN_ERRCFG_TYPE {
++	CAN_ERRCFG_MASK,
++	CAN_ERRCFG_BUSERR,
++	CAN_ERRCFG_BUSOFF
++} can_errcfg_type_t;
++
++/* tbd */
++
+ #endif /* CAN_IOCTL_H */
+
+Modified: trunk/kernel/2.4/drivers/mscan/mscan_hw.c
+===================================================================
+--- trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2007-02-12 13:34:56 UTC (rev 149)
++++ trunk/kernel/2.4/drivers/mscan/mscan_hw.c	2007-02-14 10:32:39 UTC (rev 150)
+@@ -424,10 +424,10 @@
+ 	return -EINVAL;
+ 
+     switch (cmd) {
+-    case SIOCSRATE:
++    case SIOCSCANBAUDRATE:
+ 	;
+ 	return 0;
+-    case SIOCGRATE:
++    case SIOCGCANBAUDRATE:
+ 	;
+ 	return 0;
+     }
+
+Modified: trunk/kernel/2.4/drivers/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.4/drivers/sja1000/sja1000.c	2007-02-12 13:34:56 UTC (rev 149)
++++ trunk/kernel/2.4/drivers/sja1000/sja1000.c	2007-02-14 10:32:39 UTC (rev 150)
+@@ -584,10 +584,10 @@
+ 		return -EINVAL;
+ 
+ 	switch (cmd) {
+-	case SIOCSRATE:
++	case SIOCSCANBAUDRATE:
+ 		;
+ 		return 0;
+-	case SIOCGRATE:
++	case SIOCGCANBAUDRATE:
+ 		;
+ 		return 0;
+ 	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000133.html">r149 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000135.html">r151 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#134">[ date ]</a>
+              <a href="thread.html#134">[ thread ]</a>
+              <a href="subject.html#134">[ subject ]</a>
+              <a href="author.html#134">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

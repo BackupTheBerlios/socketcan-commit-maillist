@@ -1,0 +1,387 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r432 - in trunk/kernel/2.6: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r432%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200707161715.l6GHFLh9015463%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000413.html">
+   <LINK REL="Next"  HREF="000415.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r432 - in trunk/kernel/2.6: drivers/net/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r432%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200707161715.l6GHFLh9015463%40sheep.berlios.de%3E"
+       TITLE="r432 - in trunk/kernel/2.6: drivers/net/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul 16 19:15:21 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000413.html">r431 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000415.html">r433 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#414">[ date ]</a>
+              <a href="thread.html#414">[ thread ]</a>
+              <a href="subject.html#414">[ subject ]</a>
+              <a href="author.html#414">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-07-16 19:15:08 +0200 (Mon, 16 Jul 2007)
+New Revision: 432
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/proc.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Removed obsolete initialisation of static variables.
+Fixed style of pointer declarations and pointer casts.
+Thanks to Patrick McHardy for the hint to linux/scripts/checkpatch.pl
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-07-16 09:52:43 UTC (rev 431)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-07-16 17:15:08 UTC (rev 432)
+@@ -64,7 +64,7 @@
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_DEVICES
+-static int debug = 0;
++static int debug;
+ module_param(debug, int, S_IRUGO);
+ #endif
+ 
+@@ -104,7 +104,7 @@
+  * This causes the PF_CAN core to perform the loopback as a fallback solution.
+  */
+ 
+-static int loopback = 0; /* vcan default: no loopback, just free the skb */
++static int loopback; /* vcan default: no loopback, just free the skb */
+ module_param(loopback, int, S_IRUGO);
+ MODULE_PARM_DESC(loopback, &quot;Loop back sent frames. vcan default: 0 (Off)&quot;);
+ 
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-07-16 09:52:43 UTC (rev 431)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-07-16 17:15:08 UTC (rev 432)
+@@ -83,7 +83,7 @@
+ MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug = 0;
++static int debug;
+ module_param(debug, int, S_IRUGO);
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+@@ -594,7 +594,7 @@
+ 	struct receiver *r;
+ 	struct hlist_node *n;
+ 	int matches = 0;
+-	struct can_frame *cf = (struct can_frame*)skb-&gt;data;
++	struct can_frame *cf = (struct can_frame *)skb-&gt;data;
+ 	canid_t can_id = cf-&gt;can_id;
+ 
+ 	if (d-&gt;entries == 0)
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-07-16 09:52:43 UTC (rev 431)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-07-16 17:15:08 UTC (rev 432)
+@@ -81,7 +81,7 @@
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug = 0;
++static int debug;
+ module_param(debug, int, S_IRUGO);
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+@@ -118,7 +118,7 @@
+ 	struct net_device *rx_reg_dev;
+ };
+ 
+-static struct proc_dir_entry *proc_dir = NULL;
++static struct proc_dir_entry *proc_dir;
+ 
+ #ifdef CONFIG_CAN_BCM_USER
+ #define BCM_CAP (-1)
+@@ -436,7 +436,7 @@
+  */
+ static void bcm_tx_timeout_handler(unsigned long data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 
+ 	DBG(&quot;Called with bcm_op %p\n&quot;, op);
+ 
+@@ -472,7 +472,7 @@
+ 
+ 		DBG(&quot;adding timer ival1. func=%p data=%p exp=0x%08X\n&quot;,
+ 		    op-&gt;timer.function,
+-		    (char*) op-&gt;timer.data,
++		    (char *) op-&gt;timer.data,
+ 		    (unsigned int) op-&gt;timer.expires);
+ 
+ 		/* send (next) frame */
+@@ -485,7 +485,7 @@
+ 
+ 			DBG(&quot;adding timer ival2. func=%p data=%p exp=0x%08X\n&quot;,
+ 			    op-&gt;timer.function,
+-			    (char*) op-&gt;timer.data,
++			    (char *) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+ 
+ 			/* send (next) frame */
+@@ -560,7 +560,7 @@
+ 
+ 			DBG(&quot;adding thrtimer. func=%p data=%p exp=0x%08X\n&quot;,
+ 			    op-&gt;thrtimer.function,
+-			    (char*) op-&gt;thrtimer.data,
++			    (char *) op-&gt;thrtimer.data,
+ 			    (unsigned int) op-&gt;thrtimer.expires);
+ 		}
+ 
+@@ -631,7 +631,7 @@
+ 		DBG(&quot;adding rx timeout timer ival1. func=%p data=%p &quot;
+ 		    &quot;exp=0x%08X\n&quot;,
+ 		    op-&gt;timer.function,
+-		    (char*) op-&gt;timer.data,
++		    (char *) op-&gt;timer.data,
+ 		    (unsigned int) op-&gt;timer.expires);
+ 
+ 		add_timer(&amp;op-&gt;timer);
+@@ -643,7 +643,7 @@
+  */
+ static void bcm_rx_timeout_handler(unsigned long data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 	struct bcm_msg_head msg_head;
+ 
+ 	DBG(&quot;sending RX_TIMEOUT for can_id %03X. op is %p\n&quot;, op-&gt;can_id, op);
+@@ -674,7 +674,7 @@
+  */
+ static void bcm_rx_thr_handler(unsigned long data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 	int i = 0;
+ 
+ 	/* mark disabled / consumed timer */
+@@ -684,7 +684,7 @@
+ 		DBG(&quot;sending MUX RX_CHANGED for can_id %03X. op is %p\n&quot;,
+ 		    op-&gt;can_id, op);
+ 		/* for MUX filter we start at index 1 */
+-		for (i=1; i&lt;op-&gt;nframes; i++) {
++		for (i = 1; i &lt; op-&gt;nframes; i++) {
+ 			if ((op-&gt;last_frames) &amp;&amp;
+ 			    (op-&gt;last_frames[i].can_dlc &amp; RX_THR)) {
+ 				op-&gt;last_frames[i].can_dlc &amp;= ~RX_THR;
+@@ -708,7 +708,7 @@
+  */
+ static void bcm_rx_handler(struct sk_buff *skb, void *data)
+ {
+-	struct bcm_op *op = (struct bcm_op*)data;
++	struct bcm_op *op = (struct bcm_op *)data;
+ 	struct can_frame rxframe;
+ 	int i;
+ 
+@@ -782,7 +782,7 @@
+ 		 * Remark: The MUX-mask is stored in index 0
+ 		 */
+ 
+-		for (i=1; i &lt; op-&gt;nframes; i++) {
++		for (i = 1; i &lt; op-&gt;nframes; i++) {
+ 			if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
+ 			    (GET_U64(&amp;op-&gt;frames[0]) &amp;
+ 			     GET_U64(&amp;op-&gt;frames[i]))) {
+@@ -971,7 +971,7 @@
+ 
+ 		/* update can_frames content */
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ 					       msg-&gt;msg_iov, CFSIZ);
+ 			if (err &lt; 0)
+ 				return err;
+@@ -1006,7 +1006,7 @@
+ 			op-&gt;frames = &amp;op-&gt;sframe;
+ 
+ 		for (i = 0; i &lt; msg_head-&gt;nframes; i++) {
+-			err = memcpy_fromiovec((u8*)&amp;op-&gt;frames[i],
++			err = memcpy_fromiovec((u8 *)&amp;op-&gt;frames[i],
+ 					       msg-&gt;msg_iov, CFSIZ);
+ 			if (err &lt; 0) {
+ 				if (op-&gt;frames != &amp;op-&gt;sframe)
+@@ -1094,7 +1094,7 @@
+ 			DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=%p &quot;
+ 			    &quot;exp=0x%08X\n&quot;,
+ 			    op-&gt;timer.function,
+-			    (char*) op-&gt;timer.data,
++			    (char *) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+ 
+ 		} else {
+@@ -1102,7 +1102,7 @@
+ 			DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=%p &quot;
+ 			    &quot;exp=0x%08X\n&quot;,
+ 			    op-&gt;timer.function,
+-			    (char*) op-&gt;timer.data,
++			    (char *) op-&gt;timer.data,
+ 			    (unsigned int) op-&gt;timer.expires);
+ 		}
+ 
+@@ -1158,7 +1158,7 @@
+ 
+ 		if (msg_head-&gt;nframes) {
+ 			/* update can_frames content */
+-			err = memcpy_fromiovec((u8*)op-&gt;frames,
++			err = memcpy_fromiovec((u8 *)op-&gt;frames,
+ 					       msg-&gt;msg_iov,
+ 					       msg_head-&gt;nframes * CFSIZ);
+ 			if (err &lt; 0)
+@@ -1210,7 +1210,7 @@
+ 		}
+ 
+ 		if (msg_head-&gt;nframes) {
+-			err = memcpy_fromiovec((u8*)op-&gt;frames, msg-&gt;msg_iov,
++			err = memcpy_fromiovec((u8 *)op-&gt;frames, msg-&gt;msg_iov,
+ 					       msg_head-&gt;nframes * CFSIZ);
+ 			if (err &lt; 0) {
+ 				if (op-&gt;frames != &amp;op-&gt;sframe)
+@@ -1435,7 +1435,7 @@
+ 
+ 	/* read message head information */
+ 
+-	ret = memcpy_fromiovec((u8*)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
++	ret = memcpy_fromiovec((u8 *)&amp;msg_head, msg-&gt;msg_iov, MHSIZ);
+ 	if (ret &lt; 0)
+ 		return ret;
+ 
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-07-16 09:52:43 UTC (rev 431)
++++ trunk/kernel/2.6/net/can/proc.c	2007-07-16 17:15:08 UTC (rev 432)
+@@ -67,18 +67,18 @@
+ #define CAN_PROC_RCVLIST_EFF &quot;rcvlist_eff&quot;
+ #define CAN_PROC_RCVLIST_ERR &quot;rcvlist_err&quot;
+ 
+-static struct proc_dir_entry *can_dir         = NULL;
+-static struct proc_dir_entry *pde_version     = NULL;
+-static struct proc_dir_entry *pde_stats       = NULL;
+-static struct proc_dir_entry *pde_reset_stats = NULL;
+-static struct proc_dir_entry *pde_rcvlist_all = NULL;
+-static struct proc_dir_entry *pde_rcvlist_fil = NULL;
+-static struct proc_dir_entry *pde_rcvlist_inv = NULL;
+-static struct proc_dir_entry *pde_rcvlist_sff = NULL;
+-static struct proc_dir_entry *pde_rcvlist_eff = NULL;
+-static struct proc_dir_entry *pde_rcvlist_err = NULL;
++static struct proc_dir_entry *can_dir;
++static struct proc_dir_entry *pde_version;
++static struct proc_dir_entry *pde_stats;
++static struct proc_dir_entry *pde_reset_stats;
++static struct proc_dir_entry *pde_rcvlist_all;
++static struct proc_dir_entry *pde_rcvlist_fil;
++static struct proc_dir_entry *pde_rcvlist_inv;
++static struct proc_dir_entry *pde_rcvlist_sff;
++static struct proc_dir_entry *pde_rcvlist_eff;
++static struct proc_dir_entry *pde_rcvlist_err;
+ 
+-static int user_reset = 0;
++static int user_reset;
+ 
+ static const char *rx_list_name[] = {
+ 	[RX_ERR] = &quot;rx_err&quot;,
+@@ -444,7 +444,7 @@
+ 
+ static struct proc_dir_entry *can_create_proc_readentry(const char *name,
+ 							mode_t mode,
+-							read_proc_t* read_proc,
++							read_proc_t *read_proc,
+ 							void *data)
+ {
+ 	if (can_dir)
+@@ -484,15 +484,15 @@
+ 	pde_reset_stats = can_create_proc_readentry(CAN_PROC_RESET_STATS, 0644,
+ 					can_proc_read_reset_stats, NULL);
+ 	pde_rcvlist_err = can_create_proc_readentry(CAN_PROC_RCVLIST_ERR, 0644,
+-					can_proc_read_rcvlist, (void*)RX_ERR);
++					can_proc_read_rcvlist, (void *)RX_ERR);
+ 	pde_rcvlist_all = can_create_proc_readentry(CAN_PROC_RCVLIST_ALL, 0644,
+-					can_proc_read_rcvlist, (void*)RX_ALL);
++					can_proc_read_rcvlist, (void *)RX_ALL);
+ 	pde_rcvlist_fil = can_create_proc_readentry(CAN_PROC_RCVLIST_FIL, 0644,
+-					can_proc_read_rcvlist, (void*)RX_FIL);
++					can_proc_read_rcvlist, (void *)RX_FIL);
+ 	pde_rcvlist_inv = can_create_proc_readentry(CAN_PROC_RCVLIST_INV, 0644,
+-					can_proc_read_rcvlist, (void*)RX_INV);
++					can_proc_read_rcvlist, (void *)RX_INV);
+ 	pde_rcvlist_eff = can_create_proc_readentry(CAN_PROC_RCVLIST_EFF, 0644,
+-					can_proc_read_rcvlist, (void*)RX_EFF);
++					can_proc_read_rcvlist, (void *)RX_EFF);
+ 	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF, 0644,
+ 					can_proc_read_rcvlist_sff, NULL);
+ }
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-07-16 09:52:43 UTC (rev 431)
++++ trunk/kernel/2.6/net/can/raw.c	2007-07-16 17:15:08 UTC (rev 432)
+@@ -70,7 +70,7 @@
+ MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+-static int debug = 0;
++static int debug;
+ module_param(debug, int, S_IRUGO);
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+@@ -121,7 +121,7 @@
+ 
+ static void raw_rcv(struct sk_buff *skb, void *data)
+ {
+-	struct sock *sk = (struct sock*)data;
++	struct sock *sk = (struct sock *)data;
+ 	struct raw_sock *ro = raw_sk(sk);
+ 	struct sockaddr_can *addr;
+ 	int error;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000413.html">r431 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000415.html">r433 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#414">[ date ]</a>
+              <a href="thread.html#414">[ thread ]</a>
+              <a href="subject.html#414">[ subject ]</a>
+              <a href="author.html#414">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

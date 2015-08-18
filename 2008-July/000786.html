@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r806 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r806%20-%20trunk/can-utils&In-Reply-To=%3C200807020419.m624JBMM028894%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000785.html">
+   <LINK REL="Next"  HREF="000787.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r806 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r806%20-%20trunk/can-utils&In-Reply-To=%3C200807020419.m624JBMM028894%40sheep.berlios.de%3E"
+       TITLE="r806 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul  2 06:19:11 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000785.html">r805 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000787.html">r807 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#786">[ date ]</a>
+              <a href="thread.html#786">[ thread ]</a>
+              <a href="subject.html#786">[ subject ]</a>
+              <a href="author.html#786">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-07-02 06:19:07 +0200 (Wed, 02 Jul 2008)
+New Revision: 806
+
+Modified:
+   trunk/can-utils/candump.c
+Log:
+Do not allow to create error frame filters via standard filter sets.
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2008-07-02 04:05:11 UTC (rev 805)
++++ trunk/can-utils/candump.c	2008-07-02 04:19:07 UTC (rev 806)
+@@ -387,6 +387,7 @@
+ 					eff = checkeff(ptr, nptr);
+  					rfilter[numfilter].can_id |= eff;
+  					rfilter[numfilter].can_mask |= eff;
++ 					rfilter[numfilter].can_mask &amp;= ~CAN_ERR_FLAG;
+ 					numfilter++;
+ 				} else if (sscanf(ptr, &quot;%lx~%lx&quot;,
+ 						  (long unsigned int *)
+@@ -397,6 +398,7 @@
+ 					eff = checkeff(ptr, nptr);
+  					rfilter[numfilter].can_id |= eff;
+  					rfilter[numfilter].can_mask |= eff;
++ 					rfilter[numfilter].can_mask &amp;= ~CAN_ERR_FLAG;
+ 					numfilter++;
+ 				} else if (sscanf(ptr, &quot;#%lx&quot;,
+ 						  (long unsigned int *)&amp;err_mask) != 1) { 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000785.html">r805 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000787.html">r807 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#786">[ date ]</a>
+              <a href="thread.html#786">[ thread ]</a>
+              <a href="subject.html#786">[ subject ]</a>
+              <a href="author.html#786">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

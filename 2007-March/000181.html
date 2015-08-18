@@ -1,0 +1,381 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r196 - branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r196%20-%20branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200703271552.l2RFq8DA018108%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000180.html">
+   <LINK REL="Next"  HREF="000182.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r196 - branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r196%20-%20branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200703271552.l2RFq8DA018108%40sheep.berlios.de%3E"
+       TITLE="r196 - branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Mar 27 17:52:08 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000180.html">r195 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal sja1000
+</A></li>
+        <LI>Next message: <A HREF="000182.html">r197 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . hal i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#181">[ date ]</a>
+              <a href="thread.html#181">[ thread ]</a>
+              <a href="subject.html#181">[ subject ]</a>
+              <a href="author.html#181">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-27 17:52:05 +0200 (Tue, 27 Mar 2007)
+New Revision: 196
+
+Modified:
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/proc.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+Log:
+Cleaned up the procfs stuff (naming) to make it a bit more generic.
+
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/proc.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/proc.c	2007-03-27 13:58:28 UTC (rev 195)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/proc.c	2007-03-27 15:52:05 UTC (rev 196)
+@@ -61,14 +61,11 @@
+ static struct proc_dir_entry *pde_regs  = NULL;
+ static struct proc_dir_entry *pde_reset = NULL;
+ 
+-static int sja1000_proc_read(char *page, char **start, off_t off,
+-			     int count, int *eof, void *data)
++static int can_proc_read_stats(char *page, char **start, off_t off,
++			       int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct net_device *dev;
+ 	int i;
+-	struct can_priv *priv;
+-	unsigned char stat;
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot;CAN bus device statistics:\n&quot;);
+@@ -77,38 +74,43 @@
+ 			&quot;errpass  arbitr   restarts clock        baud\n&quot;);
+ 	for (i = 0; (i &lt; MAXDEV) &amp;&amp; (len &lt; PAGE_SIZE - 200); i++) {
+ 		if (can_dev[i]) {
+-			dev = can_dev[i];
+-			stat = hw_readreg(dev-&gt;base_addr, REG_SR);
+-			priv = netdev_priv(can_dev[i]);
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;can%d: %8d %8d %8d %8d %8d &quot;
+-					&quot;%8d %8d %10d %8d\n&quot;, i,
+-					priv-&gt;can_stats.error_warning,
+-					priv-&gt;can_stats.data_overrun,
+-					priv-&gt;can_stats.wakeup,
+-					priv-&gt;can_stats.bus_error,
+-					priv-&gt;can_stats.error_passive,
+-					priv-&gt;can_stats.arbitration_lost,
+-					priv-&gt;can_stats.restarts,
+-					priv-&gt;clock,
+-					priv-&gt;speed
+-				);
++			struct net_device *dev = can_dev[i];
++			struct can_priv *priv  = netdev_priv(dev);
++#ifdef SJA1000_H
++			u8 stat = hw_readreg(dev-&gt;base_addr, REG_SR);
++
+ 			if (stat &amp; 0x80) {
+ 				len += snprintf(page + len, PAGE_SIZE - len,
+-						&quot;can%d: bus status: &quot;
+-						&quot;BUS OFF, &quot;, i);
++						&quot;%s: bus status: &quot;
++						&quot;BUS OFF, &quot;, dev-&gt;name);
+ 			} else if (stat &amp; 0x40) {
+ 				len += snprintf(page + len, PAGE_SIZE - len,
+-						&quot;can%d: bus status: ERROR &quot;
+-						&quot;PASSIVE, &quot;, i);
++						&quot;%s: bus status: ERROR &quot;
++						&quot;PASSIVE, &quot;, dev-&gt;name);
+ 			} else {
+ 				len += snprintf(page + len, PAGE_SIZE - len,
+-						&quot;can%d: bus status: OK, &quot;, i);
++						&quot;%s: bus status: OK, &quot;,
++						dev-&gt;name);
+ 			}
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;RXERR: %d, TXERR: %d\n&quot;,
+ 					hw_readreg(dev-&gt;base_addr, REG_RXERR),
+ 					hw_readreg(dev-&gt;base_addr, REG_TXERR));
++#endif
++			len += snprintf(page + len, PAGE_SIZE - len,
++					&quot;%s: %8d %8d %8d %8d %8d &quot;
++					&quot;%8d %8d %10d %8d\n&quot;, dev-&gt;name,
++					priv-&gt;can_stats.error_warning,
++					priv-&gt;can_stats.data_overrun,
++					priv-&gt;can_stats.wakeup,
++					priv-&gt;can_stats.bus_error,
++					priv-&gt;can_stats.error_passive,
++					priv-&gt;can_stats.arbitration_lost,
++					priv-&gt;can_stats.restarts,
++					priv-&gt;clock,
++					priv-&gt;speed
++				);
++
+ 		}
+ 	}
+ 
+@@ -116,72 +118,47 @@
+ 	return len;
+ }
+ 
+-static int sja1000_proc_read_regs(char *page, char **start, off_t off,
++
++static int can_proc_dump_regs(char *page, int len, struct net_device *dev)
++{
++	int r,s;
++	struct can_priv	*priv = netdev_priv(dev);
++	int regs = priv-&gt;hw_regs;
++
++	len += snprintf(page + len, PAGE_SIZE - len,
++			&quot;%s registers:\n&quot;, dev-&gt;name);
++
++	for (r = 0; r &lt; regs; r += 0x10) {
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;%02X: &quot;, r);
++		for (s = 0; s &lt; 0x10; s++) {
++			if (r+s &lt; regs)
++				len += snprintf(page + len, PAGE_SIZE-len,
++						&quot;%02X &quot;,
++						hw_readreg(dev-&gt;base_addr,
++							   r+s));
++		}
++		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
++	}
++
++        return len;
++}
++
++static int can_proc_read_regs(char *page, char **start, off_t off,
+ 				  int count, int *eof, void *data)
+ {
+ 	int len = 0;
+-	struct net_device *dev;
+ 	int i;
+-	struct can_priv	  *priv;
+ 
+-	len = sprintf(page, &quot;%s registers:\n&quot;, CHIP_NAME);
+ 	for (i = 0; (i &lt; MAXDEV) &amp;&amp; (len &lt; PAGE_SIZE - 200); i++) {
+-		if (can_dev[i]) {
+-			dev = can_dev[i];
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;can%d %s registers:\n&quot;, i, CHIP_NAME);
+-
+-			priv = netdev_priv(can_dev[i]);
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;00: %02x %02x %02x %02x %02x %02x &quot;
+-					&quot;%02x %02x %02x %02x %02x %02x %02x &quot;
+-					&quot;%02x %02x %02x\n&quot;,
+-					hw_readreg(dev-&gt;base_addr, 0x00),
+-					hw_readreg(dev-&gt;base_addr, 0x01),
+-					hw_readreg(dev-&gt;base_addr, 0x02),
+-					hw_readreg(dev-&gt;base_addr, 0x03),
+-					hw_readreg(dev-&gt;base_addr, 0x04),
+-					hw_readreg(dev-&gt;base_addr, 0x05),
+-					hw_readreg(dev-&gt;base_addr, 0x06),
+-					hw_readreg(dev-&gt;base_addr, 0x07),
+-					hw_readreg(dev-&gt;base_addr, 0x08),
+-					hw_readreg(dev-&gt;base_addr, 0x09),
+-					hw_readreg(dev-&gt;base_addr, 0x0a),
+-					hw_readreg(dev-&gt;base_addr, 0x0b),
+-					hw_readreg(dev-&gt;base_addr, 0x0c),
+-					hw_readreg(dev-&gt;base_addr, 0x0d),
+-					hw_readreg(dev-&gt;base_addr, 0x0e),
+-					hw_readreg(dev-&gt;base_addr, 0x0f)
+-				);
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;10: %02x %02x %02x %02x %02x %02x &quot;
+-					&quot;%02x %02x %02x %02x %02x %02x %02x &quot;
+-					&quot;%02x %02x %02x\n&quot;,
+-					hw_readreg(dev-&gt;base_addr, 0x10),
+-					hw_readreg(dev-&gt;base_addr, 0x11),
+-					hw_readreg(dev-&gt;base_addr, 0x12),
+-					hw_readreg(dev-&gt;base_addr, 0x13),
+-					hw_readreg(dev-&gt;base_addr, 0x14),
+-					hw_readreg(dev-&gt;base_addr, 0x15),
+-					hw_readreg(dev-&gt;base_addr, 0x16),
+-					hw_readreg(dev-&gt;base_addr, 0x17),
+-					hw_readreg(dev-&gt;base_addr, 0x18),
+-					hw_readreg(dev-&gt;base_addr, 0x19),
+-					hw_readreg(dev-&gt;base_addr, 0x1a),
+-					hw_readreg(dev-&gt;base_addr, 0x1b),
+-					hw_readreg(dev-&gt;base_addr, 0x1c),
+-					hw_readreg(dev-&gt;base_addr, 0x1d),
+-					hw_readreg(dev-&gt;base_addr, 0x1e),
+-					hw_readreg(dev-&gt;base_addr, 0x1f)
+-				);
+-		}
++		if (can_dev[i])
++			len = can_proc_dump_regs(page, len, can_dev[i]);
+ 	}
+ 
+ 	*eof = 1;
+ 	return len;
+ }
+ 
+-static int sja1000_proc_read_reset(char *page, char **start, off_t off,
++static int can_proc_read_reset(char *page, char **start, off_t off,
+ 				   int count, int *eof, void *data)
+ {
+ 	int len = 0;
+@@ -217,33 +194,33 @@
+ 	return len;
+ }
+ 
+-void sja1000_proc_create(const char *drv_name)
++void can_proc_create(const char *drv_name)
+ {
+ 	char fname[256];
+ 
+ 	if (pde == NULL) {
+-		sprintf(fname, PROCBASE &quot;/%s&quot;, drv_name);
++		sprintf(fname, PROCBASE &quot;/%s_stats&quot;, drv_name);
+ 		pde = create_proc_read_entry(fname, 0644, NULL,
+-					     sja1000_proc_read, NULL);
++					     can_proc_read_stats, NULL);
+ 	}
+ 	if (pde_regs == NULL) {
+ 		sprintf(fname, PROCBASE &quot;/%s_regs&quot;, drv_name);
+ 		pde_regs = create_proc_read_entry(fname, 0644, NULL,
+-						sja1000_proc_read_regs, NULL);
++						  can_proc_read_regs, NULL);
+ 	}
+ 	if (pde_reset == NULL) {
+ 		sprintf(fname, PROCBASE &quot;/%s_reset&quot;, drv_name);
+ 		pde_reset = create_proc_read_entry(fname, 0644, NULL,
+-						sja1000_proc_read_reset, NULL);
++						   can_proc_read_reset, NULL);
+ 	}
+ }
+ 
+-void sja1000_proc_remove(const char *drv_name)
++void can_proc_remove(const char *drv_name)
+ {
+ 	char fname[256];
+ 
+ 	if (pde) {
+-		sprintf(fname, PROCBASE &quot;/%s&quot;, drv_name);
++		sprintf(fname, PROCBASE &quot;/%s_stats&quot;, drv_name);
+ 		remove_proc_entry(fname, NULL);
+ 	}
+ 	if (pde_regs) {
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-03-27 13:58:28 UTC (rev 195)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-03-27 15:52:05 UTC (rev 196)
+@@ -173,7 +173,7 @@
+ static void chipset_init_rx(struct net_device *dev);
+ static void chipset_init_trx(struct net_device *dev);
+ static void can_netdev_setup(struct net_device *dev);
+-static struct net_device* can_create_netdev(int dev_num);
++static struct net_device* can_create_netdev(int dev_num, int hw_regs);
+ static int  can_set_drv_name(void);
+ int set_reset_mode(struct net_device *dev);
+ static int sja1000_probe_chip(unsigned long base);
+@@ -191,7 +191,7 @@
+ 			free_netdev(can_dev[i]);
+ 		}
+ 	}
+-	sja1000_proc_remove(drv_name);
++	can_proc_remove(drv_name);
+ 
+ 	if ((ret = hal_exit()))
+ 		printk(KERN_INFO &quot;%s: hal_exit error %d.\n&quot;, drv_name, ret);
+@@ -247,12 +247,12 @@
+ 			return -ENODEV;
+ 		}
+ 
+-		dev = can_create_netdev(i);
++		dev = can_create_netdev(i, SJA1000_IO_SIZE_BASIC);
+ 
+ 		if (dev != NULL) {
+ 			can_dev[i] = dev;
+ 			set_reset_mode(dev);
+-			sja1000_proc_create(drv_name);
++			can_proc_create(drv_name);
+ 		} else {
+ 			can_dev[i] = NULL;
+ 			hw_detach(i);
+@@ -1039,7 +1039,7 @@
+ 	SET_MODULE_OWNER(dev);
+ }
+ 
+-static struct net_device* can_create_netdev(int dev_num)
++static struct net_device* can_create_netdev(int dev_num, int hw_regs)
+ {
+ 	struct net_device	*dev;
+ 	struct can_priv		*priv;
+@@ -1066,6 +1066,7 @@
+ 	priv-&gt;btr        = btr[dev_num];
+ 	priv-&gt;rx_probe   = rx_probe[dev_num];
+ 	priv-&gt;clock      = clk;
++	priv-&gt;hw_regs    = hw_regs;
+ 	priv-&gt;restart_ms = restart_ms;
+ 	priv-&gt;debug      = debug;
+ 
+
+Modified: branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.h
+===================================================================
+--- branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2007-03-27 13:58:28 UTC (rev 195)
++++ branches/ha/candrv/kernel/2.6/drivers/net/can/sja1000/sja1000.h	2007-03-27 15:52:05 UTC (rev 196)
+@@ -166,6 +166,7 @@
+ 	struct can_device_stats	can_stats;
+ 	long			open_time;
+ 	int			clock;
++	int			hw_regs;
+ 	int			restart_ms;
+ 	int			debug;
+ 	int			speed;
+@@ -183,7 +184,7 @@
+ #define STATE_BUS_OFF		5
+ #define STATE_RESET_MODE	6
+ 
+-void sja1000_proc_create(const char *drv_name);
+-void sja1000_proc_remove(const char *drv_name);
++void can_proc_create(const char *drv_name);
++void can_proc_remove(const char *drv_name);
+ 
+ #endif /* SJA1000_H */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000180.html">r195 - in branches/ha/candrv/kernel/2.6/drivers/net/can: hal sja1000
+</A></li>
+	<LI>Next message: <A HREF="000182.html">r197 - in branches/ha/candrv/kernel/2.6/drivers/net/can: . hal i82527
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#181">[ date ]</a>
+              <a href="thread.html#181">[ thread ]</a>
+              <a href="subject.html#181">[ subject ]</a>
+              <a href="author.html#181">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

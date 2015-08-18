@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r489 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r489%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200709231714.l8NHEdZ1000728%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000470.html">
+   <LINK REL="Next"  HREF="000472.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r489 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r489%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200709231714.l8NHEdZ1000728%40sheep.berlios.de%3E"
+       TITLE="r489 - in trunk/kernel/2.6: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 23 19:14:39 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000470.html">r488 - in trunk: can-utils test
+</A></li>
+        <LI>Next message: <A HREF="000472.html">r490 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#471">[ date ]</a>
+              <a href="thread.html#471">[ thread ]</a>
+              <a href="subject.html#471">[ subject ]</a>
+              <a href="author.html#471">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-23 19:14:29 +0200 (Sun, 23 Sep 2007)
+New Revision: 489
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/Kconfig
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Removed CAN_RAW_USER and CAN_BCM_USER Kconfig options due to a
+discussion of Usr and Patrick:
+
+<A HREF="http://marc.info/?l=linux-netdev&amp;m=119045947822801&amp;w=2">http://marc.info/?l=linux-netdev&amp;m=119045947822801&amp;w=2</A>
+
+The capability checks are still part of the source to allow developers 
+to change the capabilities according to their needs.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-09-21 07:21:24 UTC (rev 488)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-09-23 17:14:29 UTC (rev 489)
+@@ -28,6 +28,9 @@
+ 
+ #define CAN_VERSION_STRING &quot;rev &quot; CAN_VERSION &quot; abi &quot; CAN_ABI_VERSION
+ 
++/* CAN default capability needs (-1 == none) */
++#define CAN_CAP (-1)
++
+ #define DNAME(dev) ((dev) ? (dev)-&gt;name : &quot;any&quot;)
+ 
+ /**
+
+Modified: trunk/kernel/2.6/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/net/can/Kconfig	2007-09-21 07:21:24 UTC (rev 488)
++++ trunk/kernel/2.6/net/can/Kconfig	2007-09-23 17:14:29 UTC (rev 489)
+@@ -27,21 +27,6 @@
+ 	  socket has several filter options e.g. ID-Masking / Errorframes.
+ 	  To receive/send raw CAN messages, use AF_CAN with protocol CAN_RAW.
+ 
+-config CAN_RAW_USER
+-	bool &quot;Allow non-root users to access Raw CAN Protocol sockets&quot;
+-	depends on CAN_RAW
+-	default N
+-	---help---
+-	  The Controller Area Network is a local field bus transmitting only
+-	  broadcast messages without any routing and security concepts.
+-	  In the majority of cases the user application has to deal with
+-	  raw CAN frames. Therefore it might be reasonable NOT to restrict
+-	  the CAN access only to the user root, as known from other networks.
+-	  Since CAN_RAW sockets can only send and receive frames to/from CAN
+-	  interfaces this does not affect security of others networks.
+-	  Say Y here if you want non-root users to be able to access CAN_RAW
+-	  sockets.
+-
+ config CAN_BCM
+ 	tristate &quot;Broadcast Manager CAN Protocol (with content filtering)&quot;
+ 	depends on CAN
+@@ -55,21 +40,6 @@
+ 	  CAN messages are used on the bus (e.g. in automotive environments).
+ 	  To use the Broadcast Manager, use AF_CAN with protocol CAN_BCM.
+ 
+-config CAN_BCM_USER
+-	bool &quot;Allow non-root users to access CAN broadcast manager sockets&quot;
+-	depends on CAN_BCM
+-	default N
+-	---help---
+-	  The Controller Area Network is a local field bus transmitting only
+-	  broadcast messages without any routing and security concepts.
+-	  In the majority of cases the user application has to deal with
+-	  raw CAN frames. Therefore it might be reasonable NOT to restrict
+-	  the CAN access only to the user root, as known from other networks.
+-	  Since CAN_BCM sockets can only send and receive frames to/from CAN
+-	  interfaces this does not affect security of others networks.
+-	  Say Y here if you want non-root users to be able to access CAN_BCM
+-	  sockets.
+-
+ config CAN_DEBUG_CORE
+ 	bool &quot;CAN Core debugging messages&quot;
+ 	depends on CAN
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-09-21 07:21:24 UTC (rev 488)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-09-23 17:14:29 UTC (rev 489)
+@@ -123,11 +123,8 @@
+ 
+ static struct proc_dir_entry *proc_dir;
+ 
+-#ifdef CONFIG_CAN_BCM_USER
+-#define BCM_CAP (-1)
+-#else
+-#define BCM_CAP CAP_NET_RAW
+-#endif
++/* CAN BCM sockets capability needs */
++#define CAN_BCM_CAP CAN_CAP
+ 
+ struct bcm_sock {
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+@@ -1844,7 +1841,7 @@
+ static struct can_proto bcm_can_proto __read_mostly = {
+ 	.type       = SOCK_DGRAM,
+ 	.protocol   = CAN_BCM,
+-	.capability = BCM_CAP,
++	.capability = CAN_BCM_CAP,
+ 	.ops        = &amp;bcm_ops,
+ 	.prot       = &amp;bcm_proto,
+ };
+@@ -1852,7 +1849,7 @@
+ static struct can_proto bcm_can_proto __read_mostly = {
+ 	.type       = SOCK_DGRAM,
+ 	.protocol   = CAN_BCM,
+-	.capability = BCM_CAP,
++	.capability = CAN_BCM_CAP,
+ 	.ops        = &amp;bcm_ops,
+ 	.owner      = THIS_MODULE,
+ 	.obj_size   = sizeof(struct bcm_sock),
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-09-21 07:21:24 UTC (rev 488)
++++ trunk/kernel/2.6/net/can/raw.c	2007-09-23 17:14:29 UTC (rev 489)
+@@ -78,11 +78,8 @@
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+-#ifdef CONFIG_CAN_RAW_USER
+-#define RAW_CAP (-1)
+-#else
+-#define RAW_CAP CAP_NET_RAW
+-#endif
++/* CAN RAW sockets capability needs */
++#define CAN_RAW_CAP CAN_CAP
+ 
+ #define MASK_ALL 0
+ 
+@@ -849,7 +846,7 @@
+ static struct can_proto raw_can_proto __read_mostly = {
+ 	.type       = SOCK_RAW,
+ 	.protocol   = CAN_RAW,
+-	.capability = RAW_CAP,
++	.capability = CAN_RAW_CAP,
+ 	.ops        = &amp;raw_ops,
+ 	.prot       = &amp;raw_proto,
+ };
+@@ -857,7 +854,7 @@
+ static struct can_proto raw_can_proto __read_mostly = {
+ 	.type       = SOCK_RAW,
+ 	.protocol   = CAN_RAW,
+-	.capability = RAW_CAP,
++	.capability = CAN_RAW_CAP,
+ 	.ops        = &amp;raw_ops,
+ 	.owner      = THIS_MODULE,
+ 	.obj_size   = sizeof(struct raw_sock),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000470.html">r488 - in trunk: can-utils test
+</A></li>
+	<LI>Next message: <A HREF="000472.html">r490 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#471">[ date ]</a>
+              <a href="thread.html#471">[ thread ]</a>
+              <a href="subject.html#471">[ subject ]</a>
+              <a href="author.html#471">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

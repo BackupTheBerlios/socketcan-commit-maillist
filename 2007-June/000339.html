@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r356 - branches/ha/locktest/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r356%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706180559.l5I5xRZX027441%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000338.html">
+   <LINK REL="Next"  HREF="000340.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r356 - branches/ha/locktest/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r356%20-%20branches/ha/locktest/net/can&In-Reply-To=%3C200706180559.l5I5xRZX027441%40sheep.berlios.de%3E"
+       TITLE="r356 - branches/ha/locktest/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun 18 07:59:27 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000338.html">r355 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000340.html">r357 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#339">[ date ]</a>
+              <a href="thread.html#339">[ thread ]</a>
+              <a href="subject.html#339">[ subject ]</a>
+              <a href="author.html#339">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-18 07:59:24 +0200 (Mon, 18 Jun 2007)
+New Revision: 356
+
+Modified:
+   branches/ha/locktest/net/can/bcm.c
+   branches/ha/locktest/net/can/raw.c
+Log:
+Added check for correct media type (ARPHRD_CAN) at binding time.
+
+
+Modified: branches/ha/locktest/net/can/bcm.c
+===================================================================
+--- branches/ha/locktest/net/can/bcm.c	2007-06-18 05:51:21 UTC (rev 355)
++++ branches/ha/locktest/net/can/bcm.c	2007-06-18 05:59:24 UTC (rev 356)
+@@ -1642,6 +1642,13 @@
+ 			    addr-&gt;can_ifindex);
+ 			return -ENODEV;
+ 		}
++
++		if (dev-&gt;type != ARPHRD_CAN) {
++		  DBG(&quot;device %d no CAN device\n&quot;, addr-&gt;can_ifindex);
++		  dev_put(dev);
++		  return -ENODEV;
++		}
++
+ 		bo-&gt;ifindex = dev-&gt;ifindex;
+ 		/* hold interface reference to 'dev' until bcm_release() */
+ 
+
+Modified: branches/ha/locktest/net/can/raw.c
+===================================================================
+--- branches/ha/locktest/net/can/raw.c	2007-06-18 05:51:21 UTC (rev 355)
++++ branches/ha/locktest/net/can/raw.c	2007-06-18 05:59:24 UTC (rev 356)
+@@ -343,6 +343,12 @@
+ 			err = -ENODEV;
+ 			goto out;
+ 		}
++		if (dev-&gt;type != ARPHRD_CAN) {
++			DBG(&quot;device %d no CAN device\n&quot;, addr-&gt;can_ifindex);
++			dev_put(dev);
++			err = -ENODEV;
++			goto out;
++		}
+ 		if (!(dev-&gt;flags &amp; IFF_UP)) {
+ 			sk-&gt;sk_err = ENETDOWN;
+ 			if (!sock_flag(sk, SOCK_DEAD))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000338.html">r355 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000340.html">r357 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#339">[ date ]</a>
+              <a href="thread.html#339">[ thread ]</a>
+              <a href="subject.html#339">[ subject ]</a>
+              <a href="author.html#339">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

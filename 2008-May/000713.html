@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r731 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r731%20-%20trunk/can-utils&In-Reply-To=%3C200805111146.m4BBk2fL018329%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000712.html">
+   <LINK REL="Next"  HREF="000714.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r731 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r731%20-%20trunk/can-utils&In-Reply-To=%3C200805111146.m4BBk2fL018329%40sheep.berlios.de%3E"
+       TITLE="r731 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun May 11 13:46:02 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000712.html">r730 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000714.html">r732 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#713">[ date ]</a>
+              <a href="thread.html#713">[ thread ]</a>
+              <a href="subject.html#713">[ subject ]</a>
+              <a href="author.html#713">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-05-11 13:46:00 +0200 (Sun, 11 May 2008)
+New Revision: 731
+
+Modified:
+   trunk/can-utils/cangen.c
+Log:
+Added hint about hexadecimal data representation.
+
+
+Modified: trunk/can-utils/cangen.c
+===================================================================
+--- trunk/can-utils/cangen.c	2008-05-07 11:54:07 UTC (rev 730)
++++ trunk/can-utils/cangen.c	2008-05-11 11:46:00 UTC (rev 731)
+@@ -103,7 +103,8 @@
+     fprintf(stderr, &quot;'i'        =&gt; increment values\n&quot;);
+     fprintf(stderr, &quot;&lt;hexvalue&gt; =&gt; fix value using &lt;hexvalue&gt;\n\n&quot;);
+     fprintf(stderr, &quot;When incrementing the CAN data the data length code &quot;
+-	    &quot;minimum is set to 1.\n\n&quot;);
++	    &quot;minimum is set to 1.\n&quot;);
++    fprintf(stderr, &quot;CAN IDs and data content are given and expected in hexadecimal values.\n\n&quot;);
+     fprintf(stderr, &quot;Examples:\n&quot;);
+     fprintf(stderr, &quot;%s vcan0 -g 4 -I 42A -L 1 -D i -v -v   &quot;, prg);
+     fprintf(stderr, &quot;(fixed CAN ID and length, inc. data)\n&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000712.html">r730 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000714.html">r732 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#713">[ date ]</a>
+              <a href="thread.html#713">[ thread ]</a>
+              <a href="subject.html#713">[ subject ]</a>
+              <a href="author.html#713">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,311 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1209 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1209%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101118195114.A716B480FD6%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000840.html">
+   <LINK REL="Next"  HREF="000842.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1209 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1209%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C20101118195114.A716B480FD6%40sheep.berlios.de%3E"
+       TITLE="r1209 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 18 20:51:14 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000840.html">r1208 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000842.html">r1210 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#841">[ date ]</a>
+              <a href="thread.html#841">[ thread ]</a>
+              <a href="subject.html#841">[ subject ]</a>
+              <a href="author.html#841">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-18 20:51:14 +0100 (Thu, 18 Nov 2010)
+New Revision: 1209
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+Mostly cosmetic changes to make the code look similar to the latest
+net-next-2.6/drivers/net/slip.c code where it has been updated since
+we branched slcan.c.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-17 18:43:00 UTC (rev 1208)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2010-11-18 19:51:14 UTC (rev 1209)
+@@ -66,7 +66,6 @@
+ #include &lt;linux/if_slip.h&gt;
+ #include &lt;linux/delay.h&gt;
+ #include &lt;linux/init.h&gt;
+-
+ #include &lt;socketcan/can.h&gt;
+ 
+ #include &lt;socketcan/can/version.h&gt; /* for RCSID. Removed by mkpatch script */
+@@ -79,7 +78,16 @@
+ MODULE_DESCRIPTION(&quot;serial line CAN interface&quot;);
+ MODULE_LICENSE(&quot;GPL&quot;);
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan at hartkopp.net</A>&gt;&quot;);
+-
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
++static inline void *kzalloc(size_t size, unsigned int __nocast flags)
++{
++	void *ret = kmalloc(size, flags);
++	if (ret)
++		memset(ret, 0, size);
++	return ret;
++}
++#endif
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,25)
+ #ifndef N_SLCAN
+ #error Your kernel does not support tty line discipline N_SLCAN
+ #endif
+@@ -106,6 +114,7 @@
+  * rebuild to use the right value for N_SLCAN. This workaround will allow  
+  * to use the slcan driver with an existing kernel.
+  */
++#endif
+ 
+ #define SLCAN_MAGIC 0x53CA
+ 
+@@ -149,7 +158,6 @@
+ 
+ static struct net_device **slcan_devs;
+ 
+-
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ /* Netdevice get statistics request */
+ static struct net_device_stats *slc_get_stats(struct net_device *dev)
+@@ -355,13 +363,13 @@
+ 
+ 	/* Order of next two lines is *very* important.
+ 	 * When we are sending a little amount of data,
+-	 * the transfer may be completed inside driver.write()
++	 * the transfer may be completed inside the ops-&gt;write()
+ 	 * routine, because it's running with interrupts enabled.
+ 	 * In this case we *never* got WRITE_WAKEUP event,
+ 	 * if we did not request it before write operation.
+ 	 *       14 Oct 1994  Dmitry Gorodchanin.
+ 	 */
+-	sl-&gt;tty-&gt;flags |= (1 &lt;&lt; TTY_DO_WRITE_WAKEUP);
++	set_bit(TTY_DO_WRITE_WAKEUP, &amp;sl-&gt;tty-&gt;flags);
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,26)
+ 	actual = sl-&gt;tty-&gt;driver-&gt;write(sl-&gt;tty, sl-&gt;xbuff, strlen(sl-&gt;xbuff));
+ #else
+@@ -394,7 +402,7 @@
+ 		/* Now serial buffer is almost free &amp; we can start
+ 		 * transmission of another packet */
+ 		stats-&gt;tx_packets++;
+-		tty-&gt;flags &amp;= ~(1 &lt;&lt; TTY_DO_WRITE_WAKEUP);
++		clear_bit(TTY_DO_WRITE_WAKEUP, &amp;tty-&gt;flags);
+ 		netif_wake_queue(sl-&gt;dev);
+ 		return;
+ 	}
+@@ -408,11 +416,6 @@
+ 	sl-&gt;xhead += actual;
+ }
+ 
+-
+-/******************************************
+- *   Routines looking at netdevice side.
+- ******************************************/
+-
+ /* Send a can_frame to a TTY queue. */
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,32)
+ static int slc_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -431,7 +434,6 @@
+ 		printk(KERN_WARNING &quot;%s: xmit: iface is down\n&quot;, dev-&gt;name);
+ 		goto out;
+ 	}
+-
+ 	if (sl-&gt;tty == NULL) {
+ 		spin_unlock(&amp;sl-&gt;lock);
+ 		goto out;
+@@ -451,6 +453,10 @@
+ }
+ 
+ 
++/******************************************
++ *   Routines looking at netdevice side.
++ ******************************************/
++
+ /* Netdevice UP -&gt; DOWN routine */
+ static int slc_close(struct net_device *dev)
+ {
+@@ -459,7 +465,7 @@
+ 	spin_lock_bh(&amp;sl-&gt;lock);
+ 	if (sl-&gt;tty) {
+ 		/* TTY discipline is running. */
+-		sl-&gt;tty-&gt;flags &amp;= ~(1 &lt;&lt; TTY_DO_WRITE_WAKEUP);
++		clear_bit(TTY_DO_WRITE_WAKEUP, &amp;sl-&gt;tty-&gt;flags);
+ 	}
+ 	netif_stop_queue(dev);
+ 	sl-&gt;rcount   = 0;
+@@ -500,11 +506,10 @@
+ };
+ #endif
+ 
+-/* Netdevice register callback */
+ static void slc_setup(struct net_device *dev)
+ {
+ #if LINUX_VERSION_CODE &gt; KERNEL_VERSION(2,6,28)
+-	dev-&gt;netdev_ops = &amp;slc_netdev_ops;
++	dev-&gt;netdev_ops		= &amp;slc_netdev_ops;
+ #else
+ 	dev-&gt;open		= slc_open;
+ 	dev-&gt;stop		= slc_close;
+@@ -532,7 +537,7 @@
+ }
+ 
+ /******************************************
+- * Routines looking at TTY side.
++  Routines looking at TTY side.
+  ******************************************/
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,16)
+@@ -561,8 +566,7 @@
+ 	struct net_device_stats *stats = &amp;sl-&gt;dev-&gt;stats;
+ #endif
+ 
+-	if (!sl || sl-&gt;magic != SLCAN_MAGIC ||
+-	    !netif_running(sl-&gt;dev))
++	if (!sl || sl-&gt;magic != SLCAN_MAGIC || !netif_running(sl-&gt;dev))
+ 		return;
+ 
+ 	/* Read the characters out of the buffer */
+@@ -582,7 +586,6 @@
+  ************************************/
+ 
+ /* Collect hanged up channels */
+-
+ static void slc_sync(void)
+ {
+ 	int i;
+@@ -597,12 +600,11 @@
+ 		sl = netdev_priv(dev);
+ 		if (sl-&gt;tty || sl-&gt;leased)
+ 			continue;
+-		if (dev-&gt;flags&amp;IFF_UP)
++		if (dev-&gt;flags &amp; IFF_UP)
+ 			dev_close(dev);
+ 	}
+ }
+ 
+-
+ /* Find a free SLCAN channel, and link in this `tty' line. */
+ static struct slcan *slc_alloc(dev_t line)
+ {
+@@ -734,7 +736,7 @@
+ 	/* Collect hanged up channels. */
+ 	slc_sync();
+ 
+-	sl = (struct slcan *) tty-&gt;disc_data;
++	sl = tty-&gt;disc_data;
+ 
+ 	err = -EEXIST;
+ 	/* First make sure we're not already connected. */
+@@ -772,11 +774,9 @@
+ 
+ 	/* Done.  We have linked the TTY line to a channel. */
+ 	rtnl_unlock();
+-
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,16)
+ 	tty-&gt;receive_room = 65536;	/* We don't flow control */
+ #endif
+-
+ 	return sl-&gt;dev-&gt;base_addr;
+ 
+ err_free_chan:
+@@ -798,6 +798,7 @@
+  *
+  * We also use this method for a hangup event.
+  */
++
+ static void slcan_close(struct tty_struct *tty)
+ {
+ 	struct slcan *sl = (struct slcan *) tty-&gt;disc_data;
+@@ -885,10 +886,6 @@
+ 	.write_wakeup	= slcan_write_wakeup,
+ };
+ 
+-/************************************
+- * general slcan module init/exit
+- ************************************/
+-
+ static int __init slcan_init(void)
+ {
+ 	int status;
+@@ -899,18 +896,15 @@
+ 	printk(banner);
+ 	printk(KERN_INFO &quot;slcan: %d dynamic interface channels.\n&quot;, maxdev);
+ 
+-	slcan_devs = kmalloc(sizeof(struct net_device *)*maxdev, GFP_KERNEL);
++	slcan_devs = kzalloc(sizeof(struct net_device *)*maxdev, GFP_KERNEL);
+ 	if (!slcan_devs) {
+ 		printk(KERN_ERR &quot;slcan: can't allocate slcan device array!\n&quot;);
+ 		return -ENOMEM;
+ 	}
+ 
+-	/* Clear the pointer array, we allocate devices when we need them */
+-	memset(slcan_devs, 0, sizeof(struct net_device *)*maxdev);
+-
+ 	/* Fill in our line protocol discipline, and register it */
+ 	status = tty_register_ldisc(N_SLCAN, &amp;slc_ldisc);
+-	if (status != 0)  {
++	if (status)  {
+ 		printk(KERN_ERR &quot;slcan: can't register line discipline\n&quot;);
+ 		kfree(slcan_devs);
+ 	}
+@@ -949,8 +943,8 @@
+ 		}
+ 	} while (busy &amp;&amp; time_before(jiffies, timeout));
+ 
+-	/* FIXME (2.6.32+): hangup is async so we should wait when doing
+-	   this second phase */
++	/* FIXME: hangup is async so we should wait when doing this second
++	   phase */
+ 
+ 	for (i = 0; i &lt; maxdev; i++) {
+ 		dev = slcan_devs[i];
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000840.html">r1208 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000842.html">r1210 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#841">[ date ]</a>
+              <a href="thread.html#841">[ thread ]</a>
+              <a href="subject.html#841">[ subject ]</a>
+              <a href="author.html#841">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

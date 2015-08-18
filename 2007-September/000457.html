@@ -1,0 +1,220 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r475 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r475%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200709191305.l8JD5kda020485%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000456.html">
+   <LINK REL="Next"  HREF="000458.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r475 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r475%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200709191305.l8JD5kda020485%40sheep.berlios.de%3E"
+       TITLE="r475 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 19 15:05:46 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000456.html">r474 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000458.html">r476 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#457">[ date ]</a>
+              <a href="thread.html#457">[ thread ]</a>
+              <a href="subject.html#457">[ subject ]</a>
+              <a href="author.html#457">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-09-19 15:05:43 +0200 (Wed, 19 Sep 2007)
+New Revision: 475
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Change can_proto_unregister() and can_rx_unregister() to return void.
+Change two DBG()s to printk(KERN_ERR).
+Add KERN_ERR to two printk()s.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-09-19 12:24:00 UTC (rev 474)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-09-19 13:05:43 UTC (rev 475)
+@@ -509,20 +509,14 @@
+  *
+  * Description:
+  *  Removes subscription entry depending on given (subscription) values.
+- *
+- * Return:
+- *  0 on success
+- *  -EINVAL on missing subscription entry
+- *  -ENODEV unknown device
+  */
+-int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+-		      void (*func)(struct sk_buff *, void *), void *data)
++void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
++		       void (*func)(struct sk_buff *, void *), void *data)
+ {
+ 	struct receiver *r = NULL;
+ 	struct hlist_head *rl;
+ 	struct hlist_node *next;
+ 	struct dev_rcv_lists *d;
+-	int ret = 0;
+ 
+ 	DBG(&quot;dev %p (%s), id %03X, mask %03X, callback %p, data %p\n&quot;,
+ 	    dev, DNAME(dev), can_id, mask, func, data);
+@@ -531,9 +525,9 @@
+ 
+ 	d = find_dev_rcv_lists(dev);
+ 	if (!d) {
+-		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
+-		    DNAME(dev), can_id, mask);
+-		ret = -ENODEV;
++		printk(KERN_ERR &quot;BUG: receive list not found for &quot;
++		       &quot;dev %s, id %03X, mask %03X\n&quot;,
++		       DNAME(dev), can_id, mask);
+ 		goto out;
+ 	}
+ 
+@@ -558,9 +552,9 @@
+ 	 */
+ 
+ 	if (!next) {
+-		DBG(&quot;receive list entry not found for &quot;
+-		    &quot;dev %s, id %03X, mask %03X\n&quot;, DNAME(dev), can_id, mask);
+-		ret = -EINVAL;
++		printk(KERN_ERR &quot;BUG: receive list entry not found for &quot;
++		       &quot;dev %s, id %03X, mask %03X\n&quot;,
++		       DNAME(dev), can_id, mask);
+ 		r = NULL;
+ 		d = NULL;
+ 		goto out;
+@@ -590,8 +584,6 @@
+ 	/* schedule the device structure for deletion */
+ 	if (d)
+ 		call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
+-
+-	return ret;
+ }
+ EXPORT_SYMBOL(can_rx_unregister);
+ 
+@@ -779,25 +771,20 @@
+ /**
+  * can_proto_unregister - unregister CAN transport protocol
+  * @cp: pointer to CAN protocol structure
+- *
+- * Return:
+- *  0 on success
+- *  -ESRCH protocol number was not registered
+  */
+-int can_proto_unregister(struct can_proto *cp)
++void can_proto_unregister(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+ 
+ 	if (!proto_tab[proto]) {
+-		printk(KERN_ERR &quot;can: protocol %d is not registered\n&quot;, proto);
+-		return -ESRCH;
++		printk(KERN_ERR &quot;BUG: can: protocol %d is not registered\n&quot;,
++		       proto);
++		return;
+ 	}
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	proto_unregister(cp-&gt;prot);
+ #endif
+ 	proto_tab[proto] = NULL;
+-
+-	return 0;
+ }
+ EXPORT_SYMBOL(can_proto_unregister);
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-09-19 12:24:00 UTC (rev 474)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-09-19 13:05:43 UTC (rev 475)
+@@ -1859,7 +1859,7 @@
+ 
+ 	err = can_proto_register(&amp;bcm_can_proto);
+ 	if (err &lt; 0) {
+-		printk(&quot;can: registration of bcm protocol failed\n&quot;);
++		printk(KERN_ERR &quot;can: registration of bcm protocol failed\n&quot;);
+ 		return err;
+ 	}
+ 
+@@ -1878,11 +1878,8 @@
+ 
+ static void __exit bcm_module_exit(void)
+ {
+-	int err;
++	can_proto_unregister(&amp;bcm_can_proto);
+ 
+-	err = can_proto_unregister(&amp;bcm_can_proto);
+-	WARN_ON(err &lt; 0);
+-
+ 	if (proc_dir)
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+ 		proc_net_remove(&amp;init_net, &quot;can-&quot;IDENT);
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-09-19 12:24:00 UTC (rev 474)
++++ trunk/kernel/2.6/net/can/raw.c	2007-09-19 13:05:43 UTC (rev 475)
+@@ -825,17 +825,14 @@
+ 
+ 	err = can_proto_register(&amp;raw_can_proto);
+ 	if (err &lt; 0)
+-		printk(&quot;can: registration of raw protocol failed\n&quot;);
++		printk(KERN_ERR &quot;can: registration of raw protocol failed\n&quot;);
+ 
+ 	return err;
+ }
+ 
+ static __exit void raw_module_exit(void)
+ {
+-	int err;
+-
+-	err = can_proto_unregister(&amp;raw_can_proto);
+-	WARN_ON(err &lt; 0);
++	can_proto_unregister(&amp;raw_can_proto);
+ }
+ 
+ module_init(raw_module_init);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000456.html">r474 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000458.html">r476 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#457">[ date ]</a>
+              <a href="thread.html#457">[ thread ]</a>
+              <a href="subject.html#457">[ subject ]</a>
+              <a href="author.html#457">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

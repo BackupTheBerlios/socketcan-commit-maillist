@@ -1,0 +1,2314 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r561 - trunk/patch-series/net-2.6.25
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r561%20-%20trunk/patch-series/net-2.6.25&In-Reply-To=%3C200711161519.lAGFJdlQ016074%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000542.html">
+   <LINK REL="Next"  HREF="000544.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r561 - trunk/patch-series/net-2.6.25</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r561%20-%20trunk/patch-series/net-2.6.25&In-Reply-To=%3C200711161519.lAGFJdlQ016074%40sheep.berlios.de%3E"
+       TITLE="r561 - trunk/patch-series/net-2.6.25">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 16 16:19:39 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000542.html">r560 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000544.html">r562 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#543">[ date ]</a>
+              <a href="thread.html#543">[ thread ]</a>
+              <a href="subject.html#543">[ subject ]</a>
+              <a href="author.html#543">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-11-16 16:19:36 +0100 (Fri, 16 Nov 2007)
+New Revision: 561
+
+Modified:
+   trunk/patch-series/net-2.6.25/02-can-core.diff
+   trunk/patch-series/net-2.6.25/03-can-raw-proto.diff
+   trunk/patch-series/net-2.6.25/04-can-bcm-proto.diff
+   trunk/patch-series/net-2.6.25/05-can-vcan-driver.diff
+   trunk/patch-series/net-2.6.25/07-can-doc.diff
+   trunk/patch-series/net-2.6.25/intro
+Log:
+Update patch series to r560.
+
+
+Modified: trunk/patch-series/net-2.6.25/02-can-core.diff
+===================================================================
+--- trunk/patch-series/net-2.6.25/02-can-core.diff	2007-11-16 13:57:29 UTC (rev 560)
++++ trunk/patch-series/net-2.6.25/02-can-core.diff	2007-11-16 15:19:36 UTC (rev 561)
+@@ -10,21 +10,21 @@
+ 
+ ---
+  include/linux/can.h       |  111 +++++
+- include/linux/can/core.h  |   78 +++
++ include/linux/can/core.h  |   64 +++
+  include/linux/can/error.h |   93 ++++
+  net/Kconfig               |    1 
+  net/Makefile              |    1 
+- net/can/Kconfig           |   25 +
++ net/can/Kconfig           |   17 
+  net/can/Makefile          |    6 
+- net/can/af_can.c          |  975 ++++++++++++++++++++++++++++++++++++++++++++++
+- net/can/af_can.h          |  120 +++++
+- net/can/proc.c            |  532 +++++++++++++++++++++++++
+- 10 files changed, 1942 insertions(+)
++ net/can/af_can.c          |  861 ++++++++++++++++++++++++++++++++++++++++++++++
++ net/can/af_can.h          |  122 ++++++
++ net/can/proc.c            |  533 ++++++++++++++++++++++++++++
++ 10 files changed, 1809 insertions(+)
+ 
+ Index: net-2.6.25/include/linux/can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/include/linux/can.h	2007-11-14 13:04:49.000000000 +0100
+++++ net-2.6.25/include/linux/can.h	2007-11-16 11:11:50.000000000 +0100
+ @@ -0,0 +1,111 @@
+ +/*
+ + * linux/can.h
+@@ -140,8 +140,8 @@
+ Index: net-2.6.25/include/linux/can/core.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/include/linux/can/core.h	2007-11-14 13:04:49.000000000 +0100
+-@@ -0,0 +1,78 @@
+++++ net-2.6.25/include/linux/can/core.h	2007-11-16 14:38:25.000000000 +0100
++@@ -0,0 +1,64 @@
+ +/*
+ + * linux/can/core.h
+ + *
+@@ -163,7 +163,7 @@
+ +#include &lt;linux/skbuff.h&gt;
+ +#include &lt;linux/netdevice.h&gt;
+ +
+-+#define CAN_VERSION &quot;20071027&quot;
+++#define CAN_VERSION &quot;20071116&quot;
+ +
+ +/* increment this number each time you change some user-space interface */
+ +#define CAN_ABI_VERSION &quot;8&quot;
+@@ -205,25 +205,11 @@
+ +
+ +extern int can_send(struct sk_buff *skb, int loop);
+ +
+-+#ifdef CONFIG_CAN_DEBUG_CORE
+-+extern void can_debug_skb(struct sk_buff *skb);
+-+extern void can_debug_cframe(const char *msg, struct can_frame *cframe);
+-+#define DBG(fmt, args...)  (DBG_VAR &amp; 1 ? printk( \
+-+					KERN_DEBUG DBG_PREFIX &quot;: %s: &quot; fmt, \
+-+					__func__, ##args) : 0)
+-+#define DBG_FRAME(fmt, cf) (DBG_VAR &amp; 2 ? can_debug_cframe(fmt, cf) : 0)
+-+#define DBG_SKB(skb)       (DBG_VAR &amp; 4 ? can_debug_skb(skb) : 0)
+-+#else
+-+#define DBG(fmt, args...)
+-+#define DBG_FRAME(fmt, cf)
+-+#define DBG_SKB(skb)
+-+#endif
+-+
+ +#endif /* CAN_CORE_H */
+ Index: net-2.6.25/net/Kconfig
+ ===================================================================
+---- net-2.6.25.orig/net/Kconfig	2007-11-14 13:04:26.000000000 +0100
+-+++ net-2.6.25/net/Kconfig	2007-11-14 13:04:49.000000000 +0100
++--- net-2.6.25.orig/net/Kconfig	2007-11-15 21:47:52.000000000 +0100
+++++ net-2.6.25/net/Kconfig	2007-11-16 11:11:50.000000000 +0100
+ @@ -218,6 +218,7 @@
+  endmenu
+  
+@@ -234,8 +220,8 @@
+  source &quot;net/rxrpc/Kconfig&quot;
+ Index: net-2.6.25/net/Makefile
+ ===================================================================
+---- net-2.6.25.orig/net/Makefile	2007-11-14 13:04:26.000000000 +0100
+-+++ net-2.6.25/net/Makefile	2007-11-14 13:04:49.000000000 +0100
++--- net-2.6.25.orig/net/Makefile	2007-11-15 21:47:52.000000000 +0100
+++++ net-2.6.25/net/Makefile	2007-11-16 11:11:51.000000000 +0100
+ @@ -34,6 +34,7 @@
+  obj-$(CONFIG_NETROM)		+= netrom/
+  obj-$(CONFIG_ROSE)		+= rose/
+@@ -247,8 +233,8 @@
+ Index: net-2.6.25/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/net/can/Kconfig	2007-11-14 13:04:49.000000000 +0100
+-@@ -0,0 +1,25 @@
+++++ net-2.6.25/net/can/Kconfig	2007-11-16 14:34:20.000000000 +0100
++@@ -0,0 +1,17 @@
+ +#
+ +# Controller Area Network (CAN) network layer core configuration
+ +#
+@@ -266,18 +252,10 @@
+ +
+ +	  If you want CAN support you should say Y here and also to the
+ +	  specific driver for your controller(s) below.
+-+
+-+config CAN_DEBUG_CORE
+-+	bool &quot;CAN Core debugging messages&quot;
+-+	depends on CAN
+-+	---help---
+-+	  Say Y here if you want the CAN core to produce a bunch of debug
+-+	  messages.  Select this if you are having a problem with CAN
+-+	  support and want to see more of what is going on.
+ Index: net-2.6.25/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/net/can/Makefile	2007-11-14 13:04:49.000000000 +0100
+++++ net-2.6.25/net/can/Makefile	2007-11-16 14:25:56.000000000 +0100
+ @@ -0,0 +1,6 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network core.
+@@ -288,8 +266,8 @@
+ Index: net-2.6.25/net/can/af_can.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/net/can/af_can.c	2007-11-14 13:04:49.000000000 +0100
+-@@ -0,0 +1,975 @@
+++++ net-2.6.25/net/can/af_can.c	2007-11-16 14:27:26.000000000 +0100
++@@ -0,0 +1,861 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+ + *            (used by different CAN protocol modules)
+@@ -369,27 +347,19 @@
+ +module_param(stats_timer, int, S_IRUGO);
+ +MODULE_PARM_DESC(stats_timer, &quot;enable timer for statistics (default:on)&quot;);
+ +
+-+#ifdef CONFIG_CAN_DEBUG_CORE
+-+#define DBG_PREFIX &quot;can&quot;
+-+#define DBG_VAR    can_debug
+-+static int can_debug __read_mostly;
+-+module_param_named(debug, can_debug, int, S_IRUGO);
+-+MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+-+#endif
+++HLIST_HEAD(can_rx_dev_list);
+++static struct dev_rcv_lists can_rx_alldev_list;
+++static DEFINE_SPINLOCK(can_rcvlists_lock);
+ +
+-+HLIST_HEAD(rx_dev_list);
+-+static struct dev_rcv_lists rx_alldev_list;
+-+static DEFINE_SPINLOCK(rcv_lists_lock);
+-+
+ +static struct kmem_cache *rcv_cache __read_mostly;
+ +
+ +/* table of registered CAN protocols */
+ +static struct can_proto *proto_tab[CAN_NPROTO] __read_mostly;
+ +static DEFINE_SPINLOCK(proto_tab_lock);
+ +
+-+struct timer_list stattimer; /* timer for statistics update */
+-+struct s_stats  stats;       /* packet statistics */
+-+struct s_pstats pstats;      /* receive list statistics */
+++struct timer_list can_stattimer;   /* timer for statistics update */
+++struct s_stats    can_stats;       /* packet statistics */
+++struct s_pstats   can_pstats;      /* receive list statistics */
+ +
+ +/*
+ + * af_can socket functions
+@@ -411,8 +381,6 @@
+ +
+ +static void can_sock_destruct(struct sock *sk)
+ +{
+-+	DBG(&quot;called for sock %p\n&quot;, sk);
+-+
+ +	skb_queue_purge(&amp;sk-&gt;sk_receive_queue);
+ +}
+ +
+@@ -423,8 +391,6 @@
+ +	char module_name[sizeof(&quot;can-proto-000&quot;)];
+ +	int err = 0;
+ +
+-+	DBG(&quot;socket %p, type %d, proto %d\n&quot;, sock, sock-&gt;type, protocol);
+-+
+ +	sock-&gt;state = SS_UNCONNECTED;
+ +
+ +	if (protocol &lt; 0 || protocol &gt;= CAN_NPROTO)
+@@ -433,8 +399,6 @@
+ +	if (net != &amp;init_net)
+ +		return -EAFNOSUPPORT;
+ +
+-+	DBG(&quot;looking up proto %d in proto_tab[]\n&quot;, protocol);
+-+
+ +	/* try to load protocol module, when CONFIG_KMOD is defined */
+ +	if (!proto_tab[protocol]) {
+ +		sprintf(module_name, &quot;can-proto-%d&quot;, protocol);
+@@ -448,7 +412,7 @@
+ +		if (err == -ENOSYS) {
+ +			if (printk_ratelimit())
+ +				printk(KERN_INFO &quot;can: request_module(%s)&quot;
+-+				        &quot; not implemented.\n&quot;, module_name);
+++				       &quot; not implemented.\n&quot;, module_name);
+ +		} else if (err) {
+ +			if (printk_ratelimit())
+ +				printk(KERN_ERR &quot;can: request_module(%s)&quot;
+@@ -488,8 +452,6 @@
+ +	sock_init_data(sock, sk);
+ +	sk-&gt;sk_destruct = can_sock_destruct;
+ +
+-+	DBG(&quot;created sock: %p\n&quot;, sk);
+-+
+ +	if (sk-&gt;sk_prot-&gt;init)
+ +		err = sk-&gt;sk_prot-&gt;init(sk);
+ +
+@@ -581,8 +543,8 @@
+ +		err = net_xmit_errno(err);
+ +
+ +	/* update statistics */
+-+	stats.tx_frames++;
+-+	stats.tx_frames_delta++;
+++	can_stats.tx_frames++;
+++	can_stats.tx_frames_delta++;
+ +
+ +	return err;
+ +}
+@@ -610,7 +572,7 @@
+ +	 * cursor variable n to decide if a match was found.
+ +	 */
+ +
+-+	hlist_for_each_entry_rcu(d, n, &amp;rx_dev_list, list) {
+++	hlist_for_each_entry_rcu(d, n, &amp;can_rx_dev_list, list) {
+ +		if (d-&gt;dev == dev)
+ +			break;
+ +	}
+@@ -696,14 +658,11 @@
+ +
+ +	/* insert new receiver  (dev,canid,mask) -&gt; (func,data) */
+ +
+-+	DBG(&quot;dev %p (%s), id %03X, mask %03X, callback %p, data %p, &quot;
+-+	    &quot;ident %s\n&quot;, dev, DNAME(dev), can_id, mask, func, data, ident);
+-+
+ +	r = kmem_cache_alloc(rcv_cache, GFP_KERNEL);
+ +	if (!r)
+ +		return -ENOMEM;
+ +
+-+	spin_lock(&amp;rcv_lists_lock);
+++	spin_lock(&amp;can_rcvlists_lock);
+ +
+ +	d = find_dev_rcv_lists(dev);
+ +	if (d) {
+@@ -719,17 +678,15 @@
+ +		hlist_add_head_rcu(&amp;r-&gt;list, rl);
+ +		d-&gt;entries++;
+ +
+-+		pstats.rcv_entries++;
+-+		if (pstats.rcv_entries_max &lt; pstats.rcv_entries)
+-+			pstats.rcv_entries_max = pstats.rcv_entries;
+++		can_pstats.rcv_entries++;
+++		if (can_pstats.rcv_entries_max &lt; can_pstats.rcv_entries)
+++			can_pstats.rcv_entries_max = can_pstats.rcv_entries;
+ +	} else {
+-+		DBG(&quot;receive list not found for dev %s, id %03X, mask %03X\n&quot;,
+-+		    DNAME(dev), can_id, mask);
+ +		kmem_cache_free(rcv_cache, r);
+ +		err = -ENODEV;
+ +	}
+ +
+-+	spin_unlock(&amp;rcv_lists_lock);
+++	spin_unlock(&amp;can_rcvlists_lock);
+ +
+ +	return err;
+ +}
+@@ -742,7 +699,6 @@
+ +{
+ +	struct dev_rcv_lists *d = container_of(rp, struct dev_rcv_lists, rcu);
+ +
+-+	DBG(&quot;removing dev_rcv_list at %p\n&quot;, d);
+ +	kfree(d);
+ +}
+ +
+@@ -753,7 +709,6 @@
+ +{
+ +	struct receiver *r = container_of(rp, struct receiver, rcu);
+ +
+-+	DBG(&quot;removing receiver at %p\n&quot;, r);
+ +	kmem_cache_free(rcv_cache, r);
+ +}
+ +
+@@ -776,11 +731,8 @@
+ +	struct hlist_node *next;
+ +	struct dev_rcv_lists *d;
+ +
+-+	DBG(&quot;dev %p (%s), id %03X, mask %03X, callback %p, data %p\n&quot;,
+-+	    dev, DNAME(dev), can_id, mask, func, data);
+++	spin_lock(&amp;can_rcvlists_lock);
+ +
+-+	spin_lock(&amp;rcv_lists_lock);
+-+
+ +	d = find_dev_rcv_lists(dev);
+ +	if (!d) {
+ +		printk(KERN_ERR &quot;BUG: receive list not found for &quot;
+@@ -821,19 +773,17 @@
+ +	hlist_del_rcu(&amp;r-&gt;list);
+ +	d-&gt;entries--;
+ +
+-+	if (pstats.rcv_entries &gt; 0)
+-+		pstats.rcv_entries--;
+++	if (can_pstats.rcv_entries &gt; 0)
+++		can_pstats.rcv_entries--;
+ +
+ +	/* remove device structure requested by NETDEV_UNREGISTER */
+-+	if (d-&gt;remove_on_zero_entries &amp;&amp; !d-&gt;entries) {
+-+		DBG(&quot;removing dev_rcv_list for %s on zero entries\n&quot;,
+-+		    dev-&gt;name);
+++	if (d-&gt;remove_on_zero_entries &amp;&amp; !d-&gt;entries)
+ +		hlist_del_rcu(&amp;d-&gt;list);
+-+	} else
+++	else
+ +		d = NULL;
+ +
+ + out:
+-+	spin_unlock(&amp;rcv_lists_lock);
+++	spin_unlock(&amp;can_rcvlists_lock);
+ +
+ +	/* schedule the receiver item for deletion */
+ +	if (r)
+@@ -849,7 +799,6 @@
+ +{
+ +	struct sk_buff *clone = skb_clone(skb, GFP_ATOMIC);
+ +
+-+	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ +	if (clone) {
+ +		clone-&gt;sk = skb-&gt;sk;
+ +		r-&gt;func(clone, r-&gt;data);
+@@ -872,7 +821,6 @@
+ +		/* check for error frame entries only */
+ +		hlist_for_each_entry_rcu(r, n, &amp;d-&gt;rx[RX_ERR], list) {
+ +			if (can_id &amp; r-&gt;mask) {
+-+				DBG(&quot;match on rx_err skbuff %p\n&quot;, skb);
+ +				deliver(skb, r);
+ +				matches++;
+ +			}
+@@ -882,7 +830,6 @@
+ +
+ +	/* check for unfiltered entries */
+ +	hlist_for_each_entry_rcu(r, n, &amp;d-&gt;rx[RX_ALL], list) {
+-+		DBG(&quot;match on rx_all skbuff %p\n&quot;, skb);
+ +		deliver(skb, r);
+ +		matches++;
+ +	}
+@@ -890,7 +837,6 @@
+ +	/* check for can_id/mask entries */
+ +	hlist_for_each_entry_rcu(r, n, &amp;d-&gt;rx[RX_FIL], list) {
+ +		if ((can_id &amp; r-&gt;mask) == r-&gt;can_id) {
+-+			DBG(&quot;match on rx_fil skbuff %p\n&quot;, skb);
+ +			deliver(skb, r);
+ +			matches++;
+ +		}
+@@ -899,7 +845,6 @@
+ +	/* check for inverted can_id/mask entries */
+ +	hlist_for_each_entry_rcu(r, n, &amp;d-&gt;rx[RX_INV], list) {
+ +		if ((can_id &amp; r-&gt;mask) != r-&gt;can_id) {
+-+			DBG(&quot;match on rx_inv skbuff %p\n&quot;, skb);
+ +			deliver(skb, r);
+ +			matches++;
+ +		}
+@@ -909,7 +854,6 @@
+ +	if (can_id &amp; CAN_EFF_FLAG) {
+ +		hlist_for_each_entry_rcu(r, n, &amp;d-&gt;rx[RX_EFF], list) {
+ +			if (r-&gt;can_id == can_id) {
+-+				DBG(&quot;match on rx_eff skbuff %p\n&quot;, skb);
+ +				deliver(skb, r);
+ +				matches++;
+ +			}
+@@ -917,7 +861,6 @@
+ +	} else {
+ +		can_id &amp;= CAN_SFF_MASK;
+ +		hlist_for_each_entry_rcu(r, n, &amp;d-&gt;rx_sff[can_id], list) {
+-+			DBG(&quot;match on rx_sff skbuff %p\n&quot;, skb);
+ +			deliver(skb, r);
+ +			matches++;
+ +		}
+@@ -932,25 +875,19 @@
+ +	struct dev_rcv_lists *d;
+ +	int matches;
+ +
+-+	DBG(&quot;received skbuff on device %s, ptype %04x\n&quot;,
+-+	    dev-&gt;name, ntohs(pt-&gt;type));
+-+	DBG_SKB(skb);
+-+	DBG_FRAME(&quot;can: can_rcv: received CAN frame&quot;,
+-+		  (struct can_frame *)skb-&gt;data);
+-+
+ +	if (dev-&gt;type != ARPHRD_CAN || dev-&gt;nd_net != &amp;init_net) {
+ +		kfree_skb(skb);
+ +		return 0;
+ +	}
+ +
+ +	/* update statistics */
+-+	stats.rx_frames++;
+-+	stats.rx_frames_delta++;
+++	can_stats.rx_frames++;
+++	can_stats.rx_frames_delta++;
+ +
+ +	rcu_read_lock();
+ +
+ +	/* deliver the packet to sockets listening on all devices */
+-+	matches = can_rcv_filter(&amp;rx_alldev_list, skb);
+++	matches = can_rcv_filter(&amp;can_rx_alldev_list, skb);
+ +
+ +	/* find receive list for this device */
+ +	d = find_dev_rcv_lists(dev);
+@@ -960,12 +897,11 @@
+ +	rcu_read_unlock();
+ +
+ +	/* free the skbuff allocated by the netdevice driver */
+-+	DBG(&quot;freeing skbuff %p\n&quot;, skb);
+ +	kfree_skb(skb);
+ +
+ +	if (matches &gt; 0) {
+-+		stats.matches++;
+-+		stats.matches_delta++;
+++		can_stats.matches++;
+++		can_stats.matches_delta++;
+ +	}
+ +
+ +	return 0;
+@@ -1049,9 +985,6 @@
+ +	struct net_device *dev = (struct net_device *)data;
+ +	struct dev_rcv_lists *d;
+ +
+-+	DBG(&quot;msg %ld for dev %p (%s idx %d)\n&quot;,
+-+	    msg, dev, dev-&gt;name, dev-&gt;ifindex);
+-+
+ +	if (dev-&gt;nd_net != &amp;init_net)
+ +		return NOTIFY_DONE;
+ +
+@@ -1071,8 +1004,6 @@
+ +		 * explicit initialization.
+ +		 */
+ +
+-+		DBG(&quot;creating new dev_rcv_lists for %s\n&quot;, dev-&gt;name);
+-+
+ +		d = kzalloc(sizeof(*d), GFP_KERNEL);
+ +		if (!d) {
+ +			printk(KERN_ERR
+@@ -1081,20 +1012,17 @@
+ +		}
+ +		d-&gt;dev = dev;
+ +
+-+		spin_lock(&amp;rcv_lists_lock);
+-+		hlist_add_head_rcu(&amp;d-&gt;list, &amp;rx_dev_list);
+-+		spin_unlock(&amp;rcv_lists_lock);
+++		spin_lock(&amp;can_rcvlists_lock);
+++		hlist_add_head_rcu(&amp;d-&gt;list, &amp;can_rx_dev_list);
+++		spin_unlock(&amp;can_rcvlists_lock);
+ +
+ +		break;
+ +
+ +	case NETDEV_UNREGISTER:
+-+		spin_lock(&amp;rcv_lists_lock);
+++		spin_lock(&amp;can_rcvlists_lock);
+ +
+ +		d = find_dev_rcv_lists(dev);
+ +		if (d) {
+-+			DBG(&quot;remove dev_rcv_list for %s (%d entries)\n&quot;,
+-+			    dev-&gt;name, d-&gt;entries);
+-+
+ +			if (d-&gt;entries) {
+ +				d-&gt;remove_on_zero_entries = 1;
+ +				d = NULL;
+@@ -1104,7 +1032,7 @@
+ +			printk(KERN_ERR &quot;can: notifier: receive list not &quot;
+ +			       &quot;found for dev %s\n&quot;, dev-&gt;name);
+ +
+-+		spin_unlock(&amp;rcv_lists_lock);
+++		spin_unlock(&amp;can_rcvlists_lock);
+ +
+ +		if (d)
+ +			call_rcu(&amp;d-&gt;rcu, can_rx_delete_device);
+@@ -1116,65 +1044,6 @@
+ +}
+ +
+ +/*
+-+ * af_can debugging stuff
+-+ */
+-+
+-+#ifdef CONFIG_CAN_DEBUG_CORE
+-+
+-+/**
+-+ * can_debug_cframe - print CAN frame
+-+ * @msg: pointer to message printed before the given CAN frame
+-+ * @cf: pointer to CAN frame
+-+ */
+-+void can_debug_cframe(const char *msg, struct can_frame *cf)
+-+{
+-+	char idbuf[12];
+-+	char hexbuf[28];
+-+	int dlc;
+-+
+-+	dlc = cf-&gt;can_dlc;
+-+	if (dlc &gt; 8)
+-+		dlc = 8;
+-+
+-+	if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
+-+		sprintf(idbuf, &quot;&lt;%08X&gt;&quot;, cf-&gt;can_id &amp; CAN_EFF_MASK);
+-+	else
+-+		sprintf(idbuf, &quot;&lt;%03X&gt;&quot;, cf-&gt;can_id &amp; CAN_SFF_MASK);
+-+
+-+	if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
+-+		sprintf(hexbuf, &quot;(RTR)&quot;);
+-+	else
+-+		hex_dump_to_buffer(cf-&gt;data, dlc, 16, 1, hexbuf, 28, 0);
+-+
+-+	printk(KERN_DEBUG &quot;%s: %s [%d] %s\n&quot;, msg, idbuf, dlc, hexbuf);
+-+}
+-+EXPORT_SYMBOL(can_debug_cframe);
+-+
+-+/**
+-+ * can_debug_skb - print socket buffer content to kernel log
+-+ * @skb: pointer to socket buffer
+-+ */
+-+void can_debug_skb(struct sk_buff *skb)
+-+{
+-+	printk(KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
+-+	       KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
+-+	       &quot;h,d,t,e,l: %p %+d %+d %+d, %d\n&quot;,
+-+	       skb, skb-&gt;dev ? skb-&gt;dev-&gt;ifindex : -1,
+-+	       ntohs(skb-&gt;protocol),
+-+	       atomic_read(&amp;skb-&gt;users),
+-+	       atomic_read(&amp;(skb_shinfo(skb)-&gt;dataref)),
+-+	       skb_shinfo(skb)-&gt;nr_frags,
+-+	       skb-&gt;head, skb-&gt;data - skb-&gt;head,
+-+	       skb-&gt;tail - skb-&gt;head, skb-&gt;end - skb-&gt;head, skb-&gt;len);
+-+
+-+	print_hex_dump(KERN_DEBUG, &quot;skb_head: &quot;, DUMP_PREFIX_NONE,
+-+		       16, 1, skb-&gt;head, skb-&gt;end - skb-&gt;head, 0);
+-+}
+-+EXPORT_SYMBOL(can_debug_skb);
+-+
+-+#endif
+-+
+-+/*
+ + * af_can module init/exit functions
+ + */
+ +
+@@ -1205,26 +1074,21 @@
+ +		return -ENOMEM;
+ +
+ +	/*
+-+	 * Insert rx_alldev_list for reception on all devices.
+++	 * Insert can_rx_alldev_list for reception on all devices.
+ +	 * This struct is zero initialized which is correct for the
+ +	 * embedded hlist heads, the dev pointer, and the entries counter.
+ +	 */
+ +
+-+	spin_lock(&amp;rcv_lists_lock);
+-+	hlist_add_head_rcu(&amp;rx_alldev_list.list, &amp;rx_dev_list);
+-+	spin_unlock(&amp;rcv_lists_lock);
+++	spin_lock(&amp;can_rcvlists_lock);
+++	hlist_add_head_rcu(&amp;can_rx_alldev_list.list, &amp;can_rx_dev_list);
+++	spin_unlock(&amp;can_rcvlists_lock);
+ +
+ +	if (stats_timer) {
+ +		/* the statistics are updated every second (timer triggered) */
+-+		init_timer(&amp;stattimer);
+-+		stattimer.function = can_stat_update;
+-+		stattimer.data = 0;
+-+		/* update every second */
+-+		stattimer.expires = round_jiffies(jiffies + HZ);
+-+		/* start statistics timer */
+-+		add_timer(&amp;stattimer);
+++		setup_timer(&amp;can_stattimer, can_stat_update, 0);
+++		mod_timer(&amp;can_stattimer, round_jiffies(jiffies + HZ));
+ +	} else
+-+		stattimer.function = NULL;
+++		can_stattimer.function = NULL;
+ +
+ +	can_init_proc();
+ +
+@@ -1242,7 +1106,7 @@
+ +	struct hlist_node *n, *next;
+ +
+ +	if (stats_timer)
+-+		del_timer(&amp;stattimer);
+++		del_timer(&amp;can_stattimer);
+ +
+ +	can_remove_proc();
+ +
+@@ -1251,14 +1115,14 @@
+ +	unregister_netdevice_notifier(&amp;can_netdev_notifier);
+ +	sock_unregister(PF_CAN);
+ +
+-+	/* remove rx_dev_list */
+-+	spin_lock(&amp;rcv_lists_lock);
+-+	hlist_del(&amp;rx_alldev_list.list);
+-+	hlist_for_each_entry_safe(d, n, next, &amp;rx_dev_list, list) {
+++	/* remove can_rx_dev_list */
+++	spin_lock(&amp;can_rcvlists_lock);
+++	hlist_del(&amp;can_rx_alldev_list.list);
+++	hlist_for_each_entry_safe(d, n, next, &amp;can_rx_dev_list, list) {
+ +		hlist_del(&amp;d-&gt;list);
+ +		kfree(d);
+ +	}
+-+	spin_unlock(&amp;rcv_lists_lock);
+++	spin_unlock(&amp;can_rcvlists_lock);
+ +
+ +	kmem_cache_destroy(rcv_cache);
+ +}
+@@ -1268,8 +1132,8 @@
+ Index: net-2.6.25/net/can/af_can.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/net/can/af_can.h	2007-11-14 13:04:49.000000000 +0100
+-@@ -0,0 +1,120 @@
+++++ net-2.6.25/net/can/af_can.h	2007-11-16 14:27:20.000000000 +0100
++@@ -0,0 +1,122 @@
+ +/*
+ + * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+ + * All rights reserved.
+@@ -1347,6 +1211,7 @@
+ +
+ +/* statistic structures */
+ +
+++/* can be reset e.g. by can_init_stats() */
+ +struct s_stats {
+ +	unsigned long jiffies_init;
+ +
+@@ -1369,14 +1234,15 @@
+ +	unsigned long rx_frames_delta;
+ +	unsigned long tx_frames_delta;
+ +	unsigned long matches_delta;
+-+}; /* can be reset e.g. by can_init_stats() */
+++};
+ +
+++/* persistent statistics */
+ +struct s_pstats {
+ +	unsigned long stats_reset;
+ +	unsigned long user_reset;
+ +	unsigned long rcv_entries;
+ +	unsigned long rcv_entries_max;
+-+}; /* persistent statistics */
+++};
+ +
+ +/* function prototypes for the CAN networklayer procfs (proc.c) */
+ +extern void can_init_proc(void);
+@@ -1384,17 +1250,17 @@
+ +extern void can_stat_update(unsigned long data);
+ +
+ +/* structures and variables from af_can.c needed in proc.c for reading */
+-+extern struct timer_list stattimer;	/* timer for statistics update */
+-+extern struct s_stats  stats;		/* packet statistics */
+-+extern struct s_pstats pstats;		/* receive list statistics */
+-+extern struct hlist_head rx_dev_list;	/* rx dispatcher structures */
+++extern struct timer_list can_stattimer;    /* timer for statistics update */
+++extern struct s_stats    can_stats;        /* packet statistics */
+++extern struct s_pstats   can_pstats;       /* receive list statistics */
+++extern struct hlist_head can_rx_dev_list;  /* rx dispatcher structures */
+ +
+ +#endif /* AF_CAN_H */
+ Index: net-2.6.25/net/can/proc.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/net/can/proc.c	2007-11-14 13:04:49.000000000 +0100
+-@@ -0,0 +1,532 @@
+++++ net-2.6.25/net/can/proc.c	2007-11-16 14:27:37.000000000 +0100
++@@ -0,0 +1,533 @@
+ +/*
+ + * proc.c - procfs support for Protocol family CAN core module
+ + *
+@@ -1489,17 +1355,17 @@
+ +{
+ +	/*
+ +	 * This memset function is called from a timer context (when
+-+	 * stattimer is active which is the default) OR in a process
+-+	 * context (reading the proc_fs when stattimer is disabled).
+++	 * can_stattimer is active which is the default) OR in a process
+++	 * context (reading the proc_fs when can_stattimer is disabled).
+ +	 */
+-+	memset(&amp;stats, 0, sizeof(stats));
+-+	stats.jiffies_init = jiffies;
+++	memset(&amp;can_stats, 0, sizeof(can_stats));
+++	can_stats.jiffies_init = jiffies;
+ +
+-+	pstats.stats_reset++;
+++	can_pstats.stats_reset++;
+ +
+ +	if (user_reset) {
+ +		user_reset = 0;
+-+		pstats.user_reset++;
+++		can_pstats.user_reset++;
+ +	}
+ +}
+ +
+@@ -1532,57 +1398,57 @@
+ +		can_init_stats();
+ +
+ +	/* restart counting on jiffies overflow */
+-+	if (j &lt; stats.jiffies_init)
+++	if (j &lt; can_stats.jiffies_init)
+ +		can_init_stats();
+ +
+ +	/* prevent overflow in calc_rate() */
+-+	if (stats.rx_frames &gt; (ULONG_MAX / HZ))
+++	if (can_stats.rx_frames &gt; (ULONG_MAX / HZ))
+ +		can_init_stats();
+ +
+ +	/* prevent overflow in calc_rate() */
+-+	if (stats.tx_frames &gt; (ULONG_MAX / HZ))
+++	if (can_stats.tx_frames &gt; (ULONG_MAX / HZ))
+ +		can_init_stats();
+ +
+ +	/* matches overflow - very improbable */
+-+	if (stats.matches &gt; (ULONG_MAX / 100))
+++	if (can_stats.matches &gt; (ULONG_MAX / 100))
+ +		can_init_stats();
+ +
+ +	/* calc total values */
+-+	if (stats.rx_frames)
+-+		stats.total_rx_match_ratio = (stats.matches * 100) /
+-+						stats.rx_frames;
+++	if (can_stats.rx_frames)
+++		can_stats.total_rx_match_ratio = (can_stats.matches * 100) /
+++			can_stats.rx_frames;
+ +
+-+	stats.total_tx_rate = calc_rate(stats.jiffies_init, j,
+-+					stats.tx_frames);
+-+	stats.total_rx_rate = calc_rate(stats.jiffies_init, j,
+-+					stats.rx_frames);
+++	can_stats.total_tx_rate = calc_rate(can_stats.jiffies_init, j,
+++					    can_stats.tx_frames);
+++	can_stats.total_rx_rate = calc_rate(can_stats.jiffies_init, j,
+++					    can_stats.rx_frames);
+ +
+ +	/* calc current values */
+-+	if (stats.rx_frames_delta)
+-+		stats.current_rx_match_ratio =
+-+			(stats.matches_delta * 100) / stats.rx_frames_delta;
+++	if (can_stats.rx_frames_delta)
+++		can_stats.current_rx_match_ratio =
+++			(can_stats.matches_delta * 100) /
+++			can_stats.rx_frames_delta;
+ +
+-+	stats.current_tx_rate = calc_rate(0, HZ, stats.tx_frames_delta);
+-+	stats.current_rx_rate = calc_rate(0, HZ, stats.rx_frames_delta);
+++	can_stats.current_tx_rate = calc_rate(0, HZ, can_stats.tx_frames_delta);
+++	can_stats.current_rx_rate = calc_rate(0, HZ, can_stats.rx_frames_delta);
+ +
+ +	/* check / update maximum values */
+-+	if (stats.max_tx_rate &lt; stats.current_tx_rate)
+-+		stats.max_tx_rate = stats.current_tx_rate;
+++	if (can_stats.max_tx_rate &lt; can_stats.current_tx_rate)
+++		can_stats.max_tx_rate = can_stats.current_tx_rate;
+ +
+-+	if (stats.max_rx_rate &lt; stats.current_rx_rate)
+-+		stats.max_rx_rate = stats.current_rx_rate;
+++	if (can_stats.max_rx_rate &lt; can_stats.current_rx_rate)
+++		can_stats.max_rx_rate = can_stats.current_rx_rate;
+ +
+-+	if (stats.max_rx_match_ratio &lt; stats.current_rx_match_ratio)
+-+		stats.max_rx_match_ratio = stats.current_rx_match_ratio;
+++	if (can_stats.max_rx_match_ratio &lt; can_stats.current_rx_match_ratio)
+++		can_stats.max_rx_match_ratio = can_stats.current_rx_match_ratio;
+ +
+ +	/* clear values for 'current rate' calculation */
+-+	stats.tx_frames_delta = 0;
+-+	stats.rx_frames_delta = 0;
+-+	stats.matches_delta   = 0;
+++	can_stats.tx_frames_delta = 0;
+++	can_stats.rx_frames_delta = 0;
+++	can_stats.matches_delta   = 0;
+ +
+ +	/* restart timer (one second) */
+-+	stattimer.expires = round_jiffies(jiffies + HZ);
+-+	add_timer(&amp;stattimer);
+++	mod_timer(&amp;can_stattimer, round_jiffies(jiffies + HZ));
+ +}
+ +
+ +/*
+@@ -1645,71 +1511,72 @@
+ +
+ +	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ +	len += snprintf(page + len, PAGE_SIZE - len,
+-+			&quot; %8ld transmitted frames (TXF)\n&quot;, stats.tx_frames);
+++			&quot; %8ld transmitted frames (TXF)\n&quot;,
+++			can_stats.tx_frames);
+ +	len += snprintf(page + len, PAGE_SIZE - len,
+-+			&quot; %8ld received frames (RXF)\n&quot;, stats.rx_frames);
+++			&quot; %8ld received frames (RXF)\n&quot;, can_stats.rx_frames);
+ +	len += snprintf(page + len, PAGE_SIZE - len,
+-+			&quot; %8ld matched frames (RXMF)\n&quot;, stats.matches);
+++			&quot; %8ld matched frames (RXMF)\n&quot;, can_stats.matches);
+ +
+ +	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ +
+-+	if (stattimer.function == can_stat_update) {
+++	if (can_stattimer.function == can_stat_update) {
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld %% total match ratio (RXMR)\n&quot;,
+-+				stats.total_rx_match_ratio);
+++				can_stats.total_rx_match_ratio);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld frames/s total tx rate (TXR)\n&quot;,
+-+				stats.total_tx_rate);
+++				can_stats.total_tx_rate);
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld frames/s total rx rate (RXR)\n&quot;,
+-+				stats.total_rx_rate);
+++				can_stats.total_rx_rate);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld %% current match ratio (CRXMR)\n&quot;,
+-+				stats.current_rx_match_ratio);
+++				can_stats.current_rx_match_ratio);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld frames/s current tx rate (CTXR)\n&quot;,
+-+				stats.current_tx_rate);
+++				can_stats.current_tx_rate);
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld frames/s current rx rate (CRXR)\n&quot;,
+-+				stats.current_rx_rate);
+++				can_stats.current_rx_rate);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld %% max match ratio (MRXMR)\n&quot;,
+-+				stats.max_rx_match_ratio);
+++				can_stats.max_rx_match_ratio);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld frames/s max tx rate (MTXR)\n&quot;,
+-+				stats.max_tx_rate);
+++				can_stats.max_tx_rate);
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld frames/s max rx rate (MRXR)\n&quot;,
+-+				stats.max_rx_rate);
+++				can_stats.max_rx_rate);
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ +	}
+ +
+ +	len += snprintf(page + len, PAGE_SIZE - len,
+ +			&quot; %8ld current receive list entries (CRCV)\n&quot;,
+-+			pstats.rcv_entries);
+++			can_pstats.rcv_entries);
+ +	len += snprintf(page + len, PAGE_SIZE - len,
+ +			&quot; %8ld maximum receive list entries (MRCV)\n&quot;,
+-+			pstats.rcv_entries_max);
+++			can_pstats.rcv_entries_max);
+ +
+-+	if (pstats.stats_reset)
+++	if (can_pstats.stats_reset)
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot;\n %8ld statistic resets (STR)\n&quot;,
+-+				pstats.stats_reset);
+++				can_pstats.stats_reset);
+ +
+-+	if (pstats.user_reset)
+++	if (can_pstats.user_reset)
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot; %8ld user statistic resets (USTR)\n&quot;,
+-+				pstats.user_reset);
+++				can_pstats.user_reset);
+ +
+ +	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+ +
+@@ -1724,18 +1591,18 @@
+ +
+ +	user_reset = 1;
+ +
+-+	if (stattimer.function == can_stat_update) {
+++	if (can_stattimer.function == can_stat_update) {
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot;Scheduled statistic reset #%ld.\n&quot;,
+-+				pstats.stats_reset + 1);
+++				can_pstats.stats_reset + 1);
+ +
+ +	} else {
+-+		if (stats.jiffies_init != jiffies)
+++		if (can_stats.jiffies_init != jiffies)
+ +			can_init_stats();
+ +
+ +		len += snprintf(page + len, PAGE_SIZE - len,
+ +				&quot;Performed statistic reset #%ld.\n&quot;,
+-+				pstats.stats_reset);
+++				can_pstats.stats_reset);
+ +	}
+ +
+ +	*eof = 1;
+@@ -1766,7 +1633,7 @@
+ +			&quot;\nreceive list '%s':\n&quot;, rx_list_name[idx]);
+ +
+ +	rcu_read_lock();
+-+	hlist_for_each_entry_rcu(d, n, &amp;rx_dev_list, list) {
+++	hlist_for_each_entry_rcu(d, n, &amp;can_rx_dev_list, list) {
+ +
+ +		if (!hlist_empty(&amp;d-&gt;rx[idx])) {
+ +			len = can_print_recv_banner(page, len);
+@@ -1799,7 +1666,7 @@
+ +			&quot;\nreceive list 'rx_sff':\n&quot;);
+ +
+ +	rcu_read_lock();
+-+	hlist_for_each_entry_rcu(d, n, &amp;rx_dev_list, list) {
+++	hlist_for_each_entry_rcu(d, n, &amp;can_rx_dev_list, list) {
+ +		int i, all_empty = 1;
+ +		/* check wether at least one list is non-empty */
+ +		for (i = 0; i &lt; 0x800; i++)
+@@ -1930,7 +1797,7 @@
+ Index: net-2.6.25/include/linux/can/error.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/include/linux/can/error.h	2007-11-14 13:04:49.000000000 +0100
+++++ net-2.6.25/include/linux/can/error.h	2007-11-16 11:11:51.000000000 +0100
+ @@ -0,0 +1,93 @@
+ +/*
+ + * linux/can/error.h
+
+Modified: trunk/patch-series/net-2.6.25/03-can-raw-proto.diff
+===================================================================
+--- trunk/patch-series/net-2.6.25/03-can-raw-proto.diff	2007-11-16 13:57:29 UTC (rev 560)
++++ trunk/patch-series/net-2.6.25/03-can-raw-proto.diff	2007-11-16 15:19:36 UTC (rev 561)
+@@ -10,13 +10,13 @@
+  include/linux/can/raw.h |   31 +
+  net/can/Kconfig         |   11 
+  net/can/Makefile        |    3 
+- net/can/raw.c           |  811 ++++++++++++++++++++++++++++++++++++++++++++++++
+- 4 files changed, 856 insertions(+)
++ net/can/raw.c           |  763 ++++++++++++++++++++++++++++++++++++++++++++++++
++ 4 files changed, 808 insertions(+)
+ 
+ Index: net-2.6.25/include/linux/can/raw.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/include/linux/can/raw.h	2007-11-14 13:04:51.000000000 +0100
+++++ net-2.6.25/include/linux/can/raw.h	2007-11-16 14:40:14.000000000 +0100
+ @@ -0,0 +1,31 @@
+ +/*
+ + * linux/can/raw.h
+@@ -51,12 +51,13 @@
+ +#endif
+ Index: net-2.6.25/net/can/Kconfig
+ ===================================================================
+---- net-2.6.25.orig/net/can/Kconfig	2007-11-14 13:04:49.000000000 +0100
+-+++ net-2.6.25/net/can/Kconfig	2007-11-14 13:04:51.000000000 +0100
+-@@ -16,6 +16,17 @@
++--- net-2.6.25.orig/net/can/Kconfig	2007-11-16 14:34:20.000000000 +0100
+++++ net-2.6.25/net/can/Kconfig	2007-11-16 14:42:30.000000000 +0100
++@@ -15,3 +15,14 @@
++ 
+  	  If you want CAN support you should say Y here and also to the
+  	  specific driver for your controller(s) below.
+- 
+++
+ +config CAN_RAW
+ +	tristate &quot;Raw CAN Protocol (raw access with CAN-ID filtering)&quot;
+ +	depends on CAN
+@@ -67,14 +68,10 @@
+ +	  most cases where no higher level protocol is being used. The raw
+ +	  socket has several filter options e.g. ID masking / error frames.
+ +	  To receive/send raw CAN messages, use AF_CAN with protocol CAN_RAW.
+-+
+- config CAN_DEBUG_CORE
+- 	bool &quot;CAN Core debugging messages&quot;
+- 	depends on CAN
+ Index: net-2.6.25/net/can/Makefile
+ ===================================================================
+---- net-2.6.25.orig/net/can/Makefile	2007-11-14 13:04:49.000000000 +0100
+-+++ net-2.6.25/net/can/Makefile	2007-11-14 13:04:51.000000000 +0100
++--- net-2.6.25.orig/net/can/Makefile	2007-11-16 14:25:56.000000000 +0100
+++++ net-2.6.25/net/can/Makefile	2007-11-16 14:40:14.000000000 +0100
+ @@ -4,3 +4,6 @@
+  
+  obj-$(CONFIG_CAN)	+= can.o
+@@ -85,8 +82,8 @@
+ Index: net-2.6.25/net/can/raw.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/net/can/raw.c	2007-11-14 13:04:51.000000000 +0100
+-@@ -0,0 +1,811 @@
+++++ net-2.6.25/net/can/raw.c	2007-11-16 14:43:29.000000000 +0100
++@@ -0,0 +1,763 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+ + *
+@@ -152,14 +149,6 @@
+ +MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ +MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ +
+-+#ifdef CONFIG_CAN_DEBUG_CORE
+-+#define DBG_PREFIX &quot;can-raw&quot;
+-+#define DBG_VAR    raw_debug
+-+static int raw_debug;
+-+module_param_named(debug, raw_debug, int, S_IRUGO);
+-+MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+-+#endif
+-+
+ +#define MASK_ALL 0
+ +
+ +/*
+@@ -197,13 +186,9 @@
+ +	struct sockaddr_can *addr;
+ +	int error;
+ +
+-+	DBG(&quot;received skbuff %p, sk %p\n&quot;, skb, sk);
+-+	DBG_SKB(skb);
+-+
+ +	if (!ro-&gt;recv_own_msgs) {
+ +		/* check the received tx sock reference */
+ +		if (skb-&gt;sk == sk) {
+-+			DBG(&quot;trashed own tx msg\n&quot;);
+ +			kfree_skb(skb);
+ +			return;
+ +		}
+@@ -223,11 +208,8 @@
+ +	addr-&gt;can_ifindex = skb-&gt;dev-&gt;ifindex;
+ +
+ +	error = sock_queue_rcv_skb(sk, skb);
+-+	if (error &lt; 0) {
+-+		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, error);
+-+		DBG(&quot;freeing skbuff %p\n&quot;, skb);
+++	if (error &lt; 0)
+ +		kfree_skb(skb);
+-+	}
+ +}
+ +
+ +static int raw_enable_filters(struct net_device *dev, struct sock *sk,
+@@ -238,14 +220,9 @@
+ +	int i;
+ +
+ +	for (i = 0; i &lt; count; i++) {
+-+		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+-+		    filter[i].can_id, filter[i].can_mask,
+-+		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+-+
+ +		err = can_rx_register(dev, filter[i].can_id,
+ +				      filter[i].can_mask,
+ +				      raw_rcv, sk, &quot;raw&quot;);
+-+
+ +		if (err) {
+ +			/* clean up successfully registered filters */
+ +			while (--i &gt;= 0)
+@@ -277,14 +254,9 @@
+ +{
+ +	int i;
+ +
+-+	for (i = 0; i &lt; count; i++) {
+-+		DBG(&quot;filter can_id %08X, can_mask %08X%s, sk %p\n&quot;,
+-+		    filter[i].can_id, filter[i].can_mask,
+-+		    filter[i].can_id &amp; CAN_INV_FILTER ? &quot; (inv)&quot; : &quot;&quot;, sk);
+-+
+++	for (i = 0; i &lt; count; i++)
+ +		can_rx_unregister(dev, filter[i].can_id, filter[i].can_mask,
+ +				  raw_rcv, sk);
+-+	}
+ +}
+ +
+ +static inline void raw_disable_errfilter(struct net_device *dev,
+@@ -328,9 +300,6 @@
+ +	struct raw_sock *ro = container_of(nb, struct raw_sock, notifier);
+ +	struct sock *sk = &amp;ro-&gt;sk;
+ +
+-+	DBG(&quot;msg %ld for dev %p (%s idx %d) sk %p ro-&gt;ifindex %d\n&quot;,
+-+	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, ro-&gt;ifindex);
+-+
+ +	if (dev-&gt;nd_net != &amp;init_net)
+ +		return NOTIFY_DONE;
+ +
+@@ -401,9 +370,6 @@
+ +	struct sock *sk = sock-&gt;sk;
+ +	struct raw_sock *ro = raw_sk(sk);
+ +
+-+	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+-+	    atomic_read(&amp;sk-&gt;sk_refcnt));
+-+
+ +	unregister_netdevice_notifier(&amp;ro-&gt;notifier);
+ +
+ +	lock_sock(sk);
+@@ -444,8 +410,6 @@
+ +	int err = 0;
+ +	int notify_enetdown = 0;
+ +
+-+	DBG(&quot;socket %p to device %d\n&quot;, sock, addr-&gt;can_ifindex);
+-+
+ +	if (len &lt; sizeof(*addr))
+ +		return -EINVAL;
+ +
+@@ -459,12 +423,10 @@
+ +
+ +		dev = dev_get_by_index(&amp;init_net, addr-&gt;can_ifindex);
+ +		if (!dev) {
+-+			DBG(&quot;could not find device %d\n&quot;, addr-&gt;can_ifindex);
+ +			err = -ENODEV;
+ +			goto out;
+ +		}
+ +		if (dev-&gt;type != ARPHRD_CAN) {
+-+			DBG(&quot;device %d no CAN device\n&quot;, addr-&gt;can_ifindex);
+ +			dev_put(dev);
+ +			err = -ENODEV;
+ +			goto out;
+@@ -751,8 +713,6 @@
+ +	int ifindex;
+ +	int err;
+ +
+-+	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+-+
+ +	if (msg-&gt;msg_name) {
+ +		struct sockaddr_can *addr =
+ +			(struct sockaddr_can *)msg-&gt;msg_name;
+@@ -765,10 +725,8 @@
+ +		ifindex = ro-&gt;ifindex;
+ +
+ +	dev = dev_get_by_index(&amp;init_net, ifindex);
+-+	if (!dev) {
+-+		DBG(&quot;device %d not found\n&quot;, ifindex);
+++	if (!dev)
+ +		return -ENXIO;
+-+	}
+ +
+ +	skb = sock_alloc_send_skb(sk, size, msg-&gt;msg_flags &amp; MSG_DONTWAIT,
+ +				  &amp;err);
+@@ -786,9 +744,6 @@
+ +	skb-&gt;dev = dev;
+ +	skb-&gt;sk  = sk;
+ +
+-+	DBG(&quot;sending skbuff to interface %d\n&quot;, ifindex);
+-+	DBG_SKB(skb);
+-+
+ +	err = can_send(skb, ro-&gt;loopback);
+ +
+ +	dev_put(dev);
+@@ -807,8 +762,6 @@
+ +	int error = 0;
+ +	int noblock;
+ +
+-+	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+-+
+ +	noblock =  flags &amp; MSG_DONTWAIT;
+ +	flags   &amp;= ~MSG_DONTWAIT;
+ +
+@@ -816,9 +769,6 @@
+ +	if (!skb)
+ +		return error;
+ +
+-+	DBG(&quot;delivering skbuff %p\n&quot;, skb);
+-+	DBG_SKB(skb);
+-+
+ +	if (size &lt; skb-&gt;len)
+ +		msg-&gt;msg_flags |= MSG_TRUNC;
+ +	else
+@@ -837,7 +787,6 @@
+ +		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+ +	}
+ +
+-+	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+ +	skb_free_datagram(sk, skb);
+ +
+ +	return size;
+
+Modified: trunk/patch-series/net-2.6.25/04-can-bcm-proto.diff
+===================================================================
+--- trunk/patch-series/net-2.6.25/04-can-bcm-proto.diff	2007-11-16 13:57:29 UTC (rev 560)
++++ trunk/patch-series/net-2.6.25/04-can-bcm-proto.diff	2007-11-16 15:19:36 UTC (rev 561)
+@@ -10,13 +10,13 @@
+  include/linux/can/bcm.h |   65 +
+  net/can/Kconfig         |   13 
+  net/can/Makefile        |    3 
+- net/can/bcm.c           | 1763 ++++++++++++++++++++++++++++++++++++++++++++++++
+- 4 files changed, 1844 insertions(+)
++ net/can/bcm.c           | 1561 ++++++++++++++++++++++++++++++++++++++++++++++++
++ 4 files changed, 1642 insertions(+)
+ 
+ Index: net-2.6.25/include/linux/can/bcm.h
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/include/linux/can/bcm.h	2007-11-14 13:04:52.000000000 +0100
+++++ net-2.6.25/include/linux/can/bcm.h	2007-11-16 14:44:48.000000000 +0100
+ @@ -0,0 +1,65 @@
+ +/*
+ + * linux/can/bcm.h
+@@ -85,12 +85,13 @@
+ +#endif /* CAN_BCM_H */
+ Index: net-2.6.25/net/can/Kconfig
+ ===================================================================
+---- net-2.6.25.orig/net/can/Kconfig	2007-11-14 13:04:51.000000000 +0100
+-+++ net-2.6.25/net/can/Kconfig	2007-11-14 13:04:52.000000000 +0100
+-@@ -27,6 +27,19 @@
++--- net-2.6.25.orig/net/can/Kconfig	2007-11-16 14:42:30.000000000 +0100
+++++ net-2.6.25/net/can/Kconfig	2007-11-16 14:46:32.000000000 +0100
++@@ -26,3 +26,16 @@
++ 	  most cases where no higher level protocol is being used. The raw
+  	  socket has several filter options e.g. ID masking / error frames.
+  	  To receive/send raw CAN messages, use AF_CAN with protocol CAN_RAW.
+- 
+++
+ +config CAN_BCM
+ +	tristate &quot;Broadcast Manager CAN Protocol (with content filtering)&quot;
+ +	depends on CAN
+@@ -103,14 +104,10 @@
+ +	  You probably want to use the bcm socket in most cases where cyclic
+ +	  CAN messages are used on the bus (e.g. in automotive environments).
+ +	  To use the Broadcast Manager, use AF_CAN with protocol CAN_BCM.
+-+
+- config CAN_DEBUG_CORE
+- 	bool &quot;CAN Core debugging messages&quot;
+- 	depends on CAN
+ Index: net-2.6.25/net/can/Makefile
+ ===================================================================
+---- net-2.6.25.orig/net/can/Makefile	2007-11-14 13:04:51.000000000 +0100
+-+++ net-2.6.25/net/can/Makefile	2007-11-14 13:04:52.000000000 +0100
++--- net-2.6.25.orig/net/can/Makefile	2007-11-16 14:40:14.000000000 +0100
+++++ net-2.6.25/net/can/Makefile	2007-11-16 14:44:48.000000000 +0100
+ @@ -7,3 +7,6 @@
+  
+  obj-$(CONFIG_CAN_RAW)	+= can-raw.o
+@@ -121,8 +118,8 @@
+ Index: net-2.6.25/net/can/bcm.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/net/can/bcm.c	2007-11-14 13:04:52.000000000 +0100
+-@@ -0,0 +1,1763 @@
+++++ net-2.6.25/net/can/bcm.c	2007-11-16 14:47:57.000000000 +0100
++@@ -0,0 +1,1561 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+ + *
+@@ -199,14 +196,6 @@
+ +MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ +MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ +
+-+#ifdef CONFIG_CAN_DEBUG_CORE
+-+#define DBG_PREFIX &quot;can-bcm&quot;
+-+#define DBG_VAR    bcm_debug
+-+static int bcm_debug;
+-+module_param_named(debug, bcm_debug, int, S_IRUGO);
+-+MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+-+#endif
+-+
+ +/* easy access to can_frame payload */
+ +static inline u64 GET_U64(const struct can_frame *cp)
+ +{
+@@ -301,7 +290,8 @@
+ +	if (!ifindex)
+ +		return &quot;any&quot;;
+ +
+-+	dev = __dev_get_by_index(&amp;init_net, ifindex); /* no usage counting */
+++	/* no usage counting */
+++	dev = __dev_get_by_index(&amp;init_net, ifindex);
+ +	if (dev)
+ +		return dev-&gt;name;
+ +
+@@ -404,8 +394,6 @@
+ +	struct net_device *dev;
+ +	struct can_frame *cf = &amp;op-&gt;frames[op-&gt;currframe];
+ +
+-+	DBG_FRAME(&quot;BCM: bcm_can_tx: sending frame&quot;, cf);
+-+
+ +	/* no target device? =&gt; exit */
+ +	if (!op-&gt;ifindex)
+ +		return;
+@@ -496,7 +484,6 @@
+ +	if (err &lt; 0) {
+ +		struct bcm_sock *bo = bcm_sk(sk);
+ +
+-+		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
+ +		kfree_skb(skb);
+ +		/* don't care about overflows in this statistic */
+ +		bo-&gt;dropped_usr_msgs++;
+@@ -510,8 +497,6 @@
+ +{
+ +	struct bcm_op *op = (struct bcm_op *)data;
+ +
+-+	DBG(&quot;Called with bcm_op %p\n&quot;, op);
+-+
+ +	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ +
+ +		op-&gt;count--;
+@@ -519,9 +504,6 @@
+ +			struct bcm_msg_head msg_head;
+ +
+ +			/* create notification to user */
+-+			DBG(&quot;sending TX_EXPIRED for can_id %03X\n&quot;,
+-+			    op-&gt;can_id);
+-+
+ +			msg_head.opcode  = TX_EXPIRED;
+ +			msg_head.flags   = op-&gt;flags;
+ +			msg_head.count   = op-&gt;count;
+@@ -534,37 +516,19 @@
+ +		}
+ +	}
+ +
+-+	DBG(&quot;count=%d j_ival1=%ld j_ival2=%ld\n&quot;,
+-+	    op-&gt;count, op-&gt;j_ival1, op-&gt;j_ival2);
+-+
+ +	if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+ +
+-+		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-+		add_timer(&amp;op-&gt;timer);
+-+
+-+		DBG(&quot;adding timer ival1. func=%p data=%p exp=0x%08X\n&quot;,
+-+		    op-&gt;timer.function,
+-+		    (char *) op-&gt;timer.data,
+-+		    (unsigned int) op-&gt;timer.expires);
+-+
+ +		/* send (next) frame */
+ +		bcm_can_tx(op);
+++		mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ +
+ +	} else {
+ +		if (op-&gt;j_ival2) {
+-+			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-+			add_timer(&amp;op-&gt;timer);
+ +
+-+			DBG(&quot;adding timer ival2. func=%p data=%p exp=0x%08X\n&quot;,
+-+			    op-&gt;timer.function,
+-+			    (char *) op-&gt;timer.data,
+-+			    (unsigned int) op-&gt;timer.expires);
+-+
+ +			/* send (next) frame */
+ +			bcm_can_tx(op);
+-+
+-+		} else
+-+			DBG(&quot;no timer restart\n&quot;);
+++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival2);
+++		}
+ +	}
+ +
+ +	return;
+@@ -586,10 +550,6 @@
+ +	if (op-&gt;frames_filtered &gt; ULONG_MAX/100)
+ +		op-&gt;frames_filtered = op-&gt;frames_abs = 0;
+ +
+-+	DBG(&quot;setting j_lastmsg to 0x%08X for rx_op %p\n&quot;,
+-+	    (unsigned int) op-&gt;j_lastmsg, op);
+-+	DBG(&quot;sending notification\n&quot;);
+-+
+ +	head.opcode  = RX_CHANGED;
+ +	head.flags   = op-&gt;flags;
+ +	head.count   = op-&gt;count;
+@@ -627,13 +587,7 @@
+ +
+ +		if (!(op-&gt;thrtimer.expires)) {
+ +			/* start the timer only the first time */
+-+			op-&gt;thrtimer.expires = nexttx;
+-+			add_timer(&amp;op-&gt;thrtimer);
+-+
+-+			DBG(&quot;adding thrtimer. func=%p data=%p exp=0x%08X\n&quot;,
+-+			    op-&gt;thrtimer.function,
+-+			    (char *) op-&gt;thrtimer.data,
+-+			    (unsigned int) op-&gt;thrtimer.expires);
+++			mod_timer(&amp;op-&gt;thrtimer, nexttx);
+ +		}
+ +
+ +	} else {
+@@ -656,22 +610,14 @@
+ +
+ +	if (!(op-&gt;last_frames[index].can_dlc &amp; RX_RECV)) {
+ +		/* received data for the first time =&gt; send update to user */
+-+		DBG(&quot;first time :)\n&quot;);
+ +		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
+ +		return;
+ +	}
+ +
+ +	/* do a real check in can_frame data section */
+ +
+-+	DBG(&quot;op-&gt;frames[index].data = 0x%016llx\n&quot;,
+-+	    GET_U64(&amp;op-&gt;frames[index]));
+-+	DBG(&quot;op-&gt;last_frames[index].data = 0x%016llx\n&quot;,
+-+	    GET_U64(&amp;op-&gt;last_frames[index]));
+-+	DBG(&quot;rxdata-&gt;data = 0x%016llx\n&quot;, GET_U64(rxdata));
+-+
+ +	if ((GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(rxdata)) !=
+ +	    (GET_U64(&amp;op-&gt;frames[index]) &amp; GET_U64(&amp;op-&gt;last_frames[index]))) {
+-+		DBG(&quot;relevant data change :)\n&quot;);
+ +		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index], rxdata);
+ +		return;
+ +	}
+@@ -680,13 +626,11 @@
+ +		/* do a real check in can_frame dlc */
+ +		if (rxdata-&gt;can_dlc != (op-&gt;last_frames[index].can_dlc &amp;
+ +					BCM_CAN_DLC_MASK)) {
+-+			DBG(&quot;dlc change :)\n&quot;);
+ +			bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[index],
+ +					       rxdata);
+ +			return;
+ +		}
+ +	}
+-+	DBG(&quot;no relevant change :(\n&quot;);
+ +}
+ +
+ +/*
+@@ -697,17 +641,8 @@
+ +	if (op-&gt;flags &amp; RX_NO_AUTOTIMER)
+ +		return;
+ +
+-+	if (op-&gt;j_ival1) {
+-+		op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-+
+-+		DBG(&quot;adding rx timeout timer ival1. func=%p data=%p &quot;
+-+		    &quot;exp=0x%08X\n&quot;,
+-+		    op-&gt;timer.function,
+-+		    (char *) op-&gt;timer.data,
+-+		    (unsigned int) op-&gt;timer.expires);
+-+
+-+		add_timer(&amp;op-&gt;timer);
+-+	}
+++	if (op-&gt;j_ival1)
+++		mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ +}
+ +
+ +/*
+@@ -718,8 +653,6 @@
+ +	struct bcm_op *op = (struct bcm_op *)data;
+ +	struct bcm_msg_head msg_head;
+ +
+-+	DBG(&quot;sending RX_TIMEOUT for can_id %03X. op is %p\n&quot;, op-&gt;can_id, op);
+-+
+ +	msg_head.opcode  = RX_TIMEOUT;
+ +	msg_head.flags   = op-&gt;flags;
+ +	msg_head.count   = op-&gt;count;
+@@ -736,7 +669,6 @@
+ +	if ((op-&gt;flags &amp; RX_ANNOUNCE_RESUME) &amp;&amp; op-&gt;last_frames) {
+ +		/* clear received can_frames to indicate 'nothing received' */
+ +		memset(op-&gt;last_frames, 0, op-&gt;nframes * CFSIZ);
+-+		DBG(&quot;RX_ANNOUNCE_RESTART\n&quot;);
+ +	}
+ +}
+ +
+@@ -753,8 +685,6 @@
+ +	op-&gt;thrtimer.expires = 0;
+ +
+ +	if (op-&gt;nframes &gt; 1) {
+-+		DBG(&quot;sending MUX RX_CHANGED for can_id %03X. op is %p\n&quot;,
+-+		    op-&gt;can_id, op);
+ +		/* for MUX filter we start at index 1 */
+ +		for (i = 1; i &lt; op-&gt;nframes; i++) {
+ +			if ((op-&gt;last_frames) &amp;&amp;
+@@ -765,8 +695,6 @@
+ +		}
+ +
+ +	} else {
+-+		DBG(&quot;sending simple RX_CHANGED for can_id %03X. op is %p\n&quot;,
+-+		    op-&gt;can_id, op);
+ +		/* for RX_FILTER_ID and simple filter */
+ +		if (op-&gt;last_frames &amp;&amp; (op-&gt;last_frames[0].can_dlc &amp; RX_THR)) {
+ +			op-&gt;last_frames[0].can_dlc &amp;= ~RX_THR;
+@@ -787,8 +715,6 @@
+ +	/* disable timeout */
+ +	del_timer(&amp;op-&gt;timer);
+ +
+-+	DBG(&quot;Called with bcm_op %p\n&quot;, op);
+-+
+ +	if (skb-&gt;len == sizeof(rxframe)) {
+ +		memcpy(&amp;rxframe, skb-&gt;data, sizeof(rxframe));
+ +		/* save rx timestamp */
+@@ -798,35 +724,23 @@
+ +		/* update statistics */
+ +		op-&gt;frames_abs++;
+ +		kfree_skb(skb);
+-+		DBG(&quot;got can_frame with can_id %03X\n&quot;, rxframe.can_id);
+ +
+ +	} else {
+-+		DBG(&quot;Wrong skb-&gt;len = %d\n&quot;, skb-&gt;len);
+ +		kfree_skb(skb);
+ +		return;
+ +	}
+ +
+-+	DBG_FRAME(&quot;BCM: bcm_rx_handler: CAN frame&quot;, &amp;rxframe);
+-+
+-+	if (op-&gt;can_id != rxframe.can_id) {
+-+		DBG(&quot;ERROR! Got wrong can_id %03X! Expected %03X.\n&quot;,
+-+		    rxframe.can_id, op-&gt;can_id);
+++	if (op-&gt;can_id != rxframe.can_id)
+ +		return;
+-+	}
+ +
+ +	if (op-&gt;flags &amp; RX_RTR_FRAME) {
+-+		/* send reply for RTR-request */
+-+		DBG(&quot;RTR-request\n&quot;);
+-+
+-+		/* send op-&gt;frames[0] to CAN device */
+++		/* send reply for RTR-request (placed in op-&gt;frames[0]) */
+ +		bcm_can_tx(op);
+ +		return;
+ +	}
+ +
+ +	if (op-&gt;flags &amp; RX_FILTER_ID) {
+ +		/* the easiest case */
+-+		DBG(&quot;Easy does it with RX_FILTER_ID\n&quot;);
+-+
+ +		bcm_rx_update_and_send(op, &amp;op-&gt;last_frames[0], &amp;rxframe);
+ +		bcm_rx_starttimer(op);
+ +		return;
+@@ -834,18 +748,15 @@
+ +
+ +	if (op-&gt;nframes == 1) {
+ +		/* simple compare with index 0 */
+-+		DBG(&quot;Simple compare\n&quot;);
+-+
+ +		bcm_rx_cmp_to_index(op, 0, &amp;rxframe);
+ +		bcm_rx_starttimer(op);
+ +		return;
+ +	}
+ +
+ +	if (op-&gt;nframes &gt; 1) {
+-+		/* multiplex compare */
+-+		DBG(&quot;Multiplex compare\n&quot;);
+-+
+ +		/*
+++		 * multiplex compare
+++		 *
+ +		 * find the first multiplex mask that fits.
+ +		 * Remark: The MUX-mask is stored in index 0
+ +		 */
+@@ -854,7 +765,6 @@
+ +			if ((GET_U64(&amp;op-&gt;frames[0]) &amp; GET_U64(&amp;rxframe)) ==
+ +			    (GET_U64(&amp;op-&gt;frames[0]) &amp;
+ +			     GET_U64(&amp;op-&gt;frames[i]))) {
+-+				DBG(&quot;found MUX index %d\n&quot;, i);
+ +				bcm_rx_cmp_to_index(op, i, &amp;rxframe);
+ +				break;
+ +			}
+@@ -917,8 +827,6 @@
+ +
+ +	list_for_each_entry_safe(op, n, ops, list) {
+ +		if ((op-&gt;can_id == can_id) &amp;&amp; (op-&gt;ifindex == ifindex)) {
+-+			DBG(&quot;removing rx_op %p for can_id %03X\n&quot;,
+-+			    op, op-&gt;can_id);
+ +
+ +			/*
+ +			 * Don't care if we're bound or not (due to netdev
+@@ -964,8 +872,6 @@
+ +
+ +	list_for_each_entry_safe(op, n, ops, list) {
+ +		if ((op-&gt;can_id == can_id) &amp;&amp; (op-&gt;ifindex == ifindex)) {
+-+			DBG(&quot;removing rx_op %p for can_id %03X\n&quot;,
+-+			    op, op-&gt;can_id);
+ +			list_del(&amp;op-&gt;list);
+ +			bcm_remove_op(op);
+ +			return 1; /* done */
+@@ -983,14 +889,9 @@
+ +{
+ +	struct bcm_op *op = bcm_find_op(ops, msg_head-&gt;can_id, ifindex);
+ +
+-+	if (!op) {
+-+		DBG(&quot;TRX_READ: did not find op for can_id %03X\n&quot;,
+-+		    msg_head-&gt;can_id);
+++	if (!op)
+ +		return -EINVAL;
+-+	}
+ +
+-+	DBG(&quot;TRX_READ: sending status for can_id %03X\n&quot;,
+-+	    msg_head-&gt;can_id);
+ +	/* put current values into msg_head */
+ +	msg_head-&gt;flags   = op-&gt;flags;
+ +	msg_head-&gt;count   = op-&gt;count;
+@@ -1027,9 +928,6 @@
+ +	if (op) {
+ +		/* update existing BCM operation */
+ +
+-+		DBG(&quot;TX_SETUP: modifying existing tx_op %p for can_id %03X\n&quot;,
+-+		    op, msg_head-&gt;can_id);
+-+
+ +		/*
+ +		 * Do we need more space for the can_frames than currently
+ +		 * allocated? -&gt; This is a _really_ unusual use-case and
+@@ -1058,9 +956,6 @@
+ +		if (!op)
+ +			return -ENOMEM;
+ +
+-+		DBG(&quot;TX_SETUP: creating new tx_op %p for can_id %03X\n&quot;,
+-+		    op, msg_head-&gt;can_id);
+-+
+ +		op-&gt;can_id    = msg_head-&gt;can_id;
+ +
+ +		/* create array for can_frames and copy the data */
+@@ -1095,21 +990,15 @@
+ +
+ +		/* bcm_can_tx / bcm_tx_timeout_handler needs this */
+ +		op-&gt;sk = sk;
+-+
+ +		op-&gt;ifindex = ifindex;
+ +
+-+		/* initialize uninitialized (kmalloc) structure */
+-+		init_timer(&amp;op-&gt;timer);
+++		/* initialize uninitialized (kzalloc) structure */
+++		setup_timer(&amp;op-&gt;timer, bcm_tx_timeout_handler,
+++			    (unsigned long)op);
+ +
+ +		/* currently unused in tx_ops */
+ +		init_timer(&amp;op-&gt;thrtimer);
+ +
+-+		/* handler for tx_ops */
+-+		op-&gt;timer.function = bcm_tx_timeout_handler;
+-+
+-+		/* timer.data points to this op-structure */
+-+		op-&gt;timer.data = (unsigned long)op;
+-+
+ +		/* add this bcm_op to the list of the tx_ops */
+ +		list_add(&amp;op-&gt;list, &amp;bo-&gt;tx_ops);
+ +
+@@ -1132,50 +1021,28 @@
+ +
+ +	if (op-&gt;flags &amp; SETTIMER) {
+ +		/* set timer values */
+-+
+ +		op-&gt;count = msg_head-&gt;count;
+ +		op-&gt;ival1 = msg_head-&gt;ival1;
+ +		op-&gt;ival2 = msg_head-&gt;ival2;
+ +		op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
+ +		op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ +
+-+		DBG(&quot;TX_SETUP: SETTIMER count=%d j_ival1=%ld j_ival2=%ld\n&quot;,
+-+		    op-&gt;count, op-&gt;j_ival1, op-&gt;j_ival2);
+-+
+ +		/* disable an active timer due to zero values? */
+-+		if (!op-&gt;j_ival1 &amp;&amp; !op-&gt;j_ival2) {
+++		if (!op-&gt;j_ival1 &amp;&amp; !op-&gt;j_ival2)
+ +			del_timer(&amp;op-&gt;timer);
+-+			DBG(&quot;TX_SETUP: SETTIMER disabled timer.\n&quot;);
+-+		}
+ +	}
+ +
+ +	if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp;
+ +	    ((op-&gt;j_ival1 &amp;&amp; op-&gt;count) || op-&gt;j_ival2)) {
+ +
+-+		del_timer(&amp;op-&gt;timer);
+-+
+ +		/* spec: send can_frame when starting timer */
+ +		op-&gt;flags |= TX_ANNOUNCE;
+ +
+ +		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+-+			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ +			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
+-+			DBG(&quot;TX_SETUP: adding timer ival1. func=%p data=%p &quot;
+-+			    &quot;exp=0x%08X\n&quot;,
+-+			    op-&gt;timer.function,
+-+			    (char *) op-&gt;timer.data,
+-+			    (unsigned int) op-&gt;timer.expires);
+-+
+-+		} else {
+-+			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+-+			DBG(&quot;TX_SETUP: adding timer ival2. func=%p data=%p &quot;
+-+			    &quot;exp=0x%08X\n&quot;,
+-+			    op-&gt;timer.function,
+-+			    (char *) op-&gt;timer.data,
+-+			    (unsigned int) op-&gt;timer.expires);
+-+		}
+-+
+-+		add_timer(&amp;op-&gt;timer);
+++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+++		} else
+++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival2);
+ +	}
+ +
+ +	if (op-&gt;flags &amp; TX_ANNOUNCE)
+@@ -1198,25 +1065,20 @@
+ +	if ((msg_head-&gt;flags &amp; RX_FILTER_ID) || (!(msg_head-&gt;nframes))) {
+ +		/* be robust against wrong usage ... */
+ +		msg_head-&gt;flags |= RX_FILTER_ID;
+-+		msg_head-&gt;nframes = 0; /* ignore trailing garbage */
+++		/* ignore trailing garbage */
+++		msg_head-&gt;nframes = 0;
+ +	}
+ +
+ +	if ((msg_head-&gt;flags &amp; RX_RTR_FRAME) &amp;&amp;
+ +	    ((msg_head-&gt;nframes != 1) ||
+-+	     (!(msg_head-&gt;can_id &amp; CAN_RTR_FLAG)))) {
+-+
+-+		DBG(&quot;RX_SETUP: bad RX_RTR_FRAME setup!\n&quot;);
+++	     (!(msg_head-&gt;can_id &amp; CAN_RTR_FLAG))))
+ +		return -EINVAL;
+-+	}
+ +
+ +	/* check the given can_id */
+ +	op = bcm_find_op(&amp;bo-&gt;rx_ops, msg_head-&gt;can_id, ifindex);
+ +	if (op) {
+ +		/* update existing BCM operation */
+ +
+-+		DBG(&quot;RX_SETUP: modifying existing rx_op %p for can_id %03X\n&quot;,
+-+		    op, msg_head-&gt;can_id);
+-+
+ +		/*
+ +		 * Do we need more space for the can_frames than currently
+ +		 * allocated? -&gt; This is a _really_ unusual use-case and
+@@ -1244,14 +1106,10 @@
+ +
+ +	} else {
+ +		/* insert new BCM operation for the given can_id */
+-+
+ +		op = kzalloc(OPSIZ, GFP_KERNEL);
+ +		if (!op)
+ +			return -ENOMEM;
+ +
+-+		DBG(&quot;RX_SETUP: creating new rx_op %p for can_id %03X\n&quot;,
+-+		    op, msg_head-&gt;can_id);
+-+
+ +		op-&gt;can_id    = msg_head-&gt;can_id;
+ +		op-&gt;nframes   = msg_head-&gt;nframes;
+ +
+@@ -1291,27 +1149,18 @@
+ +			}
+ +		}
+ +
+++		/* bcm_can_tx / bcm_tx_timeout_handler needs this */
+ +		op-&gt;sk = sk;
+ +		op-&gt;ifindex = ifindex;
+ +
+ +		/* initialize uninitialized (kzalloc) structure */
+-+		init_timer(&amp;op-&gt;timer);
+++		setup_timer(&amp;op-&gt;timer, bcm_rx_timeout_handler,
+++			    (unsigned long)op);
+ +
+ +		/* init throttle timer for RX_CHANGED */
+-+		init_timer(&amp;op-&gt;thrtimer);
+++		setup_timer(&amp;op-&gt;thrtimer, bcm_rx_thr_handler,
+++			    (unsigned long)op);
+ +
+-+		/* handler for rx timeouts */
+-+		op-&gt;timer.function = bcm_rx_timeout_handler;
+-+
+-+		/* timer.data points to this op-structure */
+-+		op-&gt;timer.data = (unsigned long)op;
+-+
+-+		/* handler for RX_CHANGED throttle timeouts */
+-+		op-&gt;thrtimer.function = bcm_rx_thr_handler;
+-+
+-+		/* timer.data points to this op-structure */
+-+		op-&gt;thrtimer.data = (unsigned long)op;
+-+
+ +		/* mark disabled timer */
+ +		op-&gt;thrtimer.expires = 0;
+ +
+@@ -1350,23 +1199,16 @@
+ +			op-&gt;j_ival1 = rounded_tv2jif(&amp;msg_head-&gt;ival1);
+ +			op-&gt;j_ival2 = rounded_tv2jif(&amp;msg_head-&gt;ival2);
+ +
+-+			DBG(&quot;RX_SETUP: SETTIMER j_ival1=%ld j_ival2=%ld\n&quot;,
+-+			    op-&gt;j_ival1, op-&gt;j_ival2);
+-+
+ +			/* disable an active timer due to zero value? */
+-+			if (!op-&gt;j_ival1) {
+++			if (!op-&gt;j_ival1)
+ +				del_timer(&amp;op-&gt;timer);
+-+				DBG(&quot;RX_SETUP: disabled timer rx timeouts.\n&quot;);
+-+			}
+ +
+ +			/* free currently blocked msgs ? */
+ +			if (op-&gt;thrtimer.expires) {
+-+				DBG(&quot;RX_SETUP: unblocking throttled msgs.\n&quot;);
+-+				del_timer(&amp;op-&gt;thrtimer);
+ +				/* send blocked msgs hereafter */
+-+				op-&gt;thrtimer.expires = jiffies + 2;
+-+				add_timer(&amp;op-&gt;thrtimer);
+++				mod_timer(&amp;op-&gt;thrtimer, jiffies + 2);
+ +			}
+++
+ +			/*
+ +			 * if (op-&gt;j_ival2) is zero, no (new) throttling
+ +			 * will happen. For details see functions
+@@ -1374,26 +1216,12 @@
+ +			 */
+ +		}
+ +
+-+		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1) {
+-+
+-+			del_timer(&amp;op-&gt;timer);
+-+			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+-+
+-+			DBG(&quot;RX_SETUP: adding timer ival1. func=%p data=%p&quot;
+-+			    &quot; exp=0x%08X\n&quot;,
+-+			    (char *) op-&gt;timer.function,
+-+			    (char *) op-&gt;timer.data,
+-+			    (unsigned int) op-&gt;timer.expires);
+-+
+-+			add_timer(&amp;op-&gt;timer);
+-+		}
+++		if ((op-&gt;flags &amp; STARTTIMER) &amp;&amp; op-&gt;j_ival1)
+++			mod_timer(&amp;op-&gt;timer, jiffies + op-&gt;j_ival1);
+ +	}
+ +
+ +	/* now we can register for can_ids, if we added a new bcm_op */
+ +	if (do_rx_register) {
+-+		DBG(&quot;RX_SETUP: can_rx_register() for can_id %03X. &quot;
+-+		    &quot;rx_op is %p\n&quot;, op-&gt;can_id, op);
+-+
+ +		if (ifindex) {
+ +			struct net_device *dev;
+ +
+@@ -1432,9 +1260,8 @@
+ +	struct net_device *dev;
+ +	int err;
+ +
+-+	/* just copy and send one can_frame */
+-+
+-+	if (!ifindex) /* we need a real device to send frames */
+++	/* we need a real device to send frames */
+++	if (!ifindex)
+ +		return -ENODEV;
+ +
+ +	skb = alloc_skb(CFSIZ, GFP_KERNEL);
+@@ -1448,9 +1275,6 @@
+ +		return err;
+ +	}
+ +
+-+	DBG_FRAME(&quot;BCM: TX_SEND: sending frame&quot;,
+-+		  (struct can_frame *)skb-&gt;data);
+-+
+ +	dev = dev_get_by_index(&amp;init_net, ifindex);
+ +	if (!dev) {
+ +		kfree_skb(skb);
+@@ -1477,10 +1301,8 @@
+ +	struct bcm_msg_head msg_head;
+ +	int ret; /* read bytes or error codes as return value */
+ +
+-+	if (!bo-&gt;bound) {
+-+		DBG(&quot;sock %p not bound\n&quot;, sk);
+++	if (!bo-&gt;bound)
+ +		return -ENOTCONN;
+-+	}
+ +
+ +	/* check for alternative ifindex for this bcm_op */
+ +
+@@ -1492,19 +1314,17 @@
+ +		if (addr-&gt;can_family != AF_CAN)
+ +			return -EINVAL;
+ +
+-+		ifindex = addr-&gt;can_ifindex; /* ifindex from sendto() */
+++		/* ifindex from sendto() */
+++		ifindex = addr-&gt;can_ifindex;
+ +
+ +		if (ifindex) {
+ +			struct net_device *dev;
+ +
+ +			dev = dev_get_by_index(&amp;init_net, ifindex);
+-+			if (!dev) {
+-+				DBG(&quot;device %d not found\n&quot;, ifindex);
+++			if (!dev)
+ +				return -ENODEV;
+-+			}
+ +
+ +			if (dev-&gt;type != ARPHRD_CAN) {
+-+				DBG(&quot;device %d no CAN device\n&quot;, ifindex);
+ +				dev_put(dev);
+ +				return -ENODEV;
+ +			}
+@@ -1519,8 +1339,6 @@
+ +	if (ret &lt; 0)
+ +		return ret;
+ +
+-+	DBG(&quot;opcode %d for can_id %03X\n&quot;, msg_head.opcode, msg_head.can_id);
+-+
+ +	lock_sock(sk);
+ +
+ +	switch (msg_head.opcode) {
+@@ -1568,7 +1386,6 @@
+ +		break;
+ +
+ +	default:
+-+		DBG(&quot;Unknown opcode %d\n&quot;, msg_head.opcode);
+ +		ret = -EINVAL;
+ +		break;
+ +	}
+@@ -1590,9 +1407,6 @@
+ +	struct bcm_op *op;
+ +	int notify_enodev = 0;
+ +
+-+	DBG(&quot;msg %ld for dev %p (%s idx %d) sk %p bo-&gt;ifindex %d\n&quot;,
+-+	    msg, dev, dev-&gt;name, dev-&gt;ifindex, sk, bo-&gt;ifindex);
+-+
+ +	if (dev-&gt;nd_net != &amp;init_net)
+ +		return NOTIFY_DONE;
+ +
+@@ -1668,22 +1482,16 @@
+ +	struct bcm_sock *bo = bcm_sk(sk);
+ +	struct bcm_op *op, *next;
+ +
+-+	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+-+
+ +	/* remove bcm_ops, timer, rx_unregister(), etc. */
+ +
+ +	unregister_netdevice_notifier(&amp;bo-&gt;notifier);
+ +
+ +	lock_sock(sk);
+ +
+-+	list_for_each_entry_safe(op, next, &amp;bo-&gt;tx_ops, list) {
+-+		DBG(&quot;removing tx_op %p for can_id %03X\n&quot;, op, op-&gt;can_id);
+++	list_for_each_entry_safe(op, next, &amp;bo-&gt;tx_ops, list)
+ +		bcm_remove_op(op);
+-+	}
+ +
+ +	list_for_each_entry_safe(op, next, &amp;bo-&gt;rx_ops, list) {
+-+		DBG(&quot;removing rx_op %p for can_id %03X\n&quot;, op, op-&gt;can_id);
+-+
+ +		/*
+ +		 * Don't care if we're bound or not (due to netdev problems)
+ +		 * can_rx_unregister() is always a save thing to do here.
+@@ -1742,14 +1550,10 @@
+ +		struct net_device *dev;
+ +
+ +		dev = dev_get_by_index(&amp;init_net, addr-&gt;can_ifindex);
+-+		if (!dev) {
+-+			DBG(&quot;could not find device index %d\n&quot;,
+-+			    addr-&gt;can_ifindex);
+++		if (!dev)
+ +			return -ENODEV;
+-+		}
+ +
+ +		if (dev-&gt;type != ARPHRD_CAN) {
+-+			DBG(&quot;device %d no CAN device\n&quot;, addr-&gt;can_ifindex);
+ +			dev_put(dev);
+ +			return -ENODEV;
+ +		}
+@@ -1757,9 +1561,6 @@
+ +		bo-&gt;ifindex = dev-&gt;ifindex;
+ +		dev_put(dev);
+ +
+-+		DBG(&quot;socket %p bound to device %s (idx %d)\n&quot;,
+-+		    sock, dev-&gt;name, dev-&gt;ifindex);
+-+
+ +	} else {
+ +		/* no interface reference for ifindex = 0 ('any' CAN device) */
+ +		bo-&gt;ifindex = 0;
+@@ -1787,17 +1588,12 @@
+ +	int noblock;
+ +	int err;
+ +
+-+	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+-+
+ +	noblock =  flags &amp; MSG_DONTWAIT;
+ +	flags   &amp;= ~MSG_DONTWAIT;
+ +	skb = skb_recv_datagram(sk, flags, noblock, &amp;error);
+ +	if (!skb)
+ +		return error;
+ +
+-+	DBG(&quot;delivering skbuff %p\n&quot;, skb);
+-+	DBG_SKB(skb);
+-+
+ +	if (skb-&gt;len &lt; size)
+ +		size = skb-&gt;len;
+ +
+@@ -1814,7 +1610,6 @@
+ +		memcpy(msg-&gt;msg_name, skb-&gt;cb, msg-&gt;msg_namelen);
+ +	}
+ +
+-+	DBG(&quot;freeing sock %p, skbuff %p\n&quot;, sk, skb);
+ +	skb_free_datagram(sk, skb);
+ +
+ +	return size;
+
+Modified: trunk/patch-series/net-2.6.25/05-can-vcan-driver.diff
+===================================================================
+--- trunk/patch-series/net-2.6.25/05-can-vcan-driver.diff	2007-11-16 13:57:29 UTC (rev 560)
++++ trunk/patch-series/net-2.6.25/05-can-vcan-driver.diff	2007-11-16 15:19:36 UTC (rev 561)
+@@ -10,16 +10,16 @@
+ 
+ ---
+  drivers/net/Makefile     |    1 
+- drivers/net/can/Kconfig  |   25 +++++
++ drivers/net/can/Kconfig  |   25 ++++++
+  drivers/net/can/Makefile |    5 +
+- drivers/net/can/vcan.c   |  207 +++++++++++++++++++++++++++++++++++++++++++++++
++ drivers/net/can/vcan.c   |  169 +++++++++++++++++++++++++++++++++++++++++++++++
+  net/can/Kconfig          |    3 
+- 5 files changed, 241 insertions(+)
++ 5 files changed, 203 insertions(+)
+ 
+ Index: net-2.6.25/drivers/net/Makefile
+ ===================================================================
+---- net-2.6.25.orig/drivers/net/Makefile	2007-11-14 13:04:24.000000000 +0100
+-+++ net-2.6.25/drivers/net/Makefile	2007-11-14 13:04:54.000000000 +0100
++--- net-2.6.25.orig/drivers/net/Makefile	2007-11-16 14:50:12.000000000 +0100
+++++ net-2.6.25/drivers/net/Makefile	2007-11-16 14:50:18.000000000 +0100
+ @@ -12,6 +12,7 @@
+  obj-$(CONFIG_CHELSIO_T1) += chelsio/
+  obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+@@ -31,7 +31,7 @@
+ Index: net-2.6.25/drivers/net/can/Kconfig
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/drivers/net/can/Kconfig	2007-11-14 13:04:54.000000000 +0100
+++++ net-2.6.25/drivers/net/can/Kconfig	2007-11-16 14:50:18.000000000 +0100
+ @@ -0,0 +1,25 @@
+ +menu &quot;CAN Device Drivers&quot;
+ +	depends on CAN
+@@ -61,7 +61,7 @@
+ Index: net-2.6.25/drivers/net/can/Makefile
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/drivers/net/can/Makefile	2007-11-14 13:04:54.000000000 +0100
+++++ net-2.6.25/drivers/net/can/Makefile	2007-11-16 14:50:18.000000000 +0100
+ @@ -0,0 +1,5 @@
+ +#
+ +#  Makefile for the Linux Controller Area Network drivers.
+@@ -71,8 +71,8 @@
+ Index: net-2.6.25/drivers/net/can/vcan.c
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/drivers/net/can/vcan.c	2007-11-14 13:04:54.000000000 +0100
+-@@ -0,0 +1,207 @@
+++++ net-2.6.25/drivers/net/can/vcan.c	2007-11-16 14:51:53.000000000 +0100
++@@ -0,0 +1,169 @@
+ +/*
+ + * vcan.c - Virtual CAN interface
+ + *
+@@ -131,21 +131,7 @@
+ +MODULE_LICENSE(&quot;Dual BSD/GPL&quot;);
+ +MODULE_AUTHOR(&quot;Urs Thuermann &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>&gt;&quot;);
+ +
+-+#ifdef CONFIG_CAN_DEBUG_DEVICES
+-+static int vcan_debug;
+-+module_param_named(debug, vcan_debug, int, S_IRUGO);
+-+#endif
+ +
+-+/* To be moved to linux/can/dev.h */
+-+#ifdef CONFIG_CAN_DEBUG_DEVICES
+-+#define DBG(fmt, args...)  (vcan_debug &amp; 1 ? \
+-+				printk(KERN_DEBUG &quot;vcan %s: &quot; fmt, \
+-+				__func__, ##args) : 0)
+-+#else
+-+#define DBG(fmt, args...)
+-+#endif
+-+
+-+
+ +/*
+ + * CAN test feature:
+ + * Enable the echo on driver level for testing the CAN core echo modes.
+@@ -157,22 +143,6 @@
+ +MODULE_PARM_DESC(echo, &quot;Echo sent frames (for testing). Default: 0 (Off)&quot;);
+ +
+ +
+-+static int vcan_open(struct net_device *dev)
+-+{
+-+	DBG(&quot;%s: interface up\n&quot;, dev-&gt;name);
+-+
+-+	netif_start_queue(dev);
+-+	return 0;
+-+}
+-+
+-+static int vcan_stop(struct net_device *dev)
+-+{
+-+	DBG(&quot;%s: interface down\n&quot;, dev-&gt;name);
+-+
+-+	netif_stop_queue(dev);
+-+	return 0;
+-+}
+-+
+ +static void vcan_rx(struct sk_buff *skb, struct net_device *dev)
+ +{
+ +	struct net_device_stats *stats = &amp;dev-&gt;stats;
+@@ -185,8 +155,6 @@
+ +	skb-&gt;dev       = dev;
+ +	skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+ +
+-+	DBG(&quot;received skbuff on interface %d\n&quot;, dev-&gt;ifindex);
+-+
+ +	netif_rx(skb);
+ +}
+ +
+@@ -195,8 +163,6 @@
+ +	struct net_device_stats *stats = &amp;dev-&gt;stats;
+ +	int loop;
+ +
+-+	DBG(&quot;sending skbuff on interface %s\n&quot;, dev-&gt;name);
+-+
+ +	stats-&gt;tx_packets++;
+ +	stats-&gt;tx_bytes += skb-&gt;len;
+ +
+@@ -215,7 +181,7 @@
+ +			stats-&gt;rx_bytes += skb-&gt;len;
+ +		}
+ +		kfree_skb(skb);
+-+		return 0;
+++		return NETDEV_TX_OK;
+ +	}
+ +
+ +	/* perform standard echo handling for CAN network interfaces */
+@@ -225,7 +191,7 @@
+ +
+ +		skb = skb_share_check(skb, GFP_ATOMIC);
+ +		if (!skb)
+-+			return 0;
+++			return NETDEV_TX_OK;
+ +
+ +		/* receive with packet counting */
+ +		skb-&gt;sk = srcsk;
+@@ -234,13 +200,11 @@
+ +		/* no looped packets =&gt; no counting */
+ +		kfree_skb(skb);
+ +	}
+-+	return 0;
+++	return NETDEV_TX_OK;
+ +}
+ +
+ +static void vcan_setup(struct net_device *dev)
+ +{
+-+	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+-+
+ +	dev-&gt;type              = ARPHRD_CAN;
+ +	dev-&gt;mtu               = sizeof(struct can_frame);
+ +	dev-&gt;hard_header_len   = 0;
+@@ -252,8 +216,6 @@
+ +	if (echo)
+ +		dev-&gt;flags |= IFF_ECHO;
+ +
+-+	dev-&gt;open              = vcan_open;
+-+	dev-&gt;stop              = vcan_stop;
+ +	dev-&gt;hard_start_xmit   = vcan_tx;
+ +	dev-&gt;destructor        = free_netdev;
+ +}
+@@ -282,12 +244,12 @@
+ +module_exit(vcan_cleanup_module);
+ Index: net-2.6.25/net/can/Kconfig
+ ===================================================================
+---- net-2.6.25.orig/net/can/Kconfig	2007-11-14 13:04:52.000000000 +0100
+-+++ net-2.6.25/net/can/Kconfig	2007-11-14 13:04:54.000000000 +0100
+-@@ -47,3 +47,6 @@
+- 	  Say Y here if you want the CAN core to produce a bunch of debug
+- 	  messages.  Select this if you are having a problem with CAN
+- 	  support and want to see more of what is going on.
++--- net-2.6.25.orig/net/can/Kconfig	2007-11-16 14:50:18.000000000 +0100
+++++ net-2.6.25/net/can/Kconfig	2007-11-16 14:50:18.000000000 +0100
++@@ -39,3 +39,6 @@
++ 	  You probably want to use the bcm socket in most cases where cyclic
++ 	  CAN messages are used on the bus (e.g. in automotive environments).
++ 	  To use the Broadcast Manager, use AF_CAN with protocol CAN_BCM.
+ +
+ +
+ +source &quot;drivers/net/can/Kconfig&quot;
+
+Modified: trunk/patch-series/net-2.6.25/07-can-doc.diff
+===================================================================
+--- trunk/patch-series/net-2.6.25/07-can-doc.diff	2007-11-16 13:57:29 UTC (rev 560)
++++ trunk/patch-series/net-2.6.25/07-can-doc.diff	2007-11-16 15:19:36 UTC (rev 561)
+@@ -8,14 +8,14 @@
+ 
+ ---
+  Documentation/networking/00-INDEX |    2 
+- Documentation/networking/can.txt  |  637 ++++++++++++++++++++++++++++++++++++++
+- 2 files changed, 639 insertions(+)
++ Documentation/networking/can.txt  |  629 ++++++++++++++++++++++++++++++++++++++
++ 2 files changed, 631 insertions(+)
+ 
+ Index: net-2.6.25/Documentation/networking/can.txt
+ ===================================================================
+ --- /dev/null	1970-01-01 00:00:00.000000000 +0000
+-+++ net-2.6.25/Documentation/networking/can.txt	2007-11-14 13:04:57.000000000 +0100
+-@@ -0,0 +1,637 @@
+++++ net-2.6.25/Documentation/networking/can.txt	2007-11-16 14:56:31.000000000 +0100
++@@ -0,0 +1,629 @@
+ +============================================================================
+ +
+ +can.txt
+@@ -501,16 +501,8 @@
+ +    invoked at can.ko module start time by default. This timer can be
+ +    disabled by using stattimer=0 on the module comandline.
+ +
+-+  - debug: When the Kconfig option CONFIG_CAN_DEBUG_CORE is set at
+-+    compile time, the debug output code is compiled into the module.
+-+    debug = 0x01 =&gt; print general debug information
+-+    debug = 0x02 =&gt; print content of processed CAN frames
+-+    debug = 0x04 =&gt; print content of processed socket buffers
+++  - debug: (removed since SocketCAN SVN r546)
+ +
+-+    It is possible to use ORed values e.g. 3 or 7 for an output of
+-+    all available debug information. Using 0x02 and 0x04 may flood
+-+    your kernel log - so be careful.
+-+
+ +  5.2 procfs content
+ +
+ +  As described in chapter 3.1 the Socket CAN core uses several filter
+@@ -655,8 +647,8 @@
+ +  Michael Schulze (driver layer loopback requirement, RT CAN drivers review)
+ Index: net-2.6.25/Documentation/networking/00-INDEX
+ ===================================================================
+---- net-2.6.25.orig/Documentation/networking/00-INDEX	2007-11-14 13:04:23.000000000 +0100
+-+++ net-2.6.25/Documentation/networking/00-INDEX	2007-11-14 13:04:57.000000000 +0100
++--- net-2.6.25.orig/Documentation/networking/00-INDEX	2007-11-16 14:52:07.000000000 +0100
+++++ net-2.6.25/Documentation/networking/00-INDEX	2007-11-16 14:55:44.000000000 +0100
+ @@ -24,6 +24,8 @@
+  	- info on the driver for Baycom style amateur radio modems
+  bridge.txt
+
+Modified: trunk/patch-series/net-2.6.25/intro
+===================================================================
+--- trunk/patch-series/net-2.6.25/intro	2007-11-16 13:57:29 UTC (rev 560)
++++ trunk/patch-series/net-2.6.25/intro	2007-11-16 15:19:36 UTC (rev 561)
+@@ -1,32 +1,35 @@
+ SUBJECT
+-CAN: New PF_CAN protocol family for 2.6.25
++CAN: New PF_CAN protocol family for 2.6.25, update
+ ESUBJECT
+ 
+ Hello Dave, hello Patrick,
+ 
+-this patch series that adds the PF_CAN protocol family for the
++this patch series adds the PF_CAN protocol family for the
+ Controller Area Network.  Since our last post we have changed:
+ 
+-* Fix a bug causing NULL pointer dereference when module autoloading fails.
+-* Initialize skb using skb_reset_{transport,network}_header().
+-* Use sock_alloc_send_skb() instead of alloc_skb().
+-* Adapt to changes in sk_alloc() parameter list.
+-* Rename some local variables for readability.
++* Remove vcan_open() and vcan_stop().
++* return NETDEV_TX_OK instead of 0.
++* Add can_ prefix to some global vars.
++* Remove all debug code completely.
++* Cleanup of timer code.
+ 
+ This patch series applies against net-2.6.25 and is derived from Subversion
+-revision r542 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
++revision r560 of <A HREF="http://svn.berlios.de/svnroot/repos/socketcan.">http://svn.berlios.de/svnroot/repos/socketcan.</A>
+ It can be found in the directory
+ <A HREF="http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version">http://svn.berlios.de/svnroot/repos/socketcan/trunk/patch-series/&lt;version</A>&gt;.
+ 
+-Thanks very much for your work!
+-
+-Best regards,
+-
+ Urs Thuermann
+ Oliver Hartkopp
+ 
+ 
++The changes in try #11 were:
+ 
++* Fix a bug causing NULL pointer dereference when module autoloading fails.
++* Initialize skb using skb_reset_{transport,network}_header().
++* Use sock_alloc_send_skb() instead of alloc_skb().
++* Adapt to changes in sk_alloc() parameter list.
++* Rename some local variables for readability.
++
+ The changes in try #10 were:
+ 
+ * Rename our static debug variables to {can,raw,bcm,vcan}_debug.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000542.html">r560 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000544.html">r562 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#543">[ date ]</a>
+              <a href="thread.html#543">[ thread ]</a>
+              <a href="subject.html#543">[ subject ]</a>
+              <a href="author.html#543">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

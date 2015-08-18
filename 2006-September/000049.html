@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r69 - in branches/ut/hlist/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r69%20-%20in%20branches/ut/hlist/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200609041056.k84AubqO028727%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000048.html">
+   <LINK REL="Next"  HREF="000050.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r69 - in branches/ut/hlist/kernel/2.6: include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r69%20-%20in%20branches/ut/hlist/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200609041056.k84AubqO028727%40sheep.berlios.de%3E"
+       TITLE="r69 - in branches/ut/hlist/kernel/2.6: include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Sep  4 12:56:37 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000048.html">r68 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000050.html">r70 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#49">[ date ]</a>
+              <a href="thread.html#49">[ thread ]</a>
+              <a href="subject.html#49">[ subject ]</a>
+              <a href="author.html#49">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-09-04 12:56:27 +0200 (Mon, 04 Sep 2006)
+New Revision: 69
+
+Modified:
+   branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h
+   branches/ut/hlist/kernel/2.6/net/can/af_can.c
+Log:
+fix performance problem in can_rx_unregister() by using the RCU callback
+mechanism instead of waiting for synchronization in the system call.
+
+
+Modified: branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h
+===================================================================
+--- branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h	2006-09-04 10:26:24 UTC (rev 68)
++++ branches/ut/hlist/kernel/2.6/include/linux/can/af_can.h	2006-09-04 10:56:27 UTC (rev 69)
+@@ -139,6 +139,7 @@
+ 	unsigned long matches;
+ 	void (*func)(struct sk_buff *, void *);
+ 	void *data;
++	struct rcu_head rcu;
+ 	char *ident;
+ };
+ 
+
+Modified: branches/ut/hlist/kernel/2.6/net/can/af_can.c
+===================================================================
+--- branches/ut/hlist/kernel/2.6/net/can/af_can.c	2006-09-04 10:26:24 UTC (rev 68)
++++ branches/ut/hlist/kernel/2.6/net/can/af_can.c	2006-09-04 10:56:27 UTC (rev 69)
+@@ -512,6 +512,12 @@
+ 	spin_unlock(&amp;rcv_lists_lock);
+ }
+ 
++void can_rx_delete(struct rcu_head *rp)
++{
++	struct rcv_list *r = container_of(rp, struct rcv_list, rcu);
++	kfree(r);
++}
++
+ void can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		       void (*func)(struct sk_buff *, void *), void *data)
+ {
+@@ -578,10 +584,8 @@
+  out:
+ 	spin_unlock(&amp;rcv_lists_lock);
+ 
+-	if (p) {
+-		synchronize_rcu();
+-		kfree(p);
+-	}
++	if (p)
++		call_rcu(&amp;p-&gt;rcu, can_rx_delete);
+ }
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000048.html">r68 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000050.html">r70 - branches/ut/hlist/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#49">[ date ]</a>
+              <a href="thread.html#49">[ thread ]</a>
+              <a href="subject.html#49">[ subject ]</a>
+              <a href="author.html#49">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

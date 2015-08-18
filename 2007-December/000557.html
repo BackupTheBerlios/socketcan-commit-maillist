@@ -1,0 +1,741 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r575 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r575%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082223.lB8MNbGj009903%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000556.html">
+   <LINK REL="Next"  HREF="000558.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r575 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r575%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082223.lB8MNbGj009903%40sheep.berlios.de%3E"
+       TITLE="r575 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  8 23:23:37 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000556.html">r574 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000558.html">r576 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#557">[ date ]</a>
+              <a href="thread.html#557">[ thread ]</a>
+              <a href="subject.html#557">[ subject ]</a>
+              <a href="author.html#557">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-12-08 23:23:35 +0100 (Sat, 08 Dec 2007)
+New Revision: 575
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/proc.c
+   trunk/kernel/2.4/can/raw.c
+Log:
+Change comments.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-08 22:22:46 UTC (rev 574)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-08 22:23:35 UTC (rev 575)
+@@ -115,9 +115,9 @@
+ extern struct s_stats  stats;       /* packet statistics */
+ extern struct s_pstats pstats;      /* receive list statistics */
+ 
+-/**************************************************/
+-/* af_can socket functions                        */
+-/**************************************************/
++/*
++ * af_can socket functions
++ */
+ 
+ static int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ {
+@@ -190,7 +190,7 @@
+ 	if (cp-&gt;init)
+ 		ret = cp-&gt;init(sk);
+ 	if (ret) {
+-		/* we must release sk */
++		/* release sk on errors */
+ 		sock_orphan(sk);
+ 		sock_put(sk);
+ 		return ret;
+@@ -202,26 +202,41 @@
+ 	return -ENOMEM;
+ }
+ 
+-/**************************************************/
+-/* af_can tx path                                 */
+-/**************************************************/
++/*
++ * af_can tx path
++ */
+ 
++/**
++ * can_send - transmit a CAN frame (optional with local loopback)
++ * @skb: pointer to socket buffer with CAN frame in data section
++ * @loop: loopback for listeners on local CAN sockets (recommended default!)
++ *
++ * Return:
++ *  0 on success
++ *  -ENETDOWN when the selected interface is down
++ *  -ENOBUFS on full driver queue (see net_xmit_errno())
++ */
+ int can_send(struct sk_buff *skb, int loop)
+ {
+ 	int err;
+ 
+-	if (loop) { /* local loopback (default) */
+-		*(struct sock **)skb-&gt;cb = skb-&gt;sk; /* tx sock reference */
++	if (loop) {
++		/* local loopback of sent CAN frames */
+ 
++		/* indication for the CAN driver: do loopback */
++		*(struct sock **)skb-&gt;cb = skb-&gt;sk;
++
+ 		/* interface not capabable to do the loopback itself? */
+ 		if (!(skb-&gt;dev-&gt;flags &amp; IFF_LOOPBACK)) {
+ 			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+ 			newskb-&gt;protocol  = htons(ETH_P_CAN);
+ 			newskb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
+-			netif_rx(newskb); /* perform local loopback here */
++			netif_rx(newskb);
+ 		}
+-	} else
+-		*(struct sock **)skb-&gt;cb = NULL; /* no loopback required */
++	} else {
++		/* indication for the CAN driver: no loopback required */
++		*(struct sock **)skb-&gt;cb = NULL;
++	}
+ 
+ 	if (!(skb-&gt;dev-&gt;flags &amp; IFF_UP))
+ 		err = -ENETDOWN;
+@@ -235,9 +250,9 @@
+ 	return err;
+ }
+ 
+-/**************************************************/
+-/* af_can rx path                                 */
+-/**************************************************/
++/*
++ * af_can rx path
++ */
+ 
+ static struct dev_rcv_lists *find_dev_rcv_lists(struct net_device *dev)
+ {
+@@ -260,8 +275,10 @@
+ {
+ 	canid_t inv = *can_id &amp; CAN_INV_FILTER; /* save flag before masking */
+ 
+-	if (*mask &amp; CAN_ERR_FLAG) { /* filter error frames */
+-		*mask &amp;= CAN_ERR_MASK; /* clear CAN_ERR_FLAG in list entry */
++	/* filter error frames */
++	if (*mask &amp; CAN_ERR_FLAG) {
++		/* clear CAN_ERR_FLAG in list entry */
++		*mask &amp;= CAN_ERR_MASK;
+ 		return &amp;d-&gt;rx_err;
+ 	}
+ 
+@@ -271,26 +288,54 @@
+ 	else
+ 		*mask &amp;= (CAN_SFF_MASK | CAN_RTR_FLAG);
+ 
+-	*can_id &amp;= *mask; /* reduce condition testing at receive time */
++	/* reduce condition testing at receive time */
++	*can_id &amp;= *mask;
+ 
+-	if (inv) /* inverse can_id/can_mask filter */
++	/* inverse can_id/can_mask filter */
++	if (inv)
+ 		return &amp;d-&gt;rx_inv;
+ 
+-	if (!(*mask)) /* mask == 0 =&gt; no condition testing at receive time */
++	/* mask == 0 =&gt; no condition testing at receive time */
++	if (!(*mask))
+ 		return &amp;d-&gt;rx_all;
+ 
+-	/* use extra filterset for the subscription of exactly *one* can_id */
++	/* use extra filterset for the subscription of exactly *ONE* can_id */
+ 	if (*can_id &amp; CAN_EFF_FLAG) {
+ 		if (*mask == (CAN_EFF_MASK | CAN_EFF_FLAG))
+-			return &amp;d-&gt;rx_eff; /* use-case for hash-table here? */
++			/* RFC: a use-case for hash-tables in the future? */
++			return &amp;d-&gt;rx_eff;
+ 	} else {
+ 		if (*mask == CAN_SFF_MASK)
+ 			return &amp;d-&gt;rx_sff[*can_id];
+ 	}
+ 
+-	return &amp;d-&gt;rx_fil;  /* default: filter via can_id/can_mask */
++	/* default: filter via can_id/can_mask */
++	return &amp;d-&gt;rx_fil;
+ }
+ 
++/**
++ * can_rx_register - subscribe CAN frames from a specific interface
++ * @dev: pointer to netdevice (NULL =&gt; subcribe from 'all' CAN devices list)
++ * @can_id: CAN identifier (see description)
++ * @mask: CAN mask (see description)
++ * @func: callback function on filter match
++ * @data: returned parameter for callback function
++ * @ident: string for calling module indentification
++ *
++ * Description:
++ *  Invokes the callback function with the received sk_buff and the given
++ *  parameter 'data' on a matching receive filter. A filter matches, when
++ *
++ *          &lt;received_can_id&gt; &amp; mask == can_id &amp; mask
++ *
++ *  The filter can be inverted (CAN_INV_FILTER bit set in can_id) or it can
++ *  filter for error frames (CAN_ERR_FLAG bit set in mask).
++ *
++ * Return:
++ *  0 on success
++ *  -ENOMEM on missing cache mem to create subscription entry
++ *  -ENODEV unknown device
++ */
+ int can_rx_register(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		    void (*func)(struct sk_buff *, void *), void *data,
+ 		    char *ident)
+@@ -353,6 +398,22 @@
+ 	*rl = NULL;
+ }
+ 
++/**
++ * can_rx_unregister - unsubscribe CAN frames from a specific interface
++ * @dev: pointer to netdevice (NULL =&gt; unsubcribe from 'all' CAN devices list)
++ * @can_id: CAN identifier
++ * @mask: CAN mask
++ * @func: callback function on filter match
++ * @data: returned parameter for callback function
++ *
++ * Description:
++ *  Removes subscription entry depending on given (subscription) values.
++ *
++ * Return:
++ *  0 on success
++ *  -EINVAL on missing subscription entry
++ *  -ENODEV unknown device
++ */
+ int can_rx_unregister(struct net_device *dev, canid_t can_id, canid_t mask,
+ 		      void (*func)(struct sk_buff *, void *), void *data)
+ {
+@@ -374,9 +435,10 @@
+ 
+ 	rl = find_rcv_list(&amp;can_id, &amp;mask, d);
+ 
+-	/*  Search the receiver list for the item to delete.  This should
+-	 *  exist, since no receiver may be unregistered that hasn't
+-	 *  been registered before.
++	/*
++	 * Search the receiver list for the item to delete.  This should
++	 * exist, since no receiver may be unregistered that hasn't
++	 * been registered before.
+ 	 */
+ 
+ 	for (; r = *rl; rl = &amp;r-&gt;next) {
+@@ -385,8 +447,9 @@
+ 			break;
+ 	}
+ 
+-	/*  Check for bug in CAN protocol implementations:
+-	 *  If no matching list item was found, r is NULL.
++	/*
++	 * Check for bugs in CAN protocol implementations:
++	 * If no matching list item was found, r is NULL.
+ 	 */
+ 
+ 	if (!r) {
+@@ -415,7 +478,7 @@
+ 	DBG(&quot;skbuff %p cloned to %p\n&quot;, skb, clone);
+ 	if (clone) {
+ 		r-&gt;func(clone, r-&gt;data);
+-		r-&gt;matches++;    /* update specific statistics */
++		r-&gt;matches++;
+ 	}
+ }
+ 
+@@ -514,6 +577,7 @@
+ 
+ 	read_unlock(&amp;rcv_lists_lock);
+ 
++	/* free the skbuff allocated by the netdevice driver */
+ 	DBG(&quot;freeing skbuff %p\n&quot;, skb);
+ 	kfree_skb(skb);
+ 
+@@ -526,12 +590,17 @@
+ }
+ 
+ 
+-/**************************************************/
+-/* af_can debugging stuff                         */
+-/**************************************************/
++/*
++ * af_can debugging stuff
++ */
+ 
+ #ifdef DEBUG
+ 
++/**
++ * can_debug_cframe - print CAN frame
++ * @msg: pointer to message printed before the given CAN frame
++ * @cf: pointer to CAN frame
++ */
+ void can_debug_cframe(const char *msg, struct can_frame *cf, ...)
+ {
+ 	va_list ap;
+@@ -567,6 +636,10 @@
+ 	printk(buf);
+ }
+ 
++/**
++ * can_debug_skb - print socket buffer content to kernel log
++ * @skb: pointer to socket buffer
++ */
+ void can_debug_skb(struct sk_buff *skb)
+ {
+ 	int len, nbytes, i;
+@@ -607,10 +680,14 @@
+ #endif
+ 
+ 
+-/**************************************************/
+-/* af_can protocol functions                      */
+-/**************************************************/
++/*
++ * af_can protocol functions
++ */
+ 
++/**
++ * can_proto_register - register CAN transport protocol
++ * @cp: pointer to CAN protocol structure
++ */
+ void can_proto_register(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+@@ -631,6 +708,10 @@
+ 		cp-&gt;ops-&gt;ioctl = can_ioctl;
+ }
+ 
++/**
++ * can_proto_unregister - unregister CAN transport protocol
++ * @cp: pointer to CAN protocol structure
++ */
+ void can_proto_unregister(struct can_proto *cp)
+ {
+ 	int proto = cp-&gt;protocol;
+@@ -641,6 +722,16 @@
+ 	proto_tab[proto] = NULL;
+ }
+ 
++/**
++ * can_dev_register - subscribe notifier for CAN device status changes
++ * @dev: pointer to netdevice
++ * @func: callback function on status change
++ * @data: returned parameter for callback function
++ *
++ * Description:
++ *  Invokes the callback function with the status 'msg' and the given
++ *  parameter 'data' on a status change of the given CAN network device.
++ */
+ void can_dev_register(struct net_device *dev,
+ 		      void (*func)(unsigned long msg, void *), void *data)
+ {
+@@ -660,6 +751,15 @@
+ 	write_unlock(&amp;notifier_lock);
+ }
+ 
++/**
++ * can_dev_unregister - unsubscribe notifier for CAN device status changes
++ * @dev: pointer to netdevice
++ * @func: callback function on filter match
++ * @data: returned parameter for callback function
++ *
++ * Description:
++ *  Removes subscription entry depending on given (subscription) values.
++ */
+ void can_dev_unregister(struct net_device *dev,
+ 			void (*func)(unsigned long msg, void *), void *data)
+ {
+@@ -757,9 +857,9 @@
+ 	return NOTIFY_DONE;
+ }
+ 
+-/**************************************************/
+-/* af_can module init/exit functions              */
+-/**************************************************/
++/*
++ * af_can module init/exit functions
++ */
+ 
+ static struct packet_type can_packet = {
+ 	.type = __constant_htons(ETH_P_CAN),
+@@ -788,11 +888,12 @@
+ 	if (!rcv_cache)
+ 		return -ENOMEM;
+ 
+-	/* Insert struct dev_rcv_lists for reception on all devices.
+-	   This struct is zero initialized which is correct for the
+-	   embedded receiver list head pointer, the dev pointer,
+-	   and the entries counter.
+-	*/
++	/*
++	 * Insert struct dev_rcv_lists for reception on all devices.
++	 * This struct is zero initialized which is correct for the
++	 * embedded receiver list head pointer, the dev pointer,
++	 * and the entries counter.
++	 */
+ 
+ 	write_lock_bh(&amp;rcv_lists_lock);
+ 	rx_alldev_list.pprev = &amp;rx_dev_list;
+@@ -804,7 +905,6 @@
+ 		init_timer(&amp;stattimer);
+ 	}
+ 
+-	/* procfs init */
+ 	can_init_proc();
+ 
+ 	/* protocol register */
+@@ -828,12 +928,9 @@
+ {
+ 	struct dev_rcv_lists *d;
+ 
+-	if (stats_timer) {
+-		/* stop statistics timer */
++	if (stats_timer)
+ 		del_timer(&amp;stattimer);
+-	}
+ 
+-	/* procfs remove */
+ 	can_remove_proc();
+ 
+ 	/* protocol unregister */
+@@ -852,9 +949,9 @@
+ 	kmem_cache_destroy(rcv_cache);
+ }
+ 
+-/**************************************************/
+-/* af_can utility stuff                           */
+-/**************************************************/
++/*
++ * af_can utility stuff
++ */
+ 
+ unsigned long timeval2jiffies(struct timeval *tv, int round_up)
+ {
+@@ -881,9 +978,9 @@
+ module_init(can_init);
+ module_exit(can_exit);
+ 
+-/**************************************************/
+-/* Exported symbols                               */
+-/**************************************************/
++/*
++ * Exported symbols
++ */
+ #ifdef EXPORT_SYMTAB
+ EXPORT_SYMBOL(can_proto_register);
+ EXPORT_SYMBOL(can_proto_unregister);
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2007-12-08 22:22:46 UTC (rev 574)
++++ trunk/kernel/2.4/can/af_can.h	2007-12-08 22:23:35 UTC (rev 575)
+@@ -79,6 +79,7 @@
+ 
+ /* statistic structures */
+ 
++/* can be reset e.g. by can_init_stats() */
+ struct s_stats {
+ 	unsigned long jiffies_init;
+ 
+@@ -101,13 +102,14 @@
+ 	unsigned long rx_frames_delta;
+ 	unsigned long tx_frames_delta;
+ 	unsigned long matches_delta;
+-}; /* can be reset e.g. by can_init_stats() */
++};
+ 
++/* persistent statistics */
+ struct s_pstats {
+ 	unsigned long stats_reset;
+ 	unsigned long rcv_entries;
+ 	unsigned long rcv_entries_max;
+-}; /* persistent statistics */
++};
+ 
+ /* function prototypes for the CAN networklayer procfs (proc.c) */
+ 
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-12-08 22:22:46 UTC (rev 574)
++++ trunk/kernel/2.4/can/proc.c	2007-12-08 22:23:35 UTC (rev 575)
+@@ -51,7 +51,9 @@
+ 
+ RCSID(&quot;$Id$&quot;);
+ 
+-/* proc filenames */
++/*
++ * proc filenames for the PF_CAN core
++ */
+ 
+ #define CAN_PROC_VERSION     &quot;version&quot;
+ #define CAN_PROC_STATS       &quot;stats&quot;
+@@ -82,9 +84,9 @@
+ extern struct dev_rcv_lists *rx_dev_list; /* rx dispatcher structures */
+ extern int stats_timer;                   /* module parameter. default: on */
+ 
+-/**************************************************/
+-/* af_can statistics stuff                        */
+-/**************************************************/
++/*
++ * af_can statistics stuff
++ */
+ 
+ static void can_init_stats(int caller)
+ {
+@@ -101,7 +103,7 @@
+ 	if (oldjif == newjif)
+ 		return 0;
+ 
+-	/* see can_rcv() - this should NEVER happen! */
++	/* see can_stat_update() - this should NEVER happen! */
+ 	if (count &gt; (ULONG_MAX / HZ)) {
+ 		printk(KERN_ERR &quot;CAN: calc_rate: count exceeded! %ld\n&quot;,
+ 		       count);
+@@ -117,16 +119,13 @@
+ {
+ 	unsigned long j = jiffies; /* snapshot */
+ 
+-	//DBG(&quot;CAN: can_stat_update() jiffies = %ld\n&quot;, j);
+-
+-	if (j &lt; stats.jiffies_init) /* jiffies overflow */
++	/* restart counting on jiffies overflow */
++	if (j &lt; stats.jiffies_init)
+ 		can_init_stats(2);
+ 
+-	/* stats.rx_frames is the definitively max. statistic value */
+-
+ 	/* prevent overflow in calc_rate() */
+ 	if (stats.rx_frames &gt; (ULONG_MAX / HZ))
+-		can_init_stats(3); /* restart */
++		can_init_stats(3);
+ 
+ 	/* matches overflow - very improbable */
+ 	if (stats.matches &gt; (ULONG_MAX / 100))
+@@ -165,14 +164,18 @@
+ 	stats.rx_frames_delta = 0;
+ 	stats.matches_delta   = 0;
+ 
+-	/* restart timer */
+-	stattimer.expires = jiffies + HZ; /* every second */
++	/* restart timer (one second) */
++	stattimer.expires = jiffies + HZ;
+ 	add_timer(&amp;stattimer);
+ }
+ 
+-/**************************************************/
+-/* proc read functions                            */
+-/**************************************************/
++/*
++ * proc read functions
++ *
++ * From known use-cases we expect about 10 entries in a receive list to be
++ * printed in the proc_fs. So PAGE_SIZE is definitely enough space here.
++ *
++ */
+ 
+ static int can_print_rcvlist(char *page, int len, struct receiver *rx_list,
+ 			     struct net_device *dev)
+@@ -205,8 +208,10 @@
+ 
+ static int can_print_recv_banner(char *page, int len)
+ {
+-	/*                  can1.  00000000  00000000  00000000
+-			   .......          0  tp20 */
++	/*
++	 *                  can1.  00000000  00000000  00000000
++	 *                 .......          0  tp20
++	 */
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot;  device   can_id   can_mask  function&quot;
+ 			&quot;  userdata   matches  ident\n&quot;);
+@@ -440,7 +445,6 @@
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+ 			&quot;\nreceive list 'rx_sff':\n&quot;);
+ 
+-	/* find receive list for this device */
+ 	for (d = rx_dev_list; d; d = d-&gt;next) {
+ 		int i, all_empty = 1;
+ 		/* check wether at least one list is non-empty */
+@@ -462,8 +466,9 @@
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+ 
++		/* exit on end of buffer? */
+ 		if (len &gt; PAGE_SIZE - 100)
+-			break; /* exit on end of buffer */
++			break;
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -542,9 +547,9 @@
+ 	return len;
+ }
+ 
+-/**************************************************/
+-/* proc utility functions                         */
+-/**************************************************/
++/*
++ * proc utility functions
++ */
+ 
+ static struct proc_dir_entry *can_create_proc_readentry(const char *name,
+ 							mode_t mode,
+@@ -564,16 +569,12 @@
+ 		remove_proc_entry(name, can_dir);
+ }
+ 
+-/**************************************************/
+-/* procfs init / remove                           */
+-/**************************************************/
+-
++/*
++ * can_init_proc - create main CAN proc directory and procfs entries
++ */
+ void can_init_proc(void)
+ {
+-
+-	/* procfs init */
+-
+-	/* create /proc/can directory */
++	/* create /proc/net/can directory */
+ 	can_dir = proc_mkdir(CAN_PROC_DIR, NULL);
+ 
+ 	if (!can_dir) {
+@@ -613,9 +614,11 @@
+ 	}
+ }
+ 
++/*
++ * can_remove_proc - remove procfs entries and main CAN proc directory
++ */
+ void can_remove_proc(void)
+ {
+-	/* procfs remove */
+ 	if (pde_version)
+ 		can_remove_proc_readentry(CAN_PROC_VERSION);
+ 
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2007-12-08 22:22:46 UTC (rev 574)
++++ trunk/kernel/2.4/can/raw.c	2007-12-08 22:23:35 UTC (rev 575)
+@@ -88,14 +88,15 @@
+ 
+ #define MASK_ALL 0
+ 
+-/* A raw socket has a list of can_filters attached to it, each receiving
+-   the CAN frames matching that filter.  If the filter list is empty,
+-   no CAN frames will be received by the socket.  The default after
+-   opening the socket, is to have one filter which receives all frames.
+-   The filter list is allocated dynamically with the exception of the
+-   list containing only one item.  This common case is optimized by
+-   storing the single filter in dfilter, to avoid using dynamic memory.
+-*/
++/*
++ * A raw socket has a list of can_filters attached to it, each receiving
++ * the CAN frames matching that filter.  If the filter list is empty,
++ * no CAN frames will be received by the socket.  The default after
++ * opening the socket, is to have one filter which receives all frames.
++ * The filter list is allocated dynamically with the exception of the
++ * list containing only one item.  This common case is optimized by
++ * storing the single filter in dfilter, to avoid using dynamic memory.
++ */
+ 
+ /*  This struct is part of struct sock in the place of union tp_pinfo,
+  *  which is initialized to zero for each newly allocated struct sock.
+@@ -147,7 +148,8 @@
+ 	DBG_SKB(skb);
+ 
+ 	if (!ro-&gt;recv_own_msgs) {
+-		if (*(struct sock **)skb-&gt;cb == sk) { /* tx sock reference */
++		/* check the received tx sock reference */
++		if (*(struct sock **)skb-&gt;cb == sk) {
+ 			DBG(&quot;trashed own tx msg\n&quot;);
+ 			kfree_skb(skb);
+ 			return;
+@@ -310,9 +312,11 @@
+ 
+ 	ro-&gt;ifindex = addr-&gt;can_ifindex;
+ 
+-	raw_add_filters(dev, sk); /* filters set by default/setsockopt */
++	/* filters set by default/setsockopt */
++	raw_add_filters(dev, sk);
+ 
+-	if (ro-&gt;err_mask) /* error frame filter set by setsockopt */
++	/* error frame filter set by setsockopt */
++	if (ro-&gt;err_mask)
+ 		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+ 				raw_rcv, sk, IDENT);
+ 
+@@ -375,7 +379,8 @@
+ 
+ 		count = optlen / sizeof(struct can_filter);
+ 
+-		if (count &gt; 1) { /* does not fit into dfilter */
++		if (count &gt; 1) {
++			/* filter does not fit into dfilter =&gt; alloc space */
+ 			if (!(filter = kmalloc(optlen, GFP_KERNEL)))
+ 				return -ENOMEM;
+ 			if ((err = copy_from_user(filter, optval, optlen))) {
+@@ -396,7 +401,8 @@
+ 		if (ro-&gt;count &gt; 1)
+ 			kfree(ro-&gt;filter);
+ 
+-		if (count == 1) { /* copy data for single filter */
++		/* copy data for single filter */
++		if (count == 1) {
+ 			ro-&gt;dfilter = sfilter;
+ 			filter = &amp;ro-&gt;dfilter;
+ 		}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000556.html">r574 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000558.html">r576 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#557">[ date ]</a>
+              <a href="thread.html#557">[ thread ]</a>
+              <a href="subject.html#557">[ subject ]</a>
+              <a href="author.html#557">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

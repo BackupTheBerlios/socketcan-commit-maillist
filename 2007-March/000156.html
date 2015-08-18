@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r172 - in trunk/kernel/2.6: drivers/net/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r172%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200703051536.l25Fagmf012128%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000155.html">
+   <LINK REL="Next"  HREF="000157.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r172 - in trunk/kernel/2.6: drivers/net/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r172%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20net/can&In-Reply-To=%3C200703051536.l25Fagmf012128%40sheep.berlios.de%3E"
+       TITLE="r172 - in trunk/kernel/2.6: drivers/net/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar  5 16:36:42 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000155.html">r171 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000157.html">r173 - in trunk: can-utils test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#156">[ date ]</a>
+              <a href="thread.html#156">[ thread ]</a>
+              <a href="subject.html#156">[ subject ]</a>
+              <a href="author.html#156">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-05 16:36:33 +0100 (Mon, 05 Mar 2007)
+New Revision: 172
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Removed obsolete empty lines in LINUX_VERSION_CODE conditions to get a nicer
+code output from the 'kv' script.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2007-03-05 15:25:35 UTC (rev 171)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2007-03-05 15:36:33 UTC (rev 172)
+@@ -507,7 +507,6 @@
+ 	return 65536;  /* We can handle an infinite amount of data. :-) */
+ }
+ #endif
+-
+ /*
+  * Handle the 'receiver data ready' interrupt.
+  * This function is called by the 'tty_io' module in the kernel when
+@@ -714,7 +713,6 @@
+ 	if (tty-&gt;driver-&gt;flush_buffer)
+ 		tty-&gt;driver-&gt;flush_buffer(tty);
+ #endif
+-
+ 	if (!test_bit(SLF_INUSE, &amp;sl-&gt;flags)) {
+ 		/* Perform the low-level SLCAN initialization. */
+ 		sl-&gt;rcount   = 0;
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-03-05 15:25:35 UTC (rev 171)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-03-05 15:36:33 UTC (rev 172)
+@@ -193,7 +193,6 @@
+ #endif
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+-
+ struct bcm_sock {
+ 	struct sock    sk;
+ 	struct bcm_opt opt;
+@@ -215,9 +214,7 @@
+ 	.ops        = &amp;bcm_ops,
+ 	.prot       = &amp;bcm_proto,
+ };
+-
+ #else
+-
+ #define bcm_sk(sk) ((struct bcm_opt *)(sk)-&gt;sk_protinfo)
+ 
+ static struct can_proto bcm_can_proto = {
+@@ -229,7 +226,6 @@
+ 	.obj_size   = sizeof(struct bcm_opt),
+ 	.init       = bcm_init,
+ };
+-
+ #endif
+ 
+ #define CFSIZ sizeof(struct can_frame)
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-03-05 15:25:35 UTC (rev 171)
++++ trunk/kernel/2.6/net/can/raw.c	2007-03-05 15:36:33 UTC (rev 172)
+@@ -154,7 +154,6 @@
+ #undef CAN_RAW_SUPPORT_REBIND /* use bind on already bound socket */
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+-
+ struct raw_sock {
+ 	struct sock    sk;
+ 	struct raw_opt opt;
+@@ -176,9 +175,7 @@
+ 	.ops        = &amp;raw_ops,
+ 	.prot       = &amp;raw_proto,
+ };
+-
+ #else
+-
+ #define raw_sk(sk) ((struct raw_opt *)(sk)-&gt;sk_protinfo)
+ 
+ static struct can_proto raw_can_proto = {
+@@ -190,7 +187,6 @@
+ 	.obj_size   = sizeof(struct raw_opt),
+ 	.init       = raw_init,
+ };
+-
+ #endif
+ 
+ #define MASK_ALL 0
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000155.html">r171 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000157.html">r173 - in trunk: can-utils test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#156">[ date ]</a>
+              <a href="thread.html#156">[ thread ]</a>
+              <a href="subject.html#156">[ subject ]</a>
+              <a href="author.html#156">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

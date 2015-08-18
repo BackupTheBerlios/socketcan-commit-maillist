@@ -1,0 +1,331 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r147 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r147%20-%20trunk/can-utils&In-Reply-To=%3C200702120836.l1C8afZQ008819%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000130.html">
+   <LINK REL="Next"  HREF="000132.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r147 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r147%20-%20trunk/can-utils&In-Reply-To=%3C200702120836.l1C8afZQ008819%40sheep.berlios.de%3E"
+       TITLE="r147 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Feb 12 09:36:41 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000130.html">r146 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000132.html">r148 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-02-12 09:36:38 +0100 (Mon, 12 Feb 2007)
+New Revision: 147
+
+Modified:
+   trunk/can-utils/canplayer.c
+Log:
+Added Option -l ('l'oop) to make the canplayer replay a given file more than
+one time. To replay a given file infinitely say '-l i'. Of course it is not
+possible/reasonable to define '-l' when reading from stdin ...
+
+
+Modified: trunk/can-utils/canplayer.c
+===================================================================
+--- trunk/can-utils/canplayer.c	2007-02-09 09:53:16 UTC (rev 146)
++++ trunk/can-utils/canplayer.c	2007-02-12 08:36:38 UTC (rev 147)
+@@ -62,6 +62,7 @@
+ #include &quot;lib.h&quot;
+ 
+ #define DEFAULT_GAP 1 /* ms */
++#define DEFAULT_LOOPS 1 /* only one replay */
+ #define CHANNELS 20   /* anyone using more than 20 CAN interfaces at a time? */
+ #define BUFSZ 100     /* for one line in the logfile */
+ 
+@@ -78,6 +79,10 @@
+ {
+     fprintf(stderr, &quot;\nUsage: %s &lt;options&gt; [interface assignment]*\n\n&quot;, prg);
+     fprintf(stderr, &quot;Options:              -I &lt;infile&gt;  (default stdin)\n&quot;);
++    fprintf(stderr, &quot;                      -l &lt;num&gt;     &quot;
++	    &quot;(process input file &lt;num&gt; times)\n&quot;
++	    &quot;                                   &quot;
++	    &quot;(Use 'i' for infinite loop - default: %d)\n&quot;, DEFAULT_LOOPS);
+     fprintf(stderr, &quot;                      -t           (ignore timestamps: &quot;
+ 	    &quot;send frames immediately)\n&quot;);
+     fprintf(stderr, &quot;                      -g &lt;ms&gt;      (gap in milli &quot;
+@@ -213,12 +218,14 @@
+     FILE *infile = stdin;
+     unsigned long gap = DEFAULT_GAP; 
+     int use_timestamps = 1;
+-    static int verbose, opt, loops;
++    static int verbose, opt, delay_loops;
++    static int infinite_loops = 0;
++    static int loops = DEFAULT_LOOPS;
+     int assignments; /* assignments defined on the commandline */
+     int txidx;       /* sendto() interface index */
+-    int nbytes, i, j;
++    int eof, nbytes, i, j;
+ 
+-    while ((opt = getopt(argc, argv, &quot;I:tg:v&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;I:l:tg:v&quot;)) != -1) {
+ 	switch (opt) {
+ 	case 'I':
+ 	    infile = fopen(optarg, &quot;r&quot;);
+@@ -228,6 +235,16 @@
+ 	    }
+ 	    break;
+ 
++	case 'l':
++	    if (optarg[0] == 'i')
++		infinite_loops = 1;
++	    else
++		if (!(loops = atoi(optarg))) {
++		    fprintf(stderr, &quot;Invalid argument for option -l !\n&quot;);
++		    return 1;
++		}
++	    break;
++
+ 	case 't':
+ 	    use_timestamps = 0;
+ 	    break;
+@@ -249,6 +266,17 @@
+ 
+     assignments = argc - optind; /* find real number of user assignments */
+ 
++    if (infile == stdin) { /* no jokes with stdin */
++	infinite_loops = 0;
++	loops = 1;
++    }
++
++    if (verbose &gt; 1) /* use -v -v to see this */
++	if (infinite_loops)
++	    printf(&quot;infinite_loops\n&quot;);
++	else
++	    printf(&quot;%d loops\n&quot;, loops);
++
+     sleep_ts.tv_sec  =  gap / 1000;
+     sleep_ts.tv_nsec = (gap % 1000) * 1000000;
+ 
+@@ -293,94 +321,110 @@
+ 	}
+     }
+ 
+-    if (!fgets(buf, BUFSZ-1, infile)) /* read first frame from logfile */
+-	goto out; /* nothing to read */
++    while (infinite_loops || loops--) {
+ 
+-    if (sscanf(buf, &quot;(%ld.%ld) %s %s&quot;, &amp;log_tv.tv_sec, &amp;log_tv.tv_usec,
+-	       device, ascframe) != 4)
+-	return 1;
++	if (infile != stdin)
++	    rewind(infile); /* for each loop */
+ 
+-    if (use_timestamps) { /* throttle sending due to logfile timestamps */
++	if (verbose &gt; 1) /* use -v -v to see this */
++	    printf (&quot;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; start reading file. remaining loops = %d\n&quot;, loops);
+ 
+-	gettimeofday(&amp;today_tv, NULL);
++	if (!fgets(buf, BUFSZ-1, infile)) /* read first frame from logfile */
++	    goto out; /* nothing to read */
+ 
+-	/* omit crazy comparations with negative diff_tv */
+-	if (timeval_compare(&amp;today_tv, &amp;log_tv) &lt; 1) {
+-	    fprintf(stderr, &quot;logfile timestamps newer than time of day!\n&quot;);
++	eof = 0;
++
++	if (sscanf(buf, &quot;(%ld.%ld) %s %s&quot;, &amp;log_tv.tv_sec, &amp;log_tv.tv_usec,
++		   device, ascframe) != 4)
+ 	    return 1;
+-	}
+ 
+-	/* create diff_tv so that log_tv + diff_tv = today_tv */
+-	diff_tv.tv_sec  = today_tv.tv_sec  - log_tv.tv_sec;
+-	diff_tv.tv_usec = today_tv.tv_usec - log_tv.tv_usec;
+-	if (diff_tv.tv_usec &lt; 0)
+-	    diff_tv.tv_sec--, diff_tv.tv_usec += 1000000;
+-    }
++	if (use_timestamps) { /* throttle sending due to logfile timestamps */
+ 
+-    while (1) {
++	    gettimeofday(&amp;today_tv, NULL);
+ 
+-	while ((!use_timestamps) ||
+-	       (frames_to_send(&amp;today_tv, &amp;diff_tv, &amp;log_tv) &lt; 0)) {
+-
+-	    /* log_tv/device/ascframe are valid here */
+-
+-	    if (strlen(device) &gt;= IFNAMSIZ) {
+-		fprintf(stderr, &quot;log interface name '%s' too long!&quot;, device);
++	    /* omit crazy comparations with negative diff_tv */
++	    if (timeval_compare(&amp;today_tv, &amp;log_tv) &lt; 1) {
++		fprintf(stderr, &quot;logfile timestamps newer than time of day!\n&quot;);
+ 		return 1;
+ 	    }
+ 
+-	    txidx = get_txidx(device); /* get ifindex for sending the frame */
+- 
+-	    if ((!txidx) &amp;&amp; (!assignments)) {
+-		/* ifindex not found and no user assignments */
+-		/* =&gt; assign this device automatically       */
+-		if (add_assignment(&quot;auto&quot;, s, device, device, verbose))
+-		    return 1;
+-		txidx = get_txidx(device);
+-	    }
++	    /* create diff_tv so that log_tv + diff_tv = today_tv */
++	    diff_tv.tv_sec  = today_tv.tv_sec  - log_tv.tv_sec;
++	    diff_tv.tv_usec = today_tv.tv_usec - log_tv.tv_usec;
++	    if (diff_tv.tv_usec &lt; 0)
++		diff_tv.tv_sec--, diff_tv.tv_usec += 1000000;
++	}
+ 
+-	    if (txidx) { /* only send to valid CAN devices */
++	while (!eof) {
+ 
+-		if (parse_canframe(ascframe, &amp;frame)) {
+-		    fprintf(stderr, &quot;wrong CAN frame format: '%s'!&quot;, ascframe);
++	    while ((!use_timestamps) ||
++		   (frames_to_send(&amp;today_tv, &amp;diff_tv, &amp;log_tv) &lt; 0)) {
++
++		/* log_tv/device/ascframe are valid here */
++
++		if (strlen(device) &gt;= IFNAMSIZ) {
++		    fprintf(stderr, &quot;log interface name '%s' too long!&quot;, device);
+ 		    return 1;
+ 		}
+ 
+-		addr.can_family  = AF_CAN;
+-		addr.can_ifindex = txidx; /* send via this interface */
++		txidx = get_txidx(device); /* get ifindex for sending the frame */
+  
+-		nbytes = sendto(s, &amp;frame, sizeof(struct can_frame), 0,
+-				(struct sockaddr*)&amp;addr, sizeof(addr));
++		if ((!txidx) &amp;&amp; (!assignments)) {
++		    /* ifindex not found and no user assignments */
++		    /* =&gt; assign this device automatically       */
++		    if (add_assignment(&quot;auto&quot;, s, device, device, verbose))
++			return 1;
++		    txidx = get_txidx(device);
++		}
+ 
+-		if (nbytes != sizeof(struct can_frame)) {
+-		    perror(&quot;sendto&quot;);
+-		    return 1;
++		if (txidx) { /* only send to valid CAN devices */
++
++		    if (parse_canframe(ascframe, &amp;frame)) {
++			fprintf(stderr, &quot;wrong CAN frame format: '%s'!&quot;, ascframe);
++			return 1;
++		    }
++
++		    addr.can_family  = AF_CAN;
++		    addr.can_ifindex = txidx; /* send via this interface */
++ 
++		    nbytes = sendto(s, &amp;frame, sizeof(struct can_frame), 0,
++				    (struct sockaddr*)&amp;addr, sizeof(addr));
++
++		    if (nbytes != sizeof(struct can_frame)) {
++			perror(&quot;sendto&quot;);
++			return 1;
++		    }
++
++		    if (verbose) {
++			printf(&quot;%s (%s) &quot;, get_txname(device), device);
++			fprint_long_canframe(stdout, &amp;frame, &quot;\n&quot;, 1);
++		    }
+ 		}
+ 
+-		if (verbose) {
+-		    printf(&quot;%s (%s) &quot;, get_txname(device), device);
+-		    fprint_long_canframe(stdout, &amp;frame, &quot;\n&quot;, 1);
++		/* read next frame from logfile */
++		if (!fgets(buf, BUFSZ-1, infile)) {
++		    eof = 1; /* this file is completely processed */
++		    break;
+ 		}
+-	    }
+ 
+-	    /* read next frame from logfile */
+-	    if (!fgets(buf, BUFSZ-1, infile))
+-		goto out; /* nothing to read */
++		if (sscanf(buf, &quot;(%ld.%ld) %s %s&quot;, &amp;log_tv.tv_sec, &amp;log_tv.tv_usec,
++			   device, ascframe) != 4)
++		    return 1;
+ 
+-	    if (sscanf(buf, &quot;(%ld.%ld) %s %s&quot;, &amp;log_tv.tv_sec, &amp;log_tv.tv_usec,
+-		       device, ascframe) != 4)
++		if (use_timestamps) /* save a syscall if possible */
++		    gettimeofday(&amp;today_tv, NULL);
++
++	    } /* while frames_to_send ... */
++
++	    if (nanosleep(&amp;sleep_ts, NULL))
+ 		return 1;
+ 
+-	    if (use_timestamps) /* save a syscall if possible */
+-		gettimeofday(&amp;today_tv, NULL);
+-	}
++	    delay_loops++; /* private statistics */
++	    gettimeofday(&amp;today_tv, NULL);
+ 
+-	if (nanosleep(&amp;sleep_ts, NULL))
+-	    return 1;
++	} /* while (!eof) */
+ 
+-	loops++; /* private statistics */
+-	gettimeofday(&amp;today_tv, NULL);
+-    }
++    } /* while (infinite_loops || loops--) */
+ 
+  out:
+ 
+@@ -388,7 +432,7 @@
+     fclose(infile);
+ 
+     if (verbose &gt; 1) /* use -v -v to see this */
+-	printf(&quot;%d loops\n&quot;, loops);
++	printf(&quot;%d delay_loops\n&quot;, delay_loops);
+ 
+     return 0;
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000130.html">r146 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000132.html">r148 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

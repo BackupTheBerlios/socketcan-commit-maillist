@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r274 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r274%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200705031537.l43FbEhG013874%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000257.html">
+   <LINK REL="Next"  HREF="000259.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r274 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r274%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200705031537.l43FbEhG013874%40sheep.berlios.de%3E"
+       TITLE="r274 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu May  3 17:37:14 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000257.html">r273 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000259.html">r275 - trunk/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#258">[ date ]</a>
+              <a href="thread.html#258">[ thread ]</a>
+              <a href="subject.html#258">[ subject ]</a>
+              <a href="author.html#258">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-03 17:37:10 +0200 (Thu, 03 May 2007)
+New Revision: 274
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/af_can.h
+   trunk/kernel/2.6/net/can/proc.c
+Log:
+removed spinlocks for now as i got a dead lock on heavy CAN traffic with
+heavy proc_fs reading. I assume a spinlock is really not needed here.
+Checking again tomorrow.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-05-03 13:24:10 UTC (rev 273)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-05-03 15:37:10 UTC (rev 274)
+@@ -116,7 +116,6 @@
+ struct timer_list stattimer; /* timer for statistics update */
+ struct s_stats  stats;       /* packet statistics */
+ struct s_pstats pstats;      /* receive list statistics */
+-DEFINE_SPINLOCK(stats_lock);
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static void *kzalloc(size_t size, unsigned int __nocast flags)
+@@ -293,10 +292,8 @@
+ 		err = net_xmit_errno(err);
+ 
+ 	/* update statistics */
+-	spin_lock(&amp;stats_lock);
+ 	stats.tx_frames++;
+ 	stats.tx_frames_delta++;
+-	spin_unlock(&amp;stats_lock);
+ 
+ 	return err;
+ }
+@@ -660,10 +657,8 @@
+ 	}
+ 
+ 	/* update statistics */
+-	spin_lock(&amp;stats_lock);
+ 	stats.rx_frames++;
+ 	stats.rx_frames_delta++;
+-	spin_unlock(&amp;stats_lock);
+ 
+ 	rcu_read_lock();
+ 
+@@ -682,10 +677,8 @@
+ 	kfree_skb(skb);
+ 
+ 	if (matches &gt; 0) {
+-		spin_lock(&amp;stats_lock);
+ 		stats.matches++;
+ 		stats.matches_delta++;
+-		spin_unlock(&amp;stats_lock);
+ 	}
+ 
+ 	return 0;
+
+Modified: trunk/kernel/2.6/net/can/af_can.h
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.h	2007-05-03 13:24:10 UTC (rev 273)
++++ trunk/kernel/2.6/net/can/af_can.h	2007-05-03 15:37:10 UTC (rev 274)
+@@ -111,8 +111,6 @@
+ 	unsigned long rcv_entries_max;
+ }; /* persistent statistics */
+ 
+-extern spinlock_t stats_lock;
+-
+ /* function prototypes for the CAN networklayer procfs (proc.c) */
+ extern void can_init_proc(void);
+ extern void can_remove_proc(void);
+
+Modified: trunk/kernel/2.6/net/can/proc.c
+===================================================================
+--- trunk/kernel/2.6/net/can/proc.c	2007-05-03 13:24:10 UTC (rev 273)
++++ trunk/kernel/2.6/net/can/proc.c	2007-05-03 15:37:10 UTC (rev 274)
+@@ -91,10 +91,8 @@
+ 	 * stattimer is active which is the default) OR in a process
+ 	 * context (reading the proc_fs when stattimer is disabled).
+ 	 */
+-	spin_lock(&amp;stats_lock);
+ 	memset(&amp;stats, 0, sizeof(stats));
+ 	stats.jiffies_init = jiffies;
+-	spin_unlock(&amp;stats_lock);
+ 
+ 	pstats.stats_reset++;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000257.html">r273 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000259.html">r275 - trunk/patches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#258">[ date ]</a>
+              <a href="thread.html#258">[ thread ]</a>
+              <a href="subject.html#258">[ subject ]</a>
+              <a href="author.html#258">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

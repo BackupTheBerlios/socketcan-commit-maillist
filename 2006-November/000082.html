@@ -1,0 +1,326 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r99 - in trunk: kernel/2.6/net/can test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r99%20-%20in%20trunk%3A%20kernel/2.6/net/can%20test&In-Reply-To=%3C200611171555.kAHFtBXq022925%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000081.html">
+   <LINK REL="Next"  HREF="000083.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r99 - in trunk: kernel/2.6/net/can test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r99%20-%20in%20trunk%3A%20kernel/2.6/net/can%20test&In-Reply-To=%3C200611171555.kAHFtBXq022925%40sheep.berlios.de%3E"
+       TITLE="r99 - in trunk: kernel/2.6/net/can test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 17 16:55:11 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000081.html">r98 - trunk/etc
+</A></li>
+        <LI>Next message: <A HREF="000083.html">r100 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#82">[ date ]</a>
+              <a href="thread.html#82">[ thread ]</a>
+              <a href="subject.html#82">[ subject ]</a>
+              <a href="author.html#82">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-11-17 16:55:09 +0100 (Fri, 17 Nov 2006)
+New Revision: 99
+
+Modified:
+   trunk/kernel/2.6/net/can/raw.c
+   trunk/test/tst-raw-filter.c
+Log:
+Added the possibility to set _no_ RX filter in CAN_RAW sockets as requested
+by Wolfgang Grandegger on the socketcan-core mailinglist.
+Updated tst-raw-filter testtool to checkout the functionality.
+Indeed the setting of the default filter turned out to be much clearer in the
+source code of raw.c. There's no swap-back to any default if the filter was
+once changed by the user-space. Just a straight behavior. Tnx Wolfgang.
+
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2006-11-17 15:18:55 UTC (rev 98)
++++ trunk/kernel/2.6/net/can/raw.c	2006-11-17 15:55:09 UTC (rev 99)
+@@ -102,6 +102,7 @@
+ 
+ static void raw_add_filters(struct net_device *dev, struct sock *sk);
+ static void raw_remove_filters(struct net_device *dev, struct sock *sk);
++static void raw_kfree_filters(struct sock *sk);
+ 
+ 
+ static struct proto_ops raw_ops = {
+@@ -128,10 +129,11 @@
+ struct raw_opt {
+ 	int bound;
+ 	int ifindex;
+-	int count;
+ 	int loopback;
+ 	int recv_own_msgs;
+-	struct can_filter *filter;
++	int count;                 /* number of active filters */
++	struct can_filter dfilter; /* default/single filter space */
++	struct can_filter *filter; /* pointer to filter(s) */
+ 	can_err_mask_t err_mask;
+ };
+ 
+@@ -198,11 +200,18 @@
+ 
+ static int raw_init(struct sock *sk)
+ {
+-	canraw_sk(sk)-&gt;bound         = 0;
+-	canraw_sk(sk)-&gt;count         = 0;
+-	canraw_sk(sk)-&gt;loopback      = 1;
+-	canraw_sk(sk)-&gt;recv_own_msgs = 0;
++	canraw_sk(sk)-&gt;bound            = 0;
+ 
++	/* set default filter to single entry dfilter */
++	canraw_sk(sk)-&gt;dfilter.can_id   = 0;
++	canraw_sk(sk)-&gt;dfilter.can_mask = MASK_ALL;
++	canraw_sk(sk)-&gt;filter           = &amp;canraw_sk(sk)-&gt;dfilter;
++	canraw_sk(sk)-&gt;count            = 1;
++
++	/* set default message behaviour */
++	canraw_sk(sk)-&gt;loopback         = 1;
++	canraw_sk(sk)-&gt;recv_own_msgs    = 0;
++
+ 	return 0;
+ }
+ 
+@@ -221,9 +230,8 @@
+ 	if (canraw_sk(sk)-&gt;count &gt; 0) {
+ 		if (canraw_sk(sk)-&gt;bound)
+ 			raw_remove_filters(dev, sk);
+-		kfree(canraw_sk(sk)-&gt;filter);
+-	} else if (canraw_sk(sk)-&gt;bound)
+-		can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
++		raw_kfree_filters(sk);
++	}
+ 
+ 	/* remove current error mask */
+ 	if (canraw_sk(sk)-&gt;err_mask &amp;&amp; canraw_sk(sk)-&gt;bound)
+@@ -254,19 +262,32 @@
+ #if 1
+ 		return -EINVAL;
+ #else
+-		/* remove current bindings */
++		/* remove current bindings / notifier */
+ 		if (canraw_sk(sk)-&gt;ifindex) {
+ 			dev = dev_get_by_index(canraw_sk(sk)-&gt;ifindex);
+-			;  /* remove notifier */
++			if (!dev) {
++				DBG(&quot;could not find device %d\n&quot;,
++				    addr-&gt;can_ifindex);
++				return -ENODEV;
++			}
++			if (!(dev-&gt;flags &amp; IFF_UP)) {
++				sk-&gt;sk_err = ENETDOWN;
++				sk-&gt;sk_error_report(sk);
++				goto out;
++			}
++			can_dev_unregister(dev, raw_notifier, sk);
+ 		} else
+ 			dev = NULL;
+-		if (canraw_sk(sk)-&gt;count &gt; 0) {
+-			raw_remove_filters(sk);
+-		} else {
+-			can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
+-		}
++
++		/* unregister current filters for this device */
++		if (canraw_sk(sk)-&gt;count &gt; 0)
++			raw_remove_filters(dev, sk);
++
++		/* the filter(s) content is just available here */
++
+ 		if (dev)
+ 			dev_put(dev);
++
+ 		canraw_sk(sk)-&gt;bound = 0;
+ #endif
+ 	}
+@@ -288,10 +309,8 @@
+ 
+ 	canraw_sk(sk)-&gt;ifindex = addr-&gt;can_ifindex;
+ 
+-	if (canraw_sk(sk)-&gt;count &gt; 0)   /* filters set by setsockopt */
++	if (canraw_sk(sk)-&gt;count &gt; 0)   /* filters set by default/setsockopt */
+ 		raw_add_filters(dev, sk);
+-	else
+-		can_rx_register(dev, 0, MASK_ALL, raw_rcv, sk, IDENT);
+ 
+ 	if (canraw_sk(sk)-&gt;err_mask) /* error frame filter set by setsockopt */
+ 		can_rx_register(dev, 0, (canid_t)(canraw_sk(sk)-&gt;err_mask | CAN_ERR_FLAG), raw_rcv, sk, IDENT);
+@@ -347,16 +366,18 @@
+ 
+ 	switch (optname) {
+ 	case CAN_RAW_FILTER:
+-		if (optlen) {
+-			if (optlen % sizeof(struct can_filter) != 0)
+-				return -EINVAL;
++		if (optlen % sizeof(struct can_filter) != 0)
++			return -EINVAL;
++
++		count = optlen / sizeof(struct can_filter);
++
++		if (count &gt; 1) { /* does not fit into dfilter */
+ 			if (!(filter = kmalloc(optlen, GFP_KERNEL)))
+ 				return -ENOMEM;
+ 			if ((err = copy_from_user(filter, optval, optlen))) {
+ 				kfree(filter);
+ 				return err;
+ 			}
+-			count = optlen / sizeof(struct can_filter);
+ 		}
+ 
+ 		if (canraw_sk(sk)-&gt;bound &amp;&amp; canraw_sk(sk)-&gt;ifindex)
+@@ -364,21 +385,22 @@
+ 
+ 		/* remove current filters &amp; unregister */
+ 		if (canraw_sk(sk)-&gt;count &gt; 0) {
+-
+ 			if (canraw_sk(sk)-&gt;bound)
+ 				raw_remove_filters(dev, sk);
++			raw_kfree_filters(sk);
++		}
+ 
+-			kfree(canraw_sk(sk)-&gt;filter);
+-		} else if (canraw_sk(sk)-&gt;bound)
+-			can_rx_unregister(dev, 0, MASK_ALL, raw_rcv, sk);
++		if (count == 1) { /* copy data for single filter */
++			filter = &amp;canraw_sk(sk)-&gt;dfilter;
++			if ((err = copy_from_user(filter, optval, optlen)))
++				return err;
++		}
+ 
+ 		/* add new filters &amp; register */
+ 		canraw_sk(sk)-&gt;filter = filter;
+ 		canraw_sk(sk)-&gt;count  = count;
+ 		if (canraw_sk(sk)-&gt;bound &amp;&amp; count &gt; 0)
+ 			raw_add_filters(dev, sk);
+-		else if (canraw_sk(sk)-&gt;bound)
+-			can_rx_register(dev, 0, MASK_ALL, raw_rcv, sk, IDENT);
+ 
+ 		if (dev)
+ 			dev_put(dev);
+@@ -446,6 +468,7 @@
+ {
+ 	struct sock *sk = sock-&gt;sk;
+ 	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++	int count = canraw_sk(sk)-&gt;count;
+ 	int len;
+ 
+ 	if (level != SOL_CAN_RAW)
+@@ -456,8 +479,8 @@
+ 		if (get_user(len, optlen))
+ 			return -EFAULT;
+ 
+-		if (filter) {
+-			int filter_size = canraw_sk(sk)-&gt;count * sizeof(struct can_filter);
++		if (count &amp;&amp; filter) {
++			int filter_size = count * sizeof(struct can_filter);
+ 			if (len &lt; filter_size)
+ 				return -EINVAL;
+ 			if (len &gt; filter_size)
+@@ -560,6 +583,14 @@
+ 	}
+ }
+ 
++static void raw_kfree_filters(struct sock *sk)
++{
++	struct can_filter *filter = canraw_sk(sk)-&gt;filter;
++
++	if ((canraw_sk(sk)-&gt;count &gt; 1) &amp;&amp; (filter))
++		kfree(filter);
++}
++
+ static int raw_sendmsg(struct kiocb *iocb, struct socket *sock,
+ 		       struct msghdr *msg, size_t size)
+ {
+
+Modified: trunk/test/tst-raw-filter.c
+===================================================================
+--- trunk/test/tst-raw-filter.c	2006-11-17 15:18:55 UTC (rev 98)
++++ trunk/test/tst-raw-filter.c	2006-11-17 15:55:09 UTC (rev 99)
+@@ -73,19 +73,23 @@
+     int ifindex;
+     int opt;
+     int nfilters = 0;
++    int deflt = 0;
+ 
+-    while ((opt = getopt(argc, argv, &quot;i:f:&quot;)) != -1) {
++    while ((opt = getopt(argc, argv, &quot;i:f:d&quot;)) != -1) {
+         switch (opt) {
+-        case 'i':
++        case 'i': /* specify different interface than default */
+ 	    ifname = optarg;
+             break;
+-        case 'f':
++        case 'd': /* use default settings from CAN_RAW socket */ 
++	    deflt = 1;
++            break;
++        case 'f': /* add this filter can_id:can_mask */
+ 	    if (nfilters &gt;= MAXFILTERS) {
+ 		fputs(&quot;too many filters\n&quot;, stderr);
+ 		break;
+ 	    }
+-	    rfilter[nfilters].can_id = strtol(strtok(optarg, &quot;:&quot;), NULL, 0);
+-	    rfilter[nfilters].can_mask = strtol(strtok(NULL, &quot;:&quot;), NULL, 0);
++	    rfilter[nfilters].can_id = strtol(strtok(optarg, &quot;:&quot;), NULL, 16);
++	    rfilter[nfilters].can_mask = strtol(strtok(NULL, &quot;:&quot;), NULL, 16);
+ 	    nfilters++;
+             break;
+         default:
+@@ -100,9 +104,13 @@
+       return 1;
+     }
+ 
+-    if (nfilters &gt; 0)
++    if (deflt) {
++	printf(&quot;%s: using CAN_RAW socket default filter.\n&quot;, argv[0]);
++    } else {
++	printf(&quot;%s: setting %d CAN filter(s).\n&quot;, argv[0], nfilters);
+ 	setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &amp;rfilter,
+ 		   sizeof(*rfilter) * nfilters);
++    }
+ 
+     if (strcmp(ifname, &quot;any&quot;) == 0)
+ 	ifindex = 0;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000081.html">r98 - trunk/etc
+</A></li>
+	<LI>Next message: <A HREF="000083.html">r100 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#82">[ date ]</a>
+              <a href="thread.html#82">[ thread ]</a>
+              <a href="subject.html#82">[ subject ]</a>
+              <a href="author.html#82">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

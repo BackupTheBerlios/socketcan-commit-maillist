@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r130 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r130%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200701260736.l0Q7aasW011968%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000113.html">
+   <LINK REL="Next"  HREF="000115.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r130 - trunk/kernel/2.4/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r130%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200701260736.l0Q7aasW011968%40sheep.berlios.de%3E"
+       TITLE="r130 - trunk/kernel/2.4/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 26 08:36:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000113.html">r129 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000115.html">r131 - trunk/doc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#114">[ date ]</a>
+              <a href="thread.html#114">[ thread ]</a>
+              <a href="subject.html#114">[ subject ]</a>
+              <a href="author.html#114">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-01-26 08:36:33 +0100 (Fri, 26 Jan 2007)
+New Revision: 130
+
+Modified:
+   trunk/kernel/2.4/can/Makefile
+   trunk/kernel/2.4/can/vcan.c
+Log:
+Updated vcan.c to support the new loopback functionality in af_can.c.
+Added Makefile parameters to allow to set the RAW and BCM capabilities at
+compiletime, e.g. make RAWCAP=-DCONFIG_CAN_RAW_USER 
+
+
+Modified: trunk/kernel/2.4/can/Makefile
+===================================================================
+--- trunk/kernel/2.4/can/Makefile	2007-01-10 17:18:01 UTC (rev 129)
++++ trunk/kernel/2.4/can/Makefile	2007-01-26 07:36:33 UTC (rev 130)
+@@ -42,7 +42,7 @@
+ 
+ 
+ CFLAGS    = -O2 -Wall -Wno-parentheses -D__KERNEL__ -DMODULE $(DEBUG) \
+-		-I$(KERNELDIR)/include -fno-strict-aliasing
++		$(RAWCAP) $(BCMCAP) -I$(KERNELDIR)/include -fno-strict-aliasing
+ KERNELDIR = /usr/src/linux
+ 
+ VERSION       = $(shell awk '/^VERSION/     {print $$3}' $(KERNELDIR)/Makefile)
+
+Modified: trunk/kernel/2.4/can/vcan.c
+===================================================================
+--- trunk/kernel/2.4/can/vcan.c	2007-01-10 17:18:01 UTC (rev 129)
++++ trunk/kernel/2.4/can/vcan.c	2007-01-26 07:36:33 UTC (rev 130)
+@@ -74,9 +74,9 @@
+ #define DBG_SKB(skb)
+ #endif
+ 
+-/* This 'undef' makes the vcan a kind of NULL device.  Since LLCF v0.6  */
+-/* the local loopback is implemented in af_can.c for all interfaces.    */
+-#undef  DO_LOOPBACK
++/* Indicate if this VCAN driver should do a real loopback, or if this */
++/* should be done in af_can.c */
++#define  DO_LOOPBACK
+ 
+ #define NDEVICES 4
+ 
+@@ -128,7 +128,6 @@
+ 
+ #endif
+ 
+-
+ static int vcan_tx(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct net_device_stats *stats = netdev_priv(dev);
+@@ -137,27 +136,34 @@
+ 	DBG_SKB(skb);
+ 	DBG_FRAME(&quot;VCAN: transmit CAN frame&quot;, (struct can_frame *)skb-&gt;data);
+ 
+-#ifdef DO_LOOPBACK
+-	if (atomic_read(&amp;skb-&gt;users) != 1) {
+-		struct sk_buff *old_skb = skb;
+-		skb = skb_clone(old_skb, GFP_ATOMIC);
+-		DBG(&quot;  freeing old skbuff %p, using new skbuff %p\n&quot;,
+-		    old_skb, skb);
+-		kfree_skb(old_skb);
+-		if (!skb) {
+-			return 0;
+-		}
+-	} else
+-		skb_orphan(skb);
+-#endif
+-
+ 	stats-&gt;tx_packets++;
+ 	stats-&gt;tx_bytes += skb-&gt;len;
++
+ #ifdef DO_LOOPBACK
+-	vcan_rx(skb, dev);
++	if (*(struct sock **)skb-&gt;cb) { /* loopback required */
++		if (atomic_read(&amp;skb-&gt;users) != 1) {
++			struct sk_buff *old_skb = skb;
++			skb = skb_clone(old_skb, GFP_ATOMIC);
++			DBG(&quot;  freeing old skbuff %p, using new skbuff %p\n&quot;,
++			    old_skb, skb);
++			kfree_skb(old_skb);
++			if (!skb) {
++				return 0;
++			}
++		} else
++			skb_orphan(skb);
++
++		vcan_rx(skb, dev); /* with packet counting */
++	} else {
++		/* no looped packets =&gt; no counting */
++		kfree_skb(skb);
++	}
+ #else
+-	stats-&gt;rx_packets++;
+-	stats-&gt;rx_bytes += skb-&gt;len;
++	/* only count, when the CAN-core made a loopback */
++	if (*(struct sock **)skb-&gt;cb) {
++		stats-&gt;rx_packets++;
++		stats-&gt;rx_bytes += skb-&gt;len;
++	}
+ 	kfree_skb(skb);
+ #endif
+ 	return 0;
+@@ -170,7 +176,7 @@
+ 
+ static int vcan_rebuild_header(struct sk_buff *skb)
+ {
+-	DBG(&quot;called on skbuff %p\n&quot;, skb);
++	DBG(&quot;skbuff %p\n&quot;, skb);
+ 	DBG_SKB(skb);
+ 	return 0;
+ }
+@@ -179,7 +185,7 @@
+ 		       unsigned short type, void *daddr, void *saddr,
+ 		       unsigned int len)
+ {
+-	DBG(&quot;called skbuff %p device %p\n&quot;, skb, dev);
++	DBG(&quot;skbuff %p device %p\n&quot;, skb, dev);
+ 	DBG_SKB(skb);
+ 	return 0;
+ }
+@@ -202,19 +208,21 @@
+ 		return -ENOMEM;
+ 	memset(dev-&gt;priv, 0, sizeof(struct net_device_stats));
+ 
++	dev-&gt;type              = ARPHRD_CAN;
++	dev-&gt;mtu               = sizeof(struct can_frame);
++#ifdef DO_LOOPBACK
++	dev-&gt;flags             = IFF_LOOPBACK;
++#endif
++
+ 	dev-&gt;open              = vcan_open;
+ 	dev-&gt;stop              = vcan_stop;
+ 	dev-&gt;set_config        = NULL;
+ 	dev-&gt;hard_start_xmit   = vcan_tx;
+ 	dev-&gt;do_ioctl          = vcan_ioctl;
+ 	dev-&gt;get_stats         = vcan_get_stats;
+-
+-	dev-&gt;mtu               = sizeof(struct can_frame);
+-	dev-&gt;flags             = IFF_LOOPBACK;
+ 	dev-&gt;hard_header       = vcan_header;
+ 	dev-&gt;rebuild_header    = vcan_rebuild_header;
+ 	dev-&gt;hard_header_cache = NULL;
+-	dev-&gt;type              = ARPHRD_LOOPBACK;
+ 
+ 	SET_MODULE_OWNER(dev);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000113.html">r129 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000115.html">r131 - trunk/doc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#114">[ date ]</a>
+              <a href="thread.html#114">[ thread ]</a>
+              <a href="subject.html#114">[ subject ]</a>
+              <a href="author.html#114">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r252 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r252%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704301217.l3UCHYIF002905%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000235.html">
+   <LINK REL="Next"  HREF="000237.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r252 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r252%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200704301217.l3UCHYIF002905%40sheep.berlios.de%3E"
+       TITLE="r252 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr 30 14:17:34 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000235.html">r251 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000237.html">r253 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#236">[ date ]</a>
+              <a href="thread.html#236">[ thread ]</a>
+              <a href="subject.html#236">[ subject ]</a>
+              <a href="author.html#236">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-04-30 14:17:32 +0200 (Mon, 30 Apr 2007)
+New Revision: 252
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+Use dynamically allocated buffers instead of stack space for debug messages.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-30 11:36:19 UTC (rev 251)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-30 12:17:32 UTC (rev 252)
+@@ -709,6 +709,8 @@
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+ 
++#define DBG_BSIZE 1024
++
+ /**
+  * can_debug_cframe - print CAN frame
+  * @msg: pointer to message printed before the given CAN frame
+@@ -719,11 +721,15 @@
+ 	va_list ap;
+ 	int len;
+ 	int dlc, i;
+-	char buf[1024];
++	char *buf;
+ 
++	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
++	if (!buf)
++		return;
++
+ 	len = sprintf(buf, KERN_DEBUG);
+ 	va_start(ap, cf);
+-	len += snprintf(buf + len, sizeof(buf) - 64, msg, ap);
++	len += snprintf(buf + len, DBG_BSIZE - 64, msg, ap);
+ 	buf[len++] = ':';
+ 	buf[len++] = ' ';
+ 	va_end(ap);
+@@ -748,6 +754,7 @@
+ 	buf[len++] = '\n';
+ 	buf[len]   = '\0';
+ 	printk(buf);
++	kfree(buf);
+ }
+ EXPORT_SYMBOL_GPL(can_debug_cframe);
+ 
+@@ -758,8 +765,12 @@
+ void can_debug_skb(struct sk_buff *skb)
+ {
+ 	int len, nbytes, i;
+-	char buf[1024];
++	char *buf;
+ 
++	buf = kmalloc(DBG_BSIZE, GFP_ATOMIC);
++	if (!buf)
++		return;
++
+ 	len = sprintf(buf,
+ 		      KERN_DEBUG &quot;  skbuff at %p, dev: %d, proto: %04x\n&quot;
+ 		      KERN_DEBUG &quot;  users: %d, dataref: %d, nr_frags: %d, &quot;
+@@ -775,7 +786,7 @@
+ 	for (i = 0; i &lt; nbytes; i++) {
+ 		if (i % 16 == 0)
+ 			len += sprintf(buf + len, &quot;\n&quot; KERN_DEBUG &quot;  &quot;);
+-		if (len &lt; sizeof(buf) - 16) {
++		if (len &lt; DBG_BSIZE - 16) {
+ 			len += sprintf(buf + len, &quot; %02x&quot;, skb-&gt;head[i]);
+ 		} else {
+ 			len += sprintf(buf + len, &quot;...&quot;);
+@@ -785,6 +796,7 @@
+ 	buf[len++] = '\n';
+ 	buf[len]   = '\0';
+ 	printk(buf);
++	kfree(buf);
+ }
+ EXPORT_SYMBOL_GPL(can_debug_skb);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000235.html">r251 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000237.html">r253 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#236">[ date ]</a>
+              <a href="thread.html#236">[ thread ]</a>
+              <a href="subject.html#236">[ subject ]</a>
+              <a href="author.html#236">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

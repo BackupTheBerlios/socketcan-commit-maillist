@@ -1,0 +1,494 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r95 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r95%20-%20trunk/can-utils&In-Reply-To=%3C200610301314.k9UDEcKs010676%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000075.html">
+   <LINK REL="Next"  HREF="000077.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r95 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r95%20-%20trunk/can-utils&In-Reply-To=%3C200610301314.k9UDEcKs010676%40sheep.berlios.de%3E"
+       TITLE="r95 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Oct 30 14:14:38 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000075.html">r94 - trunk/kernel/2.6/include/linux
+</A></li>
+        <LI>Next message: <A HREF="000077.html">r96 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#76">[ date ]</a>
+              <a href="thread.html#76">[ thread ]</a>
+              <a href="subject.html#76">[ subject ]</a>
+              <a href="author.html#76">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-10-30 14:14:36 +0100 (Mon, 30 Oct 2006)
+New Revision: 95
+
+Added:
+   trunk/can-utils/cansend.c
+   trunk/can-utils/lib.c
+   trunk/can-utils/lib.h
+Modified:
+   trunk/can-utils/Makefile
+Log:
+Added tiny tool cansend and a library to parse ASCII CAN frames (e.g. from
+the command line) that are defined in one concatenated string.
+This is a requirement for the comming command line tool 'bcmsend' that allows
+to send more than one CAN frame at a time.
+
+
+Modified: trunk/can-utils/Makefile
+===================================================================
+--- trunk/can-utils/Makefile	2006-10-30 13:08:32 UTC (rev 94)
++++ trunk/can-utils/Makefile	2006-10-30 13:14:36 UTC (rev 95)
+@@ -43,7 +43,7 @@
+ CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
+ 	    -fno-strict-aliasing
+ 
+-PROGRAMS = candump can-sniffer
++PROGRAMS = candump can-sniffer cansend
+ 
+ all: $(PROGRAMS)
+ 
+@@ -52,3 +52,7 @@
+ 
+ distclean:
+ 	rm -f $(PROGRAMS) *~
++
++cansend.o: lib.h
++
++cansend: cansend.o lib.o
+\ No newline at end of file
+
+Added: trunk/can-utils/cansend.c
+===================================================================
+--- trunk/can-utils/cansend.c	2006-10-30 13:08:32 UTC (rev 94)
++++ trunk/can-utils/cansend.c	2006-10-30 13:14:36 UTC (rev 95)
+@@ -0,0 +1,117 @@
++/*
++ *  $Id$
++ */
++
++/*
++ * cansend.c - simple command line tool to send CAN-frames via CAN_RAW sockets
++ *
++ * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;stdio.h&gt;
++#include &lt;stdlib.h&gt;
++#include &lt;string.h&gt;
++#include &lt;unistd.h&gt;
++
++#include &lt;net/if.h&gt;
++#include &lt;sys/ioctl.h&gt;
++
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
++
++#include &quot;lib.h&quot;
++
++int main(int argc, char **argv)
++{
++    int s; /* can raw socket */ 
++    int nbytes;
++    struct sockaddr_can addr;
++    struct can_frame frame;
++    struct ifreq ifr;
++
++    /* check command line options */
++    if (argc != 3) {
++        fprintf(stderr, &quot;Usage: %s &lt;device&gt; &lt;can_frame&gt;.\n&quot;, argv[0]);
++        return 1;
++    }
++
++    /* parse CAN frame */
++    if (parse_canframe(argv[2], &amp;frame)){
++	fprintf(stderr, &quot;\nWrong CAN-frame format!\n\n&quot;);
++	fprintf(stderr, &quot;Try: &lt;can_id&gt;#{R|data}\n&quot;);
++	fprintf(stderr, &quot;can_id can have 3 (SFF) or 8 (EFF) hex chars\n&quot;);
++	fprintf(stderr, &quot;data has 0 to 8 hex-values that can (optionally)&quot;);
++	fprintf(stderr, &quot; be seperated by '.'\n\n&quot;);
++	fprintf(stderr, &quot;e.g. 5A1#11.2233.44556677.88 / 123#DEADBEEF / &quot;);
++	fprintf(stderr, &quot;5AA# /\n     1F334455#1122334455667788 / 123#R &quot;);
++	fprintf(stderr, &quot;for remote transmission request.\n\n&quot;);
++	return 1;
++    }
++
++    /* open socket */
++    if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) &lt; 0) {
++      perror(&quot;socket&quot;);
++      return 1;
++    }
++
++    strcpy(ifr.ifr_name, argv[1]);
++    ioctl(s, SIOCGIFINDEX, &amp;ifr);
++
++    addr.can_family = AF_CAN;
++    addr.can_ifindex = ifr.ifr_ifindex;
++
++    if (bind(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
++      perror(&quot;bind&quot;);
++      return 1;
++    }
++
++    /* send frame */
++    if ((nbytes = write(s, &amp;frame, sizeof(frame))) != sizeof(frame)) {
++      perror(&quot;write&quot;);
++      return 1;
++    }
++
++    //fprint_canframe(stdout, &amp;frame, &quot;\n&quot;);
++
++    close(s);
++
++    return 0;
++}
+
+
+Property changes on: trunk/can-utils/cansend.c
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/can-utils/lib.c
+===================================================================
+--- trunk/can-utils/lib.c	2006-10-30 13:08:32 UTC (rev 94)
++++ trunk/can-utils/lib.c	2006-10-30 13:14:36 UTC (rev 95)
+@@ -0,0 +1,154 @@
++/*
++ *  $Id$
++ */
++
++/*
++ * cansend.c - simple command line tool to send CAN-frames via CAN_RAW sockets
++ *
++ * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++#include &lt;stdio.h&gt;
++#include &lt;string.h&gt;
++
++#include &lt;linux/can.h&gt;
++
++#define CANID_DELIM '#'
++#define DATA_SEPERATOR '.'
++
++static int asc2nibble(char c){
++
++    if ((c &gt;= '0') &amp;&amp; (c &lt;= '9'))
++	return c - '0';
++
++    if ((c &gt;= 'A') &amp;&amp; (c &lt;= 'F'))
++	return c - 'A' + 10;
++
++    if ((c &gt;= 'a') &amp;&amp; (c &lt;= 'f'))
++	return c - 'a' + 10;
++
++    return 16; /* error */
++}
++
++int parse_canframe(char *cs, struct can_frame *cf){
++    /* documentation see lib.h */
++
++    int i, idx, dlc, len, tmp;
++
++    len = strlen(cs);
++    //printf(&quot;'%s' len %d\n&quot;, cs, len);
++
++    memset(cf, 0, sizeof(*cf)); /* init CAN frame, e.g. DLC = 0 */
++
++    if (len &lt; 4)
++	return 1;
++
++    if (!((cs[3] == CANID_DELIM) || (cs[8] == CANID_DELIM)))
++	return 1;
++
++    if (cs[8] == CANID_DELIM) {
++
++	idx = 9;
++	cf-&gt;can_id = CAN_EFF_FLAG;
++	for (i=0; i&lt;8; i++){
++	    if ((tmp = asc2nibble(cs[i])) &gt; 0x0F)
++		return 1;
++	    cf-&gt;can_id |= (tmp &lt;&lt; (7-i)*4);
++	}
++
++    } else {
++
++	idx = 4;
++	for (i=0; i&lt;3; i++){
++	    if ((tmp = asc2nibble(cs[i])) &gt; 0x0F)
++		return 1;
++	    cf-&gt;can_id |= (tmp &lt;&lt; (2-i)*4);
++	}
++    }
++
++    if((cs[idx] == 'R') || (cs[idx] == 'r')){ /* RTR frame */
++	cf-&gt;can_id |= CAN_RTR_FLAG;
++	return 0;
++    }
++
++    for (i=0, dlc=0; i&lt;8; i++){
++
++	if(cs[idx] == DATA_SEPERATOR) /* skip (optional) seperator */
++	    idx++;
++
++	if(idx &gt;= len) /* end of string =&gt; end of data */
++	    break;
++
++	if ((tmp = asc2nibble(cs[idx++])) &gt; 0x0F)
++	    return 1;
++	cf-&gt;data[i] = (tmp &lt;&lt; 4);
++	if ((tmp = asc2nibble(cs[idx++])) &gt; 0x0F)
++	    return 1;
++	cf-&gt;data[i] |= tmp;
++	dlc++;
++    }
++
++    cf-&gt;can_dlc = dlc;
++
++    return 0;
++}
++
++void fprint_canframe(FILE *stream , struct can_frame *cf, char *eol){
++    /* documentation see lib.h */
++
++    int i;
++
++    if (cf-&gt;can_id &amp; CAN_EFF_FLAG)
++	fprintf(stream, &quot;%8X  &quot;, cf-&gt;can_id &amp; CAN_EFF_MASK);
++    else
++	fprintf(stream, &quot;%3X  &quot;, cf-&gt;can_id &amp; CAN_SFF_MASK);
++
++    fprintf(stream, &quot;[%d] &quot;, cf-&gt;can_dlc);
++
++    for (i = 0; i &lt; cf-&gt;can_dlc; i++) {
++	fprintf(stream, &quot;%02X &quot;, cf-&gt;data[i]);
++    }
++    if (cf-&gt;can_id &amp; CAN_RTR_FLAG)
++	fprintf(stream, &quot;remote request&quot;);
++    if (eol)
++	fprintf(stream, &quot;%s&quot;, eol);
++}
++
+
+
+Property changes on: trunk/can-utils/lib.c
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/can-utils/lib.h
+===================================================================
+--- trunk/can-utils/lib.h	2006-10-30 13:08:32 UTC (rev 94)
++++ trunk/can-utils/lib.h	2006-10-30 13:14:36 UTC (rev 95)
+@@ -0,0 +1,86 @@
++/*
++ *  $Id$
++ */
++
++/*
++ * cansend.c - simple command line tool to send CAN-frames via CAN_RAW sockets
++ *
++ * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, the following disclaimer and
++ *    the referenced file 'COPYING'.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of Volkswagen nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++ * file from the main directory of the linux kernel source.
++ *
++ * The provided data structures and external interfaces from this code
++ * are not restricted to be used by modules with a GPL compatible license.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
++ *
++ */
++
++int parse_canframe(char *cs, struct can_frame *cf);
++/*
++ * Transfers a valid ASCII string decribing a CAN frame into struct can_frame.
++ *
++ * &lt;can_id&gt;#{R|data}
++ *
++ * can_id can have 3 (standard frame format) or 8 (extended frame format)
++ *        hexadecimal chars
++ *
++ * data has 0 to 8 hex-values that can (optionally) be seperated by '.'
++ *
++ * Examples:
++ *
++ * 123# -&gt; standard CAN-Id = 0x123, dlc = 0
++ * 12345678# -&gt; exended CAN-Id = 0x12345678, dlc = 0
++ * 123#R -&gt; standard CAN-Id = 0x123, dlc = 0, RTR-frame
++ * 7A1#r -&gt; standard CAN-Id = 0x7A1, dlc = 0, RTR-frame
++ *
++ * 123#00 -&gt; standard CAN-Id = 0x123, dlc = 1, data[0] = 0x00
++ * 123#1122334455667788 -&gt; standard CAN-Id = 0x123, dlc = 8
++ * 123#11.22.33.44.55.66.77.88 -&gt; standard CAN-Id = 0x123, dlc = 8
++ * 123#11.2233.44556677.88 -&gt; standard CAN-Id = 0x123, dlc = 8
++ *
++ */
++
++void fprint_canframe(FILE *stream , struct can_frame *cf, char *eol);
++/*
++ * Creates a CAN frame hexadecimal output in user readable format.
++ *
++ * 12345678  [3] 11 22 33 -&gt; exended CAN-Id = 0x12345678, dlc = 3, data
++ * 12345678  [0] remote request -&gt; exended CAN-Id = 0x12345678, RTR
++ *
++ * Examples:
++ *
++ * fprint_canframe(stdout, &amp;frame, &quot;\n&quot;); // with eol to STDOUT
++ * fprint_canframe(stderr, &amp;frame, NULL); // no eol to STDERR
++ *
++ */
+
+
+Property changes on: trunk/can-utils/lib.h
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000075.html">r94 - trunk/kernel/2.6/include/linux
+</A></li>
+	<LI>Next message: <A HREF="000077.html">r96 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#76">[ date ]</a>
+              <a href="thread.html#76">[ thread ]</a>
+              <a href="subject.html#76">[ subject ]</a>
+              <a href="author.html#76">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,659 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r508 - in trunk: can-utils kernel/2.4/can	kernel/2.6/Documentation/networking	kernel/2.6/include/linux/can kernel/2.6/net/can test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r508%20-%20in%20trunk%3A%20can-utils%20kernel/2.4/can%0A%09kernel/2.6/Documentation/networking%0A%09kernel/2.6/include/linux/can%20kernel/2.6/net/can%20test&In-Reply-To=%3C200710010548.l915mtPX007699%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000491.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r508 - in trunk: can-utils kernel/2.4/can	kernel/2.6/Documentation/networking	kernel/2.6/include/linux/can kernel/2.6/net/can test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r508%20-%20in%20trunk%3A%20can-utils%20kernel/2.4/can%0A%09kernel/2.6/Documentation/networking%0A%09kernel/2.6/include/linux/can%20kernel/2.6/net/can%20test&In-Reply-To=%3C200710010548.l915mtPX007699%40sheep.berlios.de%3E"
+       TITLE="r508 - in trunk: can-utils kernel/2.4/can	kernel/2.6/Documentation/networking	kernel/2.6/include/linux/can kernel/2.6/net/can test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Oct  1 07:48:55 CEST 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000491.html">r509 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#490">[ date ]</a>
+              <a href="thread.html#490">[ thread ]</a>
+              <a href="subject.html#490">[ subject ]</a>
+              <a href="author.html#490">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-10-01 07:48:50 +0200 (Mon, 01 Oct 2007)
+New Revision: 508
+
+Modified:
+   trunk/can-utils/candump.c
+   trunk/can-utils/cangen.c
+   trunk/can-utils/canplayer.c
+   trunk/kernel/2.4/can/raw.c
+   trunk/kernel/2.4/can/raw.h
+   trunk/kernel/2.6/Documentation/networking/can.txt
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/include/linux/can/raw.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+   trunk/test/tst-raw.c
+Log:
+Reverted most of the changes since r500 except the changes in
+drivers/net/can/* after discussion with Urs.
+TODO: Documentation &amp; new Version.
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/can-utils/candump.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -106,7 +106,7 @@
+     fprintf(stderr, &quot;         -a          (enable additional ASCII output)\n&quot;);
+     fprintf(stderr, &quot;         -s &lt;level&gt;  (silent mode - 1: animation 2: nothing)\n&quot;);
+     fprintf(stderr, &quot;         -b &lt;can&gt;    (bridge mode - send received frames to &lt;can&gt;)\n&quot;);
+-    fprintf(stderr, &quot;         -B &lt;can&gt;    (bridge mode - like '-b' with disabled echo)\n&quot;);
++    fprintf(stderr, &quot;         -B &lt;can&gt;    (bridge mode - like '-b' with disabled loopback)\n&quot;);
+     fprintf(stderr, &quot;         -l          (log CAN-frames into file)\n&quot;);
+     fprintf(stderr, &quot;         -L          (use log file format on stdout)\n&quot;);
+     fprintf(stderr, &quot;\n&quot;);
+@@ -271,9 +271,9 @@
+ 		}
+ 
+ 		if (opt == 'B') {
+-		    int echo = 0;
++		    int loopback = 0;
+ 
+-		    setsockopt(bridge, SOL_CAN_RAW, CAN_RAW_ECHO, &amp;echo, sizeof(echo));
++		    setsockopt(bridge, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &amp;loopback, sizeof(loopback));
+ 		}
+ 
+ 		if (bind(bridge, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+
+Modified: trunk/can-utils/cangen.c
+===================================================================
+--- trunk/can-utils/cangen.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/can-utils/cangen.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -88,8 +88,8 @@
+ 	    &quot;default: 8\n&quot;);
+     fprintf(stderr, &quot;         -f &lt;canframe&gt; (other fixed CAN frame) &quot;
+ 	    &quot;default: 123#0123456789ABCDEF\n&quot;);
+-    fprintf(stderr, &quot;         -x            (disable echo)      &quot;
+-	    &quot;default: standard echo\n&quot;);
++    fprintf(stderr, &quot;         -x            (disable loopback)      &quot;
++	    &quot;default: standard loopback\n&quot;);
+     fprintf(stderr, &quot;         -v            (verbose)               &quot;
+ 	    &quot;default: don't print sent frames\n&quot;);
+ }
+@@ -107,7 +107,7 @@
+     unsigned char fix_data = 0;
+     unsigned char fix_dlc = 0;
+     unsigned char default_frame = 1;
+-    unsigned char echo_disable = 0;
++    unsigned char loopback_disable = 0;
+     unsigned char verbose = 0;
+ 
+     int opt;
+@@ -159,7 +159,7 @@
+ 	    break;
+ 
+ 	case 'x':
+-	    echo_disable = 1;
++	    loopback_disable = 1;
+ 	    break;
+ 
+ 	default:
+@@ -216,11 +216,11 @@
+     /* little (really a very little!) CPU usage.                          */
+     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+ 
+-    if (echo_disable) {
+-	int echo = 0;
++    if (loopback_disable) {
++	int loopback = 0;
+ 
+-	setsockopt(s, SOL_CAN_RAW, CAN_RAW_ECHO,
+-		   &amp;echo, sizeof(echo));
++	setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK,
++		   &amp;loopback, sizeof(loopback));
+     }
+ 
+     if (bind(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+
+Modified: trunk/can-utils/canplayer.c
+===================================================================
+--- trunk/can-utils/canplayer.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/can-utils/canplayer.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -89,7 +89,7 @@
+     fprintf(stderr, &quot;                      -s &lt;s&gt;      (skip gaps in &quot;
+ 	    &quot;timestamps &gt; 's' seconds)\n&quot;);
+     fprintf(stderr, &quot;                      -x           (disable local &quot;
+-	    &quot;echo of sent CAN frames)\n&quot;);
++	    &quot;loopback of sent CAN frames)\n&quot;);
+     fprintf(stderr, &quot;                      -v           (verbose: print &quot;
+ 	    &quot;sent CAN frames)\n\n&quot;);
+     fprintf(stderr, &quot;Interface assignment:  0..n assignments like &quot;
+@@ -235,7 +235,7 @@
+     unsigned long gap = DEFAULT_GAP; 
+     int use_timestamps = 1;
+     static int verbose, opt, delay_loops, skipgap;
+-    static int echo_disable = 0;
++    static int loopback_disable = 0;
+     static int infinite_loops = 0;
+     static int loops = DEFAULT_LOOPS;
+     int assignments; /* assignments defined on the commandline */
+@@ -279,7 +279,7 @@
+ 	    break;
+ 
+ 	case 'x':
+-	    echo_disable = 1;
++	    loopback_disable = 1;
+ 	    break;
+ 
+ 	case 'v':
+@@ -321,11 +321,11 @@
+     /* disable unneeded default receive filter on this RAW socket */
+     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+ 
+-    if (echo_disable) {
+-	int echo = 0;
++    if (loopback_disable) {
++	int loopback = 0;
+ 
+-	setsockopt(s, SOL_CAN_RAW, CAN_RAW_ECHO,
+-		   &amp;echo, sizeof(echo));
++	setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK,
++		   &amp;loopback, sizeof(loopback));
+     }
+ 
+     if (bind(s, (struct sockaddr *)&amp;addr, sizeof(addr)) &lt; 0) {
+
+Modified: trunk/kernel/2.4/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/can/raw.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.4/can/raw.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -139,7 +139,7 @@
+ struct canraw_opt {
+ 	int bound;
+ 	int ifindex;
+-	int echo;
++	int loopback;
+ 	int recv_own_msgs;
+ 	int count;                 /* number of active filters */
+ 	struct can_filter dfilter; /* default/single filter */
+@@ -193,8 +193,8 @@
+ 	ro-&gt;filter           = &amp;ro-&gt;dfilter;
+ 	ro-&gt;count            = 1;
+ 
+-	/* set default echo behaviour */
+-	ro-&gt;echo             = 1;
++	/* set default loopback behaviour */
++	ro-&gt;loopback         = 1;
+ 	ro-&gt;recv_own_msgs    = 0;
+ 
+ 	return 0;
+@@ -424,10 +424,10 @@
+ 
+ 		break;
+ 
+-	case CAN_RAW_ECHO:
+-		if (optlen != sizeof(ro-&gt;echo))
++	case CAN_RAW_LOOPBACK:
++		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+-		if ((err = copy_from_user(&amp;ro-&gt;echo, optval, optlen)))
++		if ((err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen)))
+ 			return err;
+ 		break;
+ 
+@@ -495,7 +495,7 @@
+ 
+ 		break;
+ 
+-	case CAN_RAW_ECHO:
++	case CAN_RAW_LOOPBACK:
+ 		if (get_user(len, optlen))
+ 			return -EFAULT;
+ 
+@@ -505,7 +505,7 @@
+ 		if (len &gt; sizeof(int))
+ 			len = sizeof(int);
+ 
+-		if (copy_to_user(optval, &amp;ro-&gt;echo, len))
++		if (copy_to_user(optval, &amp;ro-&gt;loopback, len))
+ 			return -EFAULT;
+ 
+ 		if (put_user(len, optlen))
+@@ -610,7 +610,7 @@
+ 	DBG(&quot;sending skbuff to interface %d\n&quot;, ifindex);
+ 	DBG_SKB(skb);
+ 
+-	err = can_send(skb, ro-&gt;echo);
++	err = can_send(skb, ro-&gt;loopback);
+ 
+ 	dev_put(dev);
+ 
+
+Modified: trunk/kernel/2.4/can/raw.h
+===================================================================
+--- trunk/kernel/2.4/can/raw.h	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.4/can/raw.h	2007-10-01 05:48:50 UTC (rev 508)
+@@ -58,7 +58,7 @@
+ 
+ #define CAN_RAW_FILTER		1	/* set 0 .. n can_filter(s)          */
+ #define CAN_RAW_ERR_FILTER	2	/* set filter for error frames       */
+-#define CAN_RAW_ECHO		3	/* local echo (default:on)           */
++#define CAN_RAW_LOOPBACK	3	/* local loopback (default:on)       */
+ #define CAN_RAW_RECV_OWN_MSGS	4	/* receive my own msgs (default:off) */
+ 
+ #endif
+
+Modified: trunk/kernel/2.6/Documentation/networking/can.txt
+===================================================================
+--- trunk/kernel/2.6/Documentation/networking/can.txt	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.6/Documentation/networking/can.txt	2007-10-01 05:48:50 UTC (rev 508)
+@@ -12,7 +12,7 @@
+ 
+   3 Socket CAN concept
+     3.1 receive lists
+-    3.2 local echo of sent frames
++    3.2 loopback
+     3.3 network security issues (capabilities)
+     3.4 network problem notifications
+ 
+@@ -20,7 +20,7 @@
+     4.1 RAW protocol sockets with can_filters (SOCK_RAW)
+       4.1.1 RAW socket option CAN_RAW_FILTER
+       4.1.2 RAW socket option CAN_RAW_ERR_FILTER
+-      4.1.3 RAW socket option CAN_RAW_ECHO
++      4.1.3 RAW socket option CAN_RAW_LOOPBACK
+       4.1.4 RAW socket option CAN_RAW_RECV_OWN_MSGS
+     4.2 Broadcast Manager protocol sockets (SOCK_DGRAM)
+     4.3 connected transport protocols (SOCK_SEQPACKET)
+@@ -33,7 +33,7 @@
+ 
+   6 CAN network drivers
+     6.1 general settings
+-    6.2 echo of sent frames
++    6.2 loopback
+     6.3 CAN controller hardware filters
+     6.4 currently supported CAN hardware
+     6.5 todo
+@@ -166,7 +166,7 @@
+   into several specific lists per device that match the requested
+   filter complexity for a given use-case.
+ 
+-  3.2 local echo of sent frames
++  3.2 loopback
+ 
+   As known from other networking concepts the data exchanging
+   applications may run on the same or different nodes without any
+@@ -181,21 +181,21 @@
+ 
+   To ensure that application A receives the same information in the
+   example (2) as it would receive in example (1) there is need for
+-  some kind of local echo of the sent CAN frames on the appropriate node.
++  some kind of local loopback on the appropriate node.
+ 
+   The Linux network devices (by default) just can handle the
+   transmission and reception of media dependent frames. Due to the
+   arbritration on the CAN bus the transmission of a low prio CAN-ID
+   may be delayed by the reception of a high prio CAN frame. To
+-  reflect the correct* traffic on the node the local echo of the sent
++  reflect the correct* traffic on the node the loopback of the sent
+   data has to be performed right after a successful transmission. If
+-  the CAN network interface is not capable of performing this echo handling
+-  for some reason the SocketCAN core can do this task as a fallback solution.
++  the CAN network interface is not capable of performing the loopback for
++  some reason the SocketCAN core can do this task as a fallback solution.
+   See chapter 6.2 for details (recommended).
+ 
+-  The echo functionality is enabled by default to reflect standard
++  The loopback functionality is enabled by default to reflect standard
+   networking behaviour for CAN applications. Due to some requests from
+-  the RT-SocketCAN group the local echo optionally may be disabled for each
++  the RT-SocketCAN group the loopback optionally may be disabled for each
+   separate socket. See sockopts from the CAN RAW sockets in chapter 4.1.
+ 
+   * = you really like to have this when you're running analyser tools
+@@ -374,8 +374,8 @@
+ 
+   - The filters are set to exactly one filter receiving everything
+   - The socket only receives valid data frames (=&gt; no error frames)
+-  - The local echo of sent CAN frames is enabled (see chapter 3.2)
+-  - The socket does not receive its own sent and echoed frames
++  - The loopback of sent CAN frames is enabled (see chapter 3.2)
++  - The socket does not receive its own sent frames (in loopback mode)
+ 
+   These default settings may be changed before or after binding the socket.
+   To use the referenced definitions of the socket options for CAN_RAW
+@@ -436,20 +436,20 @@
+     setsockopt(s, SOL_CAN_RAW, CAN_RAW_ERR_FILTER,
+                &amp;err_mask, sizeof(err_mask));
+ 
+-  4.1.3 RAW socket option CAN_RAW_ECHO
++  4.1.3 RAW socket option CAN_RAW_LOOPBACK
+ 
+-  To meet multi user needs the local echo is enabled by default
++  To meet multi user needs the local loopback is enabled by default
+   (see chapter 3.2 for details). But in some embedded use-cases
+-  (e.g. when only one application uses the CAN bus) this echo
++  (e.g. when only one application uses the CAN bus) this loopback
+   functionality can be disabled (separately for each socket):
+ 
+-    int echo = 0; /* 0 = disabled, 1 = enabled (default) */
++    int loopback = 0; /* 0 = disabled, 1 = enabled (default) */
+ 
+-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_ECHO, &amp;echo, sizeof(echo));
++    setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &amp;loopback, sizeof(loopback));
+ 
+   4.1.4 RAW socket option CAN_RAW_RECV_OWN_MSGS
+ 
+-  When the local echo is enabled, all the sent CAN frames are
++  When the local loopback is enabled, all the sent CAN frames are
+   looped back to the open CAN sockets that registered for the CAN
+   frames' CAN-ID on this given interface to meet the multi user
+   needs. The reception of the CAN frames on the same socket that was
+@@ -537,7 +537,7 @@
+ 
+     can_rx_register   - subscribe CAN frames from a specific interface
+     can_rx_unregister - unsubscribe CAN frames from a specific interface
+-    can_send          - transmit a CAN frame (optional with local echo)
++    can_send          - transmit a CAN frame (optional with local loopback)
+ 
+   For details see the kerneldoc documentation in net/can/af_can.c or
+   the source code of net/can/raw.c or net/can/bcm.c .
+@@ -565,14 +565,14 @@
+   The struct can_frame is the payload of each socket buffer in the
+   protocol family PF_CAN.
+ 
+-  6.2 echo of sent frames
++  6.2 loopback
+ 
+   As described in chapter 3.2 the CAN network device driver should
+-  support a local echo functionality. In this case the driver flag
+-  IFF_ECHO has to be set to cause the PF_CAN core to not perform the
+-  local echo as fallback solution:
++  support a local loopback functionality. In this case the driver flag
++  IFF_LOOPBACK has to be set to cause the PF_CAN core to not perform the
++  loopback as fallback solution:
+ 
+-    dev-&gt;flags = (IFF_NOARP | IFF_ECHO);
++    dev-&gt;flags = (IFF_NOARP | IFF_LOOPBACK);
+ 
+   6.3 CAN controller hardware filters
+ 
+@@ -608,7 +608,7 @@
+ 
+   Please check the Mailing Lists on the berlios OSS project website.
+ 
+-  6.5 todo (September 2007)
++  6.5 todo (May 2007)
+ 
+   The configuration interface for CAN network drivers is still an open
+   issue that has not been finalized in the socketcan project. Also the
+@@ -631,4 +631,4 @@
+   Matthias Brukner (first SJA1000 CAN netdevice implementation Q2/2003)
+   Klaus Hitschler (PEAK driver integration)
+   Uwe Koppe (CAN netdevices with PF_PACKET approach)
+-  Michael Schulze (driver layer echo requirement, RT CAN drivers review)
++  Michael Schulze (driver layer loopback requirement, RT CAN drivers review)
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-10-01 05:48:50 UTC (rev 508)
+@@ -67,7 +67,7 @@
+ 			      void (*func)(struct sk_buff *, void *),
+ 			      void *data);
+ 
+-extern int can_send(struct sk_buff *skb, int echo);
++extern int can_send(struct sk_buff *skb, int loop);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+ extern void can_debug_skb(struct sk_buff *skb);
+
+Modified: trunk/kernel/2.6/include/linux/can/raw.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/raw.h	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.6/include/linux/can/raw.h	2007-10-01 05:48:50 UTC (rev 508)
+@@ -26,7 +26,7 @@
+ enum {
+ 	CAN_RAW_FILTER = 1,	/* set 0 .. n can_filter(s)          */
+ 	CAN_RAW_ERR_FILTER,	/* set filter for error frames       */
+-	CAN_RAW_ECHO,		/* local echo (default:on)           */
++	CAN_RAW_LOOPBACK,	/* local loopback (default:on)       */
+ 	CAN_RAW_RECV_OWN_MSGS	/* receive my own msgs (default:off) */
+ };
+ 
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -282,18 +282,18 @@
+  */
+ 
+ /**
+- * can_send - transmit a CAN frame (optional with local echo)
++ * can_send - transmit a CAN frame (optional with local loopback)
+  * @skb: pointer to socket buffer with CAN frame in data section
+- * @echo: echo CAN frames for listeners on local CAN sockets (recommended!)
++ * @loop: loopback for listeners on local CAN sockets (recommended default!)
+  *
+  * Return:
+  *  0 on success
+  *  -ENETDOWN when the selected interface is down
+  *  -ENOBUFS on full driver queue (see net_xmit_errno())
+- *  -ENOMEM when local echo failed at calling skb_clone()
++ *  -ENOMEM when local loopback failed at calling skb_clone()
+  *  -EPERM when trying to send on a non-CAN interface
+  */
+-int can_send(struct sk_buff *skb, int echo)
++int can_send(struct sk_buff *skb, int loop)
+ {
+ 	int err;
+ 
+@@ -309,10 +309,10 @@
+ 
+ 	skb-&gt;protocol = htons(ETH_P_CAN);
+ 
+-	if (echo) {
+-		/* local echo of sent CAN frames */
++	if (loop) {
++		/* local loopback of sent CAN frames */
+ 
+-		/* indication for the CAN driver: perform local echo */
++		/* indication for the CAN driver: do loopback */
+ 		skb-&gt;pkt_type = PACKET_LOOPBACK;
+ 
+ 		/*
+@@ -329,8 +329,8 @@
+ #endif
+ 		if (!(skb-&gt;dev-&gt;flags &amp; IFF_ECHO)) {
+ 			/*
+-			 * If the interface is not capable to echo the
+-			 * sent CAN frame itself, we do it here.
++			 * If the interface is not capable to do loopback
++			 * itself, we do it here.
+ 			 */
+ 			struct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);
+ 
+@@ -345,7 +345,7 @@
+ 			netif_rx(newskb);
+ 		}
+ 	} else {
+-		/* indication for the CAN driver: no echo required */
++		/* indication for the CAN driver: no loopback required */
+ 		skb-&gt;pkt_type = PACKET_HOST;
+ 	}
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -349,7 +349,7 @@
+ 
+ 	memcpy(skb_put(skb, CFSIZ), cf, CFSIZ);
+ 
+-	/* send with local echo */
++	/* send with loopback */
+ 	skb-&gt;dev = dev;
+ 	skb-&gt;sk = op-&gt;sk;
+ 	can_send(skb, 1);
+@@ -1278,7 +1278,7 @@
+ 		/*
+ 		 * funny feature in RX(!)_SETUP only for RTR-mode:
+ 		 * copy can_id into frame BUT without RTR-flag to
+-		 * prevent a full-load-echo-test ... ;-]
++		 * prevent a full-load-loopback-test ... ;-]
+ 		 */
+ 		if ((op-&gt;flags &amp; TX_CP_CAN_ID) ||
+ 		    (op-&gt;frames[0].can_id == op-&gt;can_id))
+@@ -1410,7 +1410,7 @@
+ 
+ 	skb-&gt;dev = dev;
+ 	skb-&gt;sk  = sk;
+-	can_send(skb, 1); /* send with local echo */
++	can_send(skb, 1); /* send with loopback */
+ 	dev_put(dev);
+ 
+ 	return CFSIZ + MHSIZ;
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/kernel/2.6/net/can/raw.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -98,7 +98,7 @@
+ 	int bound;
+ 	int ifindex;
+ 	struct notifier_block notifier;
+-	int echo;
++	int loopback;
+ 	int recv_own_msgs;
+ 	int count;                 /* number of active filters */
+ 	struct can_filter dfilter; /* default/single filter */
+@@ -318,8 +318,8 @@
+ 	ro-&gt;filter           = &amp;ro-&gt;dfilter;
+ 	ro-&gt;count            = 1;
+ 
+-	/* set default echo behaviour */
+-	ro-&gt;echo             = 1;
++	/* set default loopback behaviour */
++	ro-&gt;loopback         = 1;
+ 	ro-&gt;recv_own_msgs    = 0;
+ 
+ 	/* set notifier */
+@@ -622,11 +622,11 @@
+ 
+ 		break;
+ 
+-	case CAN_RAW_ECHO:
+-		if (optlen != sizeof(ro-&gt;echo))
++	case CAN_RAW_LOOPBACK:
++		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;echo, optval, optlen);
++		err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen);
+ 
+ 		break;
+ 
+@@ -683,10 +683,10 @@
+ 		val = &amp;ro-&gt;err_mask;
+ 		break;
+ 
+-	case CAN_RAW_ECHO:
++	case CAN_RAW_LOOPBACK:
+ 		if (len &gt; sizeof(int))
+ 			len = sizeof(int);
+-		val = &amp;ro-&gt;echo;
++		val = &amp;ro-&gt;loopback;
+ 		break;
+ 
+ 	case CAN_RAW_RECV_OWN_MSGS:
+@@ -757,7 +757,7 @@
+ 	DBG(&quot;sending skbuff to interface %d\n&quot;, ifindex);
+ 	DBG_SKB(skb);
+ 
+-	err = can_send(skb, ro-&gt;echo);
++	err = can_send(skb, ro-&gt;loopback);
+ 
+ 	dev_put(dev);
+ 
+
+Modified: trunk/test/tst-raw.c
+===================================================================
+--- trunk/test/tst-raw.c	2007-09-30 14:14:20 UTC (rev 507)
++++ trunk/test/tst-raw.c	2007-10-01 05:48:50 UTC (rev 508)
+@@ -71,8 +71,8 @@
+     int opt;
+ 
+     /* sockopt test */
+-    int echo = 0;
+-    int set_echo = 0;
++    int loopback = 0;
++    int set_loopback = 0;
+     int recv_own_msgs = 0;
+     int set_recv_own_msgs = 0;
+     int send_one_frame = 0;
+@@ -86,8 +86,8 @@
+             break;
+ 
+         case 'l':
+-	    echo = atoi(optarg);
+-	    set_echo = 1;
++	    loopback = atoi(optarg);
++	    set_loopback = 1;
+             break;
+ 
+         case 'r':
+@@ -126,8 +126,8 @@
+ 
+     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &amp;rfilter, sizeof(rfilter));
+ 
+-    if(set_echo)
+-	  setsockopt(s, SOL_CAN_RAW, CAN_RAW_ECHO, &amp;echo, sizeof(echo));
++    if(set_loopback)
++	  setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &amp;loopback, sizeof(loopback));
+ 
+     if(set_recv_own_msgs)
+       setsockopt(s, SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS, &amp;recv_own_msgs, sizeof(recv_own_msgs));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000491.html">r509 - trunk/kernel/2.6/Documentation/networking
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#490">[ date ]</a>
+              <a href="thread.html#490">[ thread ]</a>
+              <a href="subject.html#490">[ subject ]</a>
+              <a href="author.html#490">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

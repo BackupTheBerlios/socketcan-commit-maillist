@@ -1,0 +1,381 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r86 - in trunk: can-utils test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r86%20-%20in%20trunk%3A%20can-utils%20test&In-Reply-To=%3C200610241355.k9ODtjf2003582%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000067.html">
+   <LINK REL="Next"  HREF="000068.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r86 - in trunk: can-utils test</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r86%20-%20in%20trunk%3A%20can-utils%20test&In-Reply-To=%3C200610241355.k9ODtjf2003582%40sheep.berlios.de%3E"
+       TITLE="r86 - in trunk: can-utils test">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Oct 24 15:55:45 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000067.html">r85 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	include/linux include/linux/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000068.html">r87 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#66">[ date ]</a>
+              <a href="thread.html#66">[ thread ]</a>
+              <a href="subject.html#66">[ subject ]</a>
+              <a href="author.html#66">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-10-24 15:55:43 +0200 (Tue, 24 Oct 2006)
+New Revision: 86
+
+Modified:
+   trunk/can-utils/Makefile
+   trunk/can-utils/can-sniffer.c
+   trunk/can-utils/candump.c
+   trunk/test/Makefile
+   trunk/test/canecho.c
+   trunk/test/tst-bcm-cycle.c
+   trunk/test/tst-bcm-filter.c
+   trunk/test/tst-bcm-rtr.c
+   trunk/test/tst-bcm-single.c
+   trunk/test/tst-bcm-throttle.c
+   trunk/test/tst-bcm-tx_read.c
+   trunk/test/tst-err.c
+   trunk/test/tst-proc.c
+   trunk/test/tst-raw-filter.c
+   trunk/test/tst-raw-sendto.c
+   trunk/test/tst-raw.c
+Log:
+changed user space program to use new include files.
+added missing include file &lt;net/if.h&gt; in most programs.
+added volatile modifier to &quot;int running&quot; in candump.c.
+
+
+Modified: trunk/can-utils/Makefile
+===================================================================
+--- trunk/can-utils/Makefile	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/can-utils/Makefile	2006-10-24 13:55:43 UTC (rev 86)
+@@ -40,7 +40,8 @@
+ #
+ #  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+-CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.4/can -fno-strict-aliasing
++CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
++	    -fno-strict-aliasing
+ 
+ PROGRAMS = candump can-sniffer
+ 
+
+Modified: trunk/can-utils/can-sniffer.c
+===================================================================
+--- trunk/can-utils/can-sniffer.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/can-utils/can-sniffer.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -62,9 +62,11 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/bcm.h&gt;
++
+ #include &quot;terminal.h&quot;
+ 
+ #define U64_DATA(p) (*(unsigned long long*)(p)-&gt;data)
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/can-utils/candump.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -60,9 +60,11 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;raw.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
++
+ #include &quot;terminal.h&quot;
+ 
+ #define USE_RECVFROM /* use read() or recvfrom() syscall */
+@@ -87,7 +89,7 @@
+ 
+ extern int optind, opterr, optopt;
+ 
+-static int	running = 1;
++static volatile int running = 1;
+ 
+ void print_usage(char *prg)
+ {
+
+Modified: trunk/test/Makefile
+===================================================================
+--- trunk/test/Makefile	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/Makefile	2006-10-24 13:55:43 UTC (rev 86)
+@@ -40,7 +40,8 @@
+ #
+ #  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
+-CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.4/can -fno-strict-aliasing
++CFLAGS    = -O2 -Wall -Wno-parentheses -I../kernel/2.6/include \
++	    -fno-strict-aliasing
+ 
+ PROGRAMS = 	tst-raw		\
+ 		tst-raw-filter	\
+
+Modified: trunk/test/canecho.c
+===================================================================
+--- trunk/test/canecho.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/canecho.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -57,8 +57,9 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
++#include &lt;linux/can.h&gt;
+ 
+ extern int optind, opterr, optopt;
+ 
+
+Modified: trunk/test/tst-bcm-cycle.c
+===================================================================
+--- trunk/test/tst-bcm-cycle.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-bcm-cycle.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -55,9 +55,10 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/bcm.h&gt;
+ 
+ #define U64_DATA(p) (*(unsigned long long*)(p)-&gt;data)
+ 
+
+Modified: trunk/test/tst-bcm-filter.c
+===================================================================
+--- trunk/test/tst-bcm-filter.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-bcm-filter.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -55,9 +55,10 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/bcm.h&gt;
+ 
+ #define U64_DATA(p) (*(unsigned long long*)(p)-&gt;data)
+ 
+
+Modified: trunk/test/tst-bcm-rtr.c
+===================================================================
+--- trunk/test/tst-bcm-rtr.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-bcm-rtr.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -55,9 +55,10 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/bcm.h&gt;
+ 
+ #define RTR_SETUP
+ 
+
+Modified: trunk/test/tst-bcm-single.c
+===================================================================
+--- trunk/test/tst-bcm-single.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-bcm-single.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -55,9 +55,10 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/bcm.h&gt;
+ 
+ int main(int argc, char **argv)
+ {
+
+Modified: trunk/test/tst-bcm-throttle.c
+===================================================================
+--- trunk/test/tst-bcm-throttle.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-bcm-throttle.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -55,9 +55,10 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/bcm.h&gt;
+ 
+ #define U64_DATA(p) (*(unsigned long long*)(p)-&gt;data)
+ 
+
+Modified: trunk/test/tst-bcm-tx_read.c
+===================================================================
+--- trunk/test/tst-bcm-tx_read.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-bcm-tx_read.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -55,9 +55,10 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;bcm.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/bcm.h&gt;
+ 
+ #define U64_DATA(p) (*(unsigned long long*)(p)-&gt;data)
+ 
+
+Modified: trunk/test/tst-err.c
+===================================================================
+--- trunk/test/tst-err.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-err.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -54,10 +54,11 @@
+ #include &lt;sys/types.h&gt;
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;raw.h&quot;
+-#include &quot;can_error.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
++#include &lt;linux/can/error.h&gt;
+ 
+ int main(int argc, char **argv)
+ {
+
+Modified: trunk/test/tst-proc.c
+===================================================================
+--- trunk/test/tst-proc.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-proc.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -55,9 +55,10 @@
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
+ #include &lt;sys/uio.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;raw.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
+ 
+ #define MAX_RAW 800
+ 
+
+Modified: trunk/test/tst-raw-filter.c
+===================================================================
+--- trunk/test/tst-raw-filter.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-raw-filter.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -54,9 +54,10 @@
+ #include &lt;sys/types.h&gt;
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;raw.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
+ 
+ #define MAXFILTERS 32
+ 
+
+Modified: trunk/test/tst-raw-sendto.c
+===================================================================
+--- trunk/test/tst-raw-sendto.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-raw-sendto.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -54,9 +54,10 @@
+ #include &lt;sys/types.h&gt;
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;raw.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
+ 
+ int main(int argc, char **argv)
+ {
+
+Modified: trunk/test/tst-raw.c
+===================================================================
+--- trunk/test/tst-raw.c	2006-10-24 13:49:12 UTC (rev 85)
++++ trunk/test/tst-raw.c	2006-10-24 13:55:43 UTC (rev 86)
+@@ -54,9 +54,10 @@
+ #include &lt;sys/types.h&gt;
+ #include &lt;sys/socket.h&gt;
+ #include &lt;sys/ioctl.h&gt;
++#include &lt;net/if.h&gt;
+ 
+-#include &quot;af_can.h&quot;
+-#include &quot;raw.h&quot;
++#include &lt;linux/can.h&gt;
++#include &lt;linux/can/raw.h&gt;
+ 
+ int main(int argc, char **argv)
+ {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000067.html">r85 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	include/linux include/linux/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000068.html">r87 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/sja1000	net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#66">[ date ]</a>
+              <a href="thread.html#66">[ thread ]</a>
+              <a href="subject.html#66">[ subject ]</a>
+              <a href="author.html#66">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

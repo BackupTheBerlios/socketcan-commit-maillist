@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r463 - trunk/kernel/2.6/drivers/net/can/ccan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r463%20-%20trunk/kernel/2.6/drivers/net/can/ccan&In-Reply-To=%3C200709161607.l8GG79H3012157%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000444.html">
+   <LINK REL="Next"  HREF="000446.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r463 - trunk/kernel/2.6/drivers/net/can/ccan</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r463%20-%20trunk/kernel/2.6/drivers/net/can/ccan&In-Reply-To=%3C200709161607.l8GG79H3012157%40sheep.berlios.de%3E"
+       TITLE="r463 - trunk/kernel/2.6/drivers/net/can/ccan">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 16 18:07:09 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000444.html">r462 - in trunk/kernel/2.6/drivers/net/can: . i82527 mscan sja1000
+</A></li>
+        <LI>Next message: <A HREF="000446.html">r464 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#445">[ date ]</a>
+              <a href="thread.html#445">[ thread ]</a>
+              <a href="subject.html#445">[ subject ]</a>
+              <a href="author.html#445">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-16 18:07:08 +0200 (Sun, 16 Sep 2007)
+New Revision: 463
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c
+Log:
+Removed SET_MODULE_OWNER() macros for Kernel 2.6.24 and newer.
+
+Reference:
+[NET]: Nuke SET_MODULE_OWNER macro.
+
+It's been a useless no-op for long enough in 2.6 so I figured it's time to
+remove it.  The number of people that could object because they're
+maintaining unified 2.4 and 2.6 drivers is probably rather small.
+
+[ Handled drivers added by netdev tree and some missed IRDA cases... -DaveM ]
+
+<A HREF="http://git.kernel.org/?p=linux/kernel/git/davem/net-2.6.24.git;a=commit;h=d19ef7a45e8f177e27fe8b085a68f0f3d68c7a05">http://git.kernel.org/?p=linux/kernel/git/davem/net-2.6.24.git;a=commit;h=d19ef7a45e8f177e27fe8b085a68f0f3d68c7a05</A>
+
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c	2007-09-16 16:03:01 UTC (rev 462)
++++ trunk/kernel/2.6/drivers/net/can/ccan/h7202_can.c	2007-09-16 16:07:08 UTC (rev 463)
+@@ -89,7 +89,9 @@
+ 	}
+ 
+ 	SET_NETDEV_DEV(dev, &amp;pdev-&gt;dev);
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,24)
+ 	SET_MODULE_OWNER(THIS_MODULE);
++#endif
+ 
+ 	dev-&gt;base_addr = (unsigned long)ioremap_nocache(mem-&gt;start, mem_size);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000444.html">r462 - in trunk/kernel/2.6/drivers/net/can: . i82527 mscan sja1000
+</A></li>
+	<LI>Next message: <A HREF="000446.html">r464 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#445">[ date ]</a>
+              <a href="thread.html#445">[ thread ]</a>
+              <a href="subject.html#445">[ subject ]</a>
+              <a href="author.html#445">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

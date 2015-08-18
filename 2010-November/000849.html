@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1217 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1217%20-%20trunk/can-utils&In-Reply-To=%3C20101129191112.2D171480034%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000848.html">
+   <LINK REL="Next"  HREF="000850.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1217 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1217%20-%20trunk/can-utils&In-Reply-To=%3C20101129191112.2D171480034%40sheep.berlios.de%3E"
+       TITLE="r1217 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 29 20:11:11 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000848.html">r1216 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000850.html">r1218 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#849">[ date ]</a>
+              <a href="thread.html#849">[ thread ]</a>
+              <a href="subject.html#849">[ subject ]</a>
+              <a href="author.html#849">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-11-29 20:11:11 +0100 (Mon, 29 Nov 2010)
+New Revision: 1217
+
+Modified:
+   trunk/can-utils/candump.c
+Log:
+candump: Added '-u &lt;usecs&gt;' commandline option to delay bridged CAN frames by
+usecs microseconds.
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2010-11-29 18:58:12 UTC (rev 1216)
++++ trunk/can-utils/candump.c	2010-11-29 19:11:11 UTC (rev 1217)
+@@ -115,6 +115,7 @@
+ 	fprintf(stderr, &quot;         -s &lt;level&gt;  (silent mode - %d: off (default) %d: animation %d: silent)\n&quot;, SILENT_OFF, SILENT_ANI, SILENT_ON);
+ 	fprintf(stderr, &quot;         -b &lt;can&gt;    (bridge mode - send received frames to &lt;can&gt;)\n&quot;);
+ 	fprintf(stderr, &quot;         -B &lt;can&gt;    (bridge mode - like '-b' with disabled loopback)\n&quot;);
++	fprintf(stderr, &quot;         -u &lt;usecs&gt;  (delay bridge forwarding by &lt;usecs&gt; microseconds)\n&quot;);
+ 	fprintf(stderr, &quot;         -l          (log CAN-frames into file. Sets '-s %d' by default)\n&quot;, SILENT_ON);
+ 	fprintf(stderr, &quot;         -L          (use log file format on stdout)\n&quot;);
+ 	fprintf(stderr, &quot;         -n &lt;count&gt;  (terminate after receiption of &lt;count&gt; CAN frames)\n&quot;);
+@@ -200,6 +201,7 @@
+ 	fd_set rdfs;
+ 	int s[MAXSOCK];
+ 	int bridge = 0;
++	useconds_t bridge_delay = 0;
+ 	unsigned char timestamp = 0;
+ 	unsigned char dropmonitor = 0;
+ 	unsigned char silent = SILENT_INI;
+@@ -233,7 +235,7 @@
+ 	last_tv.tv_sec  = 0;
+ 	last_tv.tv_usec = 0;
+ 
+-	while ((opt = getopt(argc, argv, &quot;t:ciaSs:b:B:ldLn:r:h?&quot;)) != -1) {
++	while ((opt = getopt(argc, argv, &quot;t:ciaSs:b:B:u:ldLn:r:h?&quot;)) != -1) {
+ 		switch (opt) {
+ 		case 't':
+ 			timestamp = optarg[0];
+@@ -308,6 +310,10 @@
+ 			}
+ 			break;
+ 	    
++		case 'u':
++			bridge_delay = (useconds_t)strtoul(optarg, (char **)NULL, 10);
++			break;
++
+ 		case 'l':
+ 			log = 1;
+ 			break;
+@@ -609,6 +615,9 @@
+ 					running = 0;
+ 
+ 				if (bridge) {
++					if (bridge_delay)
++						usleep(bridge_delay);
++
+ 					nbytes = write(bridge, &amp;frame, sizeof(struct can_frame));
+ 					if (nbytes &lt; 0) {
+ 						perror(&quot;bridge write&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000848.html">r1216 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000850.html">r1218 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#849">[ date ]</a>
+              <a href="thread.html#849">[ thread ]</a>
+              <a href="subject.html#849">[ subject ]</a>
+              <a href="author.html#849">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

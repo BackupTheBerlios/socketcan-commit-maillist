@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r41 - trunk/kernel/2.6/drivers/net/can/mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r41%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200606261141.k5QBfEAH014265%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000017.html">
+   <LINK REL="Next"  HREF="000019.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r41 - trunk/kernel/2.6/drivers/net/can/mscan</H1>
+    <B>thuermann at berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r41%20-%20trunk/kernel/2.6/drivers/net/can/mscan&In-Reply-To=%3C200606261141.k5QBfEAH014265%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r41 - trunk/kernel/2.6/drivers/net/can/mscan">thuermann at berlios.de
+       </A><BR>
+    <I>Mon Jun 26 13:41:14 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000017.html">[Socketcan-commit] r40 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000019.html">[Socketcan-commit] r42 - in branches: . ut
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-06-26 13:40:50 +0200 (Mon, 26 Jun 2006)
+New Revision: 41
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+   trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.h
+Log:
+Fixed $Id$ keywords in mscan source files.
+  - This caused annoying diffs and log when creating branches or tags.
+Added $Id$ to Makefile.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2006-06-23 07:17:39 UTC (rev 40)
++++ trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2006-06-26 11:40:50 UTC (rev 41)
+@@ -1,7 +1,9 @@
+ #
+-# Makefile for the MSCAN based device drivers.
++#  $Id$
+ #
++#  Makefile for the MSCAN based device drivers.
+ #
++#
+ 
+ obj-$(CONFIG_CAN_MSCAN)		+= mscan.o
+ obj-$(CONFIG_CAN_MPC52XX)	+= mpc52xx_can.o
+
+
+Property changes on: trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2006-06-23 07:17:39 UTC (rev 40)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2006-06-26 11:40:50 UTC (rev 41)
+@@ -1,5 +1,5 @@
+ /*
+- * $Id:$
++ * $Id$
+  *
+  * DESCRIPTION:
+  *  CAN bus driver for the Freescale MPC52xx embedded CPU.
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-06-23 07:17:39 UTC (rev 40)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-06-26 11:40:50 UTC (rev 41)
+@@ -1,5 +1,5 @@
+ /*
+- * $Id:$
++ * $Id$
+  *
+  * mscan.c
+  *
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/mscan.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.h	2006-06-23 07:17:39 UTC (rev 40)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.h	2006-06-26 11:40:50 UTC (rev 41)
+@@ -1,5 +1,5 @@
+ /*
+- * $Id:$
++ * $Id$
+  *
+  * DESCRIPTION:
+  *  Definitions of consts/structs to drive the Freescale MSCAN.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000017.html">[Socketcan-commit] r40 - in trunk/kernel: 2.4/can 2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000019.html">[Socketcan-commit] r42 - in branches: . ut
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

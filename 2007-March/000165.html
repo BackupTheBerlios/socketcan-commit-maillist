@@ -1,0 +1,533 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r182 - trunk/patches/linux-2.6.21-rc3
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-March/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r182%20-%20trunk/patches/linux-2.6.21-rc3&In-Reply-To=%3C200703091635.l29GZCTD025535%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000164.html">
+   <LINK REL="Next"  HREF="000166.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r182 - trunk/patches/linux-2.6.21-rc3</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r182%20-%20trunk/patches/linux-2.6.21-rc3&In-Reply-To=%3C200703091635.l29GZCTD025535%40sheep.berlios.de%3E"
+       TITLE="r182 - trunk/patches/linux-2.6.21-rc3">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar  9 17:35:12 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000164.html">r180 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000166.html">r183 - trunk/kernel/2.4/drivers/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#165">[ date ]</a>
+              <a href="thread.html#165">[ thread ]</a>
+              <a href="subject.html#165">[ subject ]</a>
+              <a href="author.html#165">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-03-09 17:35:09 +0100 (Fri, 09 Mar 2007)
+New Revision: 182
+
+Modified:
+   trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_2_New_Source.diff
+   trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_X_Complete.diff
+Log:
+Forgot to use kv to get rid of the #ifdef LINUX_VERION_CODE stuff.
+Now it's fixed.
+
+
+Modified: trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_2_New_Source.diff
+===================================================================
+--- trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_2_New_Source.diff	2007-03-09 15:16:00 UTC (rev 181)
++++ trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_2_New_Source.diff	2007-03-09 16:35:09 UTC (rev 182)
+@@ -404,8 +404,8 @@
+ +#endif /* CAN_BCM_H */
+ diff -N -u -r b/include/linux/can/core.h c/include/linux/can/core.h
+ --- b/include/linux/can/core.h	1970-01-01 01:00:00.000000000 +0100
+-+++ c/include/linux/can/core.h	2007-03-08 12:03:06.000000000 +0100
+-@@ -0,0 +1,62 @@
+++++ c/include/linux/can/core.h	2007-03-09 17:24:11.000000000 +0100
++@@ -0,0 +1,56 @@
+ +/*
+ + * linux/can/core.h
+ + *
+@@ -438,13 +438,7 @@
+ +	int              protocol;
+ +	int              capability;
+ +	struct proto_ops *ops;
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	struct proto     *prot;
+-+#else
+-+	struct module    *owner;
+-+	int              (*init)(struct sock *sk);
+-+	size_t           obj_size;
+-+#endif
+ +};
+ +
+ +/* function prototypes for the CAN networklayer core (af_can.c) */
+@@ -729,8 +723,8 @@
+ +#endif /* CAN_H */
+ diff -N -u -r b/net/can/af_can.c c/net/can/af_can.c
+ --- b/net/can/af_can.c	1970-01-01 01:00:00.000000000 +0100
+-+++ c/net/can/af_can.c	2007-03-09 13:47:12.000000000 +0100
+-@@ -0,0 +1,973 @@
+++++ c/net/can/af_can.c	2007-03-09 17:25:16.000000000 +0100
++@@ -0,0 +1,934 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+ + *            (used by different CAN protocol modules)
+@@ -836,13 +830,8 @@
+ +static int can_notifier(struct notifier_block *nb,
+ +			unsigned long msg, void *data);
+ +static int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg);
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+ +static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+ +		   struct packet_type *pt, struct net_device *orig_dev);
+-+#else
+-+static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+-+		   struct packet_type *pt);
+-+#endif
+ +static int can_rcv_filter(struct dev_rcv_lists *d, struct sk_buff *skb);
+ +static struct dev_rcv_lists *find_dev_rcv_lists(struct net_device *dev);
+ +static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
+@@ -866,11 +855,7 @@
+ +static struct dev_rcv_lists rx_alldev_list;
+ +static spinlock_t rcv_lists_lock = SPIN_LOCK_UNLOCKED;
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+ +static struct kmem_cache *rcv_cache __read_mostly;
+-+#else
+-+static kmem_cache_t *rcv_cache;
+-+#endif
+ +
+ +static struct packet_type can_packet = {
+ +	.type = __constant_htons(ETH_P_CAN),
+@@ -985,11 +970,9 @@
+ +		return;
+ +	}
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	if (proto_register(cp-&gt;prot, 0) != 0) {
+ +		return;
+ +	}
+-+#endif
+ +	proto_tab[proto] = cp;
+ +
+ +	/* use generic ioctl function if the module doesn't bring its own */
+@@ -1004,9 +987,7 @@
+ +		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
+ +		return;
+ +	}
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	proto_unregister(cp-&gt;prot);
+-+#endif
+ +	proto_tab[proto] = NULL;
+ +}
+ +
+@@ -1093,34 +1074,17 @@
+ +
+ +	sock-&gt;ops = cp-&gt;ops;
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	sk = sk_alloc(PF_CAN, GFP_KERNEL, cp-&gt;prot, 1);
+ +	if (!sk)
+ +		goto oom;
+-+#else
+-+	sk = sk_alloc(PF_CAN, GFP_KERNEL, 1, 0);
+-+	if (!sk)
+-+		goto oom;
+-+	if (cp-&gt;obj_size &amp;&amp;
+-+	    !(sk-&gt;sk_protinfo = kmalloc(cp-&gt;obj_size, GFP_KERNEL))) {
+-+		sk_free(sk);
+-+		goto oom;
+-+	}
+-+	sk_set_owner(sk, proto_tab[protocol]-&gt;owner);
+-+#endif
+ +	sock_init_data(sock, sk);
+ +	sk-&gt;sk_destruct = can_sock_destruct;
+ +
+ +	DBG(&quot;created sock: %p\n&quot;, sk);
+ +
+ +	ret = 0;
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	if (sk-&gt;sk_prot-&gt;init)
+ +		ret = sk-&gt;sk_prot-&gt;init(sk);
+-+#else
+-+	if (cp-&gt;init)
+-+		ret = cp-&gt;init(sk);
+-+#endif
+ +	if (ret) {
+ +		/* we must release sk */
+ +		sock_orphan(sk);
+@@ -1220,11 +1184,7 @@
+ +	case SIOCGSTAMP:
+ +		return sock_get_timestamp(sk, (struct timeval __user *)arg);
+ +	default:
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,16)
+ +		return -ENOIOCTLCMD;
+-+#else
+-+		return dev_ioctl(cmd, (void __user *)arg);
+-+#endif
+ +	}
+ +	return 0;
+ +}
+@@ -1405,13 +1365,8 @@
+ +	return ret;
+ +}
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+ +static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+ +		   struct packet_type *pt, struct net_device *orig_dev)
+-+#else
+-+static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+-+		   struct packet_type *pt)
+-+#endif
+ +{
+ +	struct dev_rcv_lists *d;
+ +	int matches;
+@@ -1829,8 +1784,8 @@
+ +#endif /* AF_CAN_H */
+ diff -N -u -r b/net/can/bcm.c c/net/can/bcm.c
+ --- b/net/can/bcm.c	1970-01-01 01:00:00.000000000 +0100
+-+++ c/net/can/bcm.c	2007-03-09 13:47:12.000000000 +0100
+-@@ -0,0 +1,1614 @@
+++++ c/net/can/bcm.c	2007-03-09 17:26:51.000000000 +0100
++@@ -0,0 +1,1600 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+ + *
+@@ -2027,7 +1982,6 @@
+ +#define BCM_CAP CAP_NET_RAW
+ +#endif
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +struct bcm_sock {
+ +	struct sock    sk;
+ +	struct bcm_opt opt;
+@@ -2049,20 +2003,7 @@
+ +	.ops        = &amp;bcm_ops,
+ +	.prot       = &amp;bcm_proto,
+ +};
+-+#else
+-+#define bcm_sk(sk) ((struct bcm_opt *)(sk)-&gt;sk_protinfo)
+ +
+-+static struct can_proto bcm_can_proto = {
+-+	.type       = SOCK_DGRAM,
+-+	.protocol   = CAN_BCM,
+-+	.capability = BCM_CAP,
+-+	.ops        = &amp;bcm_ops,
+-+	.owner      = THIS_MODULE,
+-+	.obj_size   = sizeof(struct bcm_opt),
+-+	.init       = bcm_init,
+-+};
+-+#endif
+-+
+ +#define CFSIZ sizeof(struct can_frame)
+ +#define OPSIZ sizeof(struct bcm_op)
+ +#define MHSIZ sizeof(struct bcm_msg_head)
+@@ -4205,8 +4146,8 @@
+ +}
+ diff -N -u -r b/net/can/raw.c c/net/can/raw.c
+ --- b/net/can/raw.c	1970-01-01 01:00:00.000000000 +0100
+-+++ c/net/can/raw.c	2007-03-09 13:47:12.000000000 +0100
+-@@ -0,0 +1,738 @@
+++++ c/net/can/raw.c	2007-03-09 17:27:37.000000000 +0100
++@@ -0,0 +1,724 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+ + *
+@@ -4360,7 +4301,6 @@
+ +
+ +#undef CAN_RAW_SUPPORT_REBIND /* use bind on already bound socket */
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +struct raw_sock {
+ +	struct sock    sk;
+ +	struct raw_opt opt;
+@@ -4382,20 +4322,7 @@
+ +	.ops        = &amp;raw_ops,
+ +	.prot       = &amp;raw_proto,
+ +};
+-+#else
+-+#define raw_sk(sk) ((struct raw_opt *)(sk)-&gt;sk_protinfo)
+ +
+-+static struct can_proto raw_can_proto = {
+-+	.type       = SOCK_RAW,
+-+	.protocol   = CAN_RAW,
+-+	.capability = RAW_CAP,
+-+	.ops        = &amp;raw_ops,
+-+	.owner      = THIS_MODULE,
+-+	.obj_size   = sizeof(struct raw_opt),
+-+	.init       = raw_init,
+-+};
+-+#endif
+-+
+ +#define MASK_ALL 0
+ +
+ +static __init int raw_module_init(void)
+
+Modified: trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_X_Complete.diff
+===================================================================
+--- trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_X_Complete.diff	2007-03-09 15:16:00 UTC (rev 181)
++++ trunk/patches/linux-2.6.21-rc3/can-networking-R180-2.6.21-rc3_X_Complete.diff	2007-03-09 16:35:09 UTC (rev 182)
+@@ -448,8 +448,8 @@
+ +#endif /* CAN_BCM_H */
+ diff -N -u -r a/include/linux/can/core.h c/include/linux/can/core.h
+ --- a/include/linux/can/core.h	1970-01-01 01:00:00.000000000 +0100
+-+++ c/include/linux/can/core.h	2007-03-08 12:03:06.000000000 +0100
+-@@ -0,0 +1,62 @@
+++++ c/include/linux/can/core.h	2007-03-09 17:24:11.000000000 +0100
++@@ -0,0 +1,56 @@
+ +/*
+ + * linux/can/core.h
+ + *
+@@ -482,13 +482,7 @@
+ +	int              protocol;
+ +	int              capability;
+ +	struct proto_ops *ops;
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	struct proto     *prot;
+-+#else
+-+	struct module    *owner;
+-+	int              (*init)(struct sock *sk);
+-+	size_t           obj_size;
+-+#endif
+ +};
+ +
+ +/* function prototypes for the CAN networklayer core (af_can.c) */
+@@ -853,8 +847,8 @@
+  M:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">muli at il.ibm.com</A>
+ diff -N -u -r a/net/can/af_can.c c/net/can/af_can.c
+ --- a/net/can/af_can.c	1970-01-01 01:00:00.000000000 +0100
+-+++ c/net/can/af_can.c	2007-03-09 13:47:12.000000000 +0100
+-@@ -0,0 +1,973 @@
+++++ c/net/can/af_can.c	2007-03-09 17:25:16.000000000 +0100
++@@ -0,0 +1,934 @@
+ +/*
+ + * af_can.c - Protocol family CAN core module
+ + *            (used by different CAN protocol modules)
+@@ -960,13 +954,8 @@
+ +static int can_notifier(struct notifier_block *nb,
+ +			unsigned long msg, void *data);
+ +static int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg);
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+ +static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+ +		   struct packet_type *pt, struct net_device *orig_dev);
+-+#else
+-+static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+-+		   struct packet_type *pt);
+-+#endif
+ +static int can_rcv_filter(struct dev_rcv_lists *d, struct sk_buff *skb);
+ +static struct dev_rcv_lists *find_dev_rcv_lists(struct net_device *dev);
+ +static struct hlist_head *find_rcv_list(canid_t *can_id, canid_t *mask,
+@@ -990,11 +979,7 @@
+ +static struct dev_rcv_lists rx_alldev_list;
+ +static spinlock_t rcv_lists_lock = SPIN_LOCK_UNLOCKED;
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,20)
+ +static struct kmem_cache *rcv_cache __read_mostly;
+-+#else
+-+static kmem_cache_t *rcv_cache;
+-+#endif
+ +
+ +static struct packet_type can_packet = {
+ +	.type = __constant_htons(ETH_P_CAN),
+@@ -1109,11 +1094,9 @@
+ +		return;
+ +	}
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	if (proto_register(cp-&gt;prot, 0) != 0) {
+ +		return;
+ +	}
+-+#endif
+ +	proto_tab[proto] = cp;
+ +
+ +	/* use generic ioctl function if the module doesn't bring its own */
+@@ -1128,9 +1111,7 @@
+ +		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
+ +		return;
+ +	}
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	proto_unregister(cp-&gt;prot);
+-+#endif
+ +	proto_tab[proto] = NULL;
+ +}
+ +
+@@ -1217,34 +1198,17 @@
+ +
+ +	sock-&gt;ops = cp-&gt;ops;
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	sk = sk_alloc(PF_CAN, GFP_KERNEL, cp-&gt;prot, 1);
+ +	if (!sk)
+ +		goto oom;
+-+#else
+-+	sk = sk_alloc(PF_CAN, GFP_KERNEL, 1, 0);
+-+	if (!sk)
+-+		goto oom;
+-+	if (cp-&gt;obj_size &amp;&amp;
+-+	    !(sk-&gt;sk_protinfo = kmalloc(cp-&gt;obj_size, GFP_KERNEL))) {
+-+		sk_free(sk);
+-+		goto oom;
+-+	}
+-+	sk_set_owner(sk, proto_tab[protocol]-&gt;owner);
+-+#endif
+ +	sock_init_data(sock, sk);
+ +	sk-&gt;sk_destruct = can_sock_destruct;
+ +
+ +	DBG(&quot;created sock: %p\n&quot;, sk);
+ +
+ +	ret = 0;
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +	if (sk-&gt;sk_prot-&gt;init)
+ +		ret = sk-&gt;sk_prot-&gt;init(sk);
+-+#else
+-+	if (cp-&gt;init)
+-+		ret = cp-&gt;init(sk);
+-+#endif
+ +	if (ret) {
+ +		/* we must release sk */
+ +		sock_orphan(sk);
+@@ -1344,11 +1308,7 @@
+ +	case SIOCGSTAMP:
+ +		return sock_get_timestamp(sk, (struct timeval __user *)arg);
+ +	default:
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,16)
+ +		return -ENOIOCTLCMD;
+-+#else
+-+		return dev_ioctl(cmd, (void __user *)arg);
+-+#endif
+ +	}
+ +	return 0;
+ +}
+@@ -1529,13 +1489,8 @@
+ +	return ret;
+ +}
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,14)
+ +static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+ +		   struct packet_type *pt, struct net_device *orig_dev)
+-+#else
+-+static int can_rcv(struct sk_buff *skb, struct net_device *dev,
+-+		   struct packet_type *pt)
+-+#endif
+ +{
+ +	struct dev_rcv_lists *d;
+ +	int matches;
+@@ -1953,8 +1908,8 @@
+ +#endif /* AF_CAN_H */
+ diff -N -u -r a/net/can/bcm.c c/net/can/bcm.c
+ --- a/net/can/bcm.c	1970-01-01 01:00:00.000000000 +0100
+-+++ c/net/can/bcm.c	2007-03-09 13:47:12.000000000 +0100
+-@@ -0,0 +1,1614 @@
+++++ c/net/can/bcm.c	2007-03-09 17:26:51.000000000 +0100
++@@ -0,0 +1,1600 @@
+ +/*
+ + * bcm.c - Broadcast Manager to filter/send (cyclic) CAN content
+ + *
+@@ -2151,7 +2106,6 @@
+ +#define BCM_CAP CAP_NET_RAW
+ +#endif
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +struct bcm_sock {
+ +	struct sock    sk;
+ +	struct bcm_opt opt;
+@@ -2173,20 +2127,7 @@
+ +	.ops        = &amp;bcm_ops,
+ +	.prot       = &amp;bcm_proto,
+ +};
+-+#else
+-+#define bcm_sk(sk) ((struct bcm_opt *)(sk)-&gt;sk_protinfo)
+ +
+-+static struct can_proto bcm_can_proto = {
+-+	.type       = SOCK_DGRAM,
+-+	.protocol   = CAN_BCM,
+-+	.capability = BCM_CAP,
+-+	.ops        = &amp;bcm_ops,
+-+	.owner      = THIS_MODULE,
+-+	.obj_size   = sizeof(struct bcm_opt),
+-+	.init       = bcm_init,
+-+};
+-+#endif
+-+
+ +#define CFSIZ sizeof(struct can_frame)
+ +#define OPSIZ sizeof(struct bcm_op)
+ +#define MHSIZ sizeof(struct bcm_msg_head)
+@@ -4329,8 +4270,8 @@
+ +}
+ diff -N -u -r a/net/can/raw.c c/net/can/raw.c
+ --- a/net/can/raw.c	1970-01-01 01:00:00.000000000 +0100
+-+++ c/net/can/raw.c	2007-03-09 13:47:12.000000000 +0100
+-@@ -0,0 +1,738 @@
+++++ c/net/can/raw.c	2007-03-09 17:27:37.000000000 +0100
++@@ -0,0 +1,724 @@
+ +/*
+ + * raw.c - Raw sockets for protocol family CAN
+ + *
+@@ -4484,7 +4425,6 @@
+ +
+ +#undef CAN_RAW_SUPPORT_REBIND /* use bind on already bound socket */
+ +
+-+#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ +struct raw_sock {
+ +	struct sock    sk;
+ +	struct raw_opt opt;
+@@ -4506,20 +4446,7 @@
+ +	.ops        = &amp;raw_ops,
+ +	.prot       = &amp;raw_proto,
+ +};
+-+#else
+-+#define raw_sk(sk) ((struct raw_opt *)(sk)-&gt;sk_protinfo)
+ +
+-+static struct can_proto raw_can_proto = {
+-+	.type       = SOCK_RAW,
+-+	.protocol   = CAN_RAW,
+-+	.capability = RAW_CAP,
+-+	.ops        = &amp;raw_ops,
+-+	.owner      = THIS_MODULE,
+-+	.obj_size   = sizeof(struct raw_opt),
+-+	.init       = raw_init,
+-+};
+-+#endif
+-+
+ +#define MASK_ALL 0
+ +
+ +static __init int raw_module_init(void)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000164.html">r180 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000166.html">r183 - trunk/kernel/2.4/drivers/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#165">[ date ]</a>
+              <a href="thread.html#165">[ thread ]</a>
+              <a href="subject.html#165">[ subject ]</a>
+              <a href="author.html#165">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

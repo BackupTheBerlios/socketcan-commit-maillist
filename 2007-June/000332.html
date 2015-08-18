@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r349 - in branches/ha/locktest: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r349%20-%20in%20branches/ha/locktest%3A%20include/linux/can%20net/can&In-Reply-To=%3C200706130531.l5D5V0X7029482%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000331.html">
+   <LINK REL="Next"  HREF="000333.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r349 - in branches/ha/locktest: include/linux/can net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r349%20-%20in%20branches/ha/locktest%3A%20include/linux/can%20net/can&In-Reply-To=%3C200706130531.l5D5V0X7029482%40sheep.berlios.de%3E"
+       TITLE="r349 - in branches/ha/locktest: include/linux/can net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 13 07:31:00 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000331.html">r348 - branches/ha/locktest/net/can
+</A></li>
+        <LI>Next message: <A HREF="000333.html">r350 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#332">[ date ]</a>
+              <a href="thread.html#332">[ thread ]</a>
+              <a href="subject.html#332">[ subject ]</a>
+              <a href="author.html#332">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-06-13 07:30:59 +0200 (Wed, 13 Jun 2007)
+New Revision: 349
+
+Modified:
+   branches/ha/locktest/include/linux/can/core.h
+   branches/ha/locktest/net/can/af_can.c
+Log:
+Removed obsolete private notifier infrastructure in CAN core.
+
+
+Modified: branches/ha/locktest/include/linux/can/core.h
+===================================================================
+--- branches/ha/locktest/include/linux/can/core.h	2007-06-13 05:26:59 UTC (rev 348)
++++ branches/ha/locktest/include/linux/can/core.h	2007-06-13 05:30:59 UTC (rev 349)
+@@ -54,19 +54,6 @@
+ #endif
+ };
+ 
+-/**
+- * struct can_notif - CAN protocol notifier structure
+- * @list: list head/node struct
+- * @func: callback function for socket notification
+- * @sk:   pointer to notified sock
+- */
+-struct can_notif {
+-	struct list_head list;
+-	void (*func)(unsigned long msg, struct sock *sk,
+-		     struct net_device *dev);
+-	struct sock *sk;
+-};
+-
+ /* function prototypes for the CAN networklayer core (af_can.c) */
+ 
+ extern int can_proto_register(struct can_proto *cp);
+@@ -82,9 +69,6 @@
+ 			     void (*func)(struct sk_buff *, void *),
+ 			     void *data);
+ 
+-extern void can_register_notifier(struct can_notif *notifier);
+-extern int  can_unregister_notifier(struct can_notif *notifier);
+-
+ extern int can_send(struct sk_buff *skb, int loop);
+ 
+ #ifdef CONFIG_CAN_DEBUG_CORE
+
+Modified: branches/ha/locktest/net/can/af_can.c
+===================================================================
+--- branches/ha/locktest/net/can/af_can.c	2007-06-13 05:26:59 UTC (rev 348)
++++ branches/ha/locktest/net/can/af_can.c	2007-06-13 05:30:59 UTC (rev 349)
+@@ -89,9 +89,6 @@
+ MODULE_PARM_DESC(debug, &quot;debug print mask: 1:debug, 2:frames, 4:skbs&quot;);
+ #endif
+ 
+-static LIST_HEAD(notifier_list);
+-static DEFINE_RWLOCK(notifier_lock);
+-
+ HLIST_HEAD(rx_dev_list);
+ static struct dev_rcv_lists rx_alldev_list;
+ static DEFINE_SPINLOCK(rcv_lists_lock);
+@@ -864,57 +861,10 @@
+ }
+ EXPORT_SYMBOL(can_proto_unregister);
+ 
+-/**
+- * can_register_notifier - subscribe notifier for CAN device status changes
+- * @notifier: pointer to CAN netdevice notifier struct
+- *
+- * Description:
+- *  Invokes the callback function on a status change of network devices.
+- *
+- */
+-void can_register_notifier(struct can_notif *notifier)
+-{
+-	write_lock(&amp;notifier_lock);
+-	list_add(&amp;notifier-&gt;list, &amp;notifier_list);
+-	write_unlock(&amp;notifier_lock);
+-}
+-EXPORT_SYMBOL(can_register_notifier);
+-
+-/**
+- * can_unregister_notifier - unsubscribe notifier for CAN device status changes
+- * @notifier: pointer to CAN netdevice notifier struct
+- *
+- * Description:
+- *  Removes subscription entry depending on given (subscription) values.
+- *
+- * Return:
+- *  0 on success
+- *  -EINVAL on missing subscription entry
+- */
+-int can_unregister_notifier(struct can_notif *notifier)
+-{
+-	struct can_notif *n, *next;
+-	int ret = -EINVAL;
+-
+-	write_lock(&amp;notifier_lock);
+-	list_for_each_entry_safe(n, next, &amp;notifier_list, list) {
+-		if (n-&gt;func == notifier-&gt;func &amp;&amp; n-&gt;sk == notifier-&gt;sk) {
+-			list_del(&amp;n-&gt;list);
+-			ret = 0;
+-			break;
+-		}
+-	}
+-	write_unlock(&amp;notifier_lock);
+-
+-	return ret;
+-}
+-EXPORT_SYMBOL(can_unregister_notifier);
+-
+ static int can_notifier(struct notifier_block *nb,
+ 			unsigned long msg, void *data)
+ {
+ 	struct net_device *dev = (struct net_device *)data;
+-	struct can_notif *n;
+ 	struct dev_rcv_lists *d;
+ 
+ 	DBG(&quot;called for %s, msg = %lu\n&quot;, dev-&gt;name, msg);
+@@ -976,11 +926,6 @@
+ 		break;
+ 	}
+ 
+-	read_lock(&amp;notifier_lock);
+-	list_for_each_entry(n, &amp;notifier_list, list)
+-		n-&gt;func(msg, n-&gt;sk, dev);
+-	read_unlock(&amp;notifier_lock);
+-
+ 	return NOTIFY_DONE;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000331.html">r348 - branches/ha/locktest/net/can
+</A></li>
+	<LI>Next message: <A HREF="000333.html">r350 - branches/ha/locktest/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#332">[ date ]</a>
+              <a href="thread.html#332">[ thread ]</a>
+              <a href="subject.html#332">[ subject ]</a>
+              <a href="author.html#332">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

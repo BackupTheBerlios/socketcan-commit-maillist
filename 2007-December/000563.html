@@ -1,0 +1,464 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r581 - trunk/kernel/2.4/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r581%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082226.lB8MQjqr010378%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000562.html">
+   <LINK REL="Next"  HREF="000564.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r581 - trunk/kernel/2.4/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r581%20-%20trunk/kernel/2.4/can&In-Reply-To=%3C200712082226.lB8MQjqr010378%40sheep.berlios.de%3E"
+       TITLE="r581 - trunk/kernel/2.4/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  8 23:26:45 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000562.html">r580 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000564.html">r582 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#563">[ date ]</a>
+              <a href="thread.html#563">[ thread ]</a>
+              <a href="subject.html#563">[ subject ]</a>
+              <a href="author.html#563">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-12-08 23:26:44 +0100 (Sat, 08 Dec 2007)
+New Revision: 581
+
+Modified:
+   trunk/kernel/2.4/can/af_can.c
+   trunk/kernel/2.4/can/af_can.h
+   trunk/kernel/2.4/can/proc.c
+Log:
+Eliminate code duplication.
+
+
+Modified: trunk/kernel/2.4/can/af_can.c
+===================================================================
+--- trunk/kernel/2.4/can/af_can.c	2007-12-08 22:26:17 UTC (rev 580)
++++ trunk/kernel/2.4/can/af_can.c	2007-12-08 22:26:44 UTC (rev 581)
+@@ -259,7 +259,7 @@
+ 	if (*mask &amp; CAN_ERR_FLAG) {
+ 		/* clear CAN_ERR_FLAG in list entry */
+ 		*mask &amp;= CAN_ERR_MASK;
+-		return &amp;d-&gt;rx_err;
++		return &amp;d-&gt;rx[RX_ERR];
+ 	}
+ 
+ 	/* ensure valid values in can_mask */
+@@ -273,24 +273,24 @@
+ 
+ 	/* inverse can_id/can_mask filter */
+ 	if (inv)
+-		return &amp;d-&gt;rx_inv;
++		return &amp;d-&gt;rx[RX_INV];
+ 
+ 	/* mask == 0 =&gt; no condition testing at receive time */
+ 	if (!(*mask))
+-		return &amp;d-&gt;rx_all;
++		return &amp;d-&gt;rx[RX_ALL];
+ 
+ 	/* use extra filterset for the subscription of exactly *ONE* can_id */
+ 	if (*can_id &amp; CAN_EFF_FLAG) {
+ 		if (*mask == (CAN_EFF_MASK | CAN_EFF_FLAG))
+ 			/* RFC: a use-case for hash-tables in the future? */
+-			return &amp;d-&gt;rx_eff;
++			return &amp;d-&gt;rx[RX_EFF];
+ 	} else {
+ 		if (*mask == CAN_SFF_MASK)
+ 			return &amp;d-&gt;rx_sff[*can_id];
+ 	}
+ 
+ 	/* default: filter via can_id/can_mask */
+-	return &amp;d-&gt;rx_fil;
++	return &amp;d-&gt;rx[RX_FIL];
+ }
+ 
+ /**
+@@ -459,7 +459,7 @@
+ 
+ 	if (can_id &amp; CAN_ERR_FLAG) {
+ 		/* check for error frame entries only */
+-		for (r = d-&gt;rx_err; r; r = r-&gt;next) {
++		for (r = d-&gt;rx[RX_ERR]; r; r = r-&gt;next) {
+ 			if (can_id &amp; r-&gt;mask) {
+ 				deliver(skb, r);
+ 				matches++;
+@@ -469,13 +469,13 @@
+ 	}
+ 
+ 	/* check for unfiltered entries */
+-	for (r = d-&gt;rx_all; r; r = r-&gt;next) {
++	for (r = d-&gt;rx[RX_ALL]; r; r = r-&gt;next) {
+ 		deliver(skb, r);
+ 		matches++;
+ 	}
+ 
+ 	/* check for can_id/mask entries */
+-	for (r = d-&gt;rx_fil; r; r = r-&gt;next) {
++	for (r = d-&gt;rx[RX_FIL]; r; r = r-&gt;next) {
+ 		if ((can_id &amp; r-&gt;mask) == r-&gt;can_id) {
+ 			deliver(skb, r);
+ 			matches++;
+@@ -483,7 +483,7 @@
+ 	}
+ 
+ 	/* check for inverted can_id/mask entries */
+-	for (r = d-&gt;rx_inv; r; r = r-&gt;next) {
++	for (r = d-&gt;rx[RX_INV]; r; r = r-&gt;next) {
+ 		if ((can_id &amp; r-&gt;mask) != r-&gt;can_id) {
+ 			deliver(skb, r);
+ 			matches++;
+@@ -492,7 +492,7 @@
+ 
+ 	/* check CAN_ID specific entries */
+ 	if (can_id &amp; CAN_EFF_FLAG) {
+-		for (r = d-&gt;rx_eff; r; r = r-&gt;next) {
++		for (r = d-&gt;rx[RX_EFF]; r; r = r-&gt;next) {
+ 			if (r-&gt;can_id == can_id) {
+ 				deliver(skb, r);
+ 				matches++;
+
+Modified: trunk/kernel/2.4/can/af_can.h
+===================================================================
+--- trunk/kernel/2.4/can/af_can.h	2007-12-08 22:26:17 UTC (rev 580)
++++ trunk/kernel/2.4/can/af_can.h	2007-12-08 22:26:44 UTC (rev 581)
+@@ -64,16 +64,14 @@
+ 	char *ident;
+ };
+ 
++enum { RX_ERR, RX_ALL, RX_FIL, RX_INV, RX_EFF, RX_MAX };
++
+ struct dev_rcv_lists {
+ 	struct dev_rcv_lists *next;
+ 	struct dev_rcv_lists **pprev;
+ 	struct net_device *dev;
+-	struct receiver *rx_err;
+-	struct receiver *rx_all;
+-	struct receiver *rx_fil;
+-	struct receiver *rx_inv;
++	struct receiver *rx[RX_MAX];
+ 	struct receiver *rx_sff[0x800];
+-	struct receiver *rx_eff;
+ 	int entries;
+ };
+ 
+
+Modified: trunk/kernel/2.4/can/proc.c
+===================================================================
+--- trunk/kernel/2.4/can/proc.c	2007-12-08 22:26:17 UTC (rev 580)
++++ trunk/kernel/2.4/can/proc.c	2007-12-08 22:26:44 UTC (rev 581)
+@@ -84,6 +84,14 @@
+ extern struct dev_rcv_lists *rx_dev_list; /* rx dispatcher structures */
+ extern int stats_timer;                   /* module parameter. default: on */
+ 
++static const char rx_list_name[][8] = {
++	[RX_ERR] = &quot;rx_err&quot;,
++	[RX_ALL] = &quot;rx_all&quot;,
++	[RX_FIL] = &quot;rx_fil&quot;,
++	[RX_INV] = &quot;rx_inv&quot;,
++	[RX_EFF] = &quot;rx_eff&quot;,
++};
++
+ /*
+  * af_can statistics stuff
+  */
+@@ -333,30 +341,31 @@
+ 	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_all(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
++static int can_proc_read_rcvlist(char *page, char **start, off_t off,
++				 int count, int *eof, void *data)
+ {
++	/* double cast to prevent GCC warning */
++	int idx = (int)(long)data;
+ 	int len = 0;
+ 	struct dev_rcv_lists *d;
+ 
+ 	MOD_INC_USE_COUNT;
+ 
+-	/* RX_ALL */
+ 	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;\nreceive list 'rx_all':\n&quot;);
++			&quot;\nreceive list '%s':\n&quot;, rx_list_name[idx]);
+ 
+-	/* find receive list for this device */
+ 	for (d = rx_dev_list; d; d = d-&gt;next) {
+ 
+-		if (d-&gt;rx_all) {
++		if (d-&gt;rx[idx]) {
+ 			len = can_print_recv_banner(page, len);
+-			len = can_print_rcvlist(page, len, d-&gt;rx_all, d-&gt;dev);
++			len = can_print_rcvlist(page, len, d-&gt;rx[idx], d-&gt;dev);
+ 		} else
+ 			len += snprintf(page + len, PAGE_SIZE - len,
+ 					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+ 
++		/* exit on end of buffer? */
+ 		if (len &gt; PAGE_SIZE - 100)
+-			break; /* exit on end of buffer */
++			break;
+ 	}
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+@@ -367,74 +376,6 @@
+ 	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_fil(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	int len = 0;
+-	struct dev_rcv_lists *d;
+-
+-	MOD_INC_USE_COUNT;
+-
+-	/* RX_FIL */
+-	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;\nreceive list 'rx_fil':\n&quot;);
+-
+-	/* find receive list for this device */
+-	for (d = rx_dev_list; d; d = d-&gt;next) {
+-
+-		if (d-&gt;rx_fil) {
+-			len = can_print_recv_banner(page, len);
+-			len = can_print_rcvlist(page, len, d-&gt;rx_fil, d-&gt;dev);
+-		} else
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+-
+-		if (len &gt; PAGE_SIZE - 100)
+-			break; /* exit on end of buffer */
+-	}
+-
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+-
+-	MOD_DEC_USE_COUNT;
+-
+-	*eof = 1;
+-	return len;
+-}
+-
+-static int can_proc_read_rcvlist_inv(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	int len = 0;
+-	struct dev_rcv_lists *d;
+-
+-	MOD_INC_USE_COUNT;
+-
+-	/* RX_INV */
+-	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;\nreceive list 'rx_inv':\n&quot;);
+-
+-	/* find receive list for this device */
+-	for (d = rx_dev_list; d; d = d-&gt;next) {
+-
+-		if (d-&gt;rx_inv) {
+-			len = can_print_recv_banner(page, len);
+-			len = can_print_rcvlist(page, len, d-&gt;rx_inv, d-&gt;dev);
+-		} else
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+-
+-		if (len &gt; PAGE_SIZE - 100)
+-			break; /* exit on end of buffer */
+-	}
+-
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+-
+-	MOD_DEC_USE_COUNT;
+-
+-	*eof = 1;
+-	return len;
+-}
+-
+ static int can_proc_read_rcvlist_sff(char *page, char **start, off_t off,
+ 				     int count, int *eof, void *data)
+ {
+@@ -481,74 +422,6 @@
+ 	return len;
+ }
+ 
+-static int can_proc_read_rcvlist_eff(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	int len = 0;
+-	struct dev_rcv_lists *d;
+-
+-	MOD_INC_USE_COUNT;
+-
+-	/* RX_EFF */
+-	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;\nreceive list 'rx_eff':\n&quot;);
+-
+-	/* find receive list for this device */
+-	for (d = rx_dev_list; d; d = d-&gt;next) {
+-
+-		if (d-&gt;rx_eff) {
+-			len = can_print_recv_banner(page, len);
+-			len = can_print_rcvlist(page, len, d-&gt;rx_eff, d-&gt;dev);
+-		} else
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+-
+-		if (len &gt; PAGE_SIZE - 100)
+-			break; /* exit on end of buffer */
+-	}
+-
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+-
+-	MOD_DEC_USE_COUNT;
+-
+-	*eof = 1;
+-	return len;
+-}
+-
+-static int can_proc_read_rcvlist_err(char *page, char **start, off_t off,
+-				     int count, int *eof, void *data)
+-{
+-	int len = 0;
+-	struct dev_rcv_lists *d;
+-
+-	MOD_INC_USE_COUNT;
+-
+-	/* RX_ERR */
+-	len += snprintf(page + len, PAGE_SIZE - len,
+-			&quot;\nreceive list 'rx_err':\n&quot;);
+-
+-	/* find receive list for this device */
+-	for (d = rx_dev_list; d; d = d-&gt;next) {
+-
+-		if (d-&gt;rx_err) {
+-			len = can_print_recv_banner(page, len);
+-			len = can_print_rcvlist(page, len, d-&gt;rx_err, d-&gt;dev);
+-		} else
+-			len += snprintf(page + len, PAGE_SIZE - len,
+-					&quot;  (%s: no entry)\n&quot;, DNAME(d-&gt;dev));
+-
+-		if (len &gt; PAGE_SIZE - 100)
+-			break; /* exit on end of buffer */
+-	}
+-
+-	len += snprintf(page + len, PAGE_SIZE - len, &quot;\n&quot;);
+-
+-	MOD_DEC_USE_COUNT;
+-
+-	*eof = 1;
+-	return len;
+-}
+-
+ /*
+  * proc utility functions
+  */
+@@ -588,24 +461,24 @@
+ 	can_dir-&gt;owner = THIS_MODULE;
+ 
+ 	/* own procfs entries from the AF_CAN core */
+-	pde_version     = can_create_proc_readentry(
+-		CAN_PROC_VERSION, 0644, can_proc_read_version, NULL);
+-	pde_stats       = can_create_proc_readentry(
+-		CAN_PROC_STATS, 0644, can_proc_read_stats, NULL);
+-	pde_reset_stats = can_create_proc_readentry(
+-		CAN_PROC_RESET_STATS, 0644, can_proc_read_reset_stats, NULL);
+-	pde_rcvlist_all = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_ALL, 0644, can_proc_read_rcvlist_all, NULL);
+-	pde_rcvlist_fil = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_FIL, 0644, can_proc_read_rcvlist_fil, NULL);
+-	pde_rcvlist_inv = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_INV, 0644, can_proc_read_rcvlist_inv, NULL);
+-	pde_rcvlist_sff = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_SFF, 0644, can_proc_read_rcvlist_sff, NULL);
+-	pde_rcvlist_eff = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_EFF, 0644, can_proc_read_rcvlist_eff, NULL);
+-	pde_rcvlist_err = can_create_proc_readentry(
+-		CAN_PROC_RCVLIST_ERR, 0644, can_proc_read_rcvlist_err, NULL);
++	pde_version     = can_create_proc_readentry(CAN_PROC_VERSION, 0644,
++					can_proc_read_version, NULL);
++	pde_stats       = can_create_proc_readentry(CAN_PROC_STATS, 0644,
++					can_proc_read_stats, NULL);
++	pde_reset_stats = can_create_proc_readentry(CAN_PROC_RESET_STATS, 0644,
++					can_proc_read_reset_stats, NULL);
++	pde_rcvlist_err = can_create_proc_readentry(CAN_PROC_RCVLIST_ERR, 0644,
++					can_proc_read_rcvlist, (void *)RX_ERR);
++	pde_rcvlist_all = can_create_proc_readentry(CAN_PROC_RCVLIST_ALL, 0644,
++					can_proc_read_rcvlist, (void *)RX_ALL);
++	pde_rcvlist_fil = can_create_proc_readentry(CAN_PROC_RCVLIST_FIL, 0644,
++					can_proc_read_rcvlist, (void *)RX_FIL);
++	pde_rcvlist_inv = can_create_proc_readentry(CAN_PROC_RCVLIST_INV, 0644,
++					can_proc_read_rcvlist, (void *)RX_INV);
++	pde_rcvlist_eff = can_create_proc_readentry(CAN_PROC_RCVLIST_EFF, 0644,
++					can_proc_read_rcvlist, (void *)RX_EFF);
++	pde_rcvlist_sff = can_create_proc_readentry(CAN_PROC_RCVLIST_SFF, 0644,
++					can_proc_read_rcvlist_sff, NULL);
+ 
+ 	if (stats_timer) {
+ 		/* the statistics are updated every second (timer triggered) */
+@@ -630,6 +503,9 @@
+ 	if (pde_reset_stats)
+ 		can_remove_proc_readentry(CAN_PROC_RESET_STATS);
+ 
++	if (pde_rcvlist_err)
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_ERR);
++
+ 	if (pde_rcvlist_all)
+ 		can_remove_proc_readentry(CAN_PROC_RCVLIST_ALL);
+ 
+@@ -639,14 +515,11 @@
+ 	if (pde_rcvlist_inv)
+ 		can_remove_proc_readentry(CAN_PROC_RCVLIST_INV);
+ 
+-	if (pde_rcvlist_sff)
+-		can_remove_proc_readentry(CAN_PROC_RCVLIST_SFF);
+-
+ 	if (pde_rcvlist_eff)
+ 		can_remove_proc_readentry(CAN_PROC_RCVLIST_EFF);
+ 
+-	if (pde_rcvlist_err)
+-		can_remove_proc_readentry(CAN_PROC_RCVLIST_ERR);
++	if (pde_rcvlist_sff)
++		can_remove_proc_readentry(CAN_PROC_RCVLIST_SFF);
+ 
+ 	if (can_dir)
+ 		remove_proc_entry(CAN_PROC_DIR, NULL);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000562.html">r580 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000564.html">r582 - trunk/kernel/2.4/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#563">[ date ]</a>
+              <a href="thread.html#563">[ thread ]</a>
+              <a href="subject.html#563">[ subject ]</a>
+              <a href="author.html#563">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r222 - in trunk/kernel/2.6: include/linux/can net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r222%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200704190834.l3J8YtRp024711%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000205.html">
+   <LINK REL="Next"  HREF="000207.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r222 - in trunk/kernel/2.6: include/linux/can net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r222%20-%20in%20trunk/kernel/2.6%3A%20include/linux/can%20net/can&In-Reply-To=%3C200704190834.l3J8YtRp024711%40sheep.berlios.de%3E"
+       TITLE="r222 - in trunk/kernel/2.6: include/linux/can net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 19 10:34:55 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000205.html">r221 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+        <LI>Next message: <A HREF="000207.html">r223 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#206">[ date ]</a>
+              <a href="thread.html#206">[ thread ]</a>
+              <a href="subject.html#206">[ subject ]</a>
+              <a href="author.html#206">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-04-19 10:34:49 +0200 (Thu, 19 Apr 2007)
+New Revision: 222
+
+Modified:
+   trunk/kernel/2.6/include/linux/can/core.h
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Fix some #if's since the change in sk_alloc() and addition of
+proto_{un,}register() was in Linux-2.6.12, not 2.6.13.
+
+
+Modified: trunk/kernel/2.6/include/linux/can/core.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/core.h	2007-04-19 06:22:49 UTC (rev 221)
++++ trunk/kernel/2.6/include/linux/can/core.h	2007-04-19 08:34:49 UTC (rev 222)
+@@ -45,7 +45,7 @@
+ 	int              protocol;
+ 	int              capability;
+ 	struct proto_ops *ops;
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	struct proto     *prot;
+ #else
+ 	struct module    *owner;
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-04-19 06:22:49 UTC (rev 221)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-04-19 08:34:49 UTC (rev 222)
+@@ -270,7 +270,7 @@
+ 		return -EBUSY;
+ 	}
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	err = proto_register(cp-&gt;prot, 0);
+ 	if (err &lt; 0)
+ 		return err;
+@@ -303,7 +303,7 @@
+ 		printk(KERN_ERR &quot;CAN: protocol %d is not registered\n&quot;, proto);
+ 		return -ESRCH;
+ 	}
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	proto_unregister(cp-&gt;prot);
+ #endif
+ 	proto_tab[proto] = NULL;
+@@ -438,7 +438,7 @@
+ 
+ 	sock-&gt;ops = cp-&gt;ops;
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	sk = sk_alloc(PF_CAN, GFP_KERNEL, cp-&gt;prot, 1);
+ 	if (!sk)
+ 		return -ENOMEM;
+@@ -462,7 +462,7 @@
+ 
+ 	DBG(&quot;created sock: %p\n&quot;, sk);
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ 	if (sk-&gt;sk_prot-&gt;init)
+ 		ret = sk-&gt;sk_prot-&gt;init(sk);
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-04-19 06:22:49 UTC (rev 221)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-04-19 08:34:49 UTC (rev 222)
+@@ -194,7 +194,7 @@
+ #define BCM_CAP CAP_NET_RAW
+ #endif
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ struct bcm_sock {
+ 	struct sock    sk;
+ 	struct bcm_opt opt;
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-04-19 06:22:49 UTC (rev 221)
++++ trunk/kernel/2.6/net/can/raw.c	2007-04-19 08:34:49 UTC (rev 222)
+@@ -152,7 +152,7 @@
+ 
+ #undef CAN_RAW_SUPPORT_REBIND /* allow bind on already bound socket */
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ struct raw_sock {
+ 	struct sock    sk;
+ 	struct raw_opt opt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000205.html">r221 - in trunk/kernel/2.6: drivers/net/can net/can
+</A></li>
+	<LI>Next message: <A HREF="000207.html">r223 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#206">[ date ]</a>
+              <a href="thread.html#206">[ thread ]</a>
+              <a href="subject.html#206">[ subject ]</a>
+              <a href="author.html#206">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

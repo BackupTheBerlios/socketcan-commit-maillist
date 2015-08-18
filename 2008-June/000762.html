@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r782 - in trunk/kernel/2.6: drivers/net/can/sja1000 include/linux/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r782%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can/sja1000%20include/linux/can&In-Reply-To=%3C200806121241.m5CCf8IZ013596%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000761.html">
+   <LINK REL="Next"  HREF="000763.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r782 - in trunk/kernel/2.6: drivers/net/can/sja1000 include/linux/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r782%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can/sja1000%20include/linux/can&In-Reply-To=%3C200806121241.m5CCf8IZ013596%40sheep.berlios.de%3E"
+       TITLE="r782 - in trunk/kernel/2.6: drivers/net/can/sja1000 include/linux/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 12 14:41:08 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000761.html">r781 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000763.html">r783 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#762">[ date ]</a>
+              <a href="thread.html#762">[ thread ]</a>
+              <a href="subject.html#762">[ subject ]</a>
+              <a href="author.html#762">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-06-12 14:41:05 +0200 (Thu, 12 Jun 2008)
+New Revision: 782
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/include/linux/can/dev.h
+Log:
+Get rid of ioctl.h for the new CAN drivers
+
+This patch gets rid of include/linux/can/ioctl.h for the new
+CAN device interface and drivers. The definitions have been
+moved temporarily to include/linux/can/dev.h. Further cleanup
+will follow when the bit timing code is updated. The ioctl.h
+file has not been deleted, because it's still used by the old
+CAN drivers.
+
+Signed-off-by: Wolfgang Grandegger &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">wg at grandegger.com</A>&gt;
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2008-06-11 20:44:00 UTC (rev 781)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2008-06-12 12:41:05 UTC (rev 782)
+@@ -65,7 +65,6 @@
+ #include &lt;linux/can/dev.h&gt;
+ #include &lt;linux/can/error.h&gt;
+ #include &lt;linux/can/dev.h&gt;
+-#include &lt;linux/can/ioctl.h&gt;	/* for struct can_device_stats */
+ 
+ #include &quot;sja1000.h&quot;
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/dev.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/dev.h	2008-06-11 20:44:00 UTC (rev 781)
++++ trunk/kernel/2.6/include/linux/can/dev.h	2008-06-12 12:41:05 UTC (rev 782)
+@@ -15,8 +15,91 @@
+ 
+ #include &lt;linux/version.h&gt;
+ #include &lt;linux/can/error.h&gt;
+-#include &lt;linux/can/ioctl.h&gt;
+ 
++/*
++ * CAN bitrate
++ */
++#define CAN_BITRATE_UNCONFIGURED	((__u32) 0xFFFFFFFFU)
++#define CAN_BITRATE_UNKNOWN		0
++#define CAN_BITRATE_DEFAULT		500000
++
++/*
++ * CAN custom bit time
++ */
++enum can_bittimes {
++	CAN_BITTIME_STD,
++	CAN_BITTIME_BTR
++};
++
++/* TSEG1 of controllers usually is a sum of synch_seg (always 1),
++ * prop_seg and phase_seg1, TSEG2 = phase_seg2 */
++
++struct can_bittime_std {
++	__u32 brp;        /* baud rate prescaler */
++	__u8  prop_seg;   /* from 1 to 8 */
++	__u8  phase_seg1; /* from 1 to 8 */
++	__u8  phase_seg2; /* from 1 to 8 */
++	__u8  sjw:7;      /* from 1 to 4 */
++	__u8  sam:1;      /* 1 - enable triple sampling */
++};
++
++struct can_bittime_btr {
++	__u8  btr0;
++	__u8  btr1;
++};
++
++struct can_bittime {
++	enum can_bittimes type;
++	union {
++		struct can_bittime_std std;
++		struct can_bittime_btr btr;
++	};
++};
++
++/*
++ * CAN mode
++ */
++enum can_mode {
++	CAN_MODE_STOP = 0,
++	CAN_MODE_START,
++	CAN_MODE_SLEEP
++};
++
++/*
++ * CAN controller mode
++ */
++#define CAN_CTRLMODE_LOOPBACK   0x1
++#define CAN_CTRLMODE_LISTENONLY 0x2
++
++/*
++ * CAN operational and error states
++ */
++enum can_state {
++	CAN_STATE_ACTIVE = 0,
++	CAN_STATE_BUS_WARNING,
++	CAN_STATE_BUS_PASSIVE,
++	CAN_STATE_BUS_OFF,
++	CAN_STATE_STOPPED,
++	CAN_STATE_SLEEPING
++};
++
++/*
++ * CAN device statistics
++ */
++struct can_device_stats {
++	int error_warning;
++	int data_overrun;
++	int wakeup;
++	int bus_error;
++	int error_passive;
++	int arbitration_lost;
++	int restarts;
++	int bus_error_at_init;
++};
++
++/*
++ * CAN common private data
++ */
+ #define CAN_ECHO_SKB_MAX  4
+ 
+ struct can_priv {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000761.html">r781 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000763.html">r783 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#762">[ date ]</a>
+              <a href="thread.html#762">[ thread ]</a>
+              <a href="subject.html#762">[ subject ]</a>
+              <a href="author.html#762">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

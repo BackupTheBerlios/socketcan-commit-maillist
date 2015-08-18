@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r421 - trunk/kernel/2.6/drivers/net/can/i82527
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r421%20-%20trunk/kernel/2.6/drivers/net/can/i82527&In-Reply-To=%3C200707090806.l6986tJi003731%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000403.html">
+   <LINK REL="Next"  HREF="000405.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r421 - trunk/kernel/2.6/drivers/net/can/i82527</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r421%20-%20trunk/kernel/2.6/drivers/net/can/i82527&In-Reply-To=%3C200707090806.l6986tJi003731%40sheep.berlios.de%3E"
+       TITLE="r421 - trunk/kernel/2.6/drivers/net/can/i82527">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  9 10:06:55 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000403.html">r420 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000405.html">r422 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#404">[ date ]</a>
+              <a href="thread.html#404">[ thread ]</a>
+              <a href="subject.html#404">[ subject ]</a>
+              <a href="author.html#404">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-07-09 10:06:51 +0200 (Mon, 09 Jul 2007)
+New Revision: 421
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.h
+Log:
+Fixed compilation warning on 64bit architectures.
+Thanks to Neal Probert for the hint.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-07-09 07:24:22 UTC (rev 420)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-07-09 08:06:51 UTC (rev 421)
+@@ -1172,7 +1172,8 @@
+ 
+ 	if ((sizeof(canmessage_t) != 15) || (sizeof(canregs_t) != 256)) {
+ 		printk(KERN_WARNING &quot;%s sizes: canmessage_t %d canregs_t %d\n&quot;,
+-		       CHIP_NAME, sizeof(canmessage_t), sizeof(canregs_t));
++		       CHIP_NAME, (int)sizeof(canmessage_t),
++		       (int)sizeof(canregs_t));
+ 		return -EBUSY;
+ 	}
+ 
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-07-09 07:24:22 UTC (rev 420)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.h	2007-07-09 08:06:51 UTC (rev 421)
+@@ -247,22 +247,25 @@
+ 
+ #ifdef IOPRINT
+ #define CANout(base,adr,v) \
+-	printk(&quot;CANout: (%lx+%x)=%x\n&quot;, base, (int)&amp;((canregs_t *)0)-&gt;adr,v)
++	printk(&quot;CANout: (%lx+%x)=%x\n&quot;, base,\
++					(int)(long)&amp;((canregs_t *)0)-&gt;adr,v)
+ 
+ #define CANin(base,adr) \
+-	printk(&quot;CANin: (%lx+%x)\n&quot;, base, (int)&amp;((canregs_t *)0)-&gt;adr)
++	printk(&quot;CANin: (%lx+%x)\n&quot;, base, (int)(long)&amp;((canregs_t *)0)-&gt;adr)
+ 
+ #else /* IOPRINT */
+ 
+ #ifdef IODEBUG
+ #define CANout(base,adr,v)      \
+-	(printk(&quot;CANout: (%lx+%x)=%x\n&quot;, base, (int)&amp;((canregs_t *)0)-&gt;adr,v),\
+-			   hw_writereg(base, (int)&amp;((canregs_t *)0)-&gt;adr, v))
++	(printk(&quot;CANout: (%lx+%x)=%x\n&quot;, base,\
++		(int)(long)&amp;((canregs_t *)0)-&gt;adr,v),\
++		hw_writereg(base, (int)(long)&amp;((canregs_t *)0)-&gt;adr, v))
+ #else
+-#define CANout(base,adr,v) hw_writereg(base, (int)&amp;((canregs_t *)0)-&gt;adr, v)
++#define CANout(base,adr,v) hw_writereg(base,\
++					(int)(long)&amp;((canregs_t *)0)-&gt;adr, v)
+ #endif
+ 
+-#define CANin(base,adr)	hw_readreg(base, (int)&amp;((canregs_t *)0)-&gt;adr)
++#define CANin(base,adr)	hw_readreg(base, (int)(long)&amp;((canregs_t *)0)-&gt;adr)
+ 
+ #endif /* IOPRINT */
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000403.html">r420 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000405.html">r422 - trunk/kernel/2.6/include/linux/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#404">[ date ]</a>
+              <a href="thread.html#404">[ thread ]</a>
+              <a href="subject.html#404">[ subject ]</a>
+              <a href="author.html#404">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

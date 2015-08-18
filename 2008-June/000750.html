@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r770 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r770%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200806111425.m5BEPvpq014269%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000749.html">
+   <LINK REL="Next"  HREF="000751.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r770 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r770%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200806111425.m5BEPvpq014269%40sheep.berlios.de%3E"
+       TITLE="r770 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 11 16:25:57 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000749.html">r769 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000751.html">r771 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#750">[ date ]</a>
+              <a href="thread.html#750">[ thread ]</a>
+              <a href="subject.html#750">[ subject ]</a>
+              <a href="author.html#750">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-11 16:25:56 +0200 (Wed, 11 Jun 2008)
+New Revision: 770
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+Added missing include.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2008-06-11 14:24:30 UTC (rev 769)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2008-06-11 14:25:56 UTC (rev 770)
+@@ -53,6 +53,7 @@
+  *                 Fred N. van Kempen, &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">waltje at uwalt.nl.mugnet.org</A>&gt;
+  */
+ 
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/moduleparam.h&gt;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000749.html">r769 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000751.html">r771 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#750">[ date ]</a>
+              <a href="thread.html#750">[ thread ]</a>
+              <a href="subject.html#750">[ subject ]</a>
+              <a href="author.html#750">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

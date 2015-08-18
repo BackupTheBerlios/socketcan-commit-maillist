@@ -1,0 +1,426 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r665 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan drivers/net/can/sja1000 net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r665%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/ccan%0A%09drivers/net/can/mscan%20drivers/net/can/sja1000%20net/can&In-Reply-To=%3C200801271746.m0RHk1il016477%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000646.html">
+   <LINK REL="Next"  HREF="000648.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r665 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan drivers/net/can/sja1000 net/can</H1>
+    <B>wolf at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r665%20-%20in%20branches/cannetdriver26%3A%20drivers/net/can/ccan%0A%09drivers/net/can/mscan%20drivers/net/can/sja1000%20net/can&In-Reply-To=%3C200801271746.m0RHk1il016477%40sheep.berlios.de%3E"
+       TITLE="r665 - in branches/cannetdriver26: drivers/net/can/ccan	drivers/net/can/mscan drivers/net/can/sja1000 net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 27 18:46:01 CET 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000646.html">r664 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+        <LI>Next message: <A HREF="000648.html">r666 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#647">[ date ]</a>
+              <a href="thread.html#647">[ thread ]</a>
+              <a href="subject.html#647">[ subject ]</a>
+              <a href="author.html#647">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2008-01-27 18:45:56 +0100 (Sun, 27 Jan 2008)
+New Revision: 665
+
+Modified:
+   branches/cannetdriver26/drivers/net/can/ccan/ccan.c
+   branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+   branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+   branches/cannetdriver26/net/can/dev.c
+   branches/cannetdriver26/net/can/sysfs.c
+   branches/cannetdriver26/net/can/sysfs.h
+Log:
+Add and export function can_set_bitrate() in favor of can_calc_bittime()
+
+A default bitrate will now be set when the device is registered and the
+device has not already done it. Currenty the default bitrate is defined
+by CAN_BITRATE_DEFAULT in linux/can/ioctl.h, but we may want to have an
+additional module parameter. Corresponding bitrate settings have been
+removed from the device drivers.
+
+
+Modified: branches/cannetdriver26/drivers/net/can/ccan/ccan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/ccan/ccan.c	2008-01-27 17:45:26 UTC (rev 664)
++++ branches/cannetdriver26/drivers/net/can/ccan/ccan.c	2008-01-27 17:45:56 UTC (rev 665)
+@@ -473,16 +473,7 @@
+ static int ccan_chip_config(struct net_device *dev)
+ {
+ 	struct ccan_priv *priv = netdev_priv(dev);
+-	struct can_bittime bittime;
+-	int ret, i;
+-	
+-	/* set bit timing */
+-	bittime.type = CAN_BITTIME_STD;
+-	ret = can_calc_bittime(&amp;priv-&gt;can, priv-&gt;can.bitrate, &amp;bittime.std);
+-	if (ret == 0)
+-		ret = ccan_set_bittime(dev, &amp;bittime);
+-	if (ret)
+-		dev_err(ND2D(dev), &quot;failed to config bit timing\n&quot;);
++	int i;
+ 
+ 	/* setup message objects */
+ 	for(i = 0; i &lt;= MAX_OBJECT; i++)
+
+Modified: branches/cannetdriver26/drivers/net/can/mscan/mscan.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-27 17:45:26 UTC (rev 664)
++++ branches/cannetdriver26/drivers/net/can/mscan/mscan.c	2008-01-27 17:45:56 UTC (rev 665)
+@@ -132,9 +132,9 @@
+ 			}
+ 			if (i &gt;= MSCAN_SET_MODE_RETRIES)
+ 				ret = -ENODEV;
+-			else
+-				priv-&gt;can.state = CAN_STATE_SLEEPING;
+ 		}
++		if (!ret)
++			priv-&gt;can.state = CAN_STATE_SLEEPING;
+ 
+ 		if (!ret &amp;&amp; (mode &amp; MSCAN_INITRQ)
+ 		    &amp;&amp; (canctl1 &amp; MSCAN_INITAK) == 0) {
+@@ -146,9 +146,9 @@
+ 			}
+ 			if (i &gt;= MSCAN_SET_MODE_RETRIES)
+ 				ret = -ENODEV;
+-			else
+-				priv-&gt;can.state = CAN_STATE_STOPPED;
+ 		}
++		if (!ret)
++			priv-&gt;can.state = CAN_STATE_STOPPED;
+ 
+ 		if (!ret &amp;&amp; (mode &amp; MSCAN_CSWAI))
+ 			out_8(&amp;regs-&gt;canctl0,
+@@ -502,6 +502,7 @@
+ 				out_8(&amp;regs-&gt;cantbsel, mask);
+ 				stats-&gt;tx_bytes += in_8(&amp;regs-&gt;tx.dlr);
+ 				stats-&gt;tx_packets++;
++				printk(&quot;TX buf %d done\n&quot;, entry-&gt;id);
+ 				can_get_echo_skb(dev, entry-&gt;id);
+ 			}
+ 			priv-&gt;tx_active &amp;= ~mask;
+@@ -585,6 +586,7 @@
+ 		break;
+ 
+ 	default:
++		printk(&quot;bt-&gt;type=%d\n&quot;, bt-&gt;type);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -654,7 +656,6 @@
+ int register_mscandev(struct net_device *dev, int clock_src)
+ {
+ 	struct mscan_regs *regs = (struct mscan_regs *)dev-&gt;base_addr;
+-	struct mscan_priv *priv = netdev_priv(dev);
+ 	u8 ctl1;
+ 
+ 	ctl1 = in_8(&amp;regs-&gt;canctl1);
+@@ -682,15 +683,6 @@
+ 
+ 	mscan_set_mode(dev, MSCAN_INIT_MODE);
+ 
+-	/* set default bit timing */
+-	if (priv-&gt;can.bitrate) {
+-		struct can_bittime bt = { .type = CAN_BITTIME_STD };
+-		if  (can_calc_bittime(&amp;priv-&gt;can, priv-&gt;can.bitrate, &amp;bt.std))
+-			dev_err(ND2D(dev), &quot;failed to calculate bit timing\n&quot;);
+-		else
+-			mscan_do_set_bittime(dev, &amp;bt);
+-	}
+-
+ 	return register_netdev(dev);
+ }
+ 
+@@ -731,7 +723,6 @@
+ 	dev-&gt;weight = 8;
+ #endif
+ 
+-	priv-&gt;can.bitrate = CAN_BITRATE_DEFAULT;
+ 	priv-&gt;can.do_set_bittime = mscan_do_set_bittime;
+ 	priv-&gt;can.do_set_mode = mscan_do_set_mode;
+ 
+
+Modified: branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 17:45:26 UTC (rev 664)
++++ branches/cannetdriver26/drivers/net/can/sja1000/sja1000.c	2008-01-27 17:45:56 UTC (rev 665)
+@@ -349,8 +349,6 @@
+ static void chipset_init(struct net_device *dev)
+ {
+ 	struct sja1000_priv *priv = netdev_priv(dev);
+-	struct can_bittime bt;
+-	int err;
+ 
+ 	/* set clock divider and output control register */
+ 	priv-&gt;write_reg(dev, REG_CDR, priv-&gt;cdr | CDR_PELICAN);
+@@ -366,15 +364,6 @@
+ 	priv-&gt;write_reg(dev, REG_ACCM2, 0xFF);
+ 	priv-&gt;write_reg(dev, REG_ACCM3, 0xFF);
+ 
+-	/* set bit timing */
+-	if (priv-&gt;can.bitrate) {
+-		bt.type = CAN_BITTIME_STD;
+-		err = can_calc_bittime(&amp;priv-&gt;can, priv-&gt;can.bitrate, &amp;bt.std);
+-		if (err)
+-			dev_err(ND2D(dev), &quot;failed to calculate bit timing\n&quot;);
+-		else
+-			sja1000_set_bittime(dev, &amp;bt);
+-	}
+ 	priv-&gt;write_reg(dev, REG_OCR, priv-&gt;ocr | OCR_MODE_NORMAL);
+ }
+ 
+@@ -754,7 +743,6 @@
+ 	if (sizeof_priv)
+ 		priv-&gt;priv = (void *)priv + sizeof(struct sja1000_priv);
+ 
+-	priv-&gt;can.bitrate = 500000;
+ 	priv-&gt;can.restart_ms = restart_ms;
+ 	priv-&gt;debug = debug;
+ 
+
+Modified: branches/cannetdriver26/net/can/dev.c
+===================================================================
+--- branches/cannetdriver26/net/can/dev.c	2008-01-27 17:45:26 UTC (rev 664)
++++ branches/cannetdriver26/net/can/dev.c	2008-01-27 17:45:56 UTC (rev 665)
+@@ -158,8 +158,34 @@
+ 		return -EDOM;
+ 	return 0;
+ }
+-EXPORT_SYMBOL(can_calc_bittime);
+ 
++int can_set_bitrate(struct net_device *dev, u32 bitrate)
++{
++	struct can_priv *priv = netdev_priv(dev);
++	int err = -ENOTSUPP;
++
++	if (priv-&gt;state != CAN_STATE_STOPPED)
++		return -EBUSY;
++
++	if (priv-&gt;do_set_bittime) {
++		if (priv-&gt;do_set_bittime) {
++			struct can_bittime bittime;
++			err = can_calc_bittime(priv, bitrate, &amp;bittime.std);
++			if (err)
++				goto out;
++			bittime.type = CAN_BITTIME_STD;
++			err = priv-&gt;do_set_bittime(dev, &amp;bittime);
++			if (!err) {
++				priv-&gt;bitrate = bitrate;
++				priv-&gt;bittime = bittime;
++			}
++		}
++	}
++out:
++	return err;
++}
++EXPORT_SYMBOL(can_set_bitrate);
++
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,23)
+ static struct net_device_stats *can_get_stats(struct net_device *dev)
+ {
+@@ -201,6 +227,7 @@
+ 	priv = netdev_priv(dev);
+ 
+ 	priv-&gt;bitrate = CAN_BITRATE_UNCONFIGURED;
++	priv-&gt;state = CAN_STATE_STOPPED;
+ 	priv-&gt;max_brp = DEFAULT_MAX_BRP;
+ 	priv-&gt;max_sjw = DEFAULT_MAX_SJW;
+ 	spin_lock_init(&amp;priv-&gt;irq_lock);
+@@ -388,14 +415,51 @@
+ }
+ EXPORT_SYMBOL(can_close_cleanup);
+ 
++static int can_netdev_notifier_call(struct notifier_block *nb,
++				    unsigned long state,
++				    void *ndev)
++{
++	struct net_device *dev = ndev;
++	struct can_priv *priv;
++
++	if (dev-&gt;type != ARPHRD_CAN)
++		return 0;
++
++	priv = netdev_priv(dev);
++
++	switch (state) {
++	case NETDEV_REGISTER:
++		/* set default bit timing */
++		if (priv-&gt;do_set_bittime &amp;&amp;
++		    priv-&gt;bitrate == CAN_BITRATE_UNCONFIGURED) {
++			if (can_set_bitrate(dev, CAN_BITRATE_DEFAULT))
++				dev_err(ND2D(dev), &quot;failed to set bitrate\n&quot;);
++		}
++#ifdef CONFIG_SYSFS
++		can_create_sysfs(dev);
++#endif
++		break;
++	case NETDEV_UNREGISTER:
++#ifdef CONFIG_SYSFS
++		can_remove_sysfs(dev);
++#endif
++		break;
++	}
++	return 0;
++}
++
++static struct notifier_block can_netdev_notifier = {
++	.notifier_call = can_netdev_notifier_call,
++};
++
+ static __init int can_dev_init(void)
+ {
+-	return can_sysfs_init();
++	return register_netdevice_notifier(&amp;can_netdev_notifier);
+ }
+ module_init(can_dev_init);
+ 
+ static __exit void can_dev_exit(void)
+ {
+-	can_sysfs_exit();
++	unregister_netdevice_notifier(&amp;can_netdev_notifier);
+ }
+ module_exit(can_dev_exit);
+
+Modified: branches/cannetdriver26/net/can/sysfs.c
+===================================================================
+--- branches/cannetdriver26/net/can/sysfs.c	2008-01-27 17:45:26 UTC (rev 664)
++++ branches/cannetdriver26/net/can/sysfs.c	2008-01-27 17:45:56 UTC (rev 665)
+@@ -38,32 +38,6 @@
+  *        if (!capable(CAP_NET_ADMIN))
+  *        	return -EPERM;
+  */
+-static int can_set_bitrate(struct net_device *dev, u32 bitrate)
+-{
+-	struct can_priv *priv = netdev_priv(dev);
+-	int err = -ENOTSUPP;
+-
+-	if (priv-&gt;state != CAN_STATE_STOPPED)
+-		return -EBUSY;
+-
+-	if (priv-&gt;do_set_bittime) {
+-		if (priv-&gt;do_set_bittime) {
+-			struct can_bittime bittime;
+-			err = can_calc_bittime(priv, bitrate, &amp;bittime.std);
+-			if (err)
+-				goto out;
+-			bittime.type = CAN_BITTIME_STD;
+-			err = priv-&gt;do_set_bittime(dev, &amp;bittime);
+-			if (!err) {
+-				priv-&gt;bitrate = bitrate;
+-				priv-&gt;bittime = bittime;
+-			}
+-		}
+-	}
+-out:
+-	return err;
+-}
+-
+ static int can_get_bitrate(struct net_device *dev, u32 *bitrate)
+ {
+ 	struct can_priv *priv = netdev_priv(dev);
+@@ -478,47 +452,7 @@
+         sysfs_remove_group(&amp;(dev-&gt;dev.kobj), &amp;can_stats_group);
+ }
+ 
+-static int can_netdev_notifier_call(struct notifier_block *nb,
+-				    unsigned long state,
+-				    void *ndev)
+-{
+-	struct net_device *dev = ndev;
+-
+-	if (dev-&gt;type != ARPHRD_CAN)
+-		return 0;
+-
+-	switch (state) {
+-	case NETDEV_REGISTER:
+-		can_create_sysfs(dev);
+-		break;
+-	case NETDEV_UNREGISTER:
+-		can_remove_sysfs(dev);
+-		break;
+-	}
+-	return 0;
+-}
+-
+-static struct notifier_block can_netdev_notifier = {
+-	.notifier_call = can_netdev_notifier_call,
+-};
+-
+ #endif /* CONFIG_SYSFS */
+ 
+-__init int can_sysfs_init(void)
+-{
+-#ifdef CONFIG_SYSFS
+-	return register_netdevice_notifier(&amp;can_netdev_notifier);
+-#else
+-	return 0;
+-#endif
+-}
+ 
+-__exit void can_sysfs_exit(void)
+-{
+-#ifdef CONFIG_SYSFS
+-	unregister_netdevice_notifier(&amp;can_netdev_notifier);
+-#endif
+-}
+ 
+-
+-
+
+Modified: branches/cannetdriver26/net/can/sysfs.h
+===================================================================
+--- branches/cannetdriver26/net/can/sysfs.h	2008-01-27 17:45:26 UTC (rev 664)
++++ branches/cannetdriver26/net/can/sysfs.h	2008-01-27 17:45:56 UTC (rev 665)
+@@ -21,8 +21,9 @@
+ #define CAN_SYSFS_H
+ 
+ int can_restart_now(struct net_device *dev);
++int can_set_bitrate(struct net_device *dev, u32 bitrate);
+ 
+-__init int can_sysfs_init(void);
+-__exit void can_sysfs_exit(void);
++void can_create_sysfs(struct net_device *dev);
++void can_remove_sysfs(struct net_device *dev);
+ 
+ #endif /* CAN_SYSFS_H */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000646.html">r664 - branches/cannetdriver26/drivers/net/can/sja1000
+</A></li>
+	<LI>Next message: <A HREF="000648.html">r666 - in branches/cannetdriver26: drivers/net/can/mscan	drivers/net/can/sja1000 include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#647">[ date ]</a>
+              <a href="thread.html#647">[ thread ]</a>
+              <a href="subject.html#647">[ subject ]</a>
+              <a href="author.html#647">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

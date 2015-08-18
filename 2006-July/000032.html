@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r55 - in trunk: doc kernel/2.6/include/linux/can kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r55%20-%20in%20trunk%3A%20doc%20kernel/2.6/include/linux/can%20kernel/2.6/net/can&In-Reply-To=%3C200607101309.k6AD9u81022271%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000033.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r55 - in trunk: doc kernel/2.6/include/linux/can kernel/2.6/net/can</H1>
+    <B>hartkopp at berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r55%20-%20in%20trunk%3A%20doc%20kernel/2.6/include/linux/can%20kernel/2.6/net/can&In-Reply-To=%3C200607101309.k6AD9u81022271%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r55 - in trunk: doc kernel/2.6/include/linux/can kernel/2.6/net/can">hartkopp at berlios.de
+       </A><BR>
+    <I>Mon Jul 10 15:09:56 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000033.html">r54 - in trunk: can-utils doc kernel/2.4/can kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000 kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can kernel/2.6/net/can test
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#32">[ date ]</a>
+              <a href="thread.html#32">[ thread ]</a>
+              <a href="subject.html#32">[ subject ]</a>
+              <a href="author.html#32">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2006-07-10 15:09:52 +0200 (Mon, 10 Jul 2006)
+New Revision: 55
+
+Modified:
+   trunk/doc/procfs.tex
+   trunk/kernel/2.6/include/linux/can/af_can.h
+   trunk/kernel/2.6/include/linux/can/can_error.h
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Added CAN_ERR_BUSERROR and CAN_ERR_RESTARTED to can_error.h
+Sorted the CAN_ERR_* defines of the error class mask.
+Introduced CAN_ERR_CRTL_[RT]X_PASSIVE defines due to discussion.
+Changed the procfs-directory from /proc/sys/net/can back to /proc/net/can.
+
+
+Modified: trunk/doc/procfs.tex
+===================================================================
+--- trunk/doc/procfs.tex	2006-07-07 06:58:26 UTC (rev 54)
++++ trunk/doc/procfs.tex	2006-07-10 13:09:52 UTC (rev 55)
+@@ -8,14 +8,14 @@
+ und Informationen &#252;ber interne Strukturen und Stati in lesbarer Form zur
+ Verf&#252;gung. Die Informationen k&#246;nnen vom Benutzer beispielsweise mit\\
+ 
+-\verb+cat /proc/sys/net/can/stats+\\
++\verb+cat /proc/net/can/stats+\\
+ 
+ abgefragt werden. Im Folgenden werden die einzelnen Eintr&#228;ge erl&#228;utert.
+ 
+-\subsection{Versionsinformation /proc/sys/net/can/version}
++\subsection{Versionsinformation /proc/net/can/version}
+ 
+ Die \LL-Versionsinformationen k&#246;nnen f&#252;r eine Anwendung z.B. durch das
+-&#214;ffnen der Datei \verb+/proc/sys/net/can/version+ ausgelesen werden. Dazu werden
++&#214;ffnen der Datei \verb+/proc/net/can/version+ ausgelesen werden. Dazu werden
+ die ersten 6 Zeichen in einen Puffer kopiert und mit 
+ \verb+ llcf_version_code = strtoul(mybuffer, (char **)NULL, 16);+
+ in den LLCF\_VERSION\_CODE &#252;berf&#252;hrt. Der LLCF\_VERSION\_CODE wird
+@@ -26,11 +26,11 @@
+ berechnet.
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/version 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/version 
+ 010000 [ Volkswagen AG - Low Level CAN Framework (LLCF) v1.0.0-rc1 ]
+ \end{code}
+ 
+-\subsection{Statistiken /proc/sys/net/can/stats}
++\subsection{Statistiken /proc/net/can/stats}
+ 
+ &#220;ber die angebotenen Statistiken kann man sich &#252;ber das aktuelle
+ Datenaufkommen informieren und wie beispielsweise der Anteil der von
+@@ -40,7 +40,7 @@
+ Die Informationen werden mit dem Start des \LL\ jede Sekunde aktualisiert.
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/stats 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/stats 
+ 
+       811 transmitted frames (TXF)
+    319427 received frames (RXF)
+@@ -62,7 +62,7 @@
+         6 maximum receive list entries (MRCV)
+ 
+ \end{code}
+-\subsection{Zur&#252;cksetzen von Statistiken /proc/sys/net/can/reset\_stats}
++\subsection{Zur&#252;cksetzen von Statistiken /proc/net/can/reset\_stats}
+ 
+ Das Zur&#252;cksetzen der statistischen Informationen kann durch interne
+ &#220;berl&#228;ufe von Z&#228;hlern oder vom Benutzer selbst initiiert werden. &#220;ber
+@@ -71,9 +71,9 @@
+ einem laufenden System bez&#252;glich der obigen Ausgabe der Statistiken
+ gut zu erkennen.
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/reset_stats 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/reset_stats 
+ LLCF statistic reset #1 done.
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/stats 
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/stats 
+ 
+        31 transmitted frames (TXF)
+      2585 received frames (RXF)
+@@ -155,7 +155,7 @@
+ Vereinfachung folgendes eingeben:
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/rcvlist_*
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/rcvlist_*
+ 
+ receive list 'rx_all':
+   device   can_id   can_mask  function  userdata   matches  ident
+@@ -194,7 +194,7 @@
+ Es geht nat&#252;rlich auch so:
+ 
+ \begin{code}
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">-hartko at pplinux1</A>:~&gt; cat /proc/sys/net/can/rcvlist_sff
+<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">+hartko at pplinux1</A>:~&gt; cat /proc/net/can/rcvlist_sff
+ 
+ receive list 'rx_sff':
+   (can1: no entry)
+
+Modified: trunk/kernel/2.6/include/linux/can/af_can.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/af_can.h	2006-07-07 06:58:26 UTC (rev 54)
++++ trunk/kernel/2.6/include/linux/can/af_can.h	2006-07-10 13:09:52 UTC (rev 55)
+@@ -95,7 +95,7 @@
+ 
+ #ifdef __KERNEL__
+ 
+-#define CAN_PROC_DIR &quot;sys/net/can&quot; /* /proc/... */
++#define CAN_PROC_DIR &quot;net/can&quot; /* /proc/... */
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,13)
+ struct can_proto {
+
+Modified: trunk/kernel/2.6/include/linux/can/can_error.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/can_error.h	2006-07-07 06:58:26 UTC (rev 54)
++++ trunk/kernel/2.6/include/linux/can/can_error.h	2006-07-10 13:09:52 UTC (rev 55)
+@@ -48,13 +48,15 @@
+ #define CAN_ERR_DLC 8 /* dlc for error frames */
+ 
+ /* error class (mask) in can_id */
+-#define CAN_ERR_BUSOFF       0x00000001U /* bus off */
+-#define CAN_ERR_TX_TIMEOUT   0x00000002U /* TX timeout (netdevice driver) */
+-#define CAN_ERR_ACK          0x00000004U /* received no ACK on transmission */
+-#define CAN_ERR_LOSTARB      0x00000008U /* lost arbitration    / data[0]    */
+-#define CAN_ERR_CRTL         0x00000010U /* controller problems / data[1]    */
+-#define CAN_ERR_PROT         0x00000020U /* protocol violations / data[2..3] */
+-#define CAN_ERR_TRX          0x00000040U /* transceiver status  / data[4]    */
++#define CAN_ERR_TX_TIMEOUT   0x00000001U /* TX timeout (by netdevice driver) */
++#define CAN_ERR_LOSTARB      0x00000002U /* lost arbitration    / data[0]    */
++#define CAN_ERR_CRTL         0x00000004U /* controller problems / data[1]    */
++#define CAN_ERR_PROT         0x00000008U /* protocol violations / data[2..3] */
++#define CAN_ERR_TRX          0x00000010U /* transceiver status  / data[4]    */
++#define CAN_ERR_ACK          0x00000020U /* received no ACK on transmission */
++#define CAN_ERR_BUSOFF       0x00000040U /* bus off */
++#define CAN_ERR_BUSERROR     0x00000080U /* bus error (may flood!) */
++#define CAN_ERR_RESTARTED    0x00000100U /* controller restarted */
+ 
+ #define CAN_ERR_MASK         0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
+ 
+@@ -68,7 +70,8 @@
+ #define CAN_ERR_CRTL_TX_OVERFLOW 0x02 /* TX buffer overflow */
+ #define CAN_ERR_CRTL_RX_WARNING  0x04 /* reached warning level for RX errors */
+ #define CAN_ERR_CRTL_TX_WARNING  0x08 /* reached warning level for TX errors */
+-#define CAN_ERR_CRTL_PASSIVE     0x10 /* reached the error passive status    */
++#define CAN_ERR_CRTL_RX_PASSIVE  0x10 /* reached error passive status RX */
++#define CAN_ERR_CRTL_TX_PASSIVE  0x20 /* reached error passive status TX */
+ 				      /* (at least one error counter exceeds */
+ 				      /* the protocol-defined level of 127)  */
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2006-07-07 06:58:26 UTC (rev 54)
++++ trunk/kernel/2.6/net/can/bcm.c	2006-07-10 13:09:52 UTC (rev 55)
+@@ -204,7 +204,7 @@
+ 
+ 	can_proto_register(CAN_BCM, &amp;bcm_can_proto);
+ 
+-	/* create /proc/can/bcm directory */
++	/* create /proc/net/can/bcm directory */
+ 	proc_dir = proc_mkdir(CAN_PROC_DIR&quot;/&quot;IDENT, NULL);
+ 
+ 	if (proc_dir)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000033.html">r54 - in trunk: can-utils doc kernel/2.4/can kernel/2.4/drivers/mscan kernel/2.4/drivers/sja1000 kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/sja1000 kernel/2.6/include/linux/can kernel/2.6/net/can test
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#32">[ date ]</a>
+              <a href="thread.html#32">[ thread ]</a>
+              <a href="subject.html#32">[ subject ]</a>
+              <a href="author.html#32">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

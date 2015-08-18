@@ -1,0 +1,243 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r767 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r767%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200806111421.m5BELfkb013878%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000746.html">
+   <LINK REL="Next"  HREF="000748.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r767 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r767%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200806111421.m5BELfkb013878%40sheep.berlios.de%3E"
+       TITLE="r767 - trunk/kernel/2.6/drivers/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun 11 16:21:41 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000746.html">r766 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+        <LI>Next message: <A HREF="000748.html">r768 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#747">[ date ]</a>
+              <a href="thread.html#747">[ thread ]</a>
+              <a href="subject.html#747">[ subject ]</a>
+              <a href="author.html#747">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-11 16:21:40 +0200 (Wed, 11 Jun 2008)
+New Revision: 767
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/slcan.c
+Log:
+Fixed cosmetic issues pointed out by Robert Schwebel:
+
+[patch 35/41] slcan: do not initialize static variables
+<A HREF="https://lists.berlios.de/pipermail/socketcan-core/2008-June/001364.html">https://lists.berlios.de/pipermail/socketcan-core/2008-June/001364.html</A>
+
+[patch 36/41] slcan: dont use assignments in if statements
+<A HREF="https://lists.berlios.de/pipermail/socketcan-core/2008-June/001357.html">https://lists.berlios.de/pipermail/socketcan-core/2008-June/001357.html</A>
+
+[patch 37/41] slcan: various coding style fixes
+<A HREF="https://lists.berlios.de/pipermail/socketcan-core/2008-June/001366.html">https://lists.berlios.de/pipermail/socketcan-core/2008-June/001366.html</A>
+
+[patch 38/41] slcan: no braces around single statements
+<A HREF="https://lists.berlios.de/pipermail/socketcan-core/2008-June/001367.html">https://lists.berlios.de/pipermail/socketcan-core/2008-June/001367.html</A>
+
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/slcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/slcan.c	2008-06-11 14:15:11 UTC (rev 766)
++++ trunk/kernel/2.6/drivers/net/can/slcan.c	2008-06-11 14:21:40 UTC (rev 767)
+@@ -89,7 +89,7 @@
+ MODULE_AUTHOR(&quot;Oliver Hartkopp &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>&gt;&quot;);
+ 
+ #ifdef CONFIG_CAN_DEBUG_DEVICES
+-static int debug = 0;
++static int debug;
+ module_param(debug, int, S_IRUGO);
+ #define DBG(args...)       (debug &amp; 1 ? \
+ 			       (printk(KERN_DEBUG &quot;slcan %s: &quot;, __func__), \
+@@ -196,7 +196,8 @@
+   *			STANDARD SLCAN DECAPSULATION		  	 *
+   ************************************************************************/
+ 
+-static int asc2nibble(char c) {
++static int asc2nibble(char c)
++{
+ 
+ 	if ((c &gt;= '0') &amp;&amp; (c &lt;= '9'))
+ 		return c - '0';
+@@ -243,12 +244,14 @@
+ 
+ 	*(u64 *) (&amp;cf.data) = 0; /* clear payload */
+ 
+-	for (i = 0, dlc_pos++; i &lt; cf.can_dlc; i++){
++	for (i = 0, dlc_pos++; i &lt; cf.can_dlc; i++) {
+ 
+-		if ((tmp = asc2nibble(sl-&gt;rbuff[dlc_pos++])) &gt; 0x0F)
++		tmp = asc2nibble(sl-&gt;rbuff[dlc_pos++]);
++		if (tmp &gt; 0x0F)
+ 			return;
+ 		cf.data[i] = (tmp &lt;&lt; 4);
+-		if ((tmp = asc2nibble(sl-&gt;rbuff[dlc_pos++])) &gt; 0x0F)
++		tmp = asc2nibble(sl-&gt;rbuff[dlc_pos++]);
++		if (tmp &gt; 0x0F)
+ 			return;
+ 		cf.data[i] |= tmp;
+ 	}
+@@ -356,9 +359,9 @@
+ 	struct net_device_stats *stats = sl-&gt;dev-&gt;get_stats(sl-&gt;dev);
+ 
+ 	/* First make sure we're connected. */
+-	if (!sl || sl-&gt;magic != SLCAN_MAGIC || !netif_running(sl-&gt;dev)) {
++	if (!sl || sl-&gt;magic != SLCAN_MAGIC || !netif_running(sl-&gt;dev))
+ 		return;
+-	}
++
+ 	if (sl-&gt;xleft &lt;= 0)  {
+ 		/* Now serial buffer is almost free &amp; we can start
+ 		 * transmission of another packet */
+@@ -461,7 +464,7 @@
+ {
+ 	struct slcan *sl = netdev_priv(dev);
+ 
+-	if (sl-&gt;tty==NULL)
++	if (sl-&gt;tty == NULL)
+ 		return -ENODEV;
+ 
+ 	sl-&gt;flags &amp;= (1 &lt;&lt; SLF_INUSE);
+@@ -539,9 +542,8 @@
+ 	/* Read the characters out of the buffer */
+ 	while (count--) {
+ 		if (fp &amp;&amp; *fp++) {
+-			if (!test_and_set_bit(SLF_ERROR, &amp;sl-&gt;flags))  {
++			if (!test_and_set_bit(SLF_ERROR, &amp;sl-&gt;flags))
+ 				stats-&gt;rx_errors++;
+-			}
+ 			cp++;
+ 			continue;
+ 		}
+@@ -562,7 +564,8 @@
+ 	struct slcan	  *sl;
+ 
+ 	for (i = 0; i &lt; maxdev; i++) {
+-		if ((dev = slcan_devs[i]) == NULL)
++		dev = slcan_devs[i];
++		if (dev == NULL)
+ 			break;
+ 
+ 		sl = netdev_priv(dev);
+@@ -689,7 +692,7 @@
+ 	struct slcan *sl;
+ 	int err;
+ 
+-	if(!capable(CAP_NET_ADMIN))
++	if (!capable(CAP_NET_ADMIN))
+ 		return -EPERM;
+ 
+ 	/* RTnetlink lock is misused here to serialize concurrent
+@@ -710,7 +713,8 @@
+ 
+ 	/* OK.  Find a free SLCAN channel to use. */
+ 	err = -ENFILE;
+-	if ((sl = slc_alloc(tty_devnum(tty))) == NULL)
++	sl = slc_alloc(tty_devnum(tty));
++	if (sl == NULL)
+ 		goto err_exit;
+ 
+ 	sl-&gt;tty = tty;
+@@ -731,7 +735,8 @@
+ 
+ 		set_bit(SLF_INUSE, &amp;sl-&gt;flags);
+ 
+-		if ((err = register_netdevice(sl-&gt;dev)))
++		err = register_netdevice(sl-&gt;dev);
++		if (err)
+ 			goto err_free_chan;
+ 	}
+ 
+@@ -805,11 +810,10 @@
+ 	unsigned int tmp;
+ 
+ 	/* First make sure we're connected. */
+-	if (!sl || sl-&gt;magic != SLCAN_MAGIC) {
++	if (!sl || sl-&gt;magic != SLCAN_MAGIC)
+ 		return -EINVAL;
+-	}
+ 
+-	switch(cmd) {
++	switch (cmd) {
+ 	case SIOCGIFNAME:
+ 		tmp = strlen(sl-&gt;dev-&gt;name) + 1;
+ 		if (copy_to_user((void __user *)arg, sl-&gt;dev-&gt;name, tmp))
+@@ -856,7 +860,7 @@
+ 		maxdev = 4; /* Sanity */
+ 
+ 	printk(banner);
+-	printk(KERN_INFO &quot;slcan: %d dynamic interface channels.\n&quot;, maxdev );
++	printk(KERN_INFO &quot;slcan: %d dynamic interface channels.\n&quot;, maxdev);
+ 
+ 	slcan_devs = kmalloc(sizeof(struct net_device *)*maxdev, GFP_KERNEL);
+ 	if (!slcan_devs) {
+@@ -868,7 +872,8 @@
+ 	memset(slcan_devs, 0, sizeof(struct net_device *)*maxdev);
+ 
+ 	/* Fill in our line protocol discipline, and register it */
+-	if ((status = tty_register_ldisc(N_SLCAN, &amp;slc_ldisc)) != 0)  {
++	status = tty_register_ldisc(N_SLCAN, &amp;slc_ldisc);
++	if (status != 0)  {
+ 		printk(KERN_ERR &quot;slcan: can't register line discipline\n&quot;);
+ 		kfree(slcan_devs);
+ 	}
+@@ -928,10 +933,9 @@
+ 	kfree(slcan_devs);
+ 	slcan_devs = NULL;
+ 
+-	if ((i = tty_unregister_ldisc(N_SLCAN)))
+-	{
++	i = tty_unregister_ldisc(N_SLCAN);
++	if (i)
+ 		printk(KERN_ERR &quot;slcan: can't unregister ldisc (err %d)\n&quot;, i);
+-	}
+ }
+ 
+ module_init(slcan_init);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000746.html">r766 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+	<LI>Next message: <A HREF="000748.html">r768 - trunk/kernel/2.6/drivers/net/can/mscan
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#747">[ date ]</a>
+              <a href="thread.html#747">[ thread ]</a>
+              <a href="subject.html#747">[ subject ]</a>
+              <a href="author.html#747">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

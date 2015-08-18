@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r637 - in trunk/kernel: 2.4/include/linux/can 2.6/include/linux/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-December/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r637%20-%20in%20trunk/kernel%3A%202.4/include/linux/can%202.6/include/linux/can&In-Reply-To=%3C200712261021.lBQALeiQ000421%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000618.html">
+   <LINK REL="Next"  HREF="000620.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r637 - in trunk/kernel: 2.4/include/linux/can 2.6/include/linux/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r637%20-%20in%20trunk/kernel%3A%202.4/include/linux/can%202.6/include/linux/can&In-Reply-To=%3C200712261021.lBQALeiQ000421%40sheep.berlios.de%3E"
+       TITLE="r637 - in trunk/kernel: 2.4/include/linux/can 2.6/include/linux/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 26 11:21:40 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000618.html">r636 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000620.html">r638 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#619">[ date ]</a>
+              <a href="thread.html#619">[ thread ]</a>
+              <a href="subject.html#619">[ subject ]</a>
+              <a href="author.html#619">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-12-26 11:21:38 +0100 (Wed, 26 Dec 2007)
+New Revision: 637
+
+Modified:
+   trunk/kernel/2.4/include/linux/can/bcm.h
+   trunk/kernel/2.6/include/linux/can/bcm.h
+Log:
+Renamed plain int definitions in struct bcm_msg_head to __u32 as 
+corectly pointed out by Sam Ravenborg:
+<A HREF="https://lists.berlios.de/pipermail/socketcan-core/2007-December/001000.html">https://lists.berlios.de/pipermail/socketcan-core/2007-December/001000.html</A>
+
+
+Modified: trunk/kernel/2.4/include/linux/can/bcm.h
+===================================================================
+--- trunk/kernel/2.4/include/linux/can/bcm.h	2007-12-23 18:17:29 UTC (rev 636)
++++ trunk/kernel/2.4/include/linux/can/bcm.h	2007-12-26 10:21:38 UTC (rev 637)
+@@ -28,12 +28,12 @@
+  * @frames:    array of CAN frames.
+  */
+ struct bcm_msg_head {
+-	int opcode;
+-	int flags;
+-	int count;
++	__u32 opcode;
++	__u32 flags;
++	__u32 count;
+ 	struct timeval ival1, ival2;
+ 	canid_t can_id;
+-	int nframes;
++	__u32 nframes;
+ 	struct can_frame frames[0];
+ };
+ 
+
+Modified: trunk/kernel/2.6/include/linux/can/bcm.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/bcm.h	2007-12-23 18:17:29 UTC (rev 636)
++++ trunk/kernel/2.6/include/linux/can/bcm.h	2007-12-26 10:21:38 UTC (rev 637)
+@@ -28,12 +28,12 @@
+  * @frames:    array of CAN frames.
+  */
+ struct bcm_msg_head {
+-	int opcode;
+-	int flags;
+-	int count;
++	__u32 opcode;
++	__u32 flags;
++	__u32 count;
+ 	struct timeval ival1, ival2;
+ 	canid_t can_id;
+-	int nframes;
++	__u32 nframes;
+ 	struct can_frame frames[0];
+ };
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000618.html">r636 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000620.html">r638 - trunk/kernel/2.4/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#619">[ date ]</a>
+              <a href="thread.html#619">[ thread ]</a>
+              <a href="subject.html#619">[ subject ]</a>
+              <a href="author.html#619">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

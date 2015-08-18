@@ -1,0 +1,347 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1167 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1167%20-%20in%20trunk%3A%20can-utils%20kernel/2.6/include/socketcan/can%0A%09kernel/2.6/net/can&In-Reply-To=%3C201004160846.o3G8kIxP013166%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000798.html">
+   <LINK REL="Next"  HREF="000800.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1167 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1167%20-%20in%20trunk%3A%20can-utils%20kernel/2.6/include/socketcan/can%0A%09kernel/2.6/net/can&In-Reply-To=%3C201004160846.o3G8kIxP013166%40sheep.berlios.de%3E"
+       TITLE="r1167 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 16 10:46:19 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000798.html">r1166 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000800.html">r1168 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#799">[ date ]</a>
+              <a href="thread.html#799">[ thread ]</a>
+              <a href="subject.html#799">[ subject ]</a>
+              <a href="author.html#799">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-04-16 10:46:17 +0200 (Fri, 16 Apr 2010)
+New Revision: 1167
+
+Modified:
+   trunk/can-utils/cangw.c
+   trunk/kernel/2.6/include/socketcan/can/gw.h
+   trunk/kernel/2.6/net/can/gw.c
+Log:
+Added CRC8 profiles to handle additional data for checksum generation.
+
+
+Modified: trunk/can-utils/cangw.c
+===================================================================
+--- trunk/can-utils/cangw.c	2010-04-12 14:41:14 UTC (rev 1166)
++++ trunk/can-utils/cangw.c	2010-04-16 08:46:17 UTC (rev 1167)
+@@ -138,6 +138,35 @@
+ 	       cs_xor-&gt;result_idx, cs_xor-&gt;init_xor_val);
+ }
+ 
++void print_cs_crc8_profile(struct cgw_csum_crc8 *cs_crc8)
++{
++	int i;
++
++	printf(&quot;-p %d:&quot;, cs_crc8-&gt;profile);
++
++	switch (cs_crc8-&gt;profile) {
++
++	case  CGW_CRC8PRF_1U8:
++
++		printf(&quot;%02X&quot;, cs_crc8-&gt;profile_data[0]);
++		break;
++
++	case  CGW_CRC8PRF_16U8:
++
++		for (i = 0; i &lt; 16; i++)
++			printf(&quot;%02X&quot;, cs_crc8-&gt;profile_data[i]);
++		break;
++
++	case  CGW_CRC8PRF_SFFID_XOR:
++		break;
++
++	default:
++		printf(&quot;&lt;unknown profile #%d&gt;&quot;, cs_crc8-&gt;profile);
++	}
++
++	printf(&quot; &quot;);
++}
++
+ void print_cs_crc8(struct cgw_csum_crc8 *cs_crc8)
+ {
+ 	int i;
+@@ -151,6 +180,9 @@
+ 		printf(&quot;%02X&quot;, cs_crc8-&gt;crctab[i]);
+ 
+ 	printf(&quot; &quot;);
++
++	if (cs_crc8-&gt;profile != CGW_CRC8PRF_UNSPEC)
++		print_cs_crc8_profile(cs_crc8);
+ }
+ 
+ void print_usage(char *prg)
+@@ -166,6 +198,9 @@
+ 	fprintf(stderr, &quot;           -e (echo sent frames - recommended on vcanx)\n&quot;);
+ 	fprintf(stderr, &quot;           -f &lt;filter&gt; (set CAN filter)\n&quot;);
+ 	fprintf(stderr, &quot;           -m &lt;mod&gt; (set frame modifications)\n&quot;);
++	fprintf(stderr, &quot;           -x &lt;from_idx&gt;:&lt;to_idx&gt;:&lt;result_idx&gt;:&lt;init_xor_val&gt; (XOR checksum)\n&quot;);
++	fprintf(stderr, &quot;           -c &lt;from&gt;:&lt;to&gt;:&lt;result&gt;:&lt;init_val&gt;:&lt;xor_val&gt;:&lt;crctab[256]&gt; (CRC8 cs)\n&quot;);
++	fprintf(stderr, &quot;           -p &lt;profile&gt;:[&lt;profile_data&gt;] (CRC8 checksum profile &amp; parameters)\n&quot;);
+ 	fprintf(stderr, &quot;\nValues are given and expected in hexadecimal values. Leading 0s can be omitted.\n&quot;);
+ 	fprintf(stderr, &quot;\n&quot;);
+ 	fprintf(stderr, &quot;&lt;filter&gt; is a &lt;value&gt;:&lt;mask&gt; CAN identifier filter\n&quot;);
+@@ -182,6 +217,11 @@
+ 	fprintf(stderr, &quot;Example:\n&quot;);
+ 	fprintf(stderr, &quot;%s -A -s can0 -d vcan3 -e -f 123:C00007FF -m SET:IL:333.4.1122334455667788\n&quot;, prg);
+ 	fprintf(stderr, &quot;\n&quot;);
++	fprintf(stderr, &quot;Supported CRC 8 profiles:\n&quot;);
++	fprintf(stderr, &quot;Profile '%d' (1U8)       - add one additional u8 value\n&quot;, CGW_CRC8PRF_1U8);
++	fprintf(stderr, &quot;Profile '%d' (16U8)      - add u8 value from table[16] indexed by (data[1] &amp; 0xF)\n&quot;, CGW_CRC8PRF_16U8);
++	fprintf(stderr, &quot;Profile '%d' (SFFID_XOR) - add u8 value (can_id &amp; 0xFF) ^ (can_id &gt;&gt; 8 &amp; 0xFF)\n&quot;, CGW_CRC8PRF_SFFID_XOR);
++	fprintf(stderr, &quot;\n&quot;);
+ }
+ 
+ int b64hex(char *asc, unsigned char *bin, int len)
+@@ -195,6 +235,45 @@
+ 	return 0;
+ }
+ 
++int parse_crc8_profile(char *optarg, struct cgw_csum_crc8 *crc8)
++{
++	int ret = 1;
++	char *ptr;
++
++	if (sscanf(optarg, &quot;%hhd:&quot;, &amp;crc8-&gt;profile) != 1)
++		return ret;
++
++	switch (crc8-&gt;profile) {
++
++	case  CGW_CRC8PRF_1U8:
++
++		if (sscanf(optarg, &quot;%hhd:%2hhx&quot;, &amp;crc8-&gt;profile, &amp;crc8-&gt;profile_data[0]) == 2)
++			ret = 0;
++
++		break;
++
++	case  CGW_CRC8PRF_16U8:
++
++		ptr = strchr(optarg, ':');
++
++		/* check if length contains 16 base64 hex values */
++		if (ptr != NULL &amp;&amp;
++		    strlen(ptr) == strlen(&quot;:00112233445566778899AABBCCDDEEFF&quot;) &amp;&amp;
++		    b64hex(ptr+1, (unsigned char *)&amp;crc8-&gt;profile_data[0], 16) == 0)
++			ret = 0;
++
++		break;
++
++	case  CGW_CRC8PRF_SFFID_XOR:
++
++		/* no additional parameters needed */
++		ret = 0;
++		break;
++	}
++
++	return ret;
++}
++
+ int parse_mod(char *optarg, struct modattr *modmsg)
+ {
+ 	char *ptr, *nptr;
+@@ -469,8 +548,10 @@
+ 	int i;
+ 
+ 	memset(&amp;req, 0, sizeof(req));
++	memset(&amp;cs_xor, 0, sizeof(cs_xor));
++	memset(&amp;cs_crc8, 0, sizeof(cs_crc8));
+ 
+-	while ((opt = getopt(argc, argv, &quot;ADFLs:d:tef:c:x:m:?&quot;)) != -1) {
++	while ((opt = getopt(argc, argv, &quot;ADFLs:d:tef:c:p:x:m:?&quot;)) != -1) {
+ 		switch (opt) {
+ 
+ 		case 'A':
+@@ -545,6 +626,13 @@
+ 			}
+ 			break;
+ 
++		case 'p':
++			if (parse_crc8_profile(optarg, &amp;cs_crc8)) {
++				printf(&quot;Bad CRC8 profile definition '%s'.\n&quot;, optarg);
++				exit(1);
++			}
++			break;
++
+ 		case 'm':
+ 			/* may be triggered by each of the CGW_MOD_FUNCS functions */
+ 			if ((modidx &lt; CGW_MOD_FUNCS) &amp;&amp; (err = parse_mod(optarg, &amp;modmsg[modidx++]))) {
+
+Modified: trunk/kernel/2.6/include/socketcan/can/gw.h
+===================================================================
+--- trunk/kernel/2.6/include/socketcan/can/gw.h	2010-04-12 14:41:14 UTC (rev 1166)
++++ trunk/kernel/2.6/include/socketcan/can/gw.h	2010-04-16 08:46:17 UTC (rev 1167)
+@@ -87,12 +87,25 @@
+ 	__u8 init_crc_val;
+ 	__u8 final_xor_val;
+ 	__u8 crctab[256];
++	__u8 profile;
++	__u8 profile_data[20];
+ } __attribute__ ((packed));
+ 
+ /* length of checksum operation parameters. idx = index in CAN frame data[] */
+ #define CGW_CS_XOR_LEN  sizeof(struct cgw_csum_xor)
+ #define CGW_CS_CRC8_LEN  sizeof(struct cgw_csum_crc8)
+ 
++/* CRC8 profiles (compute CRC for additional data elements - see below) */
++enum {
++	CGW_CRC8PRF_UNSPEC,
++	CGW_CRC8PRF_1U8,	/* compute one additional u8 value */
++	CGW_CRC8PRF_16U8,	/* u8 value table indexed by data[1] &amp; 0xF */
++	CGW_CRC8PRF_SFFID_XOR,	/* (can_id &amp; 0xFF) ^ (can_id &gt;&gt; 8 &amp; 0xFF) */
++	__CGW_CRC8PRF_MAX
++};
++
++#define CGW_CRC8PRF_MAX (__CGW_CRC8PRF_MAX - 1)
++
+ /*
+  * CAN rtnetlink attribute contents in detail
+  *
+@@ -124,7 +137,7 @@
+  *
+  * can_frame.data[ result_idx ] = xor
+  *
+- * CGW_CS_CRC8 (length 261 bytes):
++ * CGW_CS_CRC8 (length 282 bytes):
+  * Set a CRC8 value into data[result-idx] using a given 256 byte CRC8 table,
+  * a given initial value and a defined input data[start-idx] .. data[end-idx].
+  * Finally the result value is XOR'ed with the final_xor_val.
+@@ -138,6 +151,13 @@
+  *
+  * can_frame.data[ result_idx ] = crc ^ final_xor_val
+  *
++ * The calculated CRC may contain additional source data elements that can be
++ * defined in the handling of 'checksum profiles' e.g. shown in AUTOSAR specs
++ * like <A HREF="http://www.autosar.org/download/R4.0/AUTOSAR_SWS_E2ELibrary.pdf">http://www.autosar.org/download/R4.0/AUTOSAR_SWS_E2ELibrary.pdf</A>
++ * E.g. the profile_data[] may contain additional u8 values (called DATA_IDs)
++ * that are used depending on counter values inside the CAN frame data[].
++ * So far only three profiles have been implemented for illustration.
++ *
+  * Remark: In general the attribute data is a linear buffer.
+  *         Beware of sending unpacked or aligned structs!
+  */
+
+Modified: trunk/kernel/2.6/net/can/gw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/gw.c	2010-04-12 14:41:14 UTC (rev 1166)
++++ trunk/kernel/2.6/net/can/gw.c	2010-04-16 08:46:17 UTC (rev 1167)
+@@ -264,6 +264,23 @@
+ 			crc = crc8-&gt;crctab[crc^cf-&gt;data[i]];
+ 	}
+ 
++	switch (crc8-&gt;profile) {
++
++	case CGW_CRC8PRF_1U8:
++		crc = crc8-&gt;crctab[crc^crc8-&gt;profile_data[0]];
++		break;
++
++	case  CGW_CRC8PRF_16U8:
++		crc = crc8-&gt;crctab[crc^crc8-&gt;profile_data[cf-&gt;data[1] &amp; 0xF]];
++		break;
++
++	case CGW_CRC8PRF_SFFID_XOR:
++		crc = crc8-&gt;crctab[crc^(cf-&gt;can_id &amp; 0xFF)^
++				   (cf-&gt;can_id &gt;&gt; 8 &amp; 0xFF)];
++		break;
++
++	}
++
+ 	cf-&gt;data[crc8-&gt;result_idx] = crc^crc8-&gt;final_xor_val;
+ }
+ 
+@@ -275,6 +292,22 @@
+ 	for (i = crc8-&gt;from_idx; i &lt;= crc8-&gt;to_idx; i++)
+ 		crc = crc8-&gt;crctab[crc^cf-&gt;data[i]];
+ 
++	switch (crc8-&gt;profile) {
++
++	case CGW_CRC8PRF_1U8:
++		crc = crc8-&gt;crctab[crc^crc8-&gt;profile_data[0]];
++		break;
++
++	case  CGW_CRC8PRF_16U8:
++		crc = crc8-&gt;crctab[crc^crc8-&gt;profile_data[cf-&gt;data[1] &amp; 0xF]];
++		break;
++
++	case CGW_CRC8PRF_SFFID_XOR:
++		crc = crc8-&gt;crctab[crc^(cf-&gt;can_id &amp; 0xFF)^
++				   (cf-&gt;can_id &gt;&gt; 8 &amp; 0xFF)];
++		break;
++	}
++
+ 	cf-&gt;data[crc8-&gt;result_idx] = crc^crc8-&gt;final_xor_val;
+ }
+ 
+@@ -286,6 +319,22 @@
+ 	for (i = crc8-&gt;from_idx; i &gt;= crc8-&gt;to_idx; i--)
+ 		crc = crc8-&gt;crctab[crc^cf-&gt;data[i]];
+ 
++	switch (crc8-&gt;profile) {
++
++	case CGW_CRC8PRF_1U8:
++		crc = crc8-&gt;crctab[crc^crc8-&gt;profile_data[0]];
++		break;
++
++	case  CGW_CRC8PRF_16U8:
++		crc = crc8-&gt;crctab[crc^crc8-&gt;profile_data[cf-&gt;data[1] &amp; 0xF]];
++		break;
++
++	case CGW_CRC8PRF_SFFID_XOR:
++		crc = crc8-&gt;crctab[crc^(cf-&gt;can_id &amp; 0xFF)^
++				   (cf-&gt;can_id &gt;&gt; 8 &amp; 0xFF)];
++		break;
++	}
++
+ 	cf-&gt;data[crc8-&gt;result_idx] = crc^crc8-&gt;final_xor_val;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000798.html">r1166 - in trunk: can-utils kernel/2.6/include/socketcan/can	kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000800.html">r1168 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#799">[ date ]</a>
+              <a href="thread.html#799">[ thread ]</a>
+              <a href="subject.html#799">[ subject ]</a>
+              <a href="author.html#799">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

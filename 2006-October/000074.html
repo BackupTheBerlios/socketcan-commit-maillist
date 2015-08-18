@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r93 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-October/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r93%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200610270732.k9R7WbiF014737%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000073.html">
+   <LINK REL="Next"  HREF="000075.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r93 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r93%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200610270732.k9R7WbiF014737%40sheep.berlios.de%3E"
+       TITLE="r93 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct 27 09:32:37 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000073.html">r92 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000075.html">r94 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#74">[ date ]</a>
+              <a href="thread.html#74">[ thread ]</a>
+              <a href="subject.html#74">[ subject ]</a>
+              <a href="author.html#74">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2006-10-27 09:32:36 +0200 (Fri, 27 Oct 2006)
+New Revision: 93
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+Log:
+move memory allocation out of spin-locked region.
+remove two unnecessary checks for success of find_rcv_list().
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2006-10-25 15:44:50 UTC (rev 92)
++++ trunk/kernel/2.6/net/can/af_can.c	2006-10-27 07:32:36 UTC (rev 93)
+@@ -429,7 +429,7 @@
+ 		for (i = 0; i &lt; 2048; i++)
+ 			can_rx_delete_all(&amp;d-&gt;rx_sff[i]);
+ 
+-unreg_out:
++	unreg_out:
+ 		spin_unlock(&amp;rcv_lists_lock);
+ 
+ 		if (d)
+@@ -510,28 +510,25 @@
+ 	struct hlist_head *rl;
+ 	struct dev_rcv_lists *d;
+ 
++	/* insert new receiver  (dev,canid,mask) -&gt; (func,data) */
++
+ 	DBG(&quot;dev %p, id %03X, mask %03X, callback %p, data %p, ident %s\n&quot;,
+ 	    dev, can_id, mask, func, data, ident);
+ 
++	if (!(r = kmem_cache_alloc(rcv_cache, GFP_KERNEL)))
++		goto out;
++
+ 	spin_lock(&amp;rcv_lists_lock);
+ 
+ 	if (!(d = find_dev_rcv_lists(dev))) {
+ 		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+ 		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
+-		goto out;
++		kmem_cache_free(rcv_cache, r);
++		goto out_unlock;
+ 	}
+ 
+-	if (!(rl = find_rcv_list(&amp;can_id, &amp;mask, d))) {
+-		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X, ident %s\n&quot;,
+-		       dev-&gt;name, can_id, mask, ident);
+-		goto out;
+-	}
++	rl = find_rcv_list(&amp;can_id, &amp;mask, d);
+ 
+-	/* insert   (dev,canid,mask) -&gt; (func,data) */
+-	if (!(r = kmem_cache_alloc(rcv_cache, GFP_KERNEL)))
+-		goto out;
+-
+ 	r-&gt;can_id  = can_id;
+ 	r-&gt;mask    = mask;
+ 	r-&gt;matches = 0;
+@@ -546,8 +543,10 @@
+ 	if (pstats.rcv_entries_max &lt; pstats.rcv_entries)
+ 		pstats.rcv_entries_max = pstats.rcv_entries;
+ 
+- out:
++ out_unlock:
+ 	spin_unlock(&amp;rcv_lists_lock);
++ out:
++	return;
+ }
+ 
+ static void can_rcv_lists_delete(struct rcu_head *rp)
+@@ -594,13 +593,9 @@
+ 		goto out;
+ 	}
+ 
+-	if (!(rl = find_rcv_list(&amp;can_id, &amp;mask, d))) {
+-		printk(KERN_ERR &quot;CAN: receive list not found for &quot;
+-		       &quot;dev %s, id %03X, mask %03X\n&quot;, dev-&gt;name, can_id, mask);
+-		goto out;
+-	}
++	rl = find_rcv_list(&amp;can_id, &amp;mask, d);
+ 
+-	/*  Search the receiver list for the item to delete.  This must
++	/*  Search the receiver list for the item to delete.  This should
+ 	 *  exist, since no receiver may be unregistered that hasn't
+ 	 *  been registered before.
+ 	 */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000073.html">r92 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000075.html">r94 - trunk/kernel/2.6/include/linux
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#74">[ date ]</a>
+              <a href="thread.html#74">[ thread ]</a>
+              <a href="subject.html#74">[ subject ]</a>
+              <a href="author.html#74">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

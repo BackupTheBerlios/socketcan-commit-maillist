@@ -1,0 +1,98 @@
+From hartkopp at scm.berlios.de  Fri Oct 11 17:29:58 2013
+From: hartkopp at scm.berlios.de (hartkopp at scm.berlios.de)
+Date: Fri, 11 Oct 2013 17:29:58 +0200
+Subject: r1278 - branches tags trunk
+Message-ID: <20131011152958.914C955B0C@scm.berlios.de>
+
+Author: hartkopp
+Date: 2013-10-11 17:29:58 +0200 (Fri, 11 Oct 2013)
+New Revision: 1278
+
+Added:
+   branches/README-new-project-site
+   tags/README-new-project-site
+   trunk/README-new-project-site
+Log:
+Add README files to mark the BerliOS SocketCAN SVN as obsolete.
+
+###
+
+SocketCAN has become the official Linux CAN subsystem as part of Mainline Linux since Kernel 2.6.25 (2008-04-17)
+
+THE PROJECT DEVELOPMENT HAS MOVED TO https://gitorious.org/linux-can
+
+THE CAN-UTILS CAN BE FOUND AT https://gitorious.org/linux-can/can-utils
+
+THE MAILING LIST IS NOW ON http://vger.kernel.org/vger-lists.html#linux-can
+
+SEE MAIL ARCHIVES AT http://dir.gmane.org/gmane.linux.can AND http://marc.info/?l=linux-can
+
+---
+
+Socket-CAN provides an API for CAN devices based on BSD sockets.
+
+###
+
+
+
+Added: branches/README-new-project-site
+===================================================================
+--- branches/README-new-project-site	                        (rev 0)
++++ branches/README-new-project-site	2013-10-11 15:29:58 UTC (rev 1278)
+@@ -0,0 +1,13 @@
++SocketCAN has become the official Linux CAN subsystem as part of Mainline Linux since Kernel 2.6.25 (2008-04-17)
++
++THE PROJECT DEVELOPMENT HAS MOVED TO https://gitorious.org/linux-can
++
++THE CAN-UTILS CAN BE FOUND AT https://gitorious.org/linux-can/can-utils
++
++THE MAILING LIST IS NOW ON http://vger.kernel.org/vger-lists.html#linux-can
++
++SEE MAIL ARCHIVES AT http://dir.gmane.org/gmane.linux.can AND http://marc.info/?l=linux-can
++
++---
++
++Socket-CAN provides an API for CAN devices based on BSD sockets.
+\ No newline at end of file
+
+Added: tags/README-new-project-site
+===================================================================
+--- tags/README-new-project-site	                        (rev 0)
++++ tags/README-new-project-site	2013-10-11 15:29:58 UTC (rev 1278)
+@@ -0,0 +1,13 @@
++SocketCAN has become the official Linux CAN subsystem as part of Mainline Linux since Kernel 2.6.25 (2008-04-17)
++
++THE PROJECT DEVELOPMENT HAS MOVED TO https://gitorious.org/linux-can
++
++THE CAN-UTILS CAN BE FOUND AT https://gitorious.org/linux-can/can-utils
++
++THE MAILING LIST IS NOW ON http://vger.kernel.org/vger-lists.html#linux-can
++
++SEE MAIL ARCHIVES AT http://dir.gmane.org/gmane.linux.can AND http://marc.info/?l=linux-can
++
++---
++
++Socket-CAN provides an API for CAN devices based on BSD sockets.
+\ No newline at end of file
+
+Added: trunk/README-new-project-site
+===================================================================
+--- trunk/README-new-project-site	                        (rev 0)
++++ trunk/README-new-project-site	2013-10-11 15:29:58 UTC (rev 1278)
+@@ -0,0 +1,13 @@
++SocketCAN has become the official Linux CAN subsystem as part of Mainline Linux since Kernel 2.6.25 (2008-04-17)
++
++THE PROJECT DEVELOPMENT HAS MOVED TO https://gitorious.org/linux-can
++
++THE CAN-UTILS CAN BE FOUND AT https://gitorious.org/linux-can/can-utils
++
++THE MAILING LIST IS NOW ON http://vger.kernel.org/vger-lists.html#linux-can
++
++SEE MAIL ARCHIVES AT http://dir.gmane.org/gmane.linux.can AND http://marc.info/?l=linux-can
++
++---
++
++Socket-CAN provides an API for CAN devices based on BSD sockets.
+\ No newline at end of file
+
+

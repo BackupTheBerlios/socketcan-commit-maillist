@@ -1,0 +1,220 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r305 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/i82527	drivers/net/can/mscan drivers/net/can/sja1000 include/linux/can	net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r305%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/i82527%0A%09drivers/net/can/mscan%20drivers/net/can/sja1000%20include/linux/can%0A%09net/can&In-Reply-To=%3C200705131949.l4DJnwbX030488%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000288.html">
+   <LINK REL="Next"  HREF="000290.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r305 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/i82527	drivers/net/can/mscan drivers/net/can/sja1000 include/linux/can	net/can</H1>
+    <B>wolf at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r305%20-%20in%20trunk/kernel/2.6%3A%20drivers/net/can%20drivers/net/can/i82527%0A%09drivers/net/can/mscan%20drivers/net/can/sja1000%20include/linux/can%0A%09net/can&In-Reply-To=%3C200705131949.l4DJnwbX030488%40sheep.berlios.de%3E"
+       TITLE="r305 - in trunk/kernel/2.6: drivers/net/can drivers/net/can/i82527	drivers/net/can/mscan drivers/net/can/sja1000 include/linux/can	net/can">wolf at mail.berlios.de
+       </A><BR>
+    <I>Sun May 13 21:49:58 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000288.html">r304 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000290.html">r306 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#289">[ date ]</a>
+              <a href="thread.html#289">[ thread ]</a>
+              <a href="subject.html#289">[ subject ]</a>
+              <a href="author.html#289">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: wolf
+Date: 2007-05-13 21:49:57 +0200 (Sun, 13 May 2007)
+New Revision: 305
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+   trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+   trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+   trunk/kernel/2.6/include/linux/can/dev.h
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Fix problems with building Socket-CAN for MPC5200
+
+This patch fixes some build issues with missing version.h and updates
+the MSCAN Makefile for out-of-tree compilation.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/i82527/i82527.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-13 19:47:23 UTC (rev 304)
++++ trunk/kernel/2.6/drivers/net/can/i82527/i82527.c	2007-05-13 19:49:57 UTC (rev 305)
+@@ -44,6 +44,7 @@
+ 
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/kernel.h&gt;
+ #include &lt;linux/sched.h&gt;
+ #include &lt;linux/types.h&gt;
+
+Modified: trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2007-05-13 19:47:23 UTC (rev 304)
++++ trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2007-05-13 19:49:57 UTC (rev 305)
+@@ -1,10 +1,69 @@
+ #
+ #  $Id$
+ #
+-#  Makefile for the MSCAN based device drivers.
++#  Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++#  All rights reserved.
+ #
++#  Redistribution and use in source and binary forms, with or without
++#  modification, are permitted provided that the following conditions
++#  are met:
++#  1. Redistributions of source code must retain the above copyright
++#     notice, this list of conditions, the following disclaimer and
++#     the referenced file 'COPYING'.
++#  2. Redistributions in binary form must reproduce the above copyright
++#     notice, this list of conditions and the following disclaimer in the
++#     documentation and/or other materials provided with the distribution.
++#  3. Neither the name of Volkswagen nor the names of its contributors
++#     may be used to endorse or promote products derived from this software
++#     without specific prior written permission.
+ #
++#  Alternatively, provided that this notice is retained in full, this
++#  software may be distributed under the terms of the GNU General
++#  Public License (&quot;GPL&quot;) version 2 as distributed in the 'COPYING'
++#  file from the main directory of the linux kernel source.
++#
++#  The provided data structures and external interfaces from this code
++#  are not restricted to be used by modules with a GPL compatible license.
++#
++#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++#  DAMAGE.
++#
++#  Send feedback to &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-users at lists.berlios.de</A>&gt;
+ 
++ifeq ($(KERNELRELEASE),)
++
++KERNELDIR = /usr/src/linux
++PWD       = $(shell pwd)
++
++default:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
++
++clean:
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
++
++else
++
++ifneq ($(KBUILD_EXTMOD),)
++EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/../../../include \
++		-I$(KBUILD_EXTMOD)/hal \
++		-DETH_P_CAN=0x000C \
++		-DARPHRD_CAN=280
++endif
++
+ obj-$(CONFIG_CAN_MPC52XX)	+= mpc52xx_can.o
+ 
+ obj-$(CONFIG_CAN_MSCAN)		+= mscan.o
++
++mscan-mpc52xx-objs	:= mscan.o mpc52xx_can.o
++
++endif
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-13 19:47:23 UTC (rev 304)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/sja1000.c	2007-05-13 19:49:57 UTC (rev 305)
+@@ -47,6 +47,7 @@
+ 
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/kernel.h&gt;
+ #include &lt;linux/sched.h&gt;
+ #include &lt;linux/types.h&gt;
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-13 19:47:23 UTC (rev 304)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-05-13 19:49:57 UTC (rev 305)
+@@ -44,6 +44,7 @@
+ 
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/if_arp.h&gt;
+ #include &lt;linux/if_ether.h&gt;
+
+Modified: trunk/kernel/2.6/include/linux/can/dev.h
+===================================================================
+--- trunk/kernel/2.6/include/linux/can/dev.h	2007-05-13 19:47:23 UTC (rev 304)
++++ trunk/kernel/2.6/include/linux/can/dev.h	2007-05-13 19:49:57 UTC (rev 305)
+@@ -13,6 +13,7 @@
+ #ifndef CAN_DEVICE_H
+ #define CAN_DEVICE_H
+ 
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/can/error.h&gt;
+ #include &lt;linux/can/ioctl.h&gt;
+ 
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-05-13 19:47:23 UTC (rev 304)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-05-13 19:49:57 UTC (rev 305)
+@@ -44,6 +44,7 @@
+ 
+ #include &lt;linux/module.h&gt;
+ #include &lt;linux/init.h&gt;
++#include &lt;linux/version.h&gt;
+ #include &lt;linux/net.h&gt;
+ #include &lt;linux/netdevice.h&gt;
+ #include &lt;linux/proc_fs.h&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000288.html">r304 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000290.html">r306 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#289">[ date ]</a>
+              <a href="thread.html#289">[ thread ]</a>
+              <a href="subject.html#289">[ subject ]</a>
+              <a href="author.html#289">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

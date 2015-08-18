@@ -1,0 +1,420 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r384 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r384%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706211029.l5LATuZK029361%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000366.html">
+   <LINK REL="Next"  HREF="000368.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r384 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r384%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200706211029.l5LATuZK029361%40sheep.berlios.de%3E"
+       TITLE="r384 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 21 12:29:56 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000366.html">r383 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000368.html">r385 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#367">[ date ]</a>
+              <a href="thread.html#367">[ thread ]</a>
+              <a href="subject.html#367">[ subject ]</a>
+              <a href="author.html#367">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-06-21 12:29:54 +0200 (Thu, 21 Jun 2007)
+New Revision: 384
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Remove struct raw_opt and bcm_opt and integrate them into
+struct raw_scok resp. struct bcm_sock directly.
+Add (untested) support for kernels &lt; 2.6.12.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-06-20 12:09:30 UTC (rev 383)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-06-21 10:29:54 UTC (rev 384)
+@@ -113,17 +113,6 @@
+ 	struct net_device *rx_reg_dev;
+ };
+ 
+-struct bcm_opt {
+-	int bound;
+-	int ifindex;
+-	struct notifier_block notifier;
+-	struct list_head rx_ops;
+-	struct list_head tx_ops;
+-	unsigned long dropped_usr_msgs;
+-	struct proc_dir_entry *bcm_proc_read;
+-	char procname [9]; /* pointer printed in ASCII with \0 */
+-};
+-
+ static struct proc_dir_entry *proc_dir = NULL;
+ 
+ #ifdef CONFIG_CAN_BCM_USER
+@@ -132,22 +121,30 @@
+ #define BCM_CAP CAP_NET_RAW
+ #endif
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+ struct bcm_sock {
+-	struct sock    sk;
+-	struct bcm_opt opt;
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	struct sock sk;
++#else
++	struct sock *sk;
++#endif
++	int bound;
++	int ifindex;
++	struct notifier_block notifier;
++	struct list_head rx_ops;
++	struct list_head tx_ops;
++	unsigned long dropped_usr_msgs;
++	struct proc_dir_entry *bcm_proc_read;
++	char procname [9]; /* pointer printed in ASCII with \0 */
+ };
+ 
+-static inline struct bcm_opt *bcm_sk(const struct sock *sk)
++static inline struct bcm_sock *bcm_sk(const struct sock *sk)
+ {
+-	return &amp;((struct bcm_sock *)sk)-&gt;opt;
+-}
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	return (struct bcm_sock *)sk;
+ #else
+-static inline struct bcm_opt *bcm_sk(const struct sock *sk)
+-{
+-	return (struct bcm_opt *)sk-&gt;sk_protinfo;
+-}
++	return (struct bcm_sock *)sk-&gt;sk_protinfo;
+ #endif
++}
+ 
+ #if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,14)
+ static void *kzalloc(size_t size, unsigned int __nocast flags)
+@@ -234,7 +231,7 @@
+ {
+ 	int len = 0;
+ 	struct sock *sk = (struct sock *)data;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 
+ 	len += snprintf(page + len, PAGE_SIZE - len, &quot;&gt;&gt;&gt; socket %p&quot;,
+@@ -417,7 +414,7 @@
+ 
+ 	err = sock_queue_rcv_skb(sk, skb);
+ 	if (err &lt; 0) {
+-		struct bcm_opt *bo = bcm_sk(sk);
++		struct bcm_sock *bo = bcm_sk(sk);
+ 
+ 		DBG(&quot;sock_queue_rcv_skb failed: %d\n&quot;, err);
+ 		kfree_skb(skb);
+@@ -935,7 +932,7 @@
+ static int bcm_tx_setup(struct bcm_msg_head *msg_head, struct msghdr *msg,
+ 			int ifindex, struct sock *sk)
+ {
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 	int i, err;
+ 
+@@ -1116,7 +1113,7 @@
+ static int bcm_rx_setup(struct bcm_msg_head *msg_head, struct msghdr *msg,
+ 			int ifindex, struct sock *sk)
+ {
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op;
+ 	int do_rx_register;
+ 	int err;
+@@ -1388,7 +1385,7 @@
+ 		       struct msghdr *msg, size_t size)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	int ifindex = bo-&gt;ifindex; /* default ifindex for this bcm_op */
+ 	struct bcm_msg_head msg_head;
+ 	int ret; /* read bytes or error codes as return value */
+@@ -1500,12 +1497,11 @@
+ 			void *data)
+ {
+ 	struct net_device *dev = (struct net_device *)data;
+-	struct bcm_opt *bo = container_of(nb, struct bcm_opt, notifier);
++	struct bcm_sock *bo = container_of(nb, struct bcm_sock, notifier);
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	struct bcm_sock *bs = container_of(bo, struct bcm_sock, opt);
+-	struct sock *sk = &amp;bs-&gt;sk;
++	struct sock *sk = &amp;bo-&gt;sk;
+ #else
+-#error TODO (if needed): Notifier support for Kernel Versions &lt; 2.6.12
++	struct sock *sk = bo-&gt;sk;
+ #endif
+ 	struct bcm_op *op;
+ 	int notify_enodev = 0;
+@@ -1558,8 +1554,11 @@
+  */
+ static int bcm_init(struct sock *sk)
+ {
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,12)
++	bo-&gt;sk               = sk;
++#endif
+ 	bo-&gt;bound            = 0;
+ 	bo-&gt;ifindex          = 0;
+ 	bo-&gt;dropped_usr_msgs = 0;
+@@ -1582,7 +1581,7 @@
+ static int bcm_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 	struct bcm_op *op, *next;
+ 
+ 	DBG(&quot;socket %p, sk %p\n&quot;, sock, sk);
+@@ -1649,7 +1648,7 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+-	struct bcm_opt *bo = bcm_sk(sk);
++	struct bcm_sock *bo = bcm_sk(sk);
+ 
+ 	if (bo-&gt;bound)
+ 		return -EISCONN;
+@@ -1789,7 +1788,7 @@
+ 	.capability = BCM_CAP,
+ 	.ops        = &amp;bcm_ops,
+ 	.owner      = THIS_MODULE,
+-	.obj_size   = sizeof(struct bcm_opt),
++	.obj_size   = sizeof(struct bcm_sock),
+ 	.init       = bcm_init,
+ };
+ #endif
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2007-06-20 12:09:30 UTC (rev 383)
++++ trunk/kernel/2.6/net/can/raw.c	2007-06-21 10:29:54 UTC (rev 384)
+@@ -90,7 +90,12 @@
+  * storing the single filter in dfilter, to avoid using dynamic memory.
+  */
+ 
+-struct raw_opt {
++struct raw_sock {
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	struct sock sk;
++#else
++	struct sock *sk;
++#endif
+ 	int bound;
+ 	int ifindex;
+ 	struct notifier_block notifier;
+@@ -102,27 +107,19 @@
+ 	can_err_mask_t err_mask;
+ };
+ 
+-#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-struct raw_sock {
+-	struct sock    sk;
+-	struct raw_opt opt;
+-};
+-
+-static inline struct raw_opt *raw_sk(const struct sock *sk)
++static inline struct raw_sock *raw_sk(const struct sock *sk)
+ {
+-	return &amp;((struct raw_sock *)sk)-&gt;opt;
+-}
++#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
++	return (struct raw_sock *)sk;
+ #else
+-static inline struct raw_opt *raw_sk(const struct sock *sk)
+-{
+-	return (struct raw_opt *)sk-&gt;sk_protinfo;
+-}
++	return (struct raw_sock *)sk-&gt;sk_protinfo;
+ #endif
++}
+ 
+ static void raw_rcv(struct sk_buff *skb, void *data)
+ {
+ 	struct sock *sk = (struct sock*)data;
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 	struct sockaddr_can *addr;
+ 	int error;
+ 
+@@ -153,7 +150,7 @@
+ 
+ static void raw_enable_filters(struct net_device *dev, struct sock *sk)
+ {
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+@@ -169,7 +166,7 @@
+ 
+ static void raw_enable_errfilter(struct net_device *dev, struct sock *sk)
+ {
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 
+ 	if (ro-&gt;err_mask)
+ 		can_rx_register(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+@@ -178,7 +175,7 @@
+ 
+ static void raw_disable_filters(struct net_device *dev, struct sock *sk)
+ {
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 	struct can_filter *filter = ro-&gt;filter;
+ 	int i;
+ 
+@@ -194,7 +191,7 @@
+ 
+ static void raw_disable_errfilter(struct net_device *dev, struct sock *sk)
+ {
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 
+ 	if (ro-&gt;err_mask)
+ 		can_rx_unregister(dev, 0, ro-&gt;err_mask | CAN_ERR_FLAG,
+@@ -205,12 +202,11 @@
+ 			unsigned long msg, void *data)
+ {
+ 	struct net_device *dev = (struct net_device *)data;
+-	struct raw_opt *ro = container_of(nb, struct raw_opt, notifier);
++	struct raw_sock *ro = container_of(nb, struct raw_sock, notifier);
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,12)
+-	struct raw_sock *rs = container_of(ro, struct raw_sock, opt);
+-	struct sock *sk = &amp;rs-&gt;sk;
++	struct sock *sk = &amp;ro-&gt;sk;
+ #else
+-#error TODO (if needed): Notifier support for Kernel Versions &lt; 2.6.12
++	struct sock *sk = ro-&gt;sk;
+ #endif
+ 
+ 	DBG(&quot;msg %ld for dev %p (%s idx %d) sk %p ro-&gt;ifindex %d\n&quot;,
+@@ -257,8 +253,11 @@
+ 
+ static int raw_init(struct sock *sk)
+ {
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,12)
++	ro-&gt;sk               = sk;
++#endif
+ 	ro-&gt;bound            = 0;
+ 	ro-&gt;ifindex          = 0;
+ 
+@@ -283,7 +282,7 @@
+ static int raw_release(struct socket *sock)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 
+ 	DBG(&quot;socket %p, sk %p, refcnt %d\n&quot;, sock, sk,
+ 	    atomic_read(&amp;sk-&gt;sk_refcnt));
+@@ -324,7 +323,7 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 	int err = 0;
+ 	int notify_enetdown = 0;
+ 
+@@ -404,7 +403,7 @@
+ {
+ 	struct sockaddr_can *addr = (struct sockaddr_can *)uaddr;
+ 	struct sock *sk = sock-&gt;sk;
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 
+ 	if (peer)
+ 		return -EOPNOTSUPP;
+@@ -432,7 +431,7 @@
+ 			  char __user *optval, int optlen)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 	struct can_filter *filter = NULL;  /* dyn. alloc'ed filters */
+ 	struct can_filter sfilter;         /* single filter */
+ 	struct net_device *dev = NULL;
+@@ -563,7 +562,7 @@
+ 			  char __user *optval, int __user *optlen)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 	int len;
+ 	void *val;
+ 	int err = 0;
+@@ -625,7 +624,7 @@
+ 		       struct msghdr *msg, size_t size)
+ {
+ 	struct sock *sk = sock-&gt;sk;
+-	struct raw_opt *ro = raw_sk(sk);
++	struct raw_sock *ro = raw_sk(sk);
+ 	struct sk_buff *skb;
+ 	struct net_device *dev;
+ 	int ifindex;
+@@ -764,7 +763,7 @@
+ 	.capability = RAW_CAP,
+ 	.ops        = &amp;raw_ops,
+ 	.owner      = THIS_MODULE,
+-	.obj_size   = sizeof(struct raw_opt),
++	.obj_size   = sizeof(struct raw_sock),
+ 	.init       = raw_init,
+ };
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000366.html">r383 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000368.html">r385 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#367">[ date ]</a>
+              <a href="thread.html#367">[ thread ]</a>
+              <a href="subject.html#367">[ subject ]</a>
+              <a href="author.html#367">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

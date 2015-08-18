@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r495 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r495%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200709251332.l8PDWq0r014571%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000476.html">
+   <LINK REL="Next"  HREF="000478.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r495 - trunk/kernel/2.6/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r495%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200709251332.l8PDWq0r014571%40sheep.berlios.de%3E"
+       TITLE="r495 - trunk/kernel/2.6/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep 25 15:32:52 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000476.html">r494 - trunk/patch-series/net-2.6.24
+</A></li>
+        <LI>Next message: <A HREF="000478.html">r496 - in trunk: can-utils kernel/2.4/can kernel/2.4/drivers/mscan	kernel/2.4/drivers/sja1000 kernel/2.6	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/hal	kernel/2.6/drivers/net/can/i82527	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#477">[ date ]</a>
+              <a href="thread.html#477">[ thread ]</a>
+              <a href="subject.html#477">[ subject ]</a>
+              <a href="author.html#477">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-09-25 15:32:50 +0200 (Tue, 25 Sep 2007)
+New Revision: 495
+
+Modified:
+   trunk/kernel/2.6/net/can/af_can.c
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Changes suggested by Arnaldo Carvalho de Melo:
+* Use gfp_any() instead of checking in_interrupt().
+* Don't kfree() the sk_protinfo field in kerenls &gt;= 2.6.12.
+
+
+Modified: trunk/kernel/2.6/net/can/af_can.c
+===================================================================
+--- trunk/kernel/2.6/net/can/af_can.c	2007-09-25 12:05:45 UTC (rev 494)
++++ trunk/kernel/2.6/net/can/af_can.c	2007-09-25 13:32:50 UTC (rev 495)
+@@ -150,8 +150,10 @@
+ 	DBG(&quot;called for sock %p\n&quot;, sk);
+ 
+ 	skb_queue_purge(&amp;sk-&gt;sk_receive_queue);
++#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,12)
+ 	if (sk-&gt;sk_protinfo)
+ 		kfree(sk-&gt;sk_protinfo);
++#endif
+ }
+ 
+ #if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,24)
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-09-25 12:05:45 UTC (rev 494)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-09-25 13:32:50 UTC (rev 495)
+@@ -344,9 +344,7 @@
+ 		return;
+ 	}
+ 
+-	skb = alloc_skb(CFSIZ,
+-			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+-
++	skb = alloc_skb(CFSIZ, gfp_any());
+ 	if (!skb)
+ 		goto out;
+ 
+@@ -382,8 +380,7 @@
+ 	int datalen = head-&gt;nframes * CFSIZ;
+ 	int err;
+ 
+-	skb = alloc_skb(sizeof(*head) + datalen,
+-			in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
++	skb = alloc_skb(sizeof(*head) + datalen, gfp_any());
+ 	if (!skb)
+ 		return;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000476.html">r494 - trunk/patch-series/net-2.6.24
+</A></li>
+	<LI>Next message: <A HREF="000478.html">r496 - in trunk: can-utils kernel/2.4/can kernel/2.4/drivers/mscan	kernel/2.4/drivers/sja1000 kernel/2.6	kernel/2.6/drivers/net/can kernel/2.6/drivers/net/can/hal	kernel/2.6/drivers/net/can/i82527	kernel/2.6/drivers/net/can/sja1000 kernel/2.6/net/can test
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#477">[ date ]</a>
+              <a href="thread.html#477">[ thread ]</a>
+              <a href="subject.html#477">[ subject ]</a>
+              <a href="author.html#477">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

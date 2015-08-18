@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r132 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r132%20-%20trunk&In-Reply-To=%3C200701291223.l0TCNGEK024793%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000115.html">
+   <LINK REL="Next"  HREF="000117.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r132 - trunk</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r132%20-%20trunk&In-Reply-To=%3C200701291223.l0TCNGEK024793%40sheep.berlios.de%3E"
+       TITLE="r132 - trunk">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 29 13:23:16 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000115.html">r131 - trunk/doc
+</A></li>
+        <LI>Next message: <A HREF="000117.html">r133 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#116">[ date ]</a>
+              <a href="thread.html#116">[ thread ]</a>
+              <a href="subject.html#116">[ subject ]</a>
+              <a href="author.html#116">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-01-29 13:23:15 +0100 (Mon, 29 Jan 2007)
+New Revision: 132
+
+Added:
+   trunk/README
+Log:
+First shot of a README file for socketcan.
+
+
+Added: trunk/README
+===================================================================
+--- trunk/README	2007-01-29 11:25:58 UTC (rev 131)
++++ trunk/README	2007-01-29 12:23:15 UTC (rev 132)
+@@ -0,0 +1,91 @@
++$Id$
++
++
++1. What is Socket CAN
++
++The socketcan package is an implementation of CAN protocols
++(Controller Area Network) for Linux.  CAN is a networking technology
++which has wide-spread use in automation, embedded devices, and
++automotive fields.  While there have been other CAN implementations
++for Linux based on character devices, Socket CAN uses the Berkeley
++socket API, the Linux network stack and implements the CAN device
++drivers as network interfaces.  The CAN socket API has been designed
++as similar as possible to the TCP/IP protocols to allow programmers,
++familiar with network programming, to easily learn how to use CAN
++sockets.
++
++
++2. How to compile and install
++
++2a. Compile and install the kernel modules
++
++To compile the Socket CAN sources, you need the Linux kernel sources
++for the kernel running on your target system, configured like that
++kernel.
++
++Then you should chdir to the socketcan source directory and call make
++to compile all the sources:
++
++    $ cd socketcan/kernel/&lt;version&gt;
++    $ make KERNELDIR=&lt;kernel-source&gt;
++
++where version is 2.4 or 2.6, depending on the kernel version you run
++on your target, and &lt;kernel-source&gt; should be replaced by the
++directory where your target kernel source is installed.  If you
++compile on the target machine and the configured kernel is in
++/usr/src/linux, you can omit the KERNELDIR argument to make.
++
++Not only the kernel version and configuration must match the kernel
++runnung on your target system, but also the version of GCC used to
++compile the source code.  So you may have to write
++
++    $ make KERNELDIR=&lt;kernel-source&gt; CC=gcc-&lt;gcc-version&gt;
++
++or something like that to call the apropriate compiler.
++
++[ NOTE:  currently, there is no Makefile in socketcan/kernel/&lt;version&gt;
++         you have to descend into each subdirectory and run make there.
++]
++
++To install the kernel modules, you must create a directory to install
++the modules in, copy the kernel modules to that directory and run
++depmod(8) to let modprobe find the newly installed modules:
++
++    # mkdir /lib/modules/$(uname -r)/socketcan
++    # find -name \*.ko | xargs install -t /lib/modules/$(uname -r)/socketcan
++    # depmod $(uname -r)
++
++2b. Compile and install the user space utilities and test programs
++
++...
++
++[ Run make in can-utils and test dirs and cp binaries to /usr/local ]
++
++
++3. How to use socketcan
++
++Like TCP/IP, you first need to open a socket for communicating over a
++CAN network.  Since Socket CAN implements a new protocol family, you
++need to pass PF_CAN as the first argument to the socket(2) system
++call.  Currently, there are two CAN protocols to choose from, the raw
++socket protocol and the broadcast manager (BCM).  So to open a socket,
++you would write
++
++    s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
++
++and
++
++    s = socket(PF_CAN, SOCK_DGRAM, CAN_BCM);
++
++respectively.  After opening, you would normally use the bind(2)
++system call to bind to a CAN id, then you can read(2) and write(2)
++from/to the socket or use send(2), sendto(2), sendmsg(2) and the recv*
++counterpart operations on the socket as usual.  There are also CAN
++specific socket options described in the bcm(7) and can-raw(7) manual
++pages.  Complete documentation can be found in the LaTeX file,
++currently only available in German.
++
++
++4. Why using the socket API
++
++...
+
+
+Property changes on: trunk/README
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000115.html">r131 - trunk/doc
+</A></li>
+	<LI>Next message: <A HREF="000117.html">r133 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#116">[ date ]</a>
+              <a href="thread.html#116">[ thread ]</a>
+              <a href="subject.html#116">[ subject ]</a>
+              <a href="author.html#116">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

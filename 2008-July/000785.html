@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r805 - trunk/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r805%20-%20trunk/can-utils&In-Reply-To=%3C200807020405.m6245Ixl027742%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000784.html">
+   <LINK REL="Next"  HREF="000786.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r805 - trunk/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r805%20-%20trunk/can-utils&In-Reply-To=%3C200807020405.m6245Ixl027742%40sheep.berlios.de%3E"
+       TITLE="r805 - trunk/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul  2 06:05:18 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000784.html">r804 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000786.html">r806 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#785">[ date ]</a>
+              <a href="thread.html#785">[ thread ]</a>
+              <a href="subject.html#785">[ subject ]</a>
+              <a href="author.html#785">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-07-02 06:05:11 +0200 (Wed, 02 Jul 2008)
+New Revision: 805
+
+Modified:
+   trunk/can-utils/candump.c
+Log:
+Added automatic extended frame format recognition.
+
+Most SocketCAN userspace tools (like cansend) recognize the EFF by the 
+stringlength of the given CAN-ID: 3 -&gt; SFF , 8 -&gt; EFF.
+This was missing in the candump filter definition and therefore the 
+values had to be specified with the CAN_EFF_FLAG set in the value, e.g.
+92345678 for the extended CAN-ID 12345678 - this was not really nice.
+
+Now the filtersets for extended frames can be specified as expected:
+12345678:1FFFFFFF to filter for only 12345678 extended CAN-ID
+000000AA:1FFFFFFF to filter for only AA extended CAN-ID.
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2008-07-01 11:31:59 UTC (rev 804)
++++ trunk/can-utils/candump.c	2008-07-02 04:05:11 UTC (rev 805)
+@@ -116,12 +116,16 @@
+ 	fprintf(stderr, &quot; &lt;can_id&gt;:&lt;can_mask&gt; (matches when &lt;received_can_id&gt; &amp; mask == can_id &amp; mask)\n&quot;);
+ 	fprintf(stderr, &quot; &lt;can_id&gt;~&lt;can_mask&gt; (matches when &lt;received_can_id&gt; &amp; mask != can_id &amp; mask)\n&quot;);
+ 	fprintf(stderr, &quot; #&lt;error_mask&gt;       (set error frame filter, see include/linux/can/error.h)\n&quot;);
++	fprintf(stderr, &quot;\nCAN IDs, masks and data content are given and expected in hexadecimal values.\n&quot;);
++	fprintf(stderr, &quot;When can_id and can_mask are both 8 digits, they are assumed to be 29 bit EFF.\n&quot;);
++	fprintf(stderr, &quot;Without any given filter all data frames are received ('0:0' default filter).\n&quot;);
+ 	fprintf(stderr, &quot;\nUse interface name '%s' to receive from all CAN interfaces.\n&quot;, ANYDEV);
+-	fprintf(stderr, &quot;CAN IDs, masks and data content are given and expected in hexadecimal values.\n&quot;);
+ 	fprintf(stderr, &quot;\nExamples:\n&quot;);
+ 	fprintf(stderr, &quot;%s -c -c -ta can0,123:7FF,400:700,#000000FF can2,400~7F0 can3 can8\n&quot;, prg);
+ 	fprintf(stderr, &quot;%s -l any,0~0,#FFFFFFFF    (log only error frames but no(!) data frames)\n&quot;, prg);
++	fprintf(stderr, &quot;%s -l any,0:0,#FFFFFFFF    (log error frames and also all data frames)\n&quot;, prg);
+ 	fprintf(stderr, &quot;%s vcan2,92345678:9FFFFFFF (match only for extended CAN ID 12345678)\n&quot;, prg);
++	fprintf(stderr, &quot;%s vcan2,12345678:1FFFFFFF (analog to above due to 8 digit value length)\n&quot;, prg);
+ 	fprintf(stderr, &quot;\n&quot;);
+ }
+ 
+@@ -179,6 +183,21 @@
+ 	return i;
+ }
+ 
++canid_t checkeff(char *ptr, char *nptr)
++{
++	int len;
++
++	if (nptr)
++		len = nptr - ptr;
++	else
++		len = strlen(ptr);
++
++	if (len == 17 &amp;&amp; (ptr[8] == ':' || ptr[8] == '~'))
++		return CAN_EFF_FLAG;
++	else
++		return 0;
++}
++
+ int main(int argc, char **argv)
+ {
+ 	fd_set rdfs;
+@@ -194,6 +213,7 @@
+ 	int opt, ret;
+ 	int currmax, numfilter;
+ 	char *ptr, *nptr;
++	canid_t eff;
+ 	struct sockaddr_can addr;
+ 	struct can_filter rfilter[MAXFILTER];
+ 	can_err_mask_t err_mask;
+@@ -364,13 +384,19 @@
+ 					   &amp;rfilter[numfilter].can_id, 
+ 					   (long unsigned int *)
+ 					   &amp;rfilter[numfilter].can_mask) == 2) {
++					eff = checkeff(ptr, nptr);
++ 					rfilter[numfilter].can_id |= eff;
++ 					rfilter[numfilter].can_mask |= eff;
+ 					numfilter++;
+ 				} else if (sscanf(ptr, &quot;%lx~%lx&quot;,
+ 						  (long unsigned int *)
+ 						  &amp;rfilter[numfilter].can_id, 
+ 						  (long unsigned int *)
+ 						  &amp;rfilter[numfilter].can_mask) == 2) {
+-					rfilter[numfilter].can_id |= CAN_INV_FILTER;
++ 					rfilter[numfilter].can_id |= CAN_INV_FILTER;
++					eff = checkeff(ptr, nptr);
++ 					rfilter[numfilter].can_id |= eff;
++ 					rfilter[numfilter].can_mask |= eff;
+ 					numfilter++;
+ 				} else if (sscanf(ptr, &quot;#%lx&quot;,
+ 						  (long unsigned int *)&amp;err_mask) != 1) { 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000784.html">r804 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000786.html">r806 - trunk/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#785">[ date ]</a>
+              <a href="thread.html#785">[ thread ]</a>
+              <a href="subject.html#785">[ subject ]</a>
+              <a href="author.html#785">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

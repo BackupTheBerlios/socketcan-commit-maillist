@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r757 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r757%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200806072158.m57LwbYo025672%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000736.html">
+   <LINK REL="Next"  HREF="000738.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r757 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r757%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200806072158.m57LwbYo025672%40sheep.berlios.de%3E"
+       TITLE="r757 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Jun  7 23:58:37 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000736.html">r756 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000738.html">r758 - branches/cannetdriver26
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#737">[ date ]</a>
+              <a href="thread.html#737">[ thread ]</a>
+              <a href="subject.html#737">[ subject ]</a>
+              <a href="author.html#737">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-07 23:58:35 +0200 (Sat, 07 Jun 2008)
+New Revision: 757
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Fixed compilation on 2.6.22 Kernels.
+Whitespace fix.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2008-06-07 21:52:12 UTC (rev 756)
++++ trunk/kernel/2.6/net/can/bcm.c	2008-06-07 21:58:35 UTC (rev 757)
+@@ -533,9 +533,15 @@
+ /* is part of linux/hrtimer.h since 2.6.26 */
+ static inline int hrtimer_callback_running(struct hrtimer *timer)
+ {
+-        return timer-&gt;state &amp; HRTIMER_STATE_CALLBACK;
++	return timer-&gt;state &amp; HRTIMER_STATE_CALLBACK;
+ }
+ #endif
++#if LINUX_VERSION_CODE == KERNEL_VERSION(2,6,22)
++static inline s64 ktime_us_delta(const ktime_t later, const ktime_t earlier)
++{
++	return ktime_to_us(ktime_sub(later, earlier));
++}
++#endif
+ 
+ /*
+  * bcm_rx_update_and_send - process a detected relevant receive content change
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000736.html">r756 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000738.html">r758 - branches/cannetdriver26
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#737">[ date ]</a>
+              <a href="thread.html#737">[ thread ]</a>
+              <a href="subject.html#737">[ subject ]</a>
+              <a href="author.html#737">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

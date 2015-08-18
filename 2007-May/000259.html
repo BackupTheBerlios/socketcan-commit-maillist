@@ -1,0 +1,392 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r275 - trunk/patches
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r275%20-%20trunk/patches&In-Reply-To=%3C200705031642.l43GglfO008623%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000258.html">
+   <LINK REL="Next"  HREF="000260.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r275 - trunk/patches</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r275%20-%20trunk/patches&In-Reply-To=%3C200705031642.l43GglfO008623%40sheep.berlios.de%3E"
+       TITLE="r275 - trunk/patches">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu May  3 18:42:47 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000258.html">r274 - trunk/kernel/2.6/net/can
+</A></li>
+        <LI>Next message: <A HREF="000260.html">r276 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#259">[ date ]</a>
+              <a href="thread.html#259">[ thread ]</a>
+              <a href="subject.html#259">[ subject ]</a>
+              <a href="author.html#259">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-05-03 18:42:43 +0200 (Thu, 03 May 2007)
+New Revision: 275
+
+Added:
+   trunk/patches/2.6.21.diff
+Removed:
+   trunk/patches/2.6.21-rc7.diff
+Log:
+Updated patch to vanilla 2.6.21.
+Removed the ipv6 patch. This is another thread on the LKML ... 
+
+
+Deleted: trunk/patches/2.6.21-rc7.diff
+===================================================================
+--- trunk/patches/2.6.21-rc7.diff	2007-05-03 15:37:10 UTC (rev 274)
++++ trunk/patches/2.6.21-rc7.diff	2007-05-03 16:42:43 UTC (rev 275)
+@@ -1,160 +0,0 @@
+-diff -ruN linux-2.6.21-rc7/CREDITS linux/CREDITS
+---- linux-2.6.21-rc7/CREDITS	2007-04-25 08:17:49.000000000 +0000
+-+++ linux/CREDITS	2007-04-25 08:21:39.000000000 +0000
+-@@ -1324,6 +1324,14 @@
+- S: 5623 HZ Eindhoven
+- S: The Netherlands
+- 
+-+N: Oliver Hartkopp
+-+E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>
+-+W: <A HREF="http://www.volkswagen.de">http://www.volkswagen.de</A>
+-+D: Controller Area Network (network layer core)
+-+S: Brieffach 1776
+-+S: 38436 Wolfsburg
+-+S: Germany 
+-+
+- N: Andrew Haylett
+- E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">ajh at primag.co.uk</A>
+- D: Selection mechanism
+-@@ -3277,6 +3285,14 @@
+- S: F-35042 Rennes Cedex
+- S: France
+- 
+-+N: Urs Thuermann
+-+E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>
+-+W: <A HREF="http://www.volkswagen.de">http://www.volkswagen.de</A>
+-+D: Controller Area Network (network layer core)
+-+S: Brieffach 1776
+-+S: 38436 Wolfsburg
+-+S: Germany 
+-+
+- N: Jon Tombs
+- E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">jon at gte.esi.us.es</A>
+- W: <A HREF="http://www.esi.us.es/~jon">http://www.esi.us.es/~jon</A>
+-diff -ruN linux-2.6.21-rc7/MAINTAINERS linux/MAINTAINERS
+---- linux-2.6.21-rc7/MAINTAINERS	2007-04-25 08:17:49.000000000 +0000
+-+++ linux/MAINTAINERS	2007-04-25 08:21:39.000000000 +0000
+-@@ -871,6 +871,15 @@
+- T:	git kernel.org:/pub/scm/linux/kernel/git/mchehab/v4l-dvb.git
+- S:	Maintained
+- 
+-+CAN NETWORK LAYER
+-+P:	Urs Thuermann
+-+M:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>
+-+P:	Oliver Hartkopp
+-+M:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>
+-+L:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-core at lists.berlios.de</A>
+-+W:	<A HREF="http://developer.berlios.de/projects/socketcan/">http://developer.berlios.de/projects/socketcan/</A>
+-+S:	Maintained
+-+
+- CALGARY x86-64 IOMMU
+- P:	Muli Ben-Yehuda
+- M:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">muli at il.ibm.com</A>
+-diff -ruN linux-2.6.21-rc7/drivers/net/Makefile linux/drivers/net/Makefile
+---- linux-2.6.21-rc7/drivers/net/Makefile	2007-04-25 08:17:52.000000000 +0000
+-+++ linux/drivers/net/Makefile	2007-04-25 08:21:39.000000000 +0000
+-@@ -8,6 +8,7 @@
+- obj-$(CONFIG_CHELSIO_T1) += chelsio/
+- obj-$(CONFIG_CHELSIO_T3) += cxgb3/
+- obj-$(CONFIG_EHEA) += ehea/
+-+obj-$(CONFIG_CAN) += can/
+- obj-$(CONFIG_BONDING) += bonding/
+- obj-$(CONFIG_ATL1) += atl1/
+- obj-$(CONFIG_GIANFAR) += gianfar_driver.o
+-diff -ruN linux-2.6.21-rc7/include/linux/if_arp.h linux/include/linux/if_arp.h
+---- linux-2.6.21-rc7/include/linux/if_arp.h	2007-04-13 20:48:14.000000000 +0000
+-+++ linux/include/linux/if_arp.h	2007-04-25 08:21:39.000000000 +0000
+-@@ -52,6 +52,7 @@
+- #define ARPHRD_ROSE	270
+- #define ARPHRD_X25	271		/* CCITT X.25			*/
+- #define ARPHRD_HWX25	272		/* Boards with X.25 in firmware	*/
+-+#define ARPHRD_CAN	280		/* Controller Area Network      */
+- #define ARPHRD_PPP	512
+- #define ARPHRD_CISCO	513		/* Cisco HDLC	 		*/
+- #define ARPHRD_HDLC	ARPHRD_CISCO
+-diff -ruN linux-2.6.21-rc7/include/linux/if_ether.h linux/include/linux/if_ether.h
+---- linux-2.6.21-rc7/include/linux/if_ether.h	2007-04-13 20:48:14.000000000 +0000
+-+++ linux/include/linux/if_ether.h	2007-04-25 08:21:39.000000000 +0000
+-@@ -88,6 +88,7 @@
+- #define ETH_P_WAN_PPP   0x0007          /* Dummy type for WAN PPP frames*/
+- #define ETH_P_PPP_MP    0x0008          /* Dummy type for PPP MP frames */
+- #define ETH_P_LOCALTALK 0x0009		/* Localtalk pseudo type 	*/
+-+#define ETH_P_CAN	0x000C		/* Controller Area Network      */
+- #define ETH_P_PPPTALK	0x0010		/* Dummy type for Atalk over PPP*/
+- #define ETH_P_TR_802_2	0x0011		/* 802.2 frames 		*/
+- #define ETH_P_MOBITEX	0x0015		/* Mobitex (<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kaz at cafe.net</A>)	*/
+-diff -ruN linux-2.6.21-rc7/include/linux/socket.h linux/include/linux/socket.h
+---- linux-2.6.21-rc7/include/linux/socket.h	2007-04-25 08:17:54.000000000 +0000
+-+++ linux/include/linux/socket.h	2007-04-25 08:21:39.000000000 +0000
+-@@ -185,6 +185,7 @@
+- #define AF_PPPOX	24	/* PPPoX sockets		*/
+- #define AF_WANPIPE	25	/* Wanpipe API Sockets */
+- #define AF_LLC		26	/* Linux LLC			*/
+-+#define AF_CAN		29	/* Controller Area Network      */
+- #define AF_TIPC		30	/* TIPC sockets			*/
+- #define AF_BLUETOOTH	31	/* Bluetooth sockets 		*/
+- #define AF_IUCV		32	/* IUCV sockets			*/
+-@@ -219,6 +220,7 @@
+- #define PF_PPPOX	AF_PPPOX
+- #define PF_WANPIPE	AF_WANPIPE
+- #define PF_LLC		AF_LLC
+-+#define PF_CAN		AF_CAN
+- #define PF_TIPC		AF_TIPC
+- #define PF_BLUETOOTH	AF_BLUETOOTH
+- #define PF_IUCV		AF_IUCV
+-diff -ruN linux-2.6.21-rc7/include/linux/tty.h linux/include/linux/tty.h
+---- linux-2.6.21-rc7/include/linux/tty.h	2007-04-25 08:17:54.000000000 +0000
+-+++ linux/include/linux/tty.h	2007-04-25 08:21:39.000000000 +0000
+-@@ -24,7 +24,7 @@
+- #define NR_PTYS	CONFIG_LEGACY_PTY_COUNT   /* Number of legacy ptys */
+- #define NR_UNIX98_PTY_DEFAULT	4096      /* Default maximum for Unix98 ptys */
+- #define NR_UNIX98_PTY_MAX	(1 &lt;&lt; MINORBITS) /* Absolute limit */
+--#define NR_LDISCS		17
+-+#define NR_LDISCS		18
+- 
+- /* line disciplines */
+- #define N_TTY		0
+-@@ -45,6 +45,7 @@
+- #define N_SYNC_PPP	14	/* synchronous PPP */
+- #define N_HCI		15	/* Bluetooth HCI UART */
+- #define N_GIGASET_M101	16	/* Siemens Gigaset M101 serial DECT adapter */
+-+#define N_SLCAN		17	/* Serial / USB serial CAN Adaptors */
+- 
+- /*
+-  * This character is the same as _POSIX_VDISABLE: it cannot be used as
+-diff -ruN linux-2.6.21-rc7/net/Kconfig linux/net/Kconfig
+---- linux-2.6.21-rc7/net/Kconfig	2007-04-25 08:17:54.000000000 +0000
+-+++ linux/net/Kconfig	2007-04-25 08:21:39.000000000 +0000
+-@@ -217,6 +217,7 @@
+- endmenu
+- 
+- source &quot;net/ax25/Kconfig&quot;
+-+source &quot;net/can/Kconfig&quot;
+- source &quot;net/irda/Kconfig&quot;
+- source &quot;net/bluetooth/Kconfig&quot;
+- source &quot;net/ieee80211/Kconfig&quot;
+-diff -ruN linux-2.6.21-rc7/net/Makefile linux/net/Makefile
+---- linux-2.6.21-rc7/net/Makefile	2007-04-25 08:17:54.000000000 +0000
+-+++ linux/net/Makefile	2007-04-25 08:21:39.000000000 +0000
+-@@ -34,6 +34,7 @@
+- obj-$(CONFIG_NETROM)		+= netrom/
+- obj-$(CONFIG_ROSE)		+= rose/
+- obj-$(CONFIG_AX25)		+= ax25/
+-+obj-$(CONFIG_CAN)		+= can/
+- obj-$(CONFIG_IRDA)		+= irda/
+- obj-$(CONFIG_BT)		+= bluetooth/
+- obj-$(CONFIG_SUNRPC)		+= sunrpc/
+-diff -ruN linux-2.6.21-rc7/net/ipv6/addrconf.c linux/net/ipv6/addrconf.c
+---- linux-2.6.21-rc7/net/ipv6/addrconf.c	2007-04-25 08:17:54.000000000 +0000
+-+++ linux/net/ipv6/addrconf.c	2007-04-25 08:21:39.000000000 +0000
+-@@ -2177,6 +2177,10 @@
+- 	struct inet6_dev *idev = __in6_dev_get(dev);
+- 	int run_pending = 0;
+- 
+-+	/* more non ipv6 compatible dev types to skip here? */
+-+	if (dev-&gt;type == ARPHRD_CAN)
+-+		return NOTIFY_OK;
+-+
+- 	switch(event) {
+- 	case NETDEV_REGISTER:
+- 		if (!idev) {
+
+Copied: trunk/patches/2.6.21.diff (from rev 274, trunk/patches/2.6.21-rc7.diff)
+===================================================================
+--- trunk/patches/2.6.21-rc7.diff	2007-05-03 15:37:10 UTC (rev 274)
++++ trunk/patches/2.6.21.diff	2007-05-03 16:42:43 UTC (rev 275)
+@@ -0,0 +1,146 @@
++diff -ruN linux-2.6.21/CREDITS linux/CREDITS
++--- linux-2.6.21/CREDITS	2007-04-25 08:17:49.000000000 +0000
+++++ linux/CREDITS	2007-04-25 08:21:39.000000000 +0000
++@@ -1324,6 +1324,14 @@
++ S: 5623 HZ Eindhoven
++ S: The Netherlands
++ 
+++N: Oliver Hartkopp
+++E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>
+++W: <A HREF="http://www.volkswagen.de">http://www.volkswagen.de</A>
+++D: Controller Area Network (network layer core)
+++S: Brieffach 1776
+++S: 38436 Wolfsburg
+++S: Germany 
+++
++ N: Andrew Haylett
++ E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">ajh at primag.co.uk</A>
++ D: Selection mechanism
++@@ -3277,6 +3285,14 @@
++ S: F-35042 Rennes Cedex
++ S: France
++ 
+++N: Urs Thuermann
+++E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>
+++W: <A HREF="http://www.volkswagen.de">http://www.volkswagen.de</A>
+++D: Controller Area Network (network layer core)
+++S: Brieffach 1776
+++S: 38436 Wolfsburg
+++S: Germany 
+++
++ N: Jon Tombs
++ E: <A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">jon at gte.esi.us.es</A>
++ W: <A HREF="http://www.esi.us.es/~jon">http://www.esi.us.es/~jon</A>
++diff -ruN linux-2.6.21/MAINTAINERS linux/MAINTAINERS
++--- linux-2.6.21/MAINTAINERS	2007-04-25 08:17:49.000000000 +0000
+++++ linux/MAINTAINERS	2007-04-25 08:21:39.000000000 +0000
++@@ -871,6 +871,15 @@
++ T:	git kernel.org:/pub/scm/linux/kernel/git/mchehab/v4l-dvb.git
++ S:	Maintained
++ 
+++CAN NETWORK LAYER
+++P:	Urs Thuermann
+++M:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">urs.thuermann at volkswagen.de</A>
+++P:	Oliver Hartkopp
+++M:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">oliver.hartkopp at volkswagen.de</A>
+++L:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">socketcan-core at lists.berlios.de</A>
+++W:	<A HREF="http://developer.berlios.de/projects/socketcan/">http://developer.berlios.de/projects/socketcan/</A>
+++S:	Maintained
+++
++ CALGARY x86-64 IOMMU
++ P:	Muli Ben-Yehuda
++ M:	<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">muli at il.ibm.com</A>
++diff -ruN linux-2.6.21/drivers/net/Makefile linux/drivers/net/Makefile
++--- linux-2.6.21/drivers/net/Makefile	2007-04-25 08:17:52.000000000 +0000
+++++ linux/drivers/net/Makefile	2007-04-25 08:21:39.000000000 +0000
++@@ -8,6 +8,7 @@
++ obj-$(CONFIG_CHELSIO_T1) += chelsio/
++ obj-$(CONFIG_CHELSIO_T3) += cxgb3/
++ obj-$(CONFIG_EHEA) += ehea/
+++obj-$(CONFIG_CAN) += can/
++ obj-$(CONFIG_BONDING) += bonding/
++ obj-$(CONFIG_ATL1) += atl1/
++ obj-$(CONFIG_GIANFAR) += gianfar_driver.o
++diff -ruN linux-2.6.21/include/linux/if_arp.h linux/include/linux/if_arp.h
++--- linux-2.6.21/include/linux/if_arp.h	2007-04-13 20:48:14.000000000 +0000
+++++ linux/include/linux/if_arp.h	2007-04-25 08:21:39.000000000 +0000
++@@ -52,6 +52,7 @@
++ #define ARPHRD_ROSE	270
++ #define ARPHRD_X25	271		/* CCITT X.25			*/
++ #define ARPHRD_HWX25	272		/* Boards with X.25 in firmware	*/
+++#define ARPHRD_CAN	280		/* Controller Area Network      */
++ #define ARPHRD_PPP	512
++ #define ARPHRD_CISCO	513		/* Cisco HDLC	 		*/
++ #define ARPHRD_HDLC	ARPHRD_CISCO
++diff -ruN linux-2.6.21/include/linux/if_ether.h linux/include/linux/if_ether.h
++--- linux-2.6.21/include/linux/if_ether.h	2007-04-13 20:48:14.000000000 +0000
+++++ linux/include/linux/if_ether.h	2007-04-25 08:21:39.000000000 +0000
++@@ -88,6 +88,7 @@
++ #define ETH_P_WAN_PPP   0x0007          /* Dummy type for WAN PPP frames*/
++ #define ETH_P_PPP_MP    0x0008          /* Dummy type for PPP MP frames */
++ #define ETH_P_LOCALTALK 0x0009		/* Localtalk pseudo type 	*/
+++#define ETH_P_CAN	0x000C		/* Controller Area Network      */
++ #define ETH_P_PPPTALK	0x0010		/* Dummy type for Atalk over PPP*/
++ #define ETH_P_TR_802_2	0x0011		/* 802.2 frames 		*/
++ #define ETH_P_MOBITEX	0x0015		/* Mobitex (<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kaz at cafe.net</A>)	*/
++diff -ruN linux-2.6.21/include/linux/socket.h linux/include/linux/socket.h
++--- linux-2.6.21/include/linux/socket.h	2007-04-25 08:17:54.000000000 +0000
+++++ linux/include/linux/socket.h	2007-04-25 08:21:39.000000000 +0000
++@@ -185,6 +185,7 @@
++ #define AF_PPPOX	24	/* PPPoX sockets		*/
++ #define AF_WANPIPE	25	/* Wanpipe API Sockets */
++ #define AF_LLC		26	/* Linux LLC			*/
+++#define AF_CAN		29	/* Controller Area Network      */
++ #define AF_TIPC		30	/* TIPC sockets			*/
++ #define AF_BLUETOOTH	31	/* Bluetooth sockets 		*/
++ #define AF_IUCV		32	/* IUCV sockets			*/
++@@ -219,6 +220,7 @@
++ #define PF_PPPOX	AF_PPPOX
++ #define PF_WANPIPE	AF_WANPIPE
++ #define PF_LLC		AF_LLC
+++#define PF_CAN		AF_CAN
++ #define PF_TIPC		AF_TIPC
++ #define PF_BLUETOOTH	AF_BLUETOOTH
++ #define PF_IUCV		AF_IUCV
++diff -ruN linux-2.6.21/include/linux/tty.h linux/include/linux/tty.h
++--- linux-2.6.21/include/linux/tty.h	2007-04-25 08:17:54.000000000 +0000
+++++ linux/include/linux/tty.h	2007-04-25 08:21:39.000000000 +0000
++@@ -24,7 +24,7 @@
++ #define NR_PTYS	CONFIG_LEGACY_PTY_COUNT   /* Number of legacy ptys */
++ #define NR_UNIX98_PTY_DEFAULT	4096      /* Default maximum for Unix98 ptys */
++ #define NR_UNIX98_PTY_MAX	(1 &lt;&lt; MINORBITS) /* Absolute limit */
++-#define NR_LDISCS		17
+++#define NR_LDISCS		18
++ 
++ /* line disciplines */
++ #define N_TTY		0
++@@ -45,6 +45,7 @@
++ #define N_SYNC_PPP	14	/* synchronous PPP */
++ #define N_HCI		15	/* Bluetooth HCI UART */
++ #define N_GIGASET_M101	16	/* Siemens Gigaset M101 serial DECT adapter */
+++#define N_SLCAN		17	/* Serial / USB serial CAN Adaptors */
++ 
++ /*
++  * This character is the same as _POSIX_VDISABLE: it cannot be used as
++diff -ruN linux-2.6.21/net/Kconfig linux/net/Kconfig
++--- linux-2.6.21/net/Kconfig	2007-04-25 08:17:54.000000000 +0000
+++++ linux/net/Kconfig	2007-04-25 08:21:39.000000000 +0000
++@@ -217,6 +217,7 @@
++ endmenu
++ 
++ source &quot;net/ax25/Kconfig&quot;
+++source &quot;net/can/Kconfig&quot;
++ source &quot;net/irda/Kconfig&quot;
++ source &quot;net/bluetooth/Kconfig&quot;
++ source &quot;net/ieee80211/Kconfig&quot;
++diff -ruN linux-2.6.21/net/Makefile linux/net/Makefile
++--- linux-2.6.21/net/Makefile	2007-04-25 08:17:54.000000000 +0000
+++++ linux/net/Makefile	2007-04-25 08:21:39.000000000 +0000
++@@ -34,6 +34,7 @@
++ obj-$(CONFIG_NETROM)		+= netrom/
++ obj-$(CONFIG_ROSE)		+= rose/
++ obj-$(CONFIG_AX25)		+= ax25/
+++obj-$(CONFIG_CAN)		+= can/
++ obj-$(CONFIG_IRDA)		+= irda/
++ obj-$(CONFIG_BT)		+= bluetooth/
++ obj-$(CONFIG_SUNRPC)		+= sunrpc/
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000258.html">r274 - trunk/kernel/2.6/net/can
+</A></li>
+	<LI>Next message: <A HREF="000260.html">r276 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#259">[ date ]</a>
+              <a href="thread.html#259">[ thread ]</a>
+              <a href="subject.html#259">[ subject ]</a>
+              <a href="author.html#259">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

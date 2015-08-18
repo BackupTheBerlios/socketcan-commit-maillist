@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r789 - trunk/kernel/2.6/drivers/net/can/sja1000
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r789%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200806201136.m5KBaRv4002505%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000768.html">
+   <LINK REL="Next"  HREF="000770.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r789 - trunk/kernel/2.6/drivers/net/can/sja1000</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r789%20-%20trunk/kernel/2.6/drivers/net/can/sja1000&In-Reply-To=%3C200806201136.m5KBaRv4002505%40sheep.berlios.de%3E"
+       TITLE="r789 - trunk/kernel/2.6/drivers/net/can/sja1000">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 20 13:36:27 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000768.html">r788 - trunk/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000770.html">r790 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#769">[ date ]</a>
+              <a href="thread.html#769">[ thread ]</a>
+              <a href="subject.html#769">[ subject ]</a>
+              <a href="author.html#769">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-06-20 13:36:26 +0200 (Fri, 20 Jun 2008)
+New Revision: 789
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/sja1000/ems_pcmcia.c
+Log:
+Fixed channel counting and enhanced kernel log output.
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/sja1000/ems_pcmcia.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/sja1000/ems_pcmcia.c	2008-06-20 09:19:13 UTC (rev 788)
++++ trunk/kernel/2.6/drivers/net/can/sja1000/ems_pcmcia.c	2008-06-20 11:36:26 UTC (rev 789)
+@@ -182,7 +182,8 @@
+ 		if (!dev)
+ 			continue;
+ 
+-		printk(KERN_INFO &quot;%s: removing channel #%d\n&quot;, DRV_NAME, i);
++		printk(KERN_INFO &quot;%s: removing %s on channel #%d\n&quot;,
++		       DRV_NAME, dev-&gt;name, i);
+ 		unregister_sja1000dev(dev);
+ 		free_sja1000dev(dev);
+ 	}
+@@ -283,8 +284,9 @@
+ 
+ 			card-&gt;channels++;
+ 
+-			printk(KERN_INFO &quot;%s: channel #%d at %lX, irq %d\n&quot;,
+-			       DRV_NAME, i + 1,	dev-&gt;base_addr, dev-&gt;irq);
++			printk(KERN_INFO &quot;%s: registered %s on channel &quot;
++			       &quot;#%d at %lX, irq %d\n&quot;, DRV_NAME, dev-&gt;name,
++			       i, dev-&gt;base_addr, dev-&gt;irq);
+ 		} else {
+ 			free_sja1000dev(dev);
+ 		}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000768.html">r788 - trunk/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000770.html">r790 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#769">[ date ]</a>
+              <a href="thread.html#769">[ thread ]</a>
+              <a href="subject.html#769">[ subject ]</a>
+              <a href="author.html#769">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,289 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r718 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.4/net/can trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2008-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r718%20-%20branches/cannetdriver26/net/can%20branches/ha/hrtimer/net/can%0A%09trunk/kernel/2.4/net/can%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200804260950.m3Q9oksa020904%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000699.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r718 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.4/net/can trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r718%20-%20branches/cannetdriver26/net/can%20branches/ha/hrtimer/net/can%0A%09trunk/kernel/2.4/net/can%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200804260950.m3Q9oksa020904%40sheep.berlios.de%3E"
+       TITLE="r718 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.4/net/can trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 26 11:50:46 CEST 2008</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000699.html">r717 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.4/net/can trunk/kernel/2.6/net/can
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#700">[ date ]</a>
+              <a href="thread.html#700">[ thread ]</a>
+              <a href="subject.html#700">[ subject ]</a>
+              <a href="author.html#700">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2008-04-26 11:50:42 +0200 (Sat, 26 Apr 2008)
+New Revision: 718
+
+Modified:
+   branches/cannetdriver26/net/can/raw.c
+   branches/ha/hrtimer/net/can/raw.c
+   trunk/kernel/2.4/net/can/raw.c
+   trunk/kernel/2.6/net/can/raw.c
+Log:
+Added some code simplifications suggested by Wolfgang Grandegger and
+Sam Ravnborg. Tnx.
+
+
+Modified: branches/cannetdriver26/net/can/raw.c
+===================================================================
+--- branches/cannetdriver26/net/can/raw.c	2008-04-25 18:59:00 UTC (rev 717)
++++ branches/cannetdriver26/net/can/raw.c	2008-04-26 09:50:42 UTC (rev 718)
+@@ -461,14 +461,12 @@
+ 			if (!filter)
+ 				return -ENOMEM;
+ 
+-			err = copy_from_user(filter, optval, optlen);
+-			if (err) {
++			if (copy_from_user(filter, optval, optlen)) {
+ 				kfree(filter);
+ 				return -EFAULT;
+ 			}
+ 		} else if (count == 1) {
+-			err = copy_from_user(&amp;sfilter, optval, optlen);
+-			if (err)
++			if (copy_from_user(&amp;sfilter, optval, optlen))
+ 				return -EFAULT;
+ 		}
+ 
+@@ -519,8 +517,7 @@
+ 		if (optlen != sizeof(err_mask))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;err_mask, optval, optlen);
+-		if (err)
++		if (copy_from_user(&amp;err_mask, optval, optlen))
+ 			return -EFAULT;
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+@@ -557,8 +554,8 @@
+ 		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;loopback, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+@@ -566,8 +563,8 @@
+ 		if (optlen != sizeof(ro-&gt;recv_own_msgs))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+
+Modified: branches/ha/hrtimer/net/can/raw.c
+===================================================================
+--- branches/ha/hrtimer/net/can/raw.c	2008-04-25 18:59:00 UTC (rev 717)
++++ branches/ha/hrtimer/net/can/raw.c	2008-04-26 09:50:42 UTC (rev 718)
+@@ -461,14 +461,12 @@
+ 			if (!filter)
+ 				return -ENOMEM;
+ 
+-			err = copy_from_user(filter, optval, optlen);
+-			if (err) {
++			if (copy_from_user(filter, optval, optlen)) {
+ 				kfree(filter);
+ 				return -EFAULT;
+ 			}
+ 		} else if (count == 1) {
+-			err = copy_from_user(&amp;sfilter, optval, optlen);
+-			if (err)
++			if (copy_from_user(&amp;sfilter, optval, optlen))
+ 				return -EFAULT;
+ 		}
+ 
+@@ -519,8 +517,7 @@
+ 		if (optlen != sizeof(err_mask))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;err_mask, optval, optlen);
+-		if (err)
++		if (copy_from_user(&amp;err_mask, optval, optlen))
+ 			return -EFAULT;
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+@@ -557,8 +554,8 @@
+ 		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;loopback, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+@@ -566,8 +563,8 @@
+ 		if (optlen != sizeof(ro-&gt;recv_own_msgs))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+
+Modified: trunk/kernel/2.4/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.4/net/can/raw.c	2008-04-25 18:59:00 UTC (rev 717)
++++ trunk/kernel/2.4/net/can/raw.c	2008-04-26 09:50:42 UTC (rev 718)
+@@ -442,14 +442,12 @@
+ 			if (!filter)
+ 				return -ENOMEM;
+ 
+-			err = copy_from_user(filter, optval, optlen);
+-			if (err) {
++			if (copy_from_user(filter, optval, optlen)) {
+ 				kfree(filter);
+ 				return -EFAULT;
+ 			}
+ 		} else if (count == 1) {
+-			err = copy_from_user(&amp;sfilter, optval, optlen);
+-			if (err)
++			if (copy_from_user(&amp;sfilter, optval, optlen))
+ 				return -EFAULT;
+ 		}
+ 
+@@ -501,8 +499,7 @@
+ 		if (optlen != sizeof(err_mask))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;err_mask, optval, optlen);
+-		if (err)
++		if (copy_from_user(&amp;err_mask, optval, optlen))
+ 			return -EFAULT;
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+@@ -539,8 +536,8 @@
+ 		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;loopback, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+@@ -548,8 +545,8 @@
+ 		if (optlen != sizeof(ro-&gt;recv_own_msgs))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+
+Modified: trunk/kernel/2.6/net/can/raw.c
+===================================================================
+--- trunk/kernel/2.6/net/can/raw.c	2008-04-25 18:59:00 UTC (rev 717)
++++ trunk/kernel/2.6/net/can/raw.c	2008-04-26 09:50:42 UTC (rev 718)
+@@ -461,14 +461,12 @@
+ 			if (!filter)
+ 				return -ENOMEM;
+ 
+-			err = copy_from_user(filter, optval, optlen);
+-			if (err) {
++			if (copy_from_user(filter, optval, optlen)) {
+ 				kfree(filter);
+ 				return -EFAULT;
+ 			}
+ 		} else if (count == 1) {
+-			err = copy_from_user(&amp;sfilter, optval, optlen);
+-			if (err)
++			if (copy_from_user(&amp;sfilter, optval, optlen))
+ 				return -EFAULT;
+ 		}
+ 
+@@ -519,8 +517,7 @@
+ 		if (optlen != sizeof(err_mask))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;err_mask, optval, optlen);
+-		if (err)
++		if (copy_from_user(&amp;err_mask, optval, optlen))
+ 			return -EFAULT;
+ 
+ 		err_mask &amp;= CAN_ERR_MASK;
+@@ -557,8 +554,8 @@
+ 		if (optlen != sizeof(ro-&gt;loopback))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;loopback, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;loopback, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+@@ -566,8 +563,8 @@
+ 		if (optlen != sizeof(ro-&gt;recv_own_msgs))
+ 			return -EINVAL;
+ 
+-		err = copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen) ?
+-			-EFAULT : 0;
++		if (copy_from_user(&amp;ro-&gt;recv_own_msgs, optval, optlen))
++			return -EFAULT;
+ 
+ 		break;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000699.html">r717 - branches/cannetdriver26/net/can branches/ha/hrtimer/net/can	trunk/kernel/2.4/net/can trunk/kernel/2.6/net/can
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#700">[ date ]</a>
+              <a href="thread.html#700">[ thread ]</a>
+              <a href="subject.html#700">[ subject ]</a>
+              <a href="author.html#700">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r549 - trunk/kernel/2.6/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-November/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r549%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711151414.lAFEEE1q029144%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000530.html">
+   <LINK REL="Next"  HREF="000532.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r549 - trunk/kernel/2.6/net/can</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r549%20-%20trunk/kernel/2.6/net/can&In-Reply-To=%3C200711151414.lAFEEE1q029144%40sheep.berlios.de%3E"
+       TITLE="r549 - trunk/kernel/2.6/net/can">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 15 15:14:14 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000530.html">r548 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+        <LI>Next message: <A HREF="000532.html">r550 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#531">[ date ]</a>
+              <a href="thread.html#531">[ thread ]</a>
+              <a href="subject.html#531">[ subject ]</a>
+              <a href="author.html#531">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-11-15 15:14:07 +0100 (Thu, 15 Nov 2007)
+New Revision: 549
+
+Modified:
+   trunk/kernel/2.6/net/can/bcm.c
+Log:
+Cosmetics.
+
+
+Modified: trunk/kernel/2.6/net/can/bcm.c
+===================================================================
+--- trunk/kernel/2.6/net/can/bcm.c	2007-11-15 13:39:33 UTC (rev 548)
++++ trunk/kernel/2.6/net/can/bcm.c	2007-11-15 14:14:07 UTC (rev 549)
+@@ -682,8 +682,7 @@
+ 		return;
+ 
+ 	if (op-&gt;flags &amp; RX_RTR_FRAME) {
+-		/* send reply for RTR-request */
+-		/* send op-&gt;frames[0] to CAN device */
++		/* send reply for RTR-request (placed in op-&gt;frames[0]) */
+ 		bcm_can_tx(op);
+ 		return;
+ 	}
+@@ -1001,8 +1000,8 @@
+ 		op-&gt;flags |= TX_ANNOUNCE;
+ 
+ 		if (op-&gt;j_ival1 &amp;&amp; (op-&gt;count &gt; 0)) {
+-			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 			/* op-&gt;count-- is done in bcm_tx_timeout_handler */
++			op-&gt;timer.expires = jiffies + op-&gt;j_ival1;
+ 		} else
+ 			op-&gt;timer.expires = jiffies + op-&gt;j_ival2;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000530.html">r548 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+	<LI>Next message: <A HREF="000532.html">r550 - trunk/kernel/2.6/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#531">[ date ]</a>
+              <a href="thread.html#531">[ thread ]</a>
+              <a href="subject.html#531">[ subject ]</a>
+              <a href="author.html#531">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

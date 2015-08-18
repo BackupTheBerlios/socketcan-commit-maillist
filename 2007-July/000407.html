@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r425 - trunk/kernel/2.6/drivers/net/can
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-July/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r425%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200707091121.l69BLKpC011615%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000406.html">
+   <LINK REL="Next"  HREF="000408.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r425 - trunk/kernel/2.6/drivers/net/can</H1>
+    <B>thuermann at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r425%20-%20trunk/kernel/2.6/drivers/net/can&In-Reply-To=%3C200707091121.l69BLKpC011615%40sheep.berlios.de%3E"
+       TITLE="r425 - trunk/kernel/2.6/drivers/net/can">thuermann at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul  9 13:21:20 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000406.html">r424 - in trunk/patch-series: . net-2.6.23
+</A></li>
+        <LI>Next message: <A HREF="000408.html">r426 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#407">[ date ]</a>
+              <a href="thread.html#407">[ thread ]</a>
+              <a href="subject.html#407">[ subject ]</a>
+              <a href="author.html#407">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: thuermann
+Date: 2007-07-09 13:21:16 +0200 (Mon, 09 Jul 2007)
+New Revision: 425
+
+Modified:
+   trunk/kernel/2.6/drivers/net/can/vcan.c
+Log:
+Remove call to ether_setup().
+
+
+Modified: trunk/kernel/2.6/drivers/net/can/vcan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/vcan.c	2007-07-09 08:49:06 UTC (rev 424)
++++ trunk/kernel/2.6/drivers/net/can/vcan.c	2007-07-09 11:21:16 UTC (rev 425)
+@@ -230,10 +230,11 @@
+ {
+ 	DBG(&quot;dev %s\n&quot;, dev-&gt;name);
+ 
+-	ether_setup(dev);
+-
+ 	dev-&gt;type              = ARPHRD_CAN;
+ 	dev-&gt;mtu               = sizeof(struct can_frame);
++	dev-&gt;hard_header_len   = 0;
++	dev-&gt;addr_len          = 0;
++	dev-&gt;tx_queue_len      = 0;
+ 	dev-&gt;flags             = IFF_NOARP;
+ 
+ 	/* set flags according to driver capabilities */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000406.html">r424 - in trunk/patch-series: . net-2.6.23
+</A></li>
+	<LI>Next message: <A HREF="000408.html">r426 - trunk/kernel/2.6/drivers/net/can/sja1000
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#407">[ date ]</a>
+              <a href="thread.html#407">[ thread ]</a>
+              <a href="subject.html#407">[ subject ]</a>
+              <a href="author.html#407">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1255 - branches/j1939/can-utils
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1255%20-%20branches/j1939/can-utils&In-Reply-To=%3C20110506063338.E256B480C9E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000885.html">
+   <LINK REL="Next"  HREF="000887.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1255 - branches/j1939/can-utils</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1255%20-%20branches/j1939/can-utils&In-Reply-To=%3C20110506063338.E256B480C9E%40sheep.berlios.de%3E"
+       TITLE="r1255 - branches/j1939/can-utils">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri May  6 08:33:38 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000885.html">r1254 - branches/j1939/can-utils
+</A></li>
+        <LI>Next message: <A HREF="000887.html">r1256 - branches/j1939/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#886">[ date ]</a>
+              <a href="thread.html#886">[ thread ]</a>
+              <a href="subject.html#886">[ subject ]</a>
+              <a href="author.html#886">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2011-05-06 08:33:38 +0200 (Fri, 06 May 2011)
+New Revision: 1255
+
+Modified:
+   branches/j1939/can-utils/jsr.c
+Log:
+Enable piped stdin.
+
+The problem was:
+fstat(STDIN_FILENO) does still not return a size, and
+thus a bit futher, read(0, buff, 0) is done, returing ... 0,
+which equals EOF =&gt; done here, exit as soon as we can.
+
+Signed-off-by: Kurt Van Dijck &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">kurt.van.dijck at eia.be</A>&gt;
+
+
+Modified: branches/j1939/can-utils/jsr.c
+===================================================================
+--- branches/j1939/can-utils/jsr.c	2011-05-05 14:57:12 UTC (rev 1254)
++++ branches/j1939/can-utils/jsr.c	2011-05-06 06:33:38 UTC (rev 1255)
+@@ -140,7 +140,7 @@
+ 
+ 		if (fstat(STDIN_FILENO, &amp;st) &lt; 0)
+ 			error(1, errno, &quot;stat stdin, could not determine buffer size&quot;);
+-		s.pkt_len = st.st_size;
++		s.pkt_len = st.st_size ?: 1024;
+ 	}
+ 
+ 	/* prepare */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000885.html">r1254 - branches/j1939/can-utils
+</A></li>
+	<LI>Next message: <A HREF="000887.html">r1256 - branches/j1939/can-utils
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#886">[ date ]</a>
+              <a href="thread.html#886">[ thread ]</a>
+              <a href="subject.html#886">[ subject ]</a>
+              <a href="author.html#886">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

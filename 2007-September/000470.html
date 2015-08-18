@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r488 - in trunk: can-utils test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2007-September/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r488%20-%20in%20trunk%3A%20can-utils%20test&In-Reply-To=%3C200709210721.l8L7LaHA005691%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000469.html">
+   <LINK REL="Next"  HREF="000471.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r488 - in trunk: can-utils test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r488%20-%20in%20trunk%3A%20can-utils%20test&In-Reply-To=%3C200709210721.l8L7LaHA005691%40sheep.berlios.de%3E"
+       TITLE="r488 - in trunk: can-utils test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 21 09:21:36 CEST 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000469.html">r487 - trunk/patch-series/net-2.6.24
+</A></li>
+        <LI>Next message: <A HREF="000471.html">r489 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#470">[ date ]</a>
+              <a href="thread.html#470">[ thread ]</a>
+              <a href="subject.html#470">[ subject ]</a>
+              <a href="author.html#470">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2007-09-21 09:21:24 +0200 (Fri, 21 Sep 2007)
+New Revision: 488
+
+Modified:
+   trunk/can-utils/candump.c
+   trunk/can-utils/cansend.c
+   trunk/can-utils/cansniffer.c
+   trunk/can-utils/lib.c
+   trunk/can-utils/lib.h
+   trunk/can-utils/slcan_attach.c
+   trunk/can-utils/terminal.h
+   trunk/test/canecho.c
+   trunk/test/tst-bcm-cycle.c
+   trunk/test/tst-bcm-filter.c
+   trunk/test/tst-bcm-rtr.c
+   trunk/test/tst-bcm-single.c
+   trunk/test/tst-bcm-throttle.c
+   trunk/test/tst-bcm-tx_read.c
+   trunk/test/tst-err.c
+   trunk/test/tst-proc.c
+   trunk/test/tst-raw-filter.c
+   trunk/test/tst-raw-sendto.c
+   trunk/test/tst-raw.c
+Log:
+Update outdated comment.
+
+
+Modified: trunk/can-utils/candump.c
+===================================================================
+--- trunk/can-utils/candump.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/can-utils/candump.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * candump.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/can-utils/cansend.c
+===================================================================
+--- trunk/can-utils/cansend.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/can-utils/cansend.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * cansend.c - simple command line tool to send CAN-frames via CAN_RAW sockets
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/can-utils/cansniffer.c
+===================================================================
+--- trunk/can-utils/cansniffer.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/can-utils/cansniffer.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * can-sniffer.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/can-utils/lib.c
+===================================================================
+--- trunk/can-utils/lib.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/can-utils/lib.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * lib.c - library for command line tools
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/can-utils/lib.h
+===================================================================
+--- trunk/can-utils/lib.h	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/can-utils/lib.h	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * lib.h - library include for command line tools
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/can-utils/slcan_attach.c
+===================================================================
+--- trunk/can-utils/slcan_attach.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/can-utils/slcan_attach.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * slcan_attach.c - userspace tool for serial line CAN interface driver SLCAN
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/can-utils/terminal.h
+===================================================================
+--- trunk/can-utils/terminal.h	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/can-utils/terminal.h	2007-09-21 07:21:24 UTC (rev 488)
+@@ -3,7 +3,7 @@
+  */
+ 
+ /*
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/canecho.c
+===================================================================
+--- trunk/test/canecho.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/canecho.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * canecho.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-bcm-cycle.c
+===================================================================
+--- trunk/test/tst-bcm-cycle.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-bcm-cycle.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-bcm-cycle.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-bcm-filter.c
+===================================================================
+--- trunk/test/tst-bcm-filter.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-bcm-filter.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-bcm-filter.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-bcm-rtr.c
+===================================================================
+--- trunk/test/tst-bcm-rtr.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-bcm-rtr.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-bcm-rtr.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-bcm-single.c
+===================================================================
+--- trunk/test/tst-bcm-single.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-bcm-single.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-bcm-single.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-bcm-throttle.c
+===================================================================
+--- trunk/test/tst-bcm-throttle.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-bcm-throttle.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-bcm-throttle.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-bcm-tx_read.c
+===================================================================
+--- trunk/test/tst-bcm-tx_read.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-bcm-tx_read.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-bcm-tx_read.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-err.c
+===================================================================
+--- trunk/test/tst-err.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-err.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-err.c
+  *
+- * Copyright (c) 2002-2006 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-proc.c
+===================================================================
+--- trunk/test/tst-proc.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-proc.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-proc.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-raw-filter.c
+===================================================================
+--- trunk/test/tst-raw-filter.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-raw-filter.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-raw-filter.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-raw-sendto.c
+===================================================================
+--- trunk/test/tst-raw-sendto.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-raw-sendto.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-raw-sendto.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+Modified: trunk/test/tst-raw.c
+===================================================================
+--- trunk/test/tst-raw.c	2007-09-20 19:35:39 UTC (rev 487)
++++ trunk/test/tst-raw.c	2007-09-21 07:21:24 UTC (rev 488)
+@@ -5,7 +5,7 @@
+ /*
+  * tst-raw.c
+  *
+- * Copyright (c) 2002-2005 Volkswagen Group Electronic Research
++ * Copyright (c) 2002-2007 Volkswagen Group Electronic Research
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000469.html">r487 - trunk/patch-series/net-2.6.24
+</A></li>
+	<LI>Next message: <A HREF="000471.html">r489 - in trunk/kernel/2.6: include/linux/can net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#470">[ date ]</a>
+              <a href="thread.html#470">[ thread ]</a>
+              <a href="subject.html#470">[ subject ]</a>
+              <a href="author.html#470">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

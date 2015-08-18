@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> r1175 - trunk/test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1175%20-%20trunk/test&In-Reply-To=%3C201004270603.o3R63xA5002909%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000806.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>r1175 - trunk/test</H1>
+    <B>hartkopp at mail.berlios.de</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20r1175%20-%20trunk/test&In-Reply-To=%3C201004270603.o3R63xA5002909%40sheep.berlios.de%3E"
+       TITLE="r1175 - trunk/test">hartkopp at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 27 08:03:59 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000806.html">r1174 - in trunk/can-utils: . config config/m4
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#807">[ date ]</a>
+              <a href="thread.html#807">[ thread ]</a>
+              <a href="subject.html#807">[ subject ]</a>
+              <a href="author.html#807">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: hartkopp
+Date: 2010-04-27 08:03:58 +0200 (Tue, 27 Apr 2010)
+New Revision: 1175
+
+Modified:
+   trunk/test/gwtest.c
+Log:
+Updated gwtest.c to latest netlink CAN GW API.
+
+
+Modified: trunk/test/gwtest.c
+===================================================================
+--- trunk/test/gwtest.c	2010-04-19 12:12:18 UTC (rev 1174)
++++ trunk/test/gwtest.c	2010-04-27 06:03:58 UTC (rev 1175)
+@@ -44,8 +44,6 @@
+ 	return 0;
+ }
+ 
+-#define USE_PACKED_STRUCT
+-
+ int main(int argc, char **argv)
+ {
+ 	int s;
+@@ -61,17 +59,10 @@
+ 	struct can_filter filter;
+ 	struct sockaddr_nl nladdr;
+ 
+-#ifdef USE_PACKED_STRUCT
+-	struct modattr {
+-		struct can_frame cf;
+-		__u8 modtype;
+-	} __attribute__((packed));
++	struct cgw_frame_mod modmsg;
+ 
+-	struct modattr modmsg;
+-#else
+-	static struct can_frame modframe;
+-	char modbuf[CGW_MODATTR_LEN];
+-#endif
++	u_int32_t src = if_nametoindex(&quot;vcan2&quot;);
++	u_int32_t dst = if_nametoindex(&quot;vcan3&quot;);
+ 
+ 	s = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+ 
+@@ -83,10 +74,12 @@
+ 	req.n.nlmsg_seq   = 0;
+ 
+ 	req.r.can_family  = AF_CAN;
+-	req.r.src_ifindex = if_nametoindex(&quot;vcan2&quot;);
+-	req.r.dst_ifindex = if_nametoindex(&quot;vcan3&quot;);
+-	req.r.can_txflags = CAN_GW_TXFLAGS_ECHO;
++	req.r.gwtype = CGW_TYPE_CAN_CAN;
++	req.r.flags = CGW_FLAGS_CAN_ECHO;
+ 
++	addattr_l(&amp;req.n, sizeof(req), CGW_SRC_IF, &amp;src, sizeof(src));
++	addattr_l(&amp;req.n, sizeof(req), CGW_DST_IF, &amp;dst, sizeof(dst));
++
+ 	/* add new attributes here */
+ 
+ 	filter.can_id = 0x400;
+@@ -94,8 +87,6 @@
+ 
+ 	addattr_l(&amp;req.n, sizeof(req), CGW_FILTER, &amp;filter, sizeof(filter));
+ 
+-#ifdef USE_PACKED_STRUCT
+-
+ 	if (sizeof(modmsg) != CGW_MODATTR_LEN) {
+ 		printf(&quot;Problem with packed msg. Use linear copy instead.\n&quot;);
+ 		return 1;
+@@ -114,25 +105,6 @@
+ 	modmsg.modtype = CGW_MOD_DATA;
+ 	addattr_l(&amp;req.n, sizeof(req), CGW_MOD_XOR, &amp;modmsg, CGW_MODATTR_LEN);
+ 
+-#else
+-
+-	modframe.can_id  = 0x555;
+-	modframe.can_dlc = 5;
+-	*(unsigned long long *)modframe.data = 0x5555555555555555ULL;
+-
+-	memcpy(modbuf, &amp;modframe, sizeof(struct can_frame));
+-
+-	modbuf[sizeof(struct can_frame)] = CGW_MOD_ID;
+-	addattr_l(&amp;req.n, sizeof(req), CGW_MOD_SET, modbuf, CGW_MODATTR_LEN);
+-
+-	modbuf[sizeof(struct can_frame)] = CGW_MOD_DLC;
+-	addattr_l(&amp;req.n, sizeof(req), CGW_MOD_AND, modbuf, CGW_MODATTR_LEN);
+-
+-	modbuf[sizeof(struct can_frame)] = CGW_MOD_DATA;
+-	addattr_l(&amp;req.n, sizeof(req), CGW_MOD_XOR, modbuf, CGW_MODATTR_LEN);
+-
+-#endif
+-
+ 	memset(&amp;nladdr, 0, sizeof(nladdr));
+ 	nladdr.nl_family = AF_NETLINK;
+ 	nladdr.nl_pid    = 0;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000806.html">r1174 - in trunk/can-utils: . config config/m4
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#807">[ date ]</a>
+              <a href="thread.html#807">[ thread ]</a>
+              <a href="subject.html#807">[ subject ]</a>
+              <a href="author.html#807">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>

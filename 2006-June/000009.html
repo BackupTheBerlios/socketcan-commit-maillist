@@ -1,0 +1,1233 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Socketcan-commit] r32 - in trunk/kernel/2.6/drivers/net/can: . mscan
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/socketcan-commit/2006-June/index.html" >
+   <LINK REL="made" HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r32%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20.%20mscan&In-Reply-To=%3C200606151312.k5FDCGs1022368%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000008.html">
+   <LINK REL="Next"  HREF="000010.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Socketcan-commit] r32 - in trunk/kernel/2.6/drivers/net/can: . mscan</H1>
+    <B>avolkov at BerliOS</B> 
+    <A HREF="mailto:socketcan-commit%40lists.berlios.de?Subject=Re%3A%20%5BSocketcan-commit%5D%20r32%20-%20in%20trunk/kernel/2.6/drivers/net/can%3A%20.%20mscan&In-Reply-To=%3C200606151312.k5FDCGs1022368%40sheep.berlios.de%3E"
+       TITLE="[Socketcan-commit] r32 - in trunk/kernel/2.6/drivers/net/can: . mscan">avolkov at berlios.de
+       </A><BR>
+    <I>Thu Jun 15 15:12:16 CEST 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000008.html">[Socketcan-commit] r31 - trunk/kernel/2.4/can
+</A></li>
+        <LI>Next message: <A HREF="000010.html">[Socketcan-commit] r33 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#9">[ date ]</a>
+              <a href="thread.html#9">[ thread ]</a>
+              <a href="subject.html#9">[ subject ]</a>
+              <a href="author.html#9">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: avolkov
+Date: 2006-06-15 15:12:14 +0200 (Thu, 15 Jun 2006)
+New Revision: 32
+
+Added:
+   trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+   trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+   trunk/kernel/2.6/drivers/net/can/mscan/mscan.h
+Modified:
+   trunk/kernel/2.6/drivers/net/can/Kconfig
+Log:
+Added drivers of MSCAN based mpc52xx onchip CAN
+
+Modified: trunk/kernel/2.6/drivers/net/can/Kconfig
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/Kconfig	2006-06-11 18:41:06 UTC (rev 31)
++++ trunk/kernel/2.6/drivers/net/can/Kconfig	2006-06-15 13:12:14 UTC (rev 32)
+@@ -30,7 +30,7 @@
+ 	  which handles how to access your chip registers.
+ 
+ config CAN_MSCAN
+-       depends on CAN
++       depends on CAN &amp;&amp; (PPC || M68K || M68KNOMMU)
+        tristate &quot;Support for a Freescale MSCAN based chips&quot;
+        ---help---
+         The Motorola Scalable Controller Area Network (MSCAN) definition
+@@ -40,7 +40,7 @@
+ 
+ config CAN_MPC52XX
+        tristate &quot;Freescale MPC5200 onboard CAN controller&quot;
+-       depends on CAN_MSCAN &amp;&amp; PPC_MPC52xx
++       depends on CAN_MSCAN &amp;&amp; (PPC_MPC52xx || PPC_52xx)
+        default LITE5200
+        ---help---
+         If you say yes here you get support for Freescale MPC5200
+
+Added: trunk/kernel/2.6/drivers/net/can/mscan/Makefile
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2006-06-11 18:41:06 UTC (rev 31)
++++ trunk/kernel/2.6/drivers/net/can/mscan/Makefile	2006-06-15 13:12:14 UTC (rev 32)
+@@ -0,0 +1,7 @@
++#
++# Makefile for the MSCAN based device drivers.
++#
++#
++
++obj-$(CONFIG_CAN_MSCAN)		+= mscan.o
++obj-$(CONFIG_CAN_MPC52XX)	+= mpc52xx_can.o
+
+Added: trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2006-06-11 18:41:06 UTC (rev 31)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c	2006-06-15 13:12:14 UTC (rev 32)
+@@ -0,0 +1,149 @@
++/*
++ * $Id:$
++ *
++ * DESCRIPTION:
++ *  CAN bus driver for the Freescale MPC52xx embedded CPU.
++ *
++ * AUTHOR:
++ *  Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;
++ *
++ * COPYRIGHT:
++ *  2004-2005, Varma Electronics Oy
++ *
++ * LICENCE:
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * HISTORY:
++ *	 2005-02-03 created
++ *
++ */
++
++#include &lt;linux/config.h&gt;
++#include &lt;linux/kernel.h&gt;
++#include &lt;linux/module.h&gt;
++#include &lt;linux/interrupt.h&gt;
++#include &lt;linux/platform_device.h&gt;
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/can/can.h&gt;
++#include &lt;can/can_device.h&gt;
++#include &lt;can/mscan/mscan.h&gt;
++#include &lt;asm/io.h&gt;
++#include &lt;asm/mpc52xx.h&gt;
++
++static int __devinit mpc52xx_can_probe(struct platform_device *pdev)
++{
++	struct can_device *can;
++	struct resource *mem;
++	struct net_device *ndev;
++	struct mscan_platform_data *pdata = pdev-&gt;dev.platform_data;
++	u32 mem_size;
++	int ret = -ENODEV;
++
++	if(!pdata)
++		return ret;
++
++	can = alloc_mscandev();
++	if (!can)
++		return -ENOMEM;
++
++	ndev = CAN2ND(can);
++
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	ndev-&gt;irq = platform_get_irq(pdev, 0);
++	if (!mem || !ndev-&gt;irq)
++		goto req_error;
++
++	mem_size = mem-&gt;end - mem-&gt;start + 1;
++	if (!request_mem_region(mem-&gt;start, mem_size, pdev-&gt;dev.driver-&gt;name)) {
++		dev_err(&amp;pdev-&gt;dev, &quot;resource unavailable\n&quot;);
++		goto req_error;
++	}
++
++	SET_NETDEV_DEV(ndev, &amp;pdev-&gt;dev);
++	SET_MODULE_OWNER(THIS_MODULE);
++
++	ndev-&gt;base_addr = (unsigned long)ioremap_nocache(mem-&gt;start, mem_size);
++
++	if (!ndev-&gt;base_addr) {
++		dev_err(&amp;pdev-&gt;dev, &quot;failed to map can port\n&quot;);
++		ret = -ENOMEM;
++		goto fail_map;
++	}
++
++	can-&gt;can_sys_clock = pdata-&gt;clock_frq;
++
++	platform_set_drvdata(pdev, can);
++
++	ret = mscan_register(can, pdata-&gt;clock_src);
++	if (ret &gt;= 0) {
++		dev_info(&amp;pdev-&gt;dev, &quot;probe for a port 0x%lX done\n&quot;, ndev-&gt;base_addr);
++		return ret;
++	}
++
++	iounmap((unsigned long *)ndev-&gt;base_addr);
++fail_map:
++	release_mem_region(mem-&gt;start, mem_size);
++req_error:
++	free_candev(can);
++	dev_err(&amp;pdev-&gt;dev, &quot;probe failed\n&quot;);
++	return ret;
++}
++
++static int __devexit mpc52xx_can_remove(struct platform_device *pdev)
++{
++	struct can_device *can = platform_get_drvdata(pdev);
++	struct resource *mem;
++
++	platform_set_drvdata(pdev, NULL);
++	mscan_unregister(can);
++
++	iounmap((volatile void __iomem *)(CAN2ND(can)-&gt;base_addr));
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	release_mem_region(mem-&gt;start, mem-&gt;start - mem-&gt;end + 1);
++	free_candev(can);
++	return 0;
++}
++
++static struct platform_driver mpc52xx_can_driver = {
++	.driver		= {
++		.name	  = &quot;mpc52xx-mscan&quot;,
++	},
++	.probe 	  = mpc52xx_can_probe,
++	.remove   = __devexit_p(mpc52xx_can_remove)
++#ifdef CONFIG_PM
++/*	.suspend	= mpc52xx_can_suspend,	TODO */
++/*	.resume		= mpc52xx_can_resume,	TODO */
++#endif
++};
++
++int __init mpc52xx_can_init(void)
++{
++	printk(KERN_INFO &quot;%s initializing\n&quot;, mpc52xx_can_driver.driver.name);
++	return platform_driver_register(&amp;mpc52xx_can_driver);
++}
++
++void __exit mpc52xx_can_exit(void)
++{
++ 	platform_driver_unregister(&amp;mpc52xx_can_driver);
++	printk(KERN_INFO &quot;%s unloaded\n&quot;, mpc52xx_can_driver.driver.name);
++}
++
++
++module_init(mpc52xx_can_init);
++module_exit(mpc52xx_can_exit);
++
++MODULE_AUTHOR(&quot;Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;&quot;);
++MODULE_DESCRIPTION(&quot;Freescale MPC5200 CAN driver&quot;);
++MODULE_LICENSE(&quot;GPLv2&quot;);
+
+
+Property changes on: trunk/kernel/2.6/drivers/net/can/mscan/mpc52xx_can.c
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-06-11 18:41:06 UTC (rev 31)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.c	2006-06-15 13:12:14 UTC (rev 32)
+@@ -0,0 +1,683 @@
++/*
++ * $Id:$
++ *
++ * mscan.c
++ *
++ * DESCRIPTION:
++ *  CAN bus driver for the alone generic (as possible as) MSCAN controller.
++ *
++ * AUTHOR:
++ *  Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;
++ *
++ * COPYRIGHT:
++ *  2005-2006, Varma Electronics Oy
++ *
++ * LICENCE:
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#include &lt;linux/config.h&gt;
++#include &lt;linux/kernel.h&gt;
++#include &lt;linux/module.h&gt;
++#include &lt;linux/interrupt.h&gt;
++#include &lt;linux/delay.h&gt;
++#include &lt;linux/netdevice.h&gt;
++#include &lt;linux/can/can.h&gt;
++#include &lt;linux/list.h&gt;
++#include &lt;asm/io.h&gt;
++
++#include &lt;can/can_device.h&gt;
++#include &lt;can/mscan/mscan.h&gt;
++
++#define MSCAN_NORMAL_MODE	0
++#define MSCAN_SLEEP_MODE	 MSCAN_SLPRQ
++#define MSCAN_INIT_MODE		(MSCAN_INITRQ | MSCAN_SLPRQ)
++#define MSCAN_POWEROFF_MODE	(MSCAN_CSWAI | MSCAN_SLPRQ)
++
++#define BTR0_BRP_MASK	0x3f
++#define BTR0_SJW_SHIFT	6
++#define BTR0_SJW_MASK	(0x3 &lt;&lt; BTR0_SJW_SHIFT)
++
++#define BTR1_TSEG1_MASK  0xf
++#define BTR1_TSEG2_SHIFT 4
++#define BTR1_TSEG2_MASK  (0x7 &lt;&lt; BTR1_TSEG2_SHIFT)
++#define BTR1_SAM_SHIFT   7
++
++#define BTR0_SET_BRP(brp)	(((brp)-1)&amp;BTR0_BRP_MASK)
++#define BTR0_SET_SJW(sjw)	((((sjw)-1)&lt;&lt;BTR0_SJW_SHIFT)&amp;BTR0_SJW_MASK)
++
++#define BTR1_SET_TSEG1(tseg1) (((tseg1)-1)&amp;BTR1_TSEG1_MASK)
++#define BTR1_SET_TSEG2(tseg2) ((((tseg2)-1)&lt;&lt;BTR1_TSEG2_SHIFT)&amp;BTR1_TSEG2_MASK)
++#define BTR1_SET_SAM(sam)	  (((sam)&amp;1)&lt;&lt;BTR1_SAM_SHIFT)
++
++struct mscan_state {
++	u8 mode;
++	u8 canrier;
++	u8 cantier;
++};
++
++#define TX_QUEUE_SIZE	3
++
++typedef struct {
++	struct list_head list;
++	u8 mask;
++} tx_queue_entry_t;
++
++struct mscan_priv {
++	volatile unsigned long flags;
++	u8 shadow_statflg;
++	u8 shadow_canrier;
++	u8 cur_pri;
++	u8 tx_active;
++
++	struct list_head tx_head;
++	tx_queue_entry_t tx_queue[TX_QUEUE_SIZE];
++};
++
++#define F_RX_PROGRESS	0
++#define F_TX_PROGRESS	1
++#define F_TX_WAIT_ALL	2
++
++static int mscan_set_mode(struct can_device *can, u8 mode)
++{
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	int ret = 0;
++	int i;
++	u8 canctl1;
++
++	if( mode != MSCAN_NORMAL_MODE ) {
++		canctl1 = in_8(&amp;regs-&gt;canctl1);
++		if ((mode &amp; MSCAN_SLPRQ) &amp;&amp; (canctl1 &amp; MSCAN_SLPAK) == 0) {
++			out_8( &amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) | MSCAN_SLPRQ );
++			for (i = 0; i &lt; 255; i++ ) {
++				if ( in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_SLPAK )
++					break;
++				udelay(100);
++			}
++			if(i&gt;255)
++			   ret=-ENODEV;
++		}
++
++		if ( !ret &amp;&amp; (mode &amp; MSCAN_INITRQ) &amp;&amp; (canctl1 &amp; MSCAN_INITAK) == 0) {
++			out_8( &amp;regs-&gt;canctl0, in_8( &amp;regs-&gt;canctl0 ) | MSCAN_INITRQ);
++			for (i = 0; i &lt; 255; i++ ) {
++				if ( in_8(&amp;regs-&gt;canctl1) &amp; MSCAN_INITAK )
++					break;
++			}
++			if(i&gt;255)
++			   ret=-ENODEV;
++		}
++
++		if ( !ret &amp;&amp; (mode &amp; MSCAN_CSWAI) )
++			out_8( &amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) | MSCAN_CSWAI);
++
++	} else  {
++		canctl1 = in_8(&amp;regs-&gt;canctl1);
++		if ( canctl1 &amp; (MSCAN_SLPAK | MSCAN_INITAK) ) {
++		 out_8(&amp;regs-&gt;canctl0, in_8(&amp;regs-&gt;canctl0) &amp;
++		 		 	  ~(MSCAN_SLPRQ | MSCAN_INITRQ));
++		  for (i = 0; i &lt; 255; i++ ) {
++			canctl1 = in_8(&amp;regs-&gt;canctl1);
++		    if ( (canctl1 &amp; (MSCAN_INITAK | MSCAN_SLPAK)) ==0 )
++		  		break;
++		  }
++		  if(i&gt;255)
++		    ret=-ENODEV;
++		}
++	}
++  return ret;
++}
++
++static void mscan_push_state(struct can_device *can, struct mscan_state *state)
++{
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++
++	state-&gt;mode = in_8(&amp;regs-&gt;canctl0) &amp;
++					(MSCAN_SLPRQ | MSCAN_INITRQ | MSCAN_CSWAI);
++	state-&gt;canrier = in_8(&amp;regs-&gt;canrier);
++	state-&gt;cantier = in_8(&amp;regs-&gt;cantier);
++}
++
++static int mscan_pop_state(struct can_device *can, struct mscan_state *state)
++{
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	int ret;
++	ret = mscan_set_mode(can, state-&gt;mode);
++	if (!ret) {
++		out_8( &amp;regs-&gt;canrier, state-&gt;canrier);
++		out_8( &amp;regs-&gt;cantier, state-&gt;cantier);
++	}
++	return ret;
++}
++
++static int mscan_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
++{
++	struct can_frame *frame = (struct can_frame *)skb-&gt;data;
++	struct can_device *can = ND2CAN(ndev);
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	struct mscan_priv *priv = can-&gt;priv;
++	int i, rtr, buf_id;
++	u32 can_id;
++
++	if ( frame-&gt;can_dlc &gt; 8 )
++		return -EINVAL;
++
++	dev_dbg( ND2D(ndev), &quot;%s\n&quot;, __FUNCTION__);
++	out_8(&amp;regs-&gt;cantier, 0);
++
++	i = ~priv-&gt;tx_active &amp; MSCAN_TXE;
++	buf_id = ffs(i) - 1;
++	switch ( hweight8(i) ) {
++		case 0:
++			netif_stop_queue(ndev);
++			dev_err( ND2D(ndev), &quot;BUG! Tx Ring full when queue awake!\n&quot; );
++			return NETDEV_TX_BUSY;
++		case 1:
++			/* if buf_id &lt; 3, then current frame will be send out of order,
++			   since  buffer with lower id have higher priority (hell..) */
++			if(buf_id &lt; 3 )
++				priv-&gt;cur_pri++;
++			if(priv-&gt;cur_pri==0xff)
++				set_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags);
++			netif_stop_queue(ndev);
++		case 2:
++			set_bit(F_TX_PROGRESS, &amp;priv-&gt;flags);
++	}
++	out_8(&amp;regs-&gt;cantbsel, i);
++
++	rtr = frame-&gt;can_id &amp; CAN_RTR_FLAG;
++
++	if (frame-&gt;can_id &amp; CAN_EFF_FLAG) {
++		dev_dbg(ND2D(ndev), &quot;sending extended frame\n&quot;);
++
++		can_id = (frame-&gt;can_id &amp; CAN_EFF_MASK) &lt;&lt; 1;
++		if( rtr )
++			can_id |= 1;
++		out_be16(&amp;regs-&gt;tx.idr3_2, can_id);
++
++		can_id&gt;&gt;=16;
++		can_id = (can_id &amp; 0x7) | ((can_id&lt;&lt;2) &amp; 0xffe0) | (3&lt;&lt;3);
++	} else {
++		dev_dbg(ND2D(ndev), &quot;sending standard frame\n&quot;);
++		can_id = (frame-&gt;can_id &amp; CAN_SFF_MASK) &lt;&lt; 5;
++		if( rtr )
++			can_id |= 1&lt;&lt;4;
++	}
++	out_be16(&amp;regs-&gt;tx.idr1_0, can_id);
++
++	if ( !rtr ) {
++		volatile void __iomem *data = &amp;regs-&gt;tx.dsr1_0;
++		u16 *payload = (u16 *)frame-&gt;data;
++		/*Its safe to write into dsr[dlc+1]*/
++		for (i=0; i&lt;(frame-&gt;can_dlc+1)/2; i++) {
++			out_be16(data, *payload++);
++		    data += 2+_MSCAN_RESERVED_DSR_SIZE;
++		}
++	}
++
++	out_8(&amp;regs-&gt;tx.dlr, frame-&gt;can_dlc);
++	out_8(&amp;regs-&gt;tx.tbpr, priv-&gt;cur_pri);
++
++	/* Start transmission. */
++	out_8(&amp;regs-&gt;cantflg, 1&lt;&lt;buf_id);
++
++	if ( ! test_bit(F_TX_PROGRESS, &amp;priv-&gt;flags) )
++		ndev-&gt;trans_start = jiffies;
++
++	list_add_tail( &amp;priv-&gt;tx_queue[buf_id].list, &amp;priv-&gt;tx_head);
++
++	dev_kfree_skb (skb);
++
++	/* Enable interrupt. */
++	priv-&gt;tx_active |= 1&lt;&lt;buf_id;
++	out_8( &amp;regs-&gt;cantier, priv-&gt;tx_active);
++
++	return NETDEV_TX_OK;
++}
++
++
++static void mscan_tx_timeout(struct net_device *ndev)
++{
++	struct sk_buff *skb;
++	struct can_device *can = ND2CAN(ndev);
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	struct mscan_priv *priv = can-&gt;priv;
++	struct can_frame *frame;
++	u8 mask;
++
++	printk (&quot;%s\n&quot;, __FUNCTION__);
++
++	out_8(&amp;regs-&gt;cantier, 0);
++
++	mask = list_entry( priv-&gt;tx_head.next, tx_queue_entry_t, list)-&gt;mask;
++	ndev-&gt;trans_start = jiffies;
++	out_8(&amp;regs-&gt;cantarq, mask);
++	out_8(&amp;regs-&gt;cantier, priv-&gt;tx_active);
++
++	skb = dev_alloc_skb(sizeof(struct can_frame));
++	if (!skb) {
++		if(printk_ratelimit())
++			dev_notice(ND2D(ndev), &quot;TIMEOUT packet dropped\n&quot;);
++		return;
++	}
++	frame = (struct can_frame *)skb_put(skb,sizeof(struct can_frame));
++
++	frame-&gt;can_id = CAN_ERR_FLAG | CAN_ERR_TX_TIMEOUT;
++	frame-&gt;can_dlc = CAN_ERR_DLC;
++
++	skb-&gt;dev = ndev;
++	skb-&gt;protocol = __constant_htons(ETH_P_CAN);
++	skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++	netif_rx(skb);
++
++}
++
++static can_state_t state_map[] = {
++	CAN_STATE_ACTIVE,
++	CAN_STATE_BUS_WARNING,
++	CAN_STATE_BUS_PASSIVE,
++	CAN_STATE_BUS_OFF
++};
++
++static inline int check_set_state(struct can_device *can, u8 canrflg)
++{
++ can_state_t state;
++ int ret = 0;
++
++ if ( !(canrflg &amp; MSCAN_CSCIF) || can-&gt;state &gt; CAN_STATE_BUS_OFF)
++	return 0;
++
++ state = state_map[max( MSCAN_STATE_RX(canrflg), MSCAN_STATE_TX(canrflg))];
++ if(can-&gt;state &lt; state)
++	ret = 1;
++ if(state == CAN_STATE_BUS_OFF)
++	netif_carrier_off(CAN2ND(can));
++ else if(can-&gt;state == CAN_STATE_BUS_OFF &amp;&amp; state != CAN_STATE_BUS_OFF)
++	netif_carrier_on(CAN2ND(can));
++ can-&gt;state = state;
++ return ret;
++}
++
++static int mscan_rx_poll(struct net_device *ndev, int *budget)
++{
++	struct can_device *can = ND2CAN(ndev);
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++	struct mscan_priv *priv = can-&gt;priv;
++	int npackets = 0, quota = min(ndev-&gt;quota, *budget);
++	int ret = 1;
++	struct sk_buff *skb;
++	struct can_frame *frame;
++	u32 can_id;
++	u8  canrflg;
++	int i;
++
++	while ( npackets &lt; quota &amp;&amp;
++ 	( (canrflg = in_8(&amp;regs-&gt;canrflg)) &amp; (MSCAN_RXF | MSCAN_ERR_IF) )) {
++
++		skb = dev_alloc_skb(sizeof(struct can_frame));
++		if (!skb) {
++			if(printk_ratelimit())
++				dev_notice(ND2D(ndev), &quot;packet dropped\n&quot;);
++			can-&gt;net_stats.rx_dropped++;
++			out_8(&amp;regs-&gt;canrflg, canrflg);
++			continue;
++		}
++
++		frame = (struct can_frame *)skb_put(skb,sizeof(struct can_frame));
++
++		if (canrflg &amp; MSCAN_RXF) {
++			can_id = in_be16( &amp;regs-&gt;rx.idr1_0 );
++			if (can_id &amp; (1&lt;&lt;3) ) {
++			   frame-&gt;can_id = CAN_EFF_FLAG;
++			   can_id = (can_id &lt;&lt; 16) | in_be16(&amp;regs-&gt;rx.idr3_2);
++			   can_id = ((can_id &amp; 0xffe00000) | ((can_id &amp; 0x7ffff) &lt;&lt; 2 ))&gt;&gt;2;
++			}
++			else  {
++				can_id &gt;&gt;= 4;
++				frame-&gt;can_id = 0;
++			}
++
++			frame-&gt;can_id |= can_id&gt;&gt;1;
++			if(can_id &amp; 1)
++				frame-&gt;can_id |= CAN_RTR_FLAG;
++			frame-&gt;can_dlc = in_8(&amp;regs-&gt;rx.dlr) &amp; 0xf;
++
++			if( !(frame-&gt;can_id &amp; CAN_RTR_FLAG ) ) {
++				volatile void __iomem * data = &amp;regs-&gt;rx.dsr1_0;
++				u16 *payload = (u16 *)frame-&gt;data;
++				for (i=0; i&lt;(frame-&gt;can_dlc+1)/2; i++) {
++					*payload++ = in_be16(data);
++				    data += 2+_MSCAN_RESERVED_DSR_SIZE;
++				}
++			}
++
++			dev_dbg(ND2D(ndev), &quot;received pkt: id: %u dlc: %u data: &quot;,
++				frame-&gt;can_id,frame-&gt;can_dlc);
++		#ifdef DEBUG
++			for(i=0; i&lt;frame-&gt;can_dlc &amp;&amp; !(frame-&gt;can_id &amp; CAN_FLAG_RTR ); i++)
++				printk( &quot;%2x &quot;,frame-&gt;payload.data[i]);
++			printk(&quot;\n&quot;);
++		#endif
++
++			out_8(&amp;regs-&gt;canrflg, MSCAN_RXF);
++			ndev-&gt;last_rx = jiffies;
++			can-&gt;net_stats.rx_packets++;
++			can-&gt;net_stats.rx_bytes += frame-&gt;can_dlc;
++		}
++		else if (canrflg &amp; MSCAN_ERR_IF ) {
++			frame-&gt;can_id = CAN_ERR_FLAG;
++
++			if (canrflg &amp; MSCAN_OVRIF) {
++				frame-&gt;can_id |= CAN_ERR_CRTL;
++				frame-&gt;data[1] = CAN_ERR_CRTL_RX_OVERFLOW;
++				can-&gt;net_stats.rx_over_errors++;
++			}
++			else
++				frame-&gt;data[1] = 0;
++
++			if ( check_set_state(can, canrflg)) {
++			  frame-&gt;can_id |= CAN_ERR_CRTL;
++			  switch( can-&gt;state )  {
++				  case CAN_STATE_BUS_WARNING:
++					if( (priv-&gt;shadow_statflg &amp; MSCAN_RSTAT_MSK) &lt;
++					    (canrflg &amp; MSCAN_RSTAT_MSK))
++						frame-&gt;data[1] |= CAN_ERR_CRTL_RX_WARNING;
++
++					if( (priv-&gt;shadow_statflg &amp; MSCAN_TSTAT_MSK) &lt;
++					    (canrflg &amp; MSCAN_TSTAT_MSK))
++						frame-&gt;data[1] |= CAN_ERR_CRTL_TX_WARNING;
++					break;
++				  case CAN_STATE_BUS_PASSIVE:
++					frame-&gt;data[1] |= CAN_ERR_CRTL_PASSIVE;
++					break;
++				  case CAN_STATE_BUS_OFF:
++					frame-&gt;can_id |= CAN_ERR_BUSOFF;
++					frame-&gt;can_id &amp;= ~CAN_ERR_CRTL;
++					break;
++			  }
++			}
++			priv-&gt;shadow_statflg = canrflg &amp; MSCAN_STAT_MSK;
++			frame-&gt;can_dlc = CAN_ERR_DLC;
++			out_8(&amp;regs-&gt;canrflg, MSCAN_ERR_IF);
++		}
++
++		npackets++;
++		skb-&gt;dev = ndev;
++		skb-&gt;protocol = __constant_htons(ETH_P_CAN);
++		skb-&gt;ip_summed = CHECKSUM_UNNECESSARY;
++		netif_receive_skb(skb);
++	}
++
++  *budget -= npackets;
++  ndev-&gt;quota -= npackets;
++
++  if ( !(in_8(&amp;regs-&gt;canrflg) &amp; (MSCAN_RXF | MSCAN_ERR_IF))) {
++	netif_rx_complete(ndev);
++	clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
++	out_8(&amp;regs-&gt;canrier, in_8(&amp;regs-&gt;canrier) | MSCAN_ERR_IF | MSCAN_RXFIE);
++	ret = 0;
++  }
++  return ret;
++}
++
++static irqreturn_t
++mscan_isr(int irq, void *dev_id, struct pt_regs *r)
++{
++	struct net_device *ndev = (struct net_device *) dev_id;
++	struct can_device *can = ND2CAN(ndev);
++	struct mscan_regs *regs = (struct mscan_regs *)(ndev-&gt;base_addr);
++	struct mscan_priv *priv = can-&gt;priv;
++	u8 cantflg, canrflg;
++	irqreturn_t ret = IRQ_NONE;
++
++	if ( in_8(&amp;regs-&gt;cantier) &amp; MSCAN_TXE )
++	{
++		struct list_head *tmp, *pos;
++
++		cantflg = in_8(&amp;regs-&gt;cantflg) &amp; MSCAN_TXE;
++
++		list_for_each_safe(pos, tmp, &amp;priv-&gt;tx_head)  {
++			tx_queue_entry_t *entry = list_entry(pos, tx_queue_entry_t, list);
++			u8 mask = entry-&gt;mask;
++
++			if( !(cantflg &amp; mask) )
++				continue;
++
++			if ( in_8(&amp;regs-&gt;cantaak) &amp; mask ) {
++				can-&gt;net_stats.tx_dropped++;
++				can-&gt;net_stats.tx_aborted_errors++;
++			}
++			else {
++				out_8(&amp;regs-&gt;cantbsel, mask);
++				can-&gt;net_stats.tx_bytes += in_8(&amp;regs-&gt;tx.dlr);
++				can-&gt;net_stats.tx_packets++;
++			}
++			priv-&gt;tx_active &amp;= ~mask;
++			list_del(pos);
++		}
++
++		if ( list_empty(&amp;priv-&gt;tx_head) ) {
++			clear_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags);
++			clear_bit(F_TX_PROGRESS, &amp;priv-&gt;flags);
++			priv-&gt;cur_pri = 0;
++		}
++		else
++			ndev-&gt;trans_start = jiffies;
++
++		if( !test_bit(F_TX_WAIT_ALL, &amp;priv-&gt;flags) )
++			netif_wake_queue(ndev);
++
++		out_8( &amp;regs-&gt;cantier, priv-&gt;tx_active );
++		ret = IRQ_HANDLED;
++	}
++
++	if ( !test_and_set_bit(F_RX_PROGRESS, &amp;priv-&gt;flags) &amp;&amp;
++		(((canrflg = in_8(&amp;regs-&gt;canrflg)) &amp; ~MSCAN_STAT_MSK))) {
++		if ( check_set_state(can, canrflg) ) {
++			out_8(&amp;regs-&gt;canrflg, MSCAN_CSCIF);
++			ret = IRQ_HANDLED;
++		}
++		if (canrflg &amp; ~MSCAN_STAT_MSK) {
++			priv-&gt;shadow_canrier = in_8(&amp;regs-&gt;canrier);
++			out_8(&amp;regs-&gt;canrier, 0);
++			netif_rx_schedule(ndev);
++			ret = IRQ_HANDLED;
++		}
++		else
++			clear_bit(F_RX_PROGRESS, &amp;priv-&gt;flags);
++	}
++	return ret;
++}
++
++static int mscan_do_set_mode(struct can_device *can, can_mode_t mode)
++{
++	switch (mode) {
++	case CAN_MODE_SLEEP:
++	case CAN_MODE_STOP:
++		netif_stop_queue(CAN2ND(can));
++		mscan_set_mode(can,
++					(mode==CAN_MODE_STOP)? MSCAN_INIT_MODE: MSCAN_SLEEP_MODE);
++		break;
++	case CAN_MODE_START:
++		printk(&quot;%s: CAN_MODE_START requested\n&quot;,__FUNCTION__);
++		mscan_set_mode(can, MSCAN_NORMAL_MODE);
++		netif_wake_queue(CAN2ND(can));
++		break;
++
++	default:
++		return -EOPNOTSUPP;
++	}
++	return 0;
++}
++
++static
++int mscan_do_set_bit_time(struct can_device *can, struct can_bittime *bt)
++{
++	int ret = 0;
++	u8 reg;
++	struct mscan_state state;
++	struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++
++	if(bt-&gt;type != CAN_BITTIME_STD)
++		return -EINVAL;
++
++	spin_lock_irq(&amp;can-&gt;irq_lock);
++
++	mscan_push_state(can, &amp;state);
++    ret = mscan_set_mode(can, MSCAN_INIT_MODE);
++    if (! ret) {
++		reg = BTR0_SET_BRP(bt-&gt;std.brp) | BTR0_SET_SJW(bt-&gt;std.sjw);
++		out_8(&amp;regs-&gt;canbtr0, reg);
++
++		reg = BTR1_SET_TSEG1(bt-&gt;std.prop_seg + bt-&gt;std.phase_seg1) |
++			  BTR1_SET_TSEG2(bt-&gt;std.phase_seg2) | BTR1_SET_SAM(bt-&gt;std.sam);
++		out_8(&amp;regs-&gt;canbtr1, reg);
++
++	    ret = mscan_pop_state(can, &amp;state);
++    }
++
++	spin_unlock_irq(&amp;can-&gt;irq_lock);
++	return ret;
++}
++
++static int mscan_open(struct net_device *ndev)
++{
++  int ret = 0;
++  struct can_device *can = ND2CAN(ndev);
++  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++  struct mscan_priv *priv = can-&gt;priv;
++
++  if((ret =
++  		  request_irq(ndev-&gt;irq, mscan_isr, SA_SHIRQ, ndev-&gt;name, ndev)) &lt; 0) {
++   	printk(KERN_ERR &quot;%s - failed to attach interrupt\n&quot;, ndev-&gt;name);
++   	return ret;
++  }
++
++  INIT_LIST_HEAD(&amp;priv-&gt;tx_head);
++  /* acceptance mask/acceptance code (accept everything) */
++  out_be16(&amp;regs-&gt;canidar1_0, 0);
++  out_be16(&amp;regs-&gt;canidar3_2, 0);
++  out_be16(&amp;regs-&gt;canidar5_4, 0);
++  out_be16(&amp;regs-&gt;canidar7_6, 0);
++
++  out_be16(&amp;regs-&gt;canidmr1_0, 0xffff);
++  out_be16(&amp;regs-&gt;canidmr3_2, 0xffff);
++  out_be16(&amp;regs-&gt;canidmr5_4, 0xffff);
++  out_be16(&amp;regs-&gt;canidmr7_6, 0xffff);
++  /* Two 32 bit Acceptance Filters */
++  out_8(&amp;regs-&gt;canidac, MSCAN_AF_32BIT);
++
++  out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_LISTEN);
++  mscan_set_mode( can, MSCAN_NORMAL_MODE);
++
++  priv-&gt;shadow_statflg = in_8(&amp;regs-&gt;canrflg) &amp; MSCAN_STAT_MSK;
++  priv-&gt;cur_pri = 0;
++  priv-&gt;tx_active = 0;
++
++  out_8(&amp;regs-&gt;cantier, 0);
++  /* Enable receive interrupts. */
++  out_8(&amp;regs-&gt;canrier, MSCAN_OVRIE | MSCAN_RXFIE | MSCAN_CSCIE |
++				  		MSCAN_RSTATE1 | MSCAN_RSTATE0 |
++						MSCAN_TSTATE1 | MSCAN_TSTATE0);
++
++  netif_start_queue(ndev);
++
++ return 0;
++}
++
++static int mscan_close(struct net_device *ndev)
++{
++  struct can_device *can = ND2CAN(ndev);
++  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++
++  netif_stop_queue(ndev);
++
++  /* disable interrupts */
++  out_8(&amp;regs-&gt;cantier, 0);
++  out_8(&amp;regs-&gt;canrier, 0);
++  free_irq(ndev-&gt;irq, ndev);
++
++  mscan_set_mode( can, MSCAN_INIT_MODE);
++  return 0;
++}
++
++int mscan_register(struct can_device *can, int clock_src)
++{
++  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++  u8 ctl1;
++
++  ctl1 = in_8(&amp;regs-&gt;canctl1);
++  if(clock_src)
++	ctl1 |= MSCAN_CLKSRC;
++  else
++	ctl1 &amp;= ~MSCAN_CLKSRC;
++
++  ctl1 |= MSCAN_CANE;
++  out_8(&amp;regs-&gt;canctl1, ctl1);
++  udelay(100);
++
++  mscan_set_mode( can, MSCAN_INIT_MODE );
++
++  return register_netdev(CAN2ND(can));
++}
++EXPORT_SYMBOL(mscan_register);
++
++void mscan_unregister(struct can_device *can)
++{
++  struct mscan_regs *regs = (struct mscan_regs *)(CAN2ND(can)-&gt;base_addr);
++  mscan_set_mode( can, MSCAN_INIT_MODE );
++  out_8(&amp;regs-&gt;canctl1, in_8(&amp;regs-&gt;canctl1) &amp; ~MSCAN_CANE);
++  unregister_netdev(CAN2ND(can));
++}
++
++EXPORT_SYMBOL(mscan_unregister);
++
++struct can_device *alloc_mscandev()
++{
++  struct can_device *can;
++  struct net_device *ndev;
++  struct mscan_priv *priv;
++  int i;
++
++  can = alloc_candev(sizeof(struct mscan_priv));
++  if(!can)
++		return NULL;
++  ndev = CAN2ND(can);
++  priv = can-&gt;priv;
++
++  ndev-&gt;watchdog_timeo	= MSCAN_WATCHDOG_TIMEOUT;
++  ndev-&gt;open			= mscan_open;
++  ndev-&gt;stop			= mscan_close;
++  ndev-&gt;hard_start_xmit	= mscan_hard_start_xmit;
++  ndev-&gt;tx_timeout     	= mscan_tx_timeout;
++
++  ndev-&gt;poll     		= mscan_rx_poll;
++  ndev-&gt;weight     		= 8;
++
++  can-&gt;do_set_bit_time	= mscan_do_set_bit_time;
++  can-&gt;do_set_mode		= mscan_do_set_mode;
++
++  for(i=0; i&lt; TX_QUEUE_SIZE; i++)
++	priv-&gt;tx_queue[i].mask = 1&lt;&lt;i;
++
++  return can;
++}
++
++EXPORT_SYMBOL(alloc_mscandev);
++
++MODULE_AUTHOR(&quot;Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;&quot;);
++MODULE_LICENSE(&quot;GPL v2&quot;);
++MODULE_DESCRIPTION(&quot;CAN port driver for a mscan based chips&quot;);
+
+
+Property changes on: trunk/kernel/2.6/drivers/net/can/mscan/mscan.c
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Added: trunk/kernel/2.6/drivers/net/can/mscan/mscan.h
+===================================================================
+--- trunk/kernel/2.6/drivers/net/can/mscan/mscan.h	2006-06-11 18:41:06 UTC (rev 31)
++++ trunk/kernel/2.6/drivers/net/can/mscan/mscan.h	2006-06-15 13:12:14 UTC (rev 32)
+@@ -0,0 +1,254 @@
++/*
++ * $Id:$
++ *
++ * DESCRIPTION:
++ *  Definitions of consts/structs to drive the Freescale MSCAN.
++ *
++ * AUTHOR:
++ *  Andrey Volkov &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/socketcan-commit">avolkov at varma-el.com</A>&gt;
++ *
++ * COPYRIGHT:
++ *  2004-2006, Varma Electronics Oy
++ *
++ * LICENCE:
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#ifndef __MSCAN_H__
++#define __MSCAN_H__
++
++#include &lt;linux/config.h&gt;
++#include &lt;asm/types.h&gt;
++
++/* MSCAN control register 0 (CANCTL0) bits */
++#define MSCAN_RXFRM		0x80
++#define MSCAN_RXACT		0x40
++#define MSCAN_CSWAI		0x20
++#define MSCAN_SYNCH		0x10
++#define MSCAN_TIME		0x08
++#define MSCAN_WUPE		0x04
++#define MSCAN_SLPRQ		0x02
++#define MSCAN_INITRQ	0x01
++
++/* MSCAN control register 1 (CANCTL1) bits */
++#define MSCAN_CANE		0x80
++#define MSCAN_CLKSRC	0x40
++#define MSCAN_LOOPB		0x20
++#define MSCAN_LISTEN	0x10
++#define MSCAN_WUPM		0x04
++#define MSCAN_SLPAK		0x02
++#define MSCAN_INITAK	0x01
++
++#ifdef	CONFIG_PPC_MPC52xx
++#define MSCAN_CLKSRC_BUS	0
++#define MSCAN_CLKSRC_XTAL	MSCAN_CLKSRC
++#else
++#define MSCAN_CLKSRC_BUS	MSCAN_CLKSRC
++#define MSCAN_CLKSRC_XTAL	0
++#endif
++
++/* MSCAN receiver flag register (CANRFLG) bits */
++#define MSCAN_WUPIF		0x80
++#define MSCAN_CSCIF		0x40
++#define MSCAN_RSTAT1	0x20
++#define MSCAN_RSTAT0	0x10
++#define MSCAN_TSTAT1	0x08
++#define MSCAN_TSTAT0	0x04
++#define MSCAN_OVRIF		0x02
++#define MSCAN_RXF		0x01
++#define MSCAN_ERR_IF 	(MSCAN_OVRIF | MSCAN_CSCIF)
++#define MSCAN_RSTAT_MSK	(MSCAN_RSTAT1 | MSCAN_RSTAT0)
++#define MSCAN_TSTAT_MSK	(MSCAN_TSTAT1 | MSCAN_TSTAT0)
++#define MSCAN_STAT_MSK	(MSCAN_RSTAT_MSK | MSCAN_TSTAT_MSK)
++
++#define MSCAN_STATE_BUS_OFF \
++					(MSCAN_RSTAT1 | MSCAN_RSTAT0 | MSCAN_TSTAT1 | MSCAN_TSTAT0)
++#define MSCAN_STATE_TX(canrflg)  (((canrflg)&amp;MSCAN_TSTAT_MSK)&gt;&gt;2)
++#define MSCAN_STATE_RX(canrflg)  (((canrflg)&amp;MSCAN_RSTAT_MSK)&gt;&gt;4)
++#define MSCAN_STATE_ACTIVE		0
++#define MSCAN_STATE_WARNING		1
++#define MSCAN_STATE_PASSIVE		2
++#define MSCAN_STATE_BUSOFF		3
++
++
++/* MSCAN receiver interrupt enable register (CANRIER) bits */
++#define MSCAN_WUPIE		0x80
++#define MSCAN_CSCIE		0x40
++#define MSCAN_RSTATE1	0x20
++#define MSCAN_RSTATE0	0x10
++#define MSCAN_TSTATE1	0x08
++#define MSCAN_TSTATE0	0x04
++#define MSCAN_OVRIE		0x02
++#define MSCAN_RXFIE		0x01
++
++/* MSCAN transmitter flag register (CANTFLG) bits */
++#define MSCAN_TXE2		0x04
++#define MSCAN_TXE1		0x02
++#define MSCAN_TXE0		0x01
++#define MSCAN_TXE		(MSCAN_TXE2 | MSCAN_TXE1 | MSCAN_TXE0)
++
++/* MSCAN transmitter interrupt enable register (CANTIER) bits */
++#define MSCAN_TXIE2		0x04
++#define MSCAN_TXIE1		0x02
++#define MSCAN_TXIE0		0x01
++#define MSCAN_TXIE		(MSCAN_TXIE2 | MSCAN_TXIE1 | MSCAN_TXIE0)
++
++/* MSCAN transmitter message abort request (CANTARQ) bits */
++#define MSCAN_ABTRQ2	0x04
++#define MSCAN_ABTRQ1	0x02
++#define MSCAN_ABTRQ0	0x01
++
++/* MSCAN transmitter message abort ack (CANTAAK) bits */
++#define MSCAN_ABTAK2	0x04
++#define MSCAN_ABTAK1	0x02
++#define MSCAN_ABTAK0	0x01
++
++/* MSCAN transmit buffer selection (CANTBSEL) bits */
++#define MSCAN_TX2		0x04
++#define MSCAN_TX1		0x02
++#define MSCAN_TX0		0x01
++
++/* MSCAN ID acceptance control register (CANIDAC) bits */
++#define MSCAN_IDAM1		0x20
++#define MSCAN_IDAM0		0x10
++#define MSCAN_IDHIT2	0x04
++#define MSCAN_IDHIT1	0x02
++#define MSCAN_IDHIT0	0x01
++
++#define MSCAN_AF_32BIT	0x00
++#define MSCAN_AF_16BIT	MSCAN_IDAM0
++#define MSCAN_AF_8BIT	MSCAN_IDAM1
++#define MSCAN_AF_CLOSED	(MSCAN_IDAM0|MSCAN_IDAM1)
++#define MSCAN_AF_MASK	(~(MSCAN_IDAM0|MSCAN_IDAM1))
++
++/* MSCAN Miscellaneous Register (CANMISC) bits */
++#define MSCAN_BOHOLD	0x01
++
++#ifdef	CONFIG_PPC_MPC52xx
++ #define _MSCAN_RESERVED_(n,num)	u8	_res##n[num]
++ #define _MSCAN_RESERVED_DSR_SIZE	2
++#else
++ #define _MSCAN_RESERVED_(n,num)
++ #define _MSCAN_RESERVED_DSR_SIZE	0
++#endif
++
++/* Structure of the hardware registers */
++struct mscan_regs {
++/*======================================================
++	register map for mscan
++========================================================*/
++							/*  MPC5200 	   MSCAN block		*/
++							/*			  see doco S12MSCANV3/D */
++	u8  canctl0;        	/* + 0x00		   0x00	*/
++	u8  canctl1;        	/* + 0x01		   0x01	*/
++	_MSCAN_RESERVED_(1,2);	/* + 0x02		   		*/
++	u8  canbtr0;        	/* + 0x04		   0x02	*/
++	u8  canbtr1;        	/* + 0x05		   0x03	*/
++	_MSCAN_RESERVED_(2,2);	/* + 0x06		   		*/
++	u8  canrflg;        	/* + 0x08		   0x04	*/
++	u8  canrier;        	/* + 0x09		   0x05	*/
++	_MSCAN_RESERVED_(3,2);	/* + 0x0a		   		*/
++	u8  cantflg;        	/* + 0x0c		   0x06	*/
++	u8  cantier;        	/* + 0x0d		   0x07	*/
++	_MSCAN_RESERVED_(4,2);	/* + 0x0e		   		*/
++	u8  cantarq;        	/* + 0x10		   0x08	*/
++	u8  cantaak;        	/* + 0x11		   0x09	*/
++	_MSCAN_RESERVED_(5,2);	/* + 0x12		   		*/
++	u8  cantbsel;       	/* + 0x14		   0x0a	*/
++	u8  canidac;        	/* + 0x15		   0x0b	*/
++	u8  reserved;			/* + 0x16		   0x0c	*/
++	_MSCAN_RESERVED_(6,5);	/* + 0x17		   		*/
++#ifndef CONFIG_PPC_MPC52xx
++	u8  canmisc;			/*			   	   0x0d */
++#endif
++	u8  canrxerr;			/* + 0x1c		   0x0e	*/
++	u8  cantxerr;			/* + 0x1d		   0x0f	*/
++	_MSCAN_RESERVED_(7,2);	/* + 0x1e		   		*/
++	u16	canidar1_0;			/* + 0x20		   0x10	*/
++	_MSCAN_RESERVED_(8,2);	/* + 0x22		   		*/
++	u16	canidar3_2;     	/* + 0x24		   0x12	*/
++	_MSCAN_RESERVED_(9,2);	/* + 0x26		   		*/
++	u16	canidmr1_0;			/* + 0x28		   0x14	*/
++	_MSCAN_RESERVED_(10,2);	/* + 0x2a		   		*/
++	u16	canidmr3_2;			/* + 0x2c		   0x16	*/
++	_MSCAN_RESERVED_(11,2);	/* + 0x2e		   		*/
++	u16	canidar5_4;     	/* + 0x30		   0x18	*/
++	_MSCAN_RESERVED_(12,2);	/* + 0x32		   		*/
++	u16	canidar7_6;     	/* + 0x34		   0x1a	*/
++	_MSCAN_RESERVED_(13,2);	/* + 0x36		   		*/
++	u16	canidmr5_4;     	/* + 0x38		   0x1c	*/
++	_MSCAN_RESERVED_(14,2);	/* + 0x3a		   		*/
++	u16	canidmr7_6;     	/* + 0x3c		   0x1e	*/
++	_MSCAN_RESERVED_(15,2);	/* + 0x3e		   		*/
++	struct  {
++		u16 idr1_0;    			/* + 0x40		   0x20	*/
++		_MSCAN_RESERVED_(16,2);	/* + 0x42		   		*/
++		u16 idr3_2;     		/* + 0x44		   0x22	*/
++		_MSCAN_RESERVED_(17,2);	/* + 0x46		   		*/
++		u16 dsr1_0;    			/* + 0x48		   0x24	*/
++		_MSCAN_RESERVED_(18,2);	/* + 0x4a		   		*/
++		u16 dsr3_2;     		/* + 0x4c		   0x26	*/
++		_MSCAN_RESERVED_(19,2);	/* + 0x4e		   		*/
++		u16 dsr5_4;     		/* + 0x50		   0x28	*/
++		_MSCAN_RESERVED_(20,2);	/* + 0x52		   		*/
++		u16 dsr7_6;     		/* + 0x54		   0x2a	*/
++		_MSCAN_RESERVED_(21,2);	/* + 0x56		   		*/
++		u8  dlr;        		/* + 0x58		   0x2c	*/
++		u8  	:8;				/* + 0x59		   0x2d	*/
++		_MSCAN_RESERVED_(22,2);	/* + 0x5a		   		*/
++		u16 time;       		/* + 0x5c		   0x2e	*/
++	} rx;
++	_MSCAN_RESERVED_(23,2);		/* + 0x5e		   		*/
++	struct  {
++		u16  idr1_0;    		/* + 0x60		   0x30	*/
++		_MSCAN_RESERVED_(24,2); /* + 0x62		   		*/
++		u16  idr3_2;    		/* + 0x64		   0x32	*/
++		_MSCAN_RESERVED_(25,2); /* + 0x66		   		*/
++		u16  dsr1_0;    		/* + 0x68		   0x34	*/
++		_MSCAN_RESERVED_(26,2); /* + 0x6a		   		*/
++		u16  dsr3_2;    		/* + 0x6c		   0x36	*/
++		_MSCAN_RESERVED_(27,2); /* + 0x6e		   		*/
++		u16  dsr5_4;    		/* + 0x70		   0x38	*/
++		_MSCAN_RESERVED_(28,2); /* + 0x72		   		*/
++		u16  dsr7_6;    		/* + 0x74		   0x3a	*/
++		_MSCAN_RESERVED_(29,2); /* + 0x76		   		*/
++		u8  dlr;        		/* + 0x78		   0x3c	*/
++		u8  tbpr;       		/* + 0x79		   0x3d	*/
++		_MSCAN_RESERVED_(30,2); /* + 0x7a		   		*/
++		u16 time;       		/* + 0x7c		   0x3e	*/
++	} tx;
++	_MSCAN_RESERVED_(31,2);	    /* + 0x7e		   		*/
++} __attribute__ ((packed));
++
++#undef _MSCAN_RESERVED_
++#define MSCAN_REGION 	sizeof(struct mscan)
++
++#define MSCAN_WATCHDOG_TIMEOUT	((500*HZ)/1000)
++
++struct mscan_platform_data {
++	u8 clock_src;	/* MSCAN_CLKSRC_BUS or MSCAN_CLKSRC_XTAL */
++	u32 clock_frq;	/* can ref. clock, in Hz */
++};
++
++struct can_device *alloc_mscandev(void);
++/* @clock_src:
++	1 = The MSCAN clock source is the onchip Bus Clock.
++	0 = The MSCAN clock source is the chip Oscillator Clock.
++*/
++extern int mscan_register(struct can_device *can, int clock_src);
++extern void mscan_unregister(struct can_device *can);
++
++#endif /* __MSCAN_H__ */
+
+
+Property changes on: trunk/kernel/2.6/drivers/net/can/mscan/mscan.h
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000008.html">[Socketcan-commit] r31 - trunk/kernel/2.4/can
+</A></li>
+	<LI>Next message: <A HREF="000010.html">[Socketcan-commit] r33 - trunk/kernel/2.6/drivers/net/can
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#9">[ date ]</a>
+              <a href="thread.html#9">[ thread ]</a>
+              <a href="subject.html#9">[ subject ]</a>
+              <a href="author.html#9">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/socketcan-commit">More information about the Socketcan-commit
+mailing list</a><br>
+</body></html>
